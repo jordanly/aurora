@@ -81,6 +81,7 @@ public class TaskSchedulerImpl implements TaskScheduler {
   private final Preemptor preemptor;
   private final ExecutorSettings executorSettings;
   private final BiCache<String, TaskGroupKey> reservations;
+  private final Storage storage;
 
   private final AtomicLong attemptsFired = Stats.exportLong("schedule_attempts_fired");
   private final AtomicLong attemptsFailed = Stats.exportLong("schedule_attempts_failed");
@@ -91,18 +92,21 @@ public class TaskSchedulerImpl implements TaskScheduler {
       TaskAssigner assigner,
       Preemptor preemptor,
       ExecutorSettings executorSettings,
-      BiCache<String, TaskGroupKey> reservations) {
+      BiCache<String, TaskGroupKey> reservations,
+      Storage storage) {
 
     this.assigner = requireNonNull(assigner);
     this.preemptor = requireNonNull(preemptor);
     this.executorSettings = requireNonNull(executorSettings);
     this.reservations = requireNonNull(reservations);
+    this.storage = requireNonNull(storage);
   }
 
   @Timed("task_schedule_attempt")
-  public Set<String> schedule(Storage.MutableStoreProvider store, Iterable<String> taskIds) {
+  public Set<String> schedule(Iterable<String> taskIds) {
     try {
-      return scheduleTasks(store, taskIds);
+      // TODO(jly): do in an executor queue
+      return scheduleTasks(taskIds);
     } catch (RuntimeException e) {
       // We catch the generic unchecked exception here to ensure tasks are not abandoned
       // if there is a transient issue resulting in an unchecked exception.
@@ -114,16 +118,19 @@ public class TaskSchedulerImpl implements TaskScheduler {
     }
   }
 
-  private Set<String> scheduleTasks(Storage.MutableStoreProvider store, Iterable<String> tasks) {
+  private Set<String> scheduleTasks(Iterable<String> tasks) {
     ImmutableSet<String> taskIds = ImmutableSet.copyOf(tasks);
     String taskIdValues = Joiner.on(",").join(taskIds);
     LOG.debug("Attempting to schedule tasks {}", taskIdValues);
-    ImmutableSet<IAssignedTask> assignedTasks =
+
+    // TODO(jly): do we need the write lock for this? probably need to check before assignment
+    ImmutableSet<IAssignedTask> assignedTasks = storage.read(storeProvider ->
         ImmutableSet.copyOf(Iterables.transform(
-            store.getTaskStore().fetchTasks(Query.taskScoped(taskIds).byStatus(PENDING)),
-            IScheduledTask::getAssignedTask));
+            storeProvider.getTaskStore().fetchTasks(Query.taskScoped(taskIds).byStatus(PENDING)),
+            IScheduledTask::getAssignedTask)));
 
     if (Iterables.isEmpty(assignedTasks)) {
+      // TODO(jly): better message?
       LOG.warn("Failed to look up all tasks in a scheduling round: {}", taskIdValues);
       return taskIds;
     }
@@ -145,8 +152,10 @@ public class TaskSchedulerImpl implements TaskScheduler {
     }
 
     // This is safe after all checks above.
+    // TODO(jly): do we need the write lock for this? probably need to check before assignment
     ITaskConfig task = assignedTasks.stream().findFirst().get().getTask();
-    AttributeAggregate aggregate = AttributeAggregate.getJobActiveState(store, task.getJob());
+    AttributeAggregate aggregate = storage.read(storeProvider ->
+        AttributeAggregate.getJobActiveState(storeProvider, task.getJob()));
 
     // Valid Docker tasks can have a container but no executor config
     ResourceBag overhead = ResourceBag.EMPTY;
@@ -157,7 +166,6 @@ public class TaskSchedulerImpl implements TaskScheduler {
     }
 
     Set<String> launched = assigner.maybeAssign(
-        store,
         new SchedulingFilter.ResourceRequest(
             task,
             bagFromResources(task.getResources()).add(overhead), aggregate),
@@ -173,7 +181,7 @@ public class TaskSchedulerImpl implements TaskScheduler {
       // TODO(maxim): Now that preemption slots are searched asynchronously, consider
       // retrying a launch attempt within the current scheduling round IFF a reservation is
       // available.
-      maybePreemptFor(assignableTaskMap.get(taskId), aggregate, store);
+      maybePreemptFor(assignableTaskMap.get(taskId), aggregate);
     });
     attemptsNoMatch.addAndGet(failedToLaunch.size());
 
@@ -183,13 +191,15 @@ public class TaskSchedulerImpl implements TaskScheduler {
 
   private void maybePreemptFor(
       IAssignedTask task,
-      AttributeAggregate jobState,
-      Storage.MutableStoreProvider storeProvider) {
+      AttributeAggregate jobState) {
 
     if (!reservations.getByValue(TaskGroupKey.from(task.getTask())).isEmpty()) {
       return;
     }
-    Optional<String> slaveId = preemptor.attemptPreemptionFor(task, jobState, storeProvider);
+
+    // TODO(jly): deeper dive into usage of storeprovider for this call
+    Optional<String> slaveId = storage.write(storeProvider ->
+        preemptor.attemptPreemptionFor(task, jobState, storeProvider));
     if (slaveId.isPresent()) {
       reservations.put(slaveId.get(), TaskGroupKey.from(task.getTask()));
     }

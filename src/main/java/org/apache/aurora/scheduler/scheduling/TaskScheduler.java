@@ -26,10 +26,9 @@ public interface TaskScheduler extends EventSubscriber {
   /**
    * Attempts to schedule a task, possibly performing irreversible actions.
    *
-   * @param storeProvider {@code MutableStoreProvider} instance to access data store.
    * @param taskIds The tasks to attempt to schedule.
    * @return Successfully scheduled task IDs. The caller should call schedule again if a given
    *         task ID was not present in the result.
    */
-  Set<String> schedule(MutableStoreProvider storeProvider, Iterable<String> taskIds);
+  Set<String> schedule(Iterable<String> taskIds);
 }

@@ -17,6 +17,7 @@ import com.google.common.base.Optional;
 
 import org.apache.aurora.scheduler.base.TaskGroupKey;
 import org.apache.aurora.scheduler.events.PubsubEvent;
+import org.apache.aurora.scheduler.filter.SchedulingFilter;
 import org.apache.aurora.scheduler.filter.SchedulingFilter.ResourceRequest;
 import org.apache.aurora.scheduler.offers.HostOffer;
 import org.apache.aurora.scheduler.offers.OfferManager;
@@ -72,5 +73,14 @@ public class FakeOfferManager implements OfferManager {
                                             boolean revocable) {
 
     return null;
+  }
+
+  @Override
+  public boolean matches(HostOffer offer,
+                         TaskGroupKey groupKey,
+                         ResourceRequest resourceRequest,
+                         boolean revocable) {
+
+    return true;
   }
 }

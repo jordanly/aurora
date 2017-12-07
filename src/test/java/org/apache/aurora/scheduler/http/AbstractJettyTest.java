@@ -133,7 +133,6 @@ public abstract class AbstractJettyTest extends EasyMockTest {
             bindMock(TaskScheduler.class);
             bindMock(TierManager.class);
             bindMock(Thread.UncaughtExceptionHandler.class);
-            bindMock(TaskGroups.TaskGroupBatchWorker.class);
 
             bind(ServletContextListener.class).toProvider(() -> {
               return makeServletContextListener(injector, getChildServletModule());

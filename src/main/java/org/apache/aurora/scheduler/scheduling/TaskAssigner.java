@@ -30,7 +30,6 @@ public interface TaskAssigner {
    * Tries to match a task against an offer.  If a match is found, the assigner makes the
    * appropriate changes to the task and requests task launch.
    *
-   * @param storeProvider Storage provider.
    * @param resourceRequest The request for resources being scheduled.
    * @param groupKey Task group key.
    * @param tasks Tasks to assign.
@@ -38,7 +37,6 @@ public interface TaskAssigner {
    * @return Successfully assigned task IDs.
    */
   Set<String> maybeAssign(
-      MutableStoreProvider storeProvider,
       ResourceRequest resourceRequest,
       TaskGroupKey groupKey,
       Iterable<IAssignedTask> tasks,

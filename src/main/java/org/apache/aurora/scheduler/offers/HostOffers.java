@@ -20,6 +20,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Optional;
+import com.google.common.base.Predicates;
 import com.google.common.cache.Cache;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.Iterables;
@@ -55,7 +56,7 @@ class HostOffers {
   private final SchedulingFilter schedulingFilter;
 
   // Keep track of globally banned offers that will never be matched to anything.
-  private final Set<Protos.OfferID> globallyBannedOffers = Sets.newHashSet();
+  private final Set<Protos.OfferID> globallyBannedOffers = Sets.newConcurrentHashSet();
 
   // Keep track of the number of offers evaluated for vetoes when getting matching offers
   private final AtomicLong vetoEvaluatedOffers;
@@ -181,22 +182,39 @@ class HostOffers {
    * @param groupKey The task group to get offers for.
    * @return The offers a given task group can use.
    */
-  synchronized Iterable<HostOffer> getAllMatching(TaskGroupKey groupKey,
-                                                  ResourceRequest resourceRequest,
-                                                  boolean revocable) {
+  Iterable<HostOffer> getAllMatching(TaskGroupKey groupKey,
+                                     ResourceRequest resourceRequest,
+                                     boolean revocable) {
 
     return Iterables.unmodifiableIterable(FluentIterable.from(offers)
-        .filter(o -> !isGloballyBanned(o))
-        .filter(o -> !isStaticallyBanned(o, groupKey))
-        .filter(HostOffer::hasCpuAndMem)
-        .filter(o -> !isVetoed(o, resourceRequest, revocable, Optional.of(groupKey))));
+        .filter(o -> matches(o, groupKey, resourceRequest, revocable)));
   }
 
-  private synchronized boolean isGloballyBanned(HostOffer offer) {
+  public boolean matches(HostOffer offer,
+                         TaskGroupKey groupKey,
+                         ResourceRequest resourceRequest,
+                         boolean revocable) {
+
+    return !isGloballyBanned(offer)
+        && !isStaticallyBanned(offer, groupKey)
+        && offer.hasCpuAndMem()
+        && !isVetoed(offer, resourceRequest, revocable, Optional.of(groupKey));
+  }
+
+  /**
+   * Determine if an offer is globally banned. This method relies on {@code globallyBannedOffers}
+   * to be a concurrent data structure as opposed to using an intrinsic lock.
+   */
+  private boolean isGloballyBanned(HostOffer offer) {
     return globallyBannedOffers.contains(offer.getOffer().getId());
   }
 
-  private synchronized boolean isStaticallyBanned(HostOffer offer, TaskGroupKey groupKey) {
+  /**
+   * Determine if an offer is statically banned. This method relies on
+   * {@code staticallyBannedOffers} to be a concurrent data structure as opposed to using an
+   * intrinsic lock.
+   */
+  private boolean isStaticallyBanned(HostOffer offer, TaskGroupKey groupKey) {
     return staticallyBannedOffers.getIfPresent(Pair.of(offer.getOffer().getId(), groupKey)) != null;
   }
 
@@ -224,11 +242,13 @@ class HostOffers {
     return false;
   }
 
+  /**
+   * Add a static ban. This method relies on {@code staticallyBannedOffers} to be a concurrent
+   * data structure as opposed to using an intrinsic lock.
+   */
   @VisibleForTesting
-  synchronized void addStaticGroupBan(Protos.OfferID offerId, TaskGroupKey groupKey) {
-    if (offersById.containsKey(offerId)) {
-      staticallyBannedOffers.put(Pair.of(offerId, groupKey), true);
-    }
+  void addStaticGroupBan(Protos.OfferID offerId, TaskGroupKey groupKey) {
+    staticallyBannedOffers.put(Pair.of(offerId, groupKey), true);
   }
 
   @VisibleForTesting

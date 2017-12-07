@@ -257,19 +257,15 @@ public class SchedulingBenchmarks {
     }
 
     protected Set<String> schedule(Set<IScheduledTask> tasks) {
-      return storage.write((Storage.MutateWork.Quiet<Set<String>>) store -> {
-        Set<String> result = null;
+      Set<String> result = null;
 
-        List<List<IScheduledTask>> partitionedTasks = Lists.newArrayList(
-            Iterators.partition(tasks.iterator(), 5));
+      List<List<IScheduledTask>> partitionedTasks = Lists.newArrayList(
+          Iterators.partition(tasks.iterator(), 5));
 
-        for (List<IScheduledTask> partition : partitionedTasks) {
-          result = taskScheduler.schedule(
-              store,
-              org.apache.aurora.scheduler.base.Tasks.ids(partition));
-        }
-        return result;
-      });
+      for (List<IScheduledTask> partition : partitionedTasks) {
+        result = taskScheduler.schedule(org.apache.aurora.scheduler.base.Tasks.ids(partition));
+      }
+      return result;
     }
   }
 

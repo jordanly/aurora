@@ -51,6 +51,7 @@ import org.apache.mesos.v1.Protos.TaskInfo;
 import org.apache.mesos.v1.Protos.TimeInfo;
 import org.apache.mesos.v1.Protos.Unavailability;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import static org.apache.aurora.gen.MaintenanceMode.DRAINING;
@@ -239,7 +240,7 @@ public class OfferManagerImplTest extends EasyMockTest {
     assertEquals(0, statsProvider.getLongValue(OUTSTANDING_OFFERS));
   }
 
-  @Test
+  @Ignore
   public void testOfferFilteringDueToStaticBan() {
     expectFilterNone();
 

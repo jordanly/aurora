@@ -100,6 +100,12 @@ public interface OfferManager extends EventSubscriber {
                                      ResourceRequest resourceRequest,
                                      boolean revocable);
 
+  // TODO(jly): document
+  boolean matches(HostOffer offer,
+                  TaskGroupKey groupKey,
+                  ResourceRequest resourceRequest,
+                  boolean revocable);
+
   /**
    * Launches the task matched against the offer.
    *

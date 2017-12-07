@@ -88,7 +88,7 @@ public class SchedulingModule extends AbstractModule {
     @Parameter(names = "-scheduling_max_batch_size",
         validateValueWith = PositiveNumber.class,
         description = "The maximum number of scheduling attempts that can be processed in a batch.")
-    public int schedulingMaxBatchSize = 3;
+    public int schedulingMaxBatchSize = 100;
 
     @Parameter(names = "-max_tasks_per_schedule_attempt",
         validateValueWith = PositiveNumber.class,
@@ -128,10 +128,10 @@ public class SchedulingModule extends AbstractModule {
     PubsubEventModule.bindSubscriber(binder(), TaskGroups.class);
 
     bind(new TypeLiteral<Integer>() { })
-        .annotatedWith(TaskGroups.SchedulingMaxBatchSize.class)
+        .annotatedWith(TaskAssignerImpl.SchedulingMaxBatchSize.class)
         .toInstance(options.schedulingMaxBatchSize);
-    bind(TaskGroups.TaskGroupBatchWorker.class).in(Singleton.class);
-    addSchedulerActiveServiceBinding(binder()).to(TaskGroups.TaskGroupBatchWorker.class);
+    bind(TaskAssignerImpl.TaskGroupBatchWorker.class).in(Singleton.class);
+    addSchedulerActiveServiceBinding(binder()).to(TaskAssignerImpl.TaskGroupBatchWorker.class);
 
     install(new PrivateModule() {
       @Override

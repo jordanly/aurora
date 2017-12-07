@@ -158,7 +158,6 @@ public class CommandLineTest {
     expected.scheduling.initialSchedulePenalty = TEST_TIME;
     expected.scheduling.maxSchedulePenalty = TEST_TIME;
     expected.scheduling.reservationDuration = TEST_TIME;
-    expected.scheduling.schedulingMaxBatchSize = 42;
     expected.scheduling.maxTasksPerScheduleAttempt = 42;
     expected.taskAssigner.offerSelectorModules = ImmutableList.of(NoopModule.class);
     expected.async.asyncWorkerThreads = 42;
@@ -305,7 +304,6 @@ public class CommandLineTest {
         "-initial_schedule_penalty=42days",
         "-max_schedule_penalty=42days",
         "-offer_reservation_duration=42days",
-        "-scheduling_max_batch_size=42",
         "-max_tasks_per_schedule_attempt=42",
         "-offer_selector_modules=org.apache.aurora.scheduler.config.CommandLineTest$NoopModule",
         "-async_worker_threads=42",

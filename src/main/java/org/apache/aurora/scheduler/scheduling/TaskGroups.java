@@ -78,7 +78,6 @@ public class TaskGroups implements EventSubscriber {
   private final TaskGroupsSettings settings;
   private final TaskScheduler taskScheduler;
   private final RescheduleCalculator rescheduleCalculator;
-  private final BatchWorker<Set<String>> batchWorker;
 
   // Track the penalties of tasks at the time they were scheduled. This is to provide data that
   // may influence the selection of a different backoff strategy.
@@ -86,30 +85,6 @@ public class TaskGroups implements EventSubscriber {
       new SlidingStats("scheduled_task_penalty", "ms");
   private final AtomicLong scheduleAttemptsBlocks;
 
-  /**
-   * Annotation for the max scheduling batch size.
-   */
-  @VisibleForTesting
-  @Qualifier
-  @Target({ FIELD, PARAMETER, METHOD }) @Retention(RUNTIME)
-  public @interface SchedulingMaxBatchSize { }
-
-  @VisibleForTesting
-  public static class TaskGroupBatchWorker extends BatchWorker<Set<String>> {
-    @Inject
-    TaskGroupBatchWorker(
-        Storage storage,
-        StatsProvider statsProvider,
-        @SchedulingMaxBatchSize int maxBatchSize) {
-
-      super(storage, statsProvider, maxBatchSize);
-    }
-
-    @Override
-    protected String serviceName() {
-      return "TaskGroupBatchWorker";
-    }
-  }
 
   public static class TaskGroupsSettings {
     private final Amount<Long, Time> firstScheduleDelay;
@@ -139,14 +114,12 @@ public class TaskGroups implements EventSubscriber {
       TaskGroupsSettings settings,
       TaskScheduler taskScheduler,
       RescheduleCalculator rescheduleCalculator,
-      TaskGroupBatchWorker batchWorker,
       StatsProvider statsProvider) {
 
     this.executor = requireNonNull(executor);
     this.settings = requireNonNull(settings);
     this.taskScheduler = requireNonNull(taskScheduler);
     this.rescheduleCalculator = requireNonNull(rescheduleCalculator);
-    this.batchWorker = requireNonNull(batchWorker);
     this.scheduleAttemptsBlocks = statsProvider.makeCounter(SCHEDULE_ATTEMPTS_BLOCKS);
   }
 
@@ -170,16 +143,8 @@ public class TaskGroups implements EventSubscriber {
           if (settings.rateLimiter.acquire() > 0) {
             scheduleAttemptsBlocks.incrementAndGet();
           }
-          CompletableFuture<Set<String>> result = batchWorker.execute(storeProvider ->
-              taskScheduler.schedule(storeProvider, taskIds));
 
-          Set<String> scheduled = null;
-          try {
-            scheduled = result.get();
-          } catch (ExecutionException | InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new RuntimeException(e);
-          }
+          Set<String> scheduled = taskScheduler.schedule(taskIds);
 
           scheduledTaskPenalties.accumulate(group.getPenaltyMs());
           if (scheduled.isEmpty()) {
