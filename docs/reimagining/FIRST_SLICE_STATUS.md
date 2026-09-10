@@ -16,7 +16,7 @@ two-agent demonstration remains the later **SLICE-01** acceptance gate in the
 | BUILD-01 | Checkout-local ARM64 Java 8, Gradle 4.10.2 and compiler-only Thrift 0.10.0; verified archive checksums; explicit Thrift override; Python 3 wrapper fix; generated API and scheduler compile. | Python 2 comparison is source-derived rather than executed under Python 2. Native Mesos/JNI qualification is outside this lane. |
 | BUILD-02, bounded | Separate focused scheduler test task, two-worker/fork caps, frontend retained for run/JAR/full tests, original coverage thresholds retained. | Full suite, frontend execution, distribution packaging and wider integration coverage are unexecuted. |
 | CONTRACT-01, bounded | Strict alpha schemas; separate Job templates and resolved Run assignments; JobKey; lossless counters; authority-independent command hashes; Java/Go canonical encoding parity. | Real Java/Go schema/admission validators, authenticated transport, durable reducers, inventory assembly and committed ACK behavior are unimplemented. |
-| LAB-01, partial | Preflight; marked private run roots; explicit project names; source-hash-bound deterministic Compose rendering; inspection and refusal-only destruction skeleton. | Docker daemon access, images/toolchain manifests for images, real configs/certificates, launch, cleanup and native runtime smoke tests. |
+| LAB-01, partial | Preflight and Docker daemon access; marked private run roots; explicit project names; source-hash-bound deterministic Compose rendering; inspection and refusal-only destruction skeleton. | Images/toolchain manifests for images, real configs/certificates, launch, cleanup and native runtime smoke tests. |
 
 The native profile deliberately accepts one trusted batch instance or zero to two
 service instances, with one preinstalled process per instance. Job templates can
@@ -74,7 +74,7 @@ build-support/java/gradle-local :api:testThriftWrapperGenerator :api:classes \
 python3 protocol/native-v1alpha1/conformance/check.py
 python3 -m unittest discover -s build-support/lab/tests -v
 
-# Host facts; --require-docker returns nonzero until daemon access works.
+# Host facts; requires a session with the docker group active.
 build-support/lab/labctl preflight --require-docker
 
 # Preparation only. Pick a fresh run ID for each initialization.
@@ -96,17 +96,21 @@ paths; the parser check accounts for Compose re-escaping them on output.
 [Compose interpolation](https://docs.docker.com/reference/compose-file/interpolation/),
 [Compose 5.5.1 config serialization](https://github.com/docker/compose/blob/v5.5.1/cmd/compose/config.go#L180)
 
-## Current host gate and next increment
+## Current host status and next increment
 
-Docker client 29.8.0 and Compose 5.5.1 execute, but `docker info` is denied on
-`/var/run/docker.sock` both inside and outside the sandbox. The socket is mode
-0660 with owner/group 0:105; the current user lacks that group. A read-only
-`sudo -n docker info` probe also requires a password. Server/runtime/cgroup-driver
-facts remain unverified. No permissions, groups, services or boot settings were
-changed. The root cgroup v2 controllers omit memory; hard memory enforcement is
-explicitly unverified and must not be advertised.
+Docker access was initially denied because `jordanly` lacked the socket's
+`docker` group. On 2026-09-10, the user explicitly authorized adding that
+membership. The socket remains mode 0660 with owner/group root:docker.
+`docker info` and `labctl preflight --require-docker` now pass as `jordanly`
+through `sg docker -c '...'`, outside the tool sandbox. Verified facts are
+server 29.8.0, architecture aarch64, Debian 13, systemd cgroup driver and cgroup
+v2; Compose is 5.5.1. Existing processes do not inherit new supplementary groups:
+use a fresh login/session or `sg docker` for commands in the current session.
+No service, socket-permission or boot change was made. The root cgroup v2
+controllers still omit memory; hard memory enforcement is explicitly unverified
+and must not be advertised. Container execution remains an unexecuted gate.
 
-The next code increment can proceed independently of that host gate:
+The next code increment is:
 
 1. Finish CONTRACT-01 with shared Java/Go structural and semantic validation,
    command outcome fixtures and explicit reducer transition tests.
@@ -116,8 +120,8 @@ The next code increment can proceed independently of that host gate:
 3. Start CORE-01 and the native SQL transaction boundary in parallel, using the
    recovered Java tests. Preserve job desired membership separately from attempts
    and make nested write failures mark the transaction rollback-only.
-4. Complete ACCESS-01 and LAB-02 as agent/runtime interfaces stabilize. Resolve
-   Docker access through scoped host administration, build native images, then
+4. Complete ACCESS-01 and LAB-02 as agent/runtime interfaces stabilize. Build
+   native images using the now-verified Docker access, then
    qualify real ARM64 execution and the two-agent failure scenarios.
 
 The ordering remains **Go agent and Mesos replacement → working durable lab →

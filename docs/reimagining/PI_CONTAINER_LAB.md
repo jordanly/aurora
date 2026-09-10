@@ -8,19 +8,19 @@ The first implementation now provides [labctl](../../build-support/lab/README.md
 
 **Fresh host evidence**
 
-An independent subagent repeated read-only probes during this planning task, including an approved outside-sandbox retry of `docker info`.
+An independent subagent repeated read-only probes during planning. After the user authorized fixing Docker access, the orchestrator repeated `docker info` and the lab preflight outside the sandbox using the new group membership.
 
 | Observation | Result and implication |
 | --- | --- |
 | Architecture/kernel | `aarch64`, `6.18.39+rpt-rpi-2712`; Linux page size 16,384 bytes. Native dependencies must execute on this exact environment. |
 | Docker client | 29.8.0 executes; Compose v5.5.1 executes. |
-| Docker daemon | Socket permission denied inside and outside the sandbox. Server version, storage/cgroup driver and runtime are unverified. This does not prove the daemon is stopped. |
+| Docker daemon | Access now verified as `jordanly`: server 29.8.0, aarch64, systemd cgroup driver, cgroup v2. Native container execution and storage/runtime qualification remain separate gates. |
 | Cgroups | v2; root controllers `cpuset cpu io pids`. Memory is unavailable; boot command line includes `cgroup_disable=memory`. |
 | RAM/storage snapshot | 8,062 MiB RAM, about 5,977 MiB available, no swap used, approximately 95 GiB free on checkout filesystem. These are transient observations. |
 | Host tools | Java/Javac/Go remain absent from the host PATH. Checkout-local, checksum-pinned Java 8, Gradle, Thrift and Go now execute natively; API/scheduler compilation and focused tests pass. See [build recovery](../../build-support/java/README.md). |
 | Rootless prerequisites | No matching subordinate UID/GID allocation found; mapping helpers/rootless setup absent from PATH. Rootless is an option requiring setup, not a demonstrated fix. |
 
-Resolve daemon access through normal host administration before attempting image builds. Do not infer a particular group change is sufficient from sandbox-mapped socket ownership. This planning task changed no permissions, services, boot settings or packages.
+The initial denial was confirmed against the actual host socket, owned by root:docker with mode 0660. At the user's explicit request, `jordanly` was added to the `docker` group; `sg docker -c 'build-support/lab/labctl preflight --require-docker'` now passes outside the sandbox. Existing sessions need a fresh login or `sg docker` to activate membership. Socket permissions, services, boot settings and packages were unchanged.
 
 **Topology**
 
