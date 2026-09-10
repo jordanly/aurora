@@ -8,6 +8,10 @@ Read this with the [container lab and failure matrix](PI_CONTAINER_LAB.md), [ord
 
 Implementation has started with build recovery, bounded protocol conformance and lab preparation tooling. The [first implementation slice status](FIRST_SLICE_STATUS.md) records executed checks and remaining gates; the integrated two-agent demonstration below is still the target.
 
+The [durable core continuation](DURABLE_CORE_STATUS.md) now adds real SQL and Go
+admission transactions plus native Docker persistence checks. The integrated
+scheduler/agent workload and fault scenarios remain the next runtime milestone.
+
 **Verified master and provenance**
 
 Both remote master refs were refreshed on 2026-09-10. At the user's request, the fork's `origin/master` was fast-forwarded by 55 commits from `d46a8d91aa69ab9cf1ebc2b13552f8093d366fe9` to Apache's current `upstream/master`, `11ebaeeb071cb182c388a40755e84f60dda32260`; the remote result was verified. Local `master` was also fast-forwarded. Implementation is isolated on `codex/standalone-foundations`, based on that upstream commit. No implementation changes were pushed to `master`.

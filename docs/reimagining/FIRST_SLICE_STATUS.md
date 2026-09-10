@@ -1,5 +1,10 @@
 # First implementation slice: standalone foundations
 
+This file records the initial foundation increment. The subsequent
+[durable core and native container increment](DURABLE_CORE_STATUS.md) adds Java/Go
+schema validation, Go admission persistence, native SQL transactions and executed
+Docker checks. Its gate ledger supersedes the initial remaining-work entries below.
+
 Recorded 2026-09-10 on the Raspberry Pi. The fork and local `master` were
 fast-forwarded to upstream commit `11ebaeeb071cb182c388a40755e84f60dda32260`.
 The fork's remote ref was verified after pushing. Implementation lives on
