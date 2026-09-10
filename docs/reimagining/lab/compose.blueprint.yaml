@@ -1,0 +1,159 @@
+# DESIGN ONLY: local images, Aurora config schemas, lab-init and lab-probe are not implemented.
+# config --quiet validates structure without starting services; see ../PI_CONTAINER_LAB.md.
+x-aurora-status: proposed-unimplemented-runtime
+
+x-base: &base
+  platform: linux/arm64
+  pull_policy: never
+  user: "${AURORA_LAB_UID:-1000}:${AURORA_LAB_GID:-1000}"
+  init: true
+  read_only: true
+  cap_drop: [ALL]
+  security_opt: ["no-new-privileges:true"]
+  cgroup: private
+  restart: "no"
+  stop_grace_period: 40s
+  pids_limit: 128
+  tmpfs:
+    - /tmp:rw,nosuid,nodev,noexec,size=16m,mode=1777
+    - /run:rw,nosuid,nodev,noexec,size=4m,mode=0700,uid=${AURORA_LAB_UID:-1000},gid=${AURORA_LAB_GID:-1000}
+  logging:
+    driver: json-file
+    options:
+      max-size: "5m"
+      max-file: "2"
+
+x-health: &health
+  test: [CMD, /opt/aurora/bin/lab-probe, live, --config=/config/probe.json]
+  interval: 10s
+  timeout: 3s
+  retries: 6
+  start_period: 60s
+
+services:
+  scheduler:
+    <<: *base
+    image: aurora-scheduler:plan-arm64
+    cpus: 1.0
+    pids_limit: 512
+    entrypoint: [/opt/aurora/bin/lab-init]
+    command: [--, /opt/aurora/bin/scheduler, --config=/config/config.json]
+    environment:
+      JAVA_TOOL_OPTIONS: -Xms256m -Xmx768m -Djava.io.tmpdir=/run/aurora-native
+    tmpfs:
+      - /tmp:rw,nosuid,nodev,noexec,size=16m,mode=1777
+      - /run:rw,nosuid,nodev,noexec,size=4m,mode=0700,uid=${AURORA_LAB_UID:-1000},gid=${AURORA_LAB_GID:-1000}
+      # Selected JDBC package must be qualified with this executable extraction mount.
+      - /run/aurora-native:rw,nosuid,nodev,exec,size=32m,mode=0700,uid=${AURORA_LAB_UID:-1000},gid=${AURORA_LAB_GID:-1000}
+    volumes:
+      - type: bind
+        source: ${AURORA_LAB_ROOT:?Set an absolute owned lab run root}/generated/scheduler
+        target: /config
+        read_only: true
+        bind: {create_host_path: false}
+      - type: bind
+        source: ${AURORA_LAB_ROOT}/state/scheduler
+        target: /var/lib/aurora
+        bind: {create_host_path: false}
+    ports:
+      - "127.0.0.1:${AURORA_LAB_HTTP_PORT:-18081}:8081"
+    healthcheck: *health
+    networks: [control]
+
+  agent-1:
+    <<: *base
+    image: aurora-agent:plan-arm64
+    cpus: 0.75
+    pids_limit: 256
+    entrypoint: [/opt/aurora/bin/lab-init]
+    command: [--, /opt/aurora/bin/aurora-agent, serve, --config=/config/config.json]
+    environment: {GOMAXPROCS: "1", GOMEMLIMIT: "128MiB"}
+    volumes:
+      - type: bind
+        source: ${AURORA_LAB_ROOT}/generated/agent-1
+        target: /config
+        read_only: true
+        bind: {create_host_path: false}
+      - type: bind
+        source: ${AURORA_LAB_ROOT}/state/agent-1
+        target: /var/lib/aurora
+        bind: {create_host_path: false}
+    healthcheck: *health
+    networks: [worker-1]
+
+  agent-2:
+    <<: *base
+    image: aurora-agent:plan-arm64
+    cpus: 0.75
+    pids_limit: 256
+    entrypoint: [/opt/aurora/bin/lab-init]
+    command: [--, /opt/aurora/bin/aurora-agent, serve, --config=/config/config.json]
+    environment: {GOMAXPROCS: "1", GOMEMLIMIT: "128MiB"}
+    volumes:
+      - type: bind
+        source: ${AURORA_LAB_ROOT}/generated/agent-2
+        target: /config
+        read_only: true
+        bind: {create_host_path: false}
+      - type: bind
+        source: ${AURORA_LAB_ROOT}/state/agent-2
+        target: /var/lib/aurora
+        bind: {create_host_path: false}
+    healthcheck: *health
+    networks: [worker-2]
+
+  proxy-1:
+    <<: *base
+    image: aurora-lab-proxy:plan-arm64
+    cpus: 0.1
+    entrypoint: [/opt/aurora/bin/toxiproxy-server]
+    command: [-host, 0.0.0.0, -config, /config/proxies.json]
+    volumes:
+      - type: bind
+        source: ${AURORA_LAB_ROOT}/generated/proxy-1
+        target: /config
+        read_only: true
+        bind: {create_host_path: false}
+    networks:
+      control: {aliases: [agent-1.lab]}
+      worker-1: {aliases: [scheduler.lab]}
+
+  proxy-2:
+    <<: *base
+    image: aurora-lab-proxy:plan-arm64
+    cpus: 0.1
+    entrypoint: [/opt/aurora/bin/toxiproxy-server]
+    command: [-host, 0.0.0.0, -config, /config/proxies.json]
+    volumes:
+      - type: bind
+        source: ${AURORA_LAB_ROOT}/generated/proxy-2
+        target: /config
+        read_only: true
+        bind: {create_host_path: false}
+    networks:
+      control: {aliases: [agent-2.lab]}
+      worker-2: {aliases: [scheduler.lab]}
+
+  test-runner:
+    <<: *base
+    image: aurora-lab-tests:plan-arm64
+    cpus: 0.5
+    profiles: [test]
+    entrypoint: [/opt/aurora/bin/lab-tests]
+    command: [--config=/config/scenario.json]
+    volumes:
+      - type: bind
+        source: ${AURORA_LAB_ROOT}/generated/test-runner
+        target: /config
+        read_only: true
+        bind: {create_host_path: false}
+      - type: bind
+        source: ${AURORA_LAB_ROOT}/results
+        target: /results
+        bind: {create_host_path: false}
+    networks: [control]
+
+networks:
+  control: {internal: true}
+  worker-1: {internal: true}
+  worker-2: {internal: true}
