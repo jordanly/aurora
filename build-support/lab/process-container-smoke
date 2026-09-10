@@ -1,0 +1,305 @@
+#!/usr/bin/env python3
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+# Unless required by applicable law or agreed to in writing, software distributed under
+# the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND.
+# See the License for the specific language governing permissions and limitations under the License.
+"""Qualify actual trusted workloads in one isolated ARM64 agent container."""
+import argparse
+import importlib.machinery
+import importlib.util
+import json
+import os
+from pathlib import Path
+import platform
+import re
+import selectors
+import signal
+import subprocess
+import sys
+import time
+
+HERE = Path(__file__).resolve().parent
+loader = importlib.machinery.SourceFileLoader("process_smoke", str(HERE / "process-smoke"))
+spec = importlib.util.spec_from_loader(loader.name, loader)
+native = importlib.util.module_from_spec(spec)
+loader.exec_module(native)
+require = native.require
+CASES = ("container-batch-replay", "container-graceful-stop", "container-forced-stop",
+         "container-bounded-logs")
+
+
+def docker(*args, timeout=15, check=True):
+    result = subprocess.run(["docker", *map(str, args)], capture_output=True, text=True,
+                            timeout=timeout, check=False)
+    if check:
+        require(result.returncode == 0, "Docker operation failed: " + args[0])
+    return result
+
+
+class ContainerAgent(native.Agent):
+    """Reuse bounded JSONL framing, never the native PID observation/cleanup code."""
+    def __init__(self, run, image):
+        self.run = run
+        self.name = "aurora-process-" + native.digest(str(run))[:16]
+        self.labels = {"com.aurora.lab.run": str(run), "com.aurora.lab.lane": "process-container-smoke"}
+        self.process = None
+        self.container_id = None
+        self.closed = False
+        self.selector = None
+        self.stderr = None
+        self.image = image
+        self.cid_path = run / "container.cid"
+        require(not self.cid_path.exists(), "Creation identity file already exists")
+        require("," not in str(run), "Comma unsupported in Docker mount path")
+        collision = docker("ps", "-aq", "--filter", "name=^/" + self.name + "$").stdout.strip()
+        require(not collision, "Container name collision; existing container preserved")
+        args = ["docker", "run", "--cidfile", str(self.cid_path), "--name", self.name, "--pull", "never", "--platform", "linux/arm64",
+                "--init", "-i", "--network", "none", "--read-only", "--cap-drop", "ALL",
+                "--security-opt", "no-new-privileges:true", "--user", f"{os.getuid()}:{os.getgid()}",
+                "--pids-limit", "128", "--cpus", "0.50",
+                "--tmpfs", "/tmp:rw,nosuid,nodev,noexec,size=8m"]
+        for key, value in self.labels.items():
+            args += ["--label", key + "=" + value]
+        args += ["--mount", f"type=bind,source={run},target={run},readonly"]
+        for name in ("state", "work", "workload-evidence"):
+            args += ["--mount", f"type=bind,source={run / name},target={run / name}"]
+        args += [image, str(run / "aurora-agent"), "serve-local", "--config", str(run / "config.json"),
+                 "--state", str(run / "state/state.db"), "--work-root", str(run / "work"),
+                 "--network", "agent-container", "--log-bytes", "4096"]
+        self.args = args
+
+    def start(self):
+        self.stderr = (self.run / "docker-agent.stderr").open("xb", buffering=0)
+        self.process = subprocess.Popen(self.args, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                                        stderr=self.stderr)
+        os.set_blocking(self.process.stdin.fileno(), False)
+        os.set_blocking(self.process.stdout.fileno(), False)
+        self.selector = selectors.DefaultSelector()
+        self.selector.register(self.process.stdout, selectors.EVENT_READ)
+        self.buffer = b""
+
+    def release_streams(self):
+        if self.closed:
+            return
+        self.closed = True
+        if self.selector is not None:
+            self.selector.close()
+        if self.process is not None:
+            for stream in (self.process.stdin, self.process.stdout):
+                if stream is not None:
+                    stream.close()
+        if self.stderr is not None:
+            self.stderr.close()
+
+    def inspect_container(self):
+        if self.container_id is None:
+            deadline = time.monotonic() + 2
+            while not self.cid_path.exists() and time.monotonic() < deadline:
+                if self.process is not None and self.process.poll() is not None:
+                    break
+                time.sleep(0.02)
+            native.safe_path(self.cid_path)
+            require(self.cid_path.is_file() and self.cid_path.stat().st_size <= 65,
+                    "Creation identity unavailable; container resources preserved")
+            identity = self.cid_path.read_text().strip()
+            require(re.fullmatch(r"[a-f0-9]{64}", identity), "Invalid creation identity")
+            self.container_id = identity
+        result = docker("inspect", self.container_id, check=False)
+        require(result.returncode == 0, "Owned container is unavailable")
+        items = json.loads(result.stdout)
+        require(len(items) == 1, "Ambiguous container selection")
+        item = items[0]
+        require(all(item["Config"]["Labels"].get(k) == v for k, v in self.labels.items()),
+                "Container ownership mismatch; resource preserved")
+        require(item["Name"] == "/" + self.name, "Container name changed")
+        if self.container_id:
+            require(item["Id"] == self.container_id, "Container identity changed")
+        self.container_id = item["Id"]
+        host = item["HostConfig"]
+        require(item["Config"]["User"] == f"{os.getuid()}:{os.getgid()}"
+                and host["ReadonlyRootfs"] and host["Init"] and host["NetworkMode"] == "none"
+                and host["PidMode"] == "" and host["Privileged"] is False
+                and host["CapDrop"] == ["ALL"] and host["SecurityOpt"] == ["no-new-privileges:true"],
+                "Container isolation differs from requested configuration")
+        mounts = {m["Destination"]: (m["Type"], m["Source"], m["RW"]) for m in item["Mounts"]
+                  if m["Type"] != "tmpfs"}
+        expected = {str(self.run): ("bind", str(self.run), False)}
+        expected.update({str(self.run / n): ("bind", str(self.run / n), True)
+                         for n in ("state", "work", "workload-evidence")})
+        require(mounts == expected, "Container bind roots differ; resource preserved")
+        return item
+
+    def close(self):
+        if self.process is None:
+            self.release_streams()
+            return
+        failure = None
+        try:
+            item = self.inspect_container()
+            if item["State"]["Running"]:
+                try:
+                    reply = self.request({"action": "shutdown"}, timeout=8)
+                    require(reply == {"ok": True, "result": "shutdown"}, "Shutdown not confirmed")
+                    require(self.process.wait(timeout=5) == 0, "Container exited unsuccessfully")
+                except (OSError, subprocess.TimeoutExpired, native.CheckFailure) as error:
+                    failure = error
+            else:
+                require(item["State"]["ExitCode"] == 0, "Container exited unexpectedly")
+        finally:
+            try:
+                # Refuse removal unless labels, identity and bind roots still match.
+                if self.process is not None:
+                    item = self.inspect_container()
+                    docker("rm", "-f", item["Id"])
+                    absent = docker("ps", "-aq", "--filter", "id=" + item["Id"]).stdout.strip()
+                    require(not absent, "Container cleanup incomplete")
+            finally:
+                # Even when Docker ownership is uncertain, reap only our own attached CLI.
+                if self.process is not None:
+                    try:
+                        if self.process.poll() is None:
+                            try:
+                                self.process.wait(timeout=3)
+                            except subprocess.TimeoutExpired:
+                                self.process.kill()
+                                self.process.wait(timeout=3)
+                    finally:
+                        self.release_streams()
+        if failure:
+            raise native.CheckFailure("Container required forced cleanup") from failure
+
+
+class ContainerHarness(native.Harness):
+    def __init__(self, run, evidence, image):
+        super().__init__(run, evidence)
+        self.image = image
+
+    def start(self):
+        self.agent = ContainerAgent(self.run, self.image)
+        self.agent.start()
+        self.inspect()
+        item = self.agent.inspect_container()
+        require(item["Image"] == self.evidence["base_image_id"], "Unqualified container image")
+        self.evidence["container_id"] = item["Id"]
+        self.evidence["isolation_verified"] = True
+
+    def inspect(self):
+        reply = self.agent.request({"action": "inspect"})
+        require(reply.get("ok") is True, "Container agent inspection failed")
+        # PIDs in this reply belong to the container, never to host OwnedProcesses.
+        return reply["result"]
+
+    def probe(self, port):
+        result = docker("exec", self.agent.container_id, str(self.fixture),
+                        "--mode", "probe", "--port", str(port), timeout=5)
+        return json.loads(result.stdout)
+
+    def cases(self):
+        self.start()
+        self.begin(CASES[0])
+        run = self.delivery("container-batch")
+        first = self.admit(run)
+        self.terminal(run, "succeeded", code=0)
+        require(self.launch_count("container-batch") == 1, "Batch launch evidence missing")
+        require(self.admit(run) == first, "Batch replay result changed")
+        time.sleep(0.2)
+        _, attempt = self.terminal(run, "succeeded", code=0)
+        require(self.launch_count("container-batch") == 1, "Batch replay executed twice")
+        self.complete(attempt=attempt, launch_count=1, admission=first)
+
+        for name, refuse in ((CASES[1], False), (CASES[2], True)):
+            self.begin(name)
+            # Each run has a private network namespace; these exact ports have no host publication.
+            port = 20100 if not refuse else 20101
+            run = self.delivery(name, "service", port,
+                                extra=["--refuse-sigterm"] if refuse else [])
+            self.admit(run)
+            self.ready(run, port)
+            physical = self.probe(port)
+            stop = self.stop(run)
+            _, attempt = self.terminal(run, "stopped", code=-1 if refuse else 0,
+                                       signal_number=signal.SIGKILL if refuse else 0)
+            require(any(e.get("event") == "signal" and e.get("signal") == "terminated"
+                        for e in self.events(name)), "Fixture never recorded TERM receipt")
+            released = docker("exec", self.agent.container_id, str(self.fixture),
+                              "--mode", "port-check", "--port", str(port))
+            require(json.loads(released.stdout) == {"available": True, "port": port},
+                    "Stopped fixture did not release its exact socket")
+            self.complete(attempt=attempt, physical_probe=physical, stop=stop,
+                          signals=self.events(name), exact_port_rebound=True)
+
+        self.begin(CASES[3])
+        run = self.delivery("container-logs", extra=["--log-spam-lines", "1000"])
+        self.admit(run)
+        key, attempt = self.terminal(run, "succeeded", code=0)
+        sizes = {stream: (self.run / "work" / key / (stream + ".log")).stat().st_size
+                 for stream in ("stdout", "stderr")}
+        require(all(n <= 4096 for n in sizes.values())
+                and sizes["stdout"] == attempt["execution"]["stdoutBytes"]
+                and sizes["stderr"] == attempt["execution"]["stderrBytes"] == 4096
+                and attempt["execution"]["stderrDropped"] > 0, "Bounded log evidence missing")
+        self.complete(attempt=attempt, log_bytes=sizes)
+
+    def cleanup(self):
+        if self.agent is not None:
+            self.agent.close()
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--run-root", required=True, type=Path)
+    args = parser.parse_args()
+    run = args.run_root
+    harness = None
+    evidence = None
+    status = 4
+    try:
+        native.safe_path(run)
+        require("," not in str(run), "Comma unsupported in Docker mount path")
+        require(not run.exists() and os.getuid() > 0 and os.getgid() > 0, "New root and non-root UID/GID required")
+        require(platform.machine() == "aarch64", "Native ARM64 host required")
+        image = json.loads((HERE / "native-smoke-manifest.json").read_text())["base_image"]
+        base = json.loads(docker("image", "inspect", image).stdout)[0]
+        require(base["Architecture"] == "arm64" and base["Os"] == "linux", "Base image architecture differs")
+        run.parent.mkdir(parents=True, exist_ok=True)
+        run.mkdir(mode=0o700)
+        for name in ("state", "work", "workload-evidence"):
+            (run / name).mkdir(mode=0o700)
+        native.write_json(run / ".aurora-process-container", {"root": str(run), "uid": os.getuid()})
+        evidence = {"schema": 1, "lane": "process-container-smoke", "cluster": False,
+                    "container_recovery": False, "ok": False, "base_image": image,
+                    "base_image_id": base["Id"], "declared_cases": list(CASES), "cases": []}
+        native.write_json(run / "result.json", evidence)
+        evidence["provenance"] = native.build(run)
+        evidence["provenance"]["container_harness_sha256"] = native.file_sha(Path(__file__).resolve())
+        harness = ContainerHarness(run, evidence, image)
+        harness.cases()
+        require([c["case"] for c in evidence["cases"]] == list(CASES)
+                and all(c["ok"] for c in evidence["cases"]), "Container cases incomplete")
+        status = 0
+    except (native.CheckFailure, OSError, ValueError, KeyError, subprocess.TimeoutExpired) as error:
+        if evidence is not None:
+            evidence["error"] = str(error)[:1024]
+        else:
+            print(json.dumps({"ok": False, "error": str(error)[:1024]}), file=sys.stderr)
+    finally:
+        if evidence is not None:
+            native.write_json(run / "result.json", evidence)
+            try:
+                if harness is not None:
+                    harness.cleanup()
+                evidence["cleanup"] = "complete"
+            except (native.CheckFailure, OSError, ValueError, KeyError, subprocess.TimeoutExpired) as error:
+                evidence["cleanup"] = "failed"
+                evidence["cleanup_error"] = str(error)[:1024]
+                status = 5
+            evidence["ok"] = status == 0
+            native.write_json(run / "result.json", evidence)
+    print(json.dumps({"ok": status == 0, "result": str(run / "result.json")}))
+    return status
+
+
+if __name__ == "__main__":
+    sys.exit(main())
