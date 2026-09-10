@@ -3,8 +3,8 @@
 This Temurin 25 library applies the authoritative `native-v1alpha1/schema.json`
 and the semantic checks used by the Python reference and Go agent. It is an
 independent Gradle project so the legacy scheduler's forced Jackson versions
-do not change the validator's classpath. Integration into native scheduler
-intake is still required; no legacy dependency upgrade is implied.
+do not change the validator's classpath. The native scheduler uses it for job
+intake and execution messages; no legacy dependency upgrade is implied.
 
 The input boundary rejects duplicate keys, trailing documents, unsafe or
 negative JSON numbers (including negative zero), fractional/exponent numbers,
@@ -30,7 +30,8 @@ on failure. Successful output contains the full input: use it only for fixtures
 or other intentionally inspectable documents.
 
 Use the [verified native build](../../build-support/native/README.md) from repository root.
-The protocol is built and tested with the scheduler, using the same pinned JRE:
+The protocol is built and tested with the scheduler's pinned JDK. The example
+then runs its installed validator with the bundle's matching JRE:
 
 ```sh
 aurora_bundle=/absolute/new/bundle
@@ -41,7 +42,7 @@ python3 protocol/native-v1alpha1/conformance/check.py \
   --validator "$aurora_bundle/context/agent/aurora-agent validate --document"
 ```
 
-Build the Go executable using [the agent instructions](../../agent/README.md)
+For a separate Go build, use [the agent instructions](../../agent/README.md)
 with output `.pi-tools/agent-dist/aurora-agent`. `--validator` runs the complete
 structural/semantic rejection corpus as well as valid canonical/hash and parser
 vectors. Positional arguments retain the earlier canonical-only adapter mode.

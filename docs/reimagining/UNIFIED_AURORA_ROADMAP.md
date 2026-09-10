@@ -14,9 +14,12 @@ reports preserve the preceding increments.
 
 CUT-01 packages that cluster as isolated runtime images with pinned tools and
 content-verified dependency boundaries. Use the [native build and qualification
-commands](../../build-support/native/README.md) for a fresh checkout. Java/Gradle
-modernization follows this [qualified packaged baseline](CUT01_STATUS.md), which
-passed the full Pi gate on 2026-09-10.
+commands](../../build-support/native/README.md) for a fresh checkout. Following
+that [qualified packaged baseline](CUT01_STATUS.md), [JAVA-01](JAVA01_STATUS.md)
+has passed the same full Pi gate on Java 25 and Gradle 9, including reproducible
+Java artifacts and Java 8/25 state/TLS compatibility. This completion covers the
+retained native scheduler/protocol profile; dependency upgrades (JAVA-02) and
+the broader release qualification matrix (JAVA-03) remain next.
 
 **Verified master and provenance**
 

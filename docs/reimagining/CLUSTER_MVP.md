@@ -29,10 +29,10 @@ executable bind mounts. New labs require a bundle. The operational commands belo
 remain supported for the already-running original MVP; use a new run root and
 `up --bundle /absolute/bundle` to start a separate current cluster.
 
-Use the checkout toolchains and the previously qualified digest-pinned Debian
-ARM64 base image. The runner rebuilds binaries from current source offline,
-verifies native Java runtime artifacts, generates private lab certificates and
-records source and artifact hashes. It requires Python 3, OpenSSL and Docker.
+The bundle builder compiles the current source with pinned tools and verifies
+runtime contents against the digest-pinned Debian ARM64 base. The cluster runner
+verifies that bundle, generates private lab certificates and records source and
+artifact hashes. It requires Python 3, OpenSSL and Docker.
 No Docker socket is mounted into a container.
 
 From this checkout on the Pi:

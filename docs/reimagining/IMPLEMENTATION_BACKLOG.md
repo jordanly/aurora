@@ -6,7 +6,12 @@ The integrated SLICE-01 MVP has passed its three-round and ten-minute gate.
 CUT-01 has passed its [packaged Pi qualification](CUT01_STATUS.md), with a [native packaging lane](../../build-support/native/README.md):
 pinned standalone builds, production and lab images, exact runtime content gates,
 and an image-backed qualification command. The [evidence ledger](cut01-evidence.json)
-records all 23 passing cases and verified cleanup. JAVA-01 follows this packaged baseline.
+records all 23 passing cases and verified cleanup. [JAVA-01](JAVA01_STATUS.md)
+now advances the retained native scheduler/protocol profile to Java 25 and
+Gradle 9, with reproducible archives, Java 8/25 state and TLS compatibility, and
+the same complete Pi gate. [Its evidence](java01-evidence.json) records all 23
+passing cases and cleanup. JAVA-02 is next; retired legacy build targets are
+outside the native JAVA-01 completion claim.
 
 **First work and independent tracks**
 
@@ -31,7 +36,7 @@ Start with PLAN-01, BUILD-01 and CONTRACT-01. Go reducers/protocol fixtures can 
 | P3 / EXEC-01 | Committed launch/stop dispatch and observation reduction; reconnect snapshots/watermarks; fresh authority on stable command replay. | CORE-02, AGENT-02, STORE-02 | Actual effects follow commit; duplicates/reorders/old commands cannot regress state; failed writes produce no observation ACK. |
 | P3 / SLICE-01 | Complete two-agent scenario runner, small read/debug API, physical evidence and isolated restore. | LAB-02, INTAKE-01, EXEC-01 | Batch/service + scheduler restart + proxy interruption + stop/reconnect + MVP agent crash + backup restore pass three times, then bounded mixed run. |
 | P4 / CUT-01 | Native distribution dependency cleanup and build profile; separate legacy adapter/importer classpaths. | SLICE-01 | Native dependency report/image/startup excludes Mesos jars/JNI/native log/Python worker; schema names alone are documented exceptions. Rerun SLICE-01. |
-| P5 / JAVA-01 | Modern Gradle/buildSrc/plugins, toolchains for all generated/main/test/JMH sources, deterministic package tasks. | CUT-01 | Build/generation/quality task outputs correct on selected JVM; compare artifacts to standalone pre-upgrade baseline. |
+| P5 / JAVA-01 | Complete for retained native profile: Gradle 9, Java 25 compiler/test/JavaExec toolchains and deterministic package tasks. Retired buildSrc/Thrift/JMH targets excluded after CUT-01 isolation. | CUT-01 | 34 Java tests, identical Java archives/installed trees, Java 8/25 state and TLS compatibility, verified production images, full three-round/ten-minute Pi gate; [recorded evidence](java01-evidence.json). |
 | P5 / JAVA-02 | Coherent DI, serialization, networking, logging and JDBC/native compatibility upgrades. | JAVA-01 | Focused/full relevant Java and SQL/recovery checks pass, including exact ARM64 native libraries and no unexplained broad access flags. |
 | P5 / JAVA-03 | HTTP/auth stack and distribution/launcher qualification; modern-JVM two-agent regression run. | JAVA-02 | API/auth/storage fixtures plus same SLICE-01 corpus pass; measured resource/latency changes documented. Full Java modernization gate complete. |
 | P6 / SUPERVISE-01 | Same-binary surviving attempt supervisors, local protocol/versioning and daemon reattachment. | AGENT-02, SLICE-01; integrate on modern native baseline | Kill only daemon while children exit/log; preserve exact outcomes and execution; supervisor loss differs from container loss. |
