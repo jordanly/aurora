@@ -1,0 +1,321 @@
+#!/usr/bin/env python3
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+"""Bounded, daemon-free scaffolding for the Aurora Pi container lab."""
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import os
+import platform
+import secrets
+import shutil
+import socket
+import stat
+import subprocess
+import sys
+import time
+import re
+import tempfile
+from pathlib import Path
+
+MARKER = ".aurora-lab-run"
+SCHEMA = 1
+SERVICES = ("scheduler", "agent-1", "agent-2", "proxy-1", "proxy-2", "test-runner")
+STATE_SERVICES = ("scheduler", "agent-1", "agent-2")
+RUN_ID_RE = re.compile(r"[a-z0-9][a-z0-9_-]{0,47}\Z")
+
+
+def die(message: str, code: int = 2) -> None:
+    print(json.dumps({"ok": False, "error": message}, sort_keys=True), file=sys.stderr)
+    raise SystemExit(code)
+
+
+def sha256(path: Path) -> str:
+    h = hashlib.sha256()
+    with path.open("rb") as f:
+        for block in iter(lambda: f.read(1024 * 1024), b""):
+            h.update(block)
+    return h.hexdigest()
+
+
+def repo_root() -> Path:
+    return Path(__file__).resolve().parents[2]
+
+
+def default_root() -> Path:
+    return repo_root() / ".pi-lab"
+
+
+def absolute_private(path: Path, *, create_parent: bool = False) -> Path:
+    path = path.expanduser()
+    if not path.is_absolute():
+        path = Path.cwd() / path
+    if any(part == ".." for part in path.parts):
+        die("path traversal is not accepted")
+    if any(any(ord(ch) < 32 or ord(ch) == 127 for ch in part) for part in path.parts):
+        die("control characters are not accepted in paths")
+    # Resolve only after rejecting an existing symlink at the requested leaf.
+    probe = path
+    while probe != probe.parent:
+        if probe.is_symlink():
+            die("symlink paths are not accepted")
+        probe = probe.parent
+    path = path.resolve()
+    if create_parent:
+        path.parent.mkdir(parents=True, exist_ok=True)
+    return path
+
+
+def real_dir(path: Path, message: str) -> None:
+    try:
+        mode = path.lstat().st_mode
+    except OSError:
+        die(message)
+    if not stat.S_ISDIR(mode):
+        die(message)
+
+
+def real_file(path: Path, message: str) -> None:
+    try:
+        mode = path.lstat().st_mode
+    except OSError:
+        die(message)
+    if not stat.S_ISREG(mode):
+        die(message)
+
+
+def owned_run(path: Path, *, allow_missing: bool = False) -> dict:
+    path = absolute_private(path)
+    if not path.exists():
+        if allow_missing:
+            return {}
+        die(f"run root does not exist: {path}")
+    real_dir(path, "run root must be a real directory")
+    marker = path / MARKER
+    manifest = path / "manifest.json"
+    real_file(marker, "refusing unmarked or foreign run root")
+    real_file(manifest, "refusing unmarked or foreign run root")
+    if marker.read_text() != "Aurora lab run root; owned by labctl.\n":
+        die("run ownership marker content mismatch")
+    if os.geteuid() != 0:
+        for owned_path in (path, marker, manifest):
+            if owned_path.stat().st_uid != os.getuid():
+                die("run root is not owned by the invoking user")
+    try:
+        with manifest.open() as stream:
+            data = json.load(stream)
+    except (OSError, ValueError, TypeError, AttributeError) as e:
+        die(f"invalid manifest: {e}")
+    if not isinstance(data, dict):
+        die("invalid manifest: expected JSON object")
+    if data.get("schema") != SCHEMA or data.get("marker") != MARKER:
+        die("manifest ownership marker/schema mismatch")
+    if (data.get("run_root") != str(path) or
+            type(data.get("uid")) is not int or type(data.get("gid")) is not int or
+            data["uid"] < 0 or data["gid"] < 0):
+        die("manifest run root does not match requested path")
+    if not isinstance(data.get("run_id"), str) or not RUN_ID_RE.fullmatch(data["run_id"]):
+        die("manifest run id is invalid")
+    if data.get("project") != "aurora-lab-" + data["run_id"]:
+        die("manifest project does not match run id")
+    real_dir(path / "generated", "generated directory is not a real owned directory")
+    for service in SERVICES:
+        real_dir(path / "generated" / service, "generated service directory is not a real owned directory")
+    return data
+
+
+def command_result(cmd: list[str], timeout: float = 4.0) -> dict:
+    try:
+        p = subprocess.run(cmd, text=True, capture_output=True, timeout=timeout, check=False)
+        return {"available": True, "returncode": p.returncode, "stdout": p.stdout.strip(), "stderr": p.stderr.strip()}
+    except (OSError, subprocess.TimeoutExpired) as e:
+        return {"available": False, "error": str(e)}
+
+
+def docker_command() -> str:
+    return os.environ.get("AURORA_LAB_DOCKER", "docker")
+
+
+def preflight(args: argparse.Namespace) -> int:
+    docker = command_result([docker_command(), "info", "--format", "{{json .}}"])
+    docker_summary = {"available": docker.get("available", False), "returncode": docker.get("returncode")}
+    if docker.get("error"):
+        docker_summary["error"] = docker["error"]
+    if docker.get("available"):
+        try:
+            raw = json.loads(docker.get("stdout", "{}"))
+            for key in ("ServerVersion", "Architecture", "CgroupDriver", "OperatingSystem"):
+                if key in raw:
+                    docker_summary[key] = raw[key]
+        except ValueError:
+            pass
+        if docker.get("stderr"):
+            docker_summary["error"] = docker["stderr"]
+    cgroup = Path("/sys/fs/cgroup")
+    controllers = []
+    try:
+        controllers = (cgroup / "cgroup.controllers").read_text().split()
+    except OSError:
+        pass
+    facts = {
+        "schema": SCHEMA,
+        "host": {"hostname": socket.gethostname(), "platform": platform.platform(), "machine": platform.machine(), "python": sys.version.split()[0]},
+        "tools": {name: shutil.which(name) for name in ("docker", "docker-compose", "java", "javac", "go")},
+        "docker": docker_summary,
+        "compose": command_result([docker_command(), "compose", "version", "--short"]),
+        "page_size": os.sysconf("SC_PAGESIZE"),
+        "cgroup": {"path": str(cgroup), "v2": (cgroup / "cgroup.controllers").is_file(), "controllers": controllers,
+                   "memoryControllerAvailable": "memory" in controllers,
+                   "hardMemoryEnforcementVerified": False},
+    }
+    print(json.dumps(facts, indent=2, sort_keys=True))
+    if args.require_docker and (not docker.get("available") or docker.get("returncode") != 0):
+        return 1
+    return 0
+
+
+def init_run(args: argparse.Namespace) -> int:
+    if args.uid < 0 or args.gid < 0:
+        die("UID/GID must be nonnegative integers")
+    if (args.uid != os.getuid() or args.gid != os.getgid()) and os.geteuid() != 0:
+        die("configured UID/GID must be owned by the invoking user (root may select another owner)")
+    base = absolute_private(Path(args.root) if args.root else default_root(), create_parent=True)
+    base.mkdir(mode=0o700, exist_ok=True)
+    if base.is_symlink() or not base.is_dir():
+        die("lab root must be a real directory")
+    run_id = args.run_id or time.strftime("%Y%m%dt%H%M%Sz", time.gmtime()) + "-" + secrets.token_hex(4)
+    if not RUN_ID_RE.fullmatch(run_id):
+        die("run id must match lowercase [a-z0-9][a-z0-9_-]* and be at most 48 characters")
+    run = base / run_id
+    if run.exists():
+        die(f"run already exists: {run}")
+    run.mkdir(mode=0o700)
+    for name in ("generated", "results", "logs"):
+        (run / name).mkdir(mode=0o700)
+    (run / "state").mkdir(mode=0o700)
+    for name in SERVICES:
+        (run / "generated" / name).mkdir(mode=0o700)
+    for name in STATE_SERVICES:
+        (run / "state" / name).mkdir(mode=0o700)
+    (run / MARKER).write_text("Aurora lab run root; owned by labctl.\n")
+    blueprint = repo_root() / "docs/reimagining/lab/compose.blueprint.yaml"
+    manifest = {
+        "schema": SCHEMA, "marker": MARKER, "run_id": run_id, "run_root": str(run),
+        "project": "aurora-lab-" + run_id.lower(), "uid": args.uid, "gid": args.gid,
+        "source": str(blueprint), "source_sha256": sha256(blueprint),
+        "config_status": "unconfigured; no certificates or credentials generated",
+        "created_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+    }
+    (run / "manifest.json").write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n")
+    # Explicit contracts prevent a future launcher from mistaking scaffolding for valid credentials.
+    for service in SERVICES:
+        payload = {"status": "unconfigured", "service": service, "run_id": run_id, "credentials": "absent"}
+        filename = "proxies.json" if service.startswith("proxy") else ("scenario.json" if service == "test-runner" else "config.json")
+        (run / "generated" / service / filename).write_text(json.dumps(payload, indent=2) + "\n")
+    if os.geteuid() == 0:
+        for item in (run, *run.rglob("*")):
+            os.chown(item, args.uid, args.gid)
+    print(json.dumps({"ok": True, "run_root": str(run), "manifest": str(run / "manifest.json")}, sort_keys=True))
+    return 0
+
+
+def render(args: argparse.Namespace) -> int:
+    run = absolute_private(Path(args.run))
+    manifest = owned_run(run)
+    blueprint = repo_root() / "docs/reimagining/lab/compose.blueprint.yaml"
+    if sha256(blueprint) != manifest.get("source_sha256"):
+        die("blueprint changed since init; create a new run")
+    if not 1 <= args.http_port <= 65535:
+        die("HTTP port must be between 1 and 65535")
+    text = blueprint.read_text()
+    # Compose expands '$' even inside YAML quotes; double it so user paths stay literal.
+    def source_scalar(match: re.Match[str]) -> str:
+        return "source: " + json.dumps(str(run) + match.group(1)).replace("$", "$$")
+    text = re.sub(r"source: \$\{AURORA_LAB_ROOT(?::\?[^}]*)?\}([^\n]+)", source_scalar, text)
+    replacements = {"${AURORA_LAB_UID:-1000}": str(manifest["uid"]), "${AURORA_LAB_GID:-1000}": str(manifest["gid"]), "${AURORA_LAB_HTTP_PORT:-18081}": str(args.http_port)}
+    for old, new in replacements.items():
+        text = text.replace(old, new)
+    text = "name: " + json.dumps(manifest["project"]) + "\n" + text
+    out = run / "generated" / "compose.yaml"
+    if out.exists() or out.is_symlink():
+        real_file(out, "refusing to replace symlink or non-file compose output")
+    try:
+        with tempfile.NamedTemporaryFile("w", dir=out.parent, prefix=".compose.", delete=False) as stream:
+            stream.write(text)
+            temporary = Path(stream.name)
+        os.replace(temporary, out)
+    except OSError as error:
+        try:
+            temporary.unlink()
+        except (OSError, UnboundLocalError):
+            pass
+        die(f"unable to write rendered compose: {error}")
+    print(json.dumps({"ok": True, "compose": str(out), "project": manifest["project"]}, sort_keys=True))
+    return 0
+
+
+def inspect_run(args: argparse.Namespace) -> int:
+    run = absolute_private(Path(args.run))
+    manifest = owned_run(run)
+    info = {"ok": True, "manifest": manifest, "paths": {"compose": (run / "generated/compose.yaml").is_file(), "state": all((run / "state" / n).is_dir() for n in STATE_SERVICES)}}
+    print(json.dumps(info, indent=2, sort_keys=True))
+    return 0
+
+
+def destroy(args: argparse.Namespace) -> int:
+    run = absolute_private(Path(args.run))
+    manifest = owned_run(run)
+    docker = command_result([docker_command(), "info", "--format", "{{json .}}"])
+    if not docker.get("available") or docker.get("returncode") != 0:
+        die("Docker state is unavailable; refusing destruction of a run with unknown resources", 3)
+    # A future implementation must query only this project before deletion.
+    if not args.confirm:
+        die("destruction requires --confirm")
+    die("scoped destruction is not implemented yet; no files removed", 4)
+
+
+def main(argv: list[str]) -> int:
+    parser = argparse.ArgumentParser(prog="labctl")
+    sub = parser.add_subparsers(dest="command", required=True)
+    p = sub.add_parser("preflight")
+    p.add_argument("--require-docker", action="store_true")
+    p.set_defaults(fn=preflight)
+    p = sub.add_parser("init")
+    p.add_argument("--root")
+    p.add_argument("--run-id")
+    p.add_argument("--uid", type=int, default=os.getuid())
+    p.add_argument("--gid", type=int, default=os.getgid())
+    p.set_defaults(fn=init_run)
+    p = sub.add_parser("render")
+    p.add_argument("run")
+    p.add_argument("--http-port", type=int, default=18081)
+    p.set_defaults(fn=render)
+    p = sub.add_parser("inspect")
+    p.add_argument("run")
+    p.set_defaults(fn=inspect_run)
+    p = sub.add_parser("destroy")
+    p.add_argument("run")
+    p.add_argument("--confirm", action="store_true")
+    p.set_defaults(fn=destroy)
+    args = parser.parse_args(argv)
+    try:
+        return args.fn(args)
+    except OSError as error:
+        die(f"filesystem operation failed: {error}")
+
+
+if __name__ == "__main__":
+    raise SystemExit(main(sys.argv[1:]))
