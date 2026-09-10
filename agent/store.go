@@ -17,7 +17,7 @@
  * under the License.
  */
 
-// Package agent implements local admission only; it never starts processes.
+// Package agent provides durable admission and optional trusted Linux process execution.
 package agent
 
 import (
@@ -33,6 +33,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"strconv"
+	"sync"
 	"time"
 
 	"aurora.local/agent/protocol"
@@ -94,13 +95,15 @@ type Result struct {
 	Deadline int64  `json:"deadlineUnixMillis,omitempty"`
 }
 type Attempt struct {
-	Body     map[string]any `json:"body"`
-	Stopped  bool           `json:"stopped"`
-	Deadline int64          `json:"deadlineUnixMillis"`
-	Sequence uint64         `json:"sequence"`
+	Body      map[string]any `json:"body"`
+	Stopped   bool           `json:"stopped"`
+	Deadline  int64          `json:"deadlineUnixMillis"`
+	Sequence  uint64         `json:"sequence"`
+	Execution *Execution     `json:"execution,omitempty"`
 }
 type State struct {
 	FormatVersion int                `json:"formatVersion"`
+	RuntimeScope  *RuntimeScope      `json:"runtimeScope,omitempty"`
 	Config        Config             `json:"config"`
 	Cursor        uint64             `json:"cursor,string"`
 	Ack           uint64             `json:"ack,string"`
@@ -110,9 +113,12 @@ type State struct {
 	Observations  []map[string]any   `json:"observations"`
 }
 type Store struct {
-	db           *bolt.DB
-	c            Config
-	beforeCommit func() error
+	db              *bolt.DB
+	c               Config
+	beforeCommit    func() error
+	effectMu        sync.Mutex
+	runtimeActive   bool
+	runtimeDraining bool
 }
 
 func Open(path string, c Config) (s *Store, err error) {
@@ -204,7 +210,14 @@ func Open(path string, c Config) (s *Store, err error) {
 	}
 	return s, err
 }
-func (s *Store) Close() error { return s.db.Close() }
+func (s *Store) Close() error {
+	s.effectMu.Lock()
+	defer s.effectMu.Unlock()
+	if s.runtimeActive {
+		return errors.New("runtime must close before store")
+	}
+	return s.db.Close()
+}
 func save(b *bolt.Bucket, st State) error {
 	data := protocol.Canonical(st)
 	if e := b.Put([]byte("snapshot"), data); e != nil {
@@ -232,7 +245,7 @@ func read(b *bolt.Bucket) (State, error) {
 	if e := d.Decode(&st); e != nil {
 		return st, e
 	}
-	if st.FormatVersion != 1 {
+	if st.FormatVersion != 1 && st.FormatVersion != 2 {
 		return st, errors.New("unsupported store format")
 	}
 	if st.Sequences == nil || st.Commands == nil || st.Attempts == nil || st.Observations == nil || st.Ack > st.Cursor {
@@ -247,7 +260,16 @@ func read(b *bolt.Bucket) (State, error) {
 		if !ok || attemptKey(id) != k {
 			return st, errors.New("corrupt attempt")
 		}
-		st.Attempts[k] = Attempt{Body: v, Stopped: a.Stopped, Deadline: a.Deadline, Sequence: a.Sequence}
+		a.Body = v
+		if a.Execution != nil {
+			if st.FormatVersion != 2 || st.RuntimeScope == nil {
+				return st, errors.New("execution without runtime scope/version")
+			}
+			if e := validateExecution(a.Execution); e != nil {
+				return st, e
+			}
+		}
+		st.Attempts[k] = a
 	}
 	for i, o := range st.Observations {
 		v, e := protocol.Validate(protocol.Canonical(o))
@@ -270,6 +292,8 @@ func (s *Store) Inspect() (State, error) {
 	return st, e
 }
 func (s *Store) Admit(data []byte, caller Caller) (Result, error) {
+	s.effectMu.Lock()
+	defer s.effectMu.Unlock()
 	var out Result
 	if e := s.trusted(caller); e != nil {
 		return out, e
@@ -310,6 +334,9 @@ func (s *Store) Admit(data []byte, caller Caller) (Result, error) {
 		}
 		out = Result{Command: command, Hash: hash, Outcome: "accepted"}
 		kind := body["kind"]
+		if kind == "Run" && s.runtimeDraining {
+			return errors.New("runtime shutting down")
+		}
 		if kind == "Run" {
 			if exists {
 				if attempt.Stopped {
@@ -323,7 +350,7 @@ func (s *Store) Admit(data []byte, caller Caller) (Result, error) {
 				cpu, mem := r["cpuMillis"].(uint64), r["memoryBytes"].(uint64)
 				sockets := map[string]bool{}
 				for _, a := range st.Attempts {
-					if a.Body["kind"] != "Run" {
+					if a.Body["kind"] != "Run" || (a.Execution != nil && a.Execution.Cleanup == "complete") {
 						continue
 					}
 					ap := a.Body["assignment"].(map[string]any)
@@ -360,6 +387,9 @@ func (s *Store) Admit(data []byte, caller Caller) (Result, error) {
 				attempt.Deadline = deadline
 			}
 			attempt.Stopped = true
+			if attempt.Execution != nil {
+				attempt.Execution.Ready = false
+			}
 			exists = true
 			st.Attempts[key] = attempt
 			out.Deadline = attempt.Deadline
@@ -381,6 +411,13 @@ func (s *Store) Admit(data []byte, caller Caller) (Result, error) {
 			st.Attempts[key] = attempt
 		}
 		obs := map[string]any{"version": "native-v1alpha1", "kind": "Observation", "identity": id, "source": target, "sequence": strconv.FormatUint(seq, 10), "cursor": out.Cursor, "state": "unknown", "ready": false, "cleanup": "unknown"}
+		// Admission records command disposition without regressing already observed
+		// execution facts, including a completed attempt receiving a late Stop.
+		if exists && attempt.Execution != nil {
+			obs["state"] = attempt.Execution.Outcome
+			obs["ready"] = attempt.Execution.Ready
+			obs["cleanup"] = attempt.Execution.Cleanup
+		}
 		st.Observations = append(st.Observations, obs)
 		st.Commands[command] = out
 		if e = save(b, st); e != nil {
@@ -497,4 +534,9 @@ func createMarker(path string, c Config) error {
 	// Linking publishes the already fsynced contents atomically without replacing
 	// a concurrent or unexpected enrollment marker. Open still owns the DB lock.
 	return os.Link(f.Name(), path)
+}
+
+// Reserved is true until cleanup of an admitted Run is durably confirmed.
+func (a Attempt) Reserved() bool {
+	return a.Body["kind"] == "Run" && (a.Execution == nil || a.Execution.Cleanup != "complete")
 }

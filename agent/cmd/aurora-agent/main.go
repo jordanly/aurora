@@ -23,6 +23,7 @@ import (
 	agent "aurora.local/agent"
 	"aurora.local/agent/protocol"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -41,18 +42,27 @@ func read(path string) ([]byte, error) {
 	}
 	return b, e
 }
-func run() error {
+func run() (err error) {
 	if len(os.Args) < 2 {
-		return fmt.Errorf("version|validate|admit|inspect")
+		return fmt.Errorf("version|validate|admit|inspect|serve-local")
 	}
 	if os.Args[1] == "version" {
 		return json.NewEncoder(os.Stdout).Encode(map[string]string{"version": "native-v1alpha1-admission", "store": "bbolt-v1.5.0"})
+	}
+	if os.Args[1] == "__launch-helper" {
+		if len(os.Args) != 2 {
+			return fmt.Errorf("unexpected helper arguments")
+		}
+		return agent.LaunchHelper()
 	}
 	f := flag.NewFlagSet(os.Args[1], flag.ContinueOnError)
 	config := f.String("config", "", "trusted local enrollment configuration")
 	state := f.String("state", "", "exclusive local state file")
 	command := f.String("command", "", "Delivery JSON file")
 	document := f.String("document", "", "protocol JSON file")
+	workRoot := f.String("work-root", "", "absolute private runtime work and log root")
+	network := f.String("network", "agent-container", "one local assignment network domain")
+	logBytes := f.Int64("log-bytes", 1048576, "maximum retained bytes per workload log stream")
 	if e := f.Parse(os.Args[2:]); e != nil {
 		return e
 	}
@@ -71,7 +81,7 @@ func run() error {
 		_, e = os.Stdout.Write(append(protocol.Canonical(v), '\n'))
 		return e
 	}
-	if os.Args[1] != "admit" && os.Args[1] != "inspect" {
+	if os.Args[1] != "admit" && os.Args[1] != "inspect" && os.Args[1] != "serve-local" {
 		return fmt.Errorf("unknown action")
 	}
 	b, e := read(*config)
@@ -86,16 +96,15 @@ func run() error {
 	if e != nil {
 		return e
 	}
-	defer s.Close()
+	defer func() { err = errors.Join(err, s.Close()) }()
+	if os.Args[1] == "serve-local" {
+		return runLocal(s, c, agent.RuntimeOptions{Root: *workRoot, Network: *network, LogBytes: *logBytes})
+	}
 	var result any
 	if os.Args[1] == "inspect" {
 		var st agent.State
 		st, e = s.Inspect()
-		attempts := map[string]any{}
-		for k, a := range st.Attempts {
-			attempts[k] = map[string]any{"identity": a.Body["identity"], "reserved": a.Body["kind"] == "Run", "stopped": a.Stopped, "deadlineUnixMillis": a.Deadline}
-		}
-		result = map[string]any{"cursor": fmt.Sprint(st.Cursor), "ack": fmt.Sprint(st.Ack), "commands": st.Commands, "attempts": attempts, "observations": st.Observations}
+		result = publicState(st)
 	} else {
 		b, e = read(*command)
 		if e != nil {

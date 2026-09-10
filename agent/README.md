@@ -1,13 +1,18 @@
-# Durable admission foundation (AGENT-01)
+# Durable admission and local process runtime (AGENT-01 / AGENT-02)
 
-This standalone Go module validates the bounded native-v1alpha1 profile and
-persists admission. It does **not** launch a process, bind sockets, enforce resources,
-serve a network API, authenticate remote peers, perform reconciliation, or prove
-cleanup. An accepted Run reserves resources and produces an `unknown` observation.
-A Stop permanently tombstones its attempt and preserves any existing reservation.
-Only a future cleanup/fencing reducer can release resources; terminal outcome alone
-will not do so. Scope/config changes fail closed, including runtime/boot changes,
-pending a future recovery protocol.
+This standalone Go module validates native-v1alpha1, persists admission, and runs
+trusted preinstalled Linux processes through an optional local runtime. Accepted
+Run commands reserve resources before execution. The runtime releases those
+reservations only after verified cleanup; uncertain executions remain reserved.
+Stop-before-Run permanently tombstones the attempt.
+
+The local runtime has no scheduler connection or authenticated network API.
+Workloads run as the agent user with explicit argv/environment, in a private
+per-attempt working directory. This is a trusted process lane, with no hard
+memory enforcement or security boundary against hostile same-user workloads.
+Surviving supervisors, arbitrary detached descendants, workload adoption after
+container loss, retries beyond maxRuns=1, and production backup/restore remain
+outside this increment.
 
 ## Local interface
 
@@ -37,10 +42,60 @@ survive refresh because envelope authority is excluded from immutable body hashi
 All CLI output is JSON. `admit` returns command, bodySha256, outcome, cursor, and
 Stop deadline. Replays return that exact durable result. Rejections exit nonzero.
 `inspect` returns cursor/ack decimal strings, commands, redacted attempt summaries
-(identity, reserved, stopped, deadline), and observations; it omits argv/environment.
+(identity, reservation, stop deadline and execution outcome/PID/readiness/log counters),
+and observations; it omits argv/environment.
 `validate` deliberately outputs the full canonical input, so use fixture inputs.
 The library inspect API exposes full local records to its trusted caller.
 Inputs are bounded to 1 MiB and depth 64. No secrets are required by this profile.
+
+## Local process control
+
+Build the binary above, then keep its stdin/stdout attached:
+
+```sh
+/tmp/aurora-agent serve-local --config agent/examples/agent-a.json \
+  --state /tmp/aurora-agent.db --work-root /tmp/aurora-agent-work \
+  --network agent-container --log-bytes 1048576
+```
+
+Each JSON line is either a complete Delivery, `{"action":"inspect"}`, or
+`{"action":"shutdown"}`. Replies contain `ok` and `result` or a generic `error`.
+Delivery acceptance confirms the admission transaction; inspect observations to
+learn execution results. This interface trusts its local operator and must not
+be wrapped as an unauthenticated remote endpoint. It has no remote ACK interface.
+EOF, SIGINT, SIGTERM, and explicit shutdown persist stop intent and drain the
+runtime. Shutdown success follows runtime and journal closure. A stalled response
+reader is bounded to five seconds and causes cleanup; a failed or uncertain
+cleanup returns an error. Requests are limited to 1 MiB. Inputs should arrive
+sequentially and each reply should be consumed before sending another request.
+
+`NewRuntime`/`Tick` consume each attempt's launch intent once. An internal helper
+blocks on an inherited descriptor until the agent has durably recorded its
+PID/start identity and release intent. Admission of Stop and final gate release
+share a lock. The helper uses a new session, explicit environment, no-new-privileges
+and parent-death signaling; set-ID/file-capability executables reject. The spawning
+OS thread remains alive until Wait completes. The private helper entry point is
+an implementation detail, not a workload API.
+
+TCP readiness requires the assigned listening socket to belong to the recorded
+workload PID, plus a successful connection. Probes honor cancellation and cap each
+connection attempt at 250 ms to keep the control loop responsive. It is transport readiness: the fixture's
+HTTP `/ready` delay is application evidence and does not change this protocol's
+TCP readiness semantics. Exact assigned ports have no fallback; externally occupied
+ports fail execution. Accounting release follows cleanup, not signal submission.
+Stop uses its durable deadline, first TERM and then KILL if needed. Signaling uses
+pidfds and verified identities, with no raw-PID fallback. Startup after daemon loss
+never relaunches consumed intent: it cleans verified processes and reports Lost,
+retaining uncertainty if identity or group absence cannot be established.
+
+Each stdout/stderr file retains its first configured 1 KiB..16 MiB; excess bytes
+are drained and counted. Log truncation is visible in inspect. This bounds each
+stream, not aggregate journal/work-directory growth. There is no rotation, remote
+log API, per-task cgroup enforcement or physical power-loss guarantee yet.
+
+Linux behavior references: [parent-death signal](https://man7.org/linux/man-pages/man2/PR_SET_PDEATHSIG.2const.html),
+[pidfds](https://man7.org/linux/man-pages/man2/pidfd_open.2.html), and
+[Go process and pipe waiting](https://pkg.go.dev/os/exec#Cmd).
 
 ## Storage and invariants
 
@@ -65,7 +120,8 @@ One bbolt transaction commits the immutable command hash/result, attempt reserva
 or tombstone, sequence, durable node cursor and observation. Conflicting command ID
 reuse rejects. Attempts are keyed by cluster/recovery/job/instance/attempt and reject identity
 mutation. Exact TCP/IPv4 sockets include network domain. Admission sums all existing
-Run reservations, including stopped/uncertain attempts, under the writer transaction.
+Run reservations, including stopped/uncertain attempts until their execution cleanup is complete,
+under the writer transaction.
 No capabilities are advertised, so hard-memory requests reject at admission.
 Stop replay never changes its original deadline; later distinct Stops can only
 shorten the tombstone deadline. Tombstones and dedupe records are never ACK-pruned.
@@ -76,7 +132,14 @@ transaction. Repeating an ACK continues bounded pruning. It trusts the scheduler
 assertion of contiguous committed receipt; proving the remote commit is scheduler
 work. Pruning does not reset node cursors or attempt sequences.
 
-Snapshots carry an explicit format version and integrity checksum and are validated on every read. Existing
+Snapshots carry an explicit format version and integrity checksum and are validated on every read.
+Admission-only journals start at format 1. First `NewRuntime` atomically upgrades to
+format 2 and records observed host boot ID, PID and network namespace identities,
+and namespace-init start time. The older admission-only binary refuses format 2;
+do not downgrade it after enabling execution. Enrollment labels alone cannot
+substitute for these actual kernel identities. A changed scope refuses runtime
+startup before any PID is signaled, even when the same state volume survives.
+Container-loss recovery needs explicit fencing/re-enrollment integration later. Existing
 empty files, wrong scope, malformed state, checksum mismatch and corrupt bbolt
 headers refuse admission. Checksums detect accidental corruption, not malicious
 local rewriting. The compact prototype stores one aggregate snapshot per
