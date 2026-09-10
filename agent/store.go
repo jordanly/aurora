@@ -121,7 +121,12 @@ type Store struct {
 	runtimeDraining bool
 }
 
-func Open(path string, c Config) (s *Store, err error) {
+func Open(path string, c Config) (*Store, error) { return openStore(path, c, false) }
+
+// OpenServer restores durable session authority after daemon restart; enrollment
+// and capacity must still match the operator-owned config exactly.
+func OpenServer(path string, c Config) (*Store, error) { return openStore(path, c, true) }
+func openStore(path string, c Config, restoreAuthority bool) (s *Store, err error) {
 	if _, e := ReadConfig(protocol.Canonical(c)); e != nil {
 		return nil, e
 	}
@@ -182,6 +187,10 @@ func Open(path string, c Config) (s *Store, err error) {
 		if e != nil {
 			return e
 		}
+		if restoreAuthority {
+			c.Session = st.Config.Session
+			c.Epoch = st.Config.Epoch
+		}
 		old := st.Config
 		old.Session = c.Session
 		old.Epoch = c.Epoch
@@ -207,6 +216,9 @@ func Open(path string, c Config) (s *Store, err error) {
 			err = dir.Sync()
 			dir.Close()
 		}
+	}
+	if err == nil {
+		s.c = c
 	}
 	return s, err
 }
@@ -438,6 +450,8 @@ func socket(x any) string {
 // Ack trusts the authenticated scheduler's assertion of contiguous committed receipt.
 // At most limit observations are deleted; command dedupe and tombstones remain permanent.
 func (s *Store) Ack(data []byte, c Caller, limit int) error {
+	s.effectMu.Lock()
+	defer s.effectMu.Unlock()
 	if e := s.trusted(c); e != nil {
 		return e
 	}
@@ -539,4 +553,43 @@ func createMarker(path string, c Config) error {
 // Reserved is true until cleanup of an admitted Run is durably confirmed.
 func (a Attempt) Reserved() bool {
 	return a.Body["kind"] == "Run" && (a.Execution == nil || a.Execution.Cleanup != "complete")
+}
+
+// CurrentConfig returns the authority snapshot under the same lock as admission.
+func (s *Store) CurrentConfig() Config { s.effectMu.Lock(); defer s.effectMu.Unlock(); return s.c }
+func (s *Store) RefreshSession(peer, epoch, session string) (Config, error) {
+	s.effectMu.Lock()
+	defer s.effectMu.Unlock()
+	c := s.c
+	if peer != c.Peer {
+		return c, errors.New("session peer rejected")
+	}
+	next := c
+	next.Epoch = epoch
+	next.Session = session
+	if _, e := ReadConfig(protocol.Canonical(next)); e != nil {
+		return c, e
+	}
+	oldEpoch, _ := strconv.ParseUint(c.Epoch, 10, 64)
+	newEpoch, _ := strconv.ParseUint(epoch, 10, 64)
+	if newEpoch < oldEpoch || newEpoch == oldEpoch && session != c.Session {
+		return c, errors.New("stale or conflicting session")
+	}
+	if next == c {
+		return c, nil
+	}
+	err := s.db.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte("state"))
+		st, e := read(b)
+		if e != nil {
+			return e
+		}
+		st.Config = next
+		return save(b, st)
+	})
+	if err != nil {
+		return c, err
+	}
+	s.c = next
+	return next, nil
 }

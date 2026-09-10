@@ -24,7 +24,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"os"
 	"os/signal"
@@ -35,32 +34,8 @@ import (
 	"aurora.local/agent/protocol"
 )
 
-func publicState(st agent.State) map[string]any {
-	attempts := map[string]any{}
-	for key, a := range st.Attempts {
-		attempts[key] = map[string]any{
-			"identity": a.Body["identity"], "reserved": a.Reserved(),
-			"stopped": a.Stopped, "deadlineUnixMillis": a.Deadline,
-			"execution": publicExecution(a.Execution),
-		}
-	}
-	return map[string]any{"cursor": fmt.Sprint(st.Cursor), "ack": fmt.Sprint(st.Ack),
-		"commands": st.Commands, "attempts": attempts, "observations": st.Observations}
-}
-
-// Keep local inspection independent of future private execution metadata.
-func publicExecution(e *agent.Execution) any {
-	if e == nil {
-		return nil
-	}
-	return map[string]any{
-		"phase": e.Phase, "pid": e.PID, "start": e.Start,
-		"outcome": e.Outcome, "cleanup": e.Cleanup, "ready": e.Ready,
-		"exitCode": e.ExitCode, "signal": e.Signal,
-		"stdoutBytes": e.StdoutBytes, "stderrBytes": e.StderrBytes,
-		"stdoutDropped": e.StdoutDropped, "stderrDropped": e.StderrDropped,
-	}
-}
+func publicState(st agent.State) map[string]any { return agent.PublicState(st) }
+func publicExecution(e *agent.Execution) any    { return agent.PublicExecution(e) }
 
 // A stalled operator reader must not prevent cancellation and workload cleanup.
 // The CLI owns these streams; closing them must interrupt outstanding I/O.

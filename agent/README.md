@@ -1,4 +1,4 @@
-# Durable admission and local process runtime (AGENT-01 / AGENT-02)
+# Durable admission, trusted process runtime, and lab HTTPS transport
 
 This standalone Go module validates native-v1alpha1, persists admission, and runs
 trusted preinstalled Linux processes through an optional local runtime. Accepted
@@ -6,7 +6,8 @@ Run commands reserve resources before execution. The runtime releases those
 reservations only after verified cleanup; uncertain executions remain reserved.
 Stop-before-Run permanently tombstones the attempt.
 
-The local runtime has no scheduler connection or authenticated network API.
+The runtime supports operator-owned local stdin and an optional mutually
+authenticated HTTPS transport for the bounded single-scheduler lab.
 Workloads run as the agent user with explicit argv/environment, in a private
 per-attempt working directory. This is a trusted process lane, with no hard
 memory enforcement or security boundary against hostile same-user workloads.
@@ -47,6 +48,83 @@ and observations; it omits argv/environment.
 `validate` deliberately outputs the full canonical input, so use fixture inputs.
 The library inspect API exposes full local records to its trusted caller.
 Inputs are bounded to 1 MiB and depth 64. No secrets are required by this profile.
+
+## Authenticated HTTPS transport (v0lab)
+
+```sh
+/tmp/aurora-agent serve --config agent/examples/agent-a.json \
+  --state /var/lib/aurora/state.db --work-root /var/lib/aurora/work \
+  --network agent-container --listen :8443 \
+  --tls-cert /run/aurora-tls/agent.crt --tls-key /run/aurora-tls/agent.key \
+  --tls-ca /run/aurora-tls/ca.crt
+```
+
+Every connection requires TLS 1.3 and a client certificate verified by the supplied
+CA. Every request additionally requires the leaf certificate to contain the exact
+DNS SAN from config `peer` (normally `scheduler`). Common names and wildcard SANs
+do not authorize. There is no plaintext or unauthenticated HTTP fallback. The
+scheduler must verify the agent server certificate against its enrolled node DNS
+name and CA. Private keys are operator-mounted inputs and are never returned.
+
+| Endpoint | Request | Success response |
+| --- | --- | --- |
+| `GET /v1/state?afterCursor=0&limit=128` | Optional canonical uint64 cursor and limit 1..128 | `{config,state,nextCursor,hasMore}` |
+| `POST /v1/session` | Exactly `{schedulerEpoch: string, session: string}` | Current 11-field Config |
+| `POST /v1/deliver` | Complete native Delivery | Immutable admission Result |
+| `POST /v1/ack` | Complete native ObservationAck, plus `X-Aurora-Epoch` and `X-Aurora-Session` headers | `{ok:true}` |
+
+POST requests require `Content-Type: application/json`. Bodies and responses are
+limited to 1 MiB; unknown fields, duplicate keys, unsupported methods and malformed
+queries reject. Errors are generic JSON and never contain assignment argv/env.
+An accepted Result has HTTP 200; a durable rejected command Result has HTTP 409.
+Other invalid deliveries, stale authority, invalid ACKs and cursor retention gaps
+also have HTTP 409 with `{error: string}`. Authentication failures use HTTP 403
+(or fail the TLS handshake); malformed session/query input uses HTTP 400.
+The server caps concurrent handlers at eight, headers at 8 KiB, header reads at
+three seconds, complete request reads and response writes at five seconds, and
+idle connections at thirty seconds. Runtime ticks independently every 50 ms.
+Connection loss does not stop existing workloads. SIGINT/SIGTERM stops accepting
+HTTP requests and drains the runtime using its existing bounded shutdown policy.
+
+Session refresh accepts a larger epoch or the identical current epoch/session
+pair. A different session within the same epoch rejects on this network endpoint.
+The authenticated certificate supplies the peer; caller authority is read from
+trusted current store state and independently checked against Delivery authority
+or ACK headers. A stale connection cannot reuse its old session to deliver or ACK.
+This is a single trusted scheduler profile, not a distributed leader election or
+certificate-based fencing protocol.
+
+`serve` uses `OpenServer`: after restart it restores epoch/session from the durable
+journal, while requiring every static enrollment/capacity field to match its config.
+The initial config file does not need rewriting after `/v1/session`. Other local
+CLI commands retain strict explicit-config `Open` semantics. Immutable command
+hashes/results survive session refresh and reconnect. Actual kernel boot/PID/network
+scope binding still refuses container recreation over an old journal; daemon-only
+restart in the same keeper/container namespace follows conservative Lost recovery.
+
+The state response always contains the entire redacted attempt/command inventory,
+plus at most `limit` observations with cursor strictly above `afterCursor`.
+Attempt `sequence`, state `cursor`/`ack`, and `nextCursor` are decimal strings.
+State `cursor` is the durable high-water mark; `nextCursor` is the last observation
+returned (or the requested cursor for an empty page). `hasMore` indicates another
+observation page. A requested cursor below the durable ACK or beyond the high-water
+mark returns HTTP 409; never infer missing events or execution absence from that
+failure. Each page is an atomic current snapshot, not a frozen multi-page inventory.
+The scheduler must commit contiguous observations before ACK, and compare attempt
+sequences when combining current inventory with older observation pages.
+
+Full inventory is capped at 128 attempts, 1024 command results, and 1 MiB encoded
+response. Exceeding a limit returns HTTP 503 with no successful partial inventory;
+placement must stop and existing reservations remain. Permanent dedupe/tombstones
+are not collected to bypass this limit. This intentionally bounded lab profile
+needs a later inventory/retention protocol for longer-lived operation. ACK pruning
+deletes at most 128 observations per call; repeated identical ACKs finish pruning.
+
+Tests exercise actual TLS handshakes with missing/untrusted/wrong-SAN certificates,
+strict bodies, stale Delivery/ACK authority, epoch/session replay through uint64 max,
+pagination and retention gaps, inventory bounds and redaction. A real HTTPS runtime
+test launches a workload, completes it, restarts with unchanged initial config,
+and proves replay does not execute it twice.
 
 ## Local process control
 
@@ -145,7 +223,7 @@ headers refuse admission. Checksums detect accidental corruption, not malicious
 local rewriting. The compact prototype stores one aggregate snapshot per
 transaction, so writes/read validation grow with retained history. Dedupe/tombstones
 are permanent and storage growth is not production bounded. No backup/restore,
-compaction, schema migration, multi-host store, or network authentication is claimed.
+compaction, general schema migration, or multi-host store is claimed.
 
 ## Local-store spike evidence
 

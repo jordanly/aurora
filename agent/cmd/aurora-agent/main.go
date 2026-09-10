@@ -44,7 +44,7 @@ func read(path string) ([]byte, error) {
 }
 func run() (err error) {
 	if len(os.Args) < 2 {
-		return fmt.Errorf("version|validate|admit|inspect|serve-local")
+		return fmt.Errorf("version|validate|admit|inspect|serve-local|serve")
 	}
 	if os.Args[1] == "version" {
 		return json.NewEncoder(os.Stdout).Encode(map[string]string{"version": "native-v1alpha1-admission", "store": "bbolt-v1.5.0"})
@@ -62,6 +62,10 @@ func run() (err error) {
 	document := f.String("document", "", "protocol JSON file")
 	workRoot := f.String("work-root", "", "absolute private runtime work and log root")
 	network := f.String("network", "agent-container", "one local assignment network domain")
+	listen := f.String("listen", ":8443", "mutually authenticated HTTPS address")
+	tlsCert := f.String("tls-cert", "", "server certificate PEM")
+	tlsKey := f.String("tls-key", "", "server private key PEM")
+	tlsCA := f.String("tls-ca", "", "trusted scheduler client CA PEM")
 	logBytes := f.Int64("log-bytes", 1048576, "maximum retained bytes per workload log stream")
 	if e := f.Parse(os.Args[2:]); e != nil {
 		return e
@@ -81,7 +85,7 @@ func run() (err error) {
 		_, e = os.Stdout.Write(append(protocol.Canonical(v), '\n'))
 		return e
 	}
-	if os.Args[1] != "admit" && os.Args[1] != "inspect" && os.Args[1] != "serve-local" {
+	if os.Args[1] != "admit" && os.Args[1] != "inspect" && os.Args[1] != "serve-local" && os.Args[1] != "serve" {
 		return fmt.Errorf("unknown action")
 	}
 	b, e := read(*config)
@@ -92,11 +96,19 @@ func run() (err error) {
 	if e != nil {
 		return e
 	}
-	s, e := agent.Open(*state, c)
+	var s *agent.Store
+	if os.Args[1] == "serve" {
+		s, e = agent.OpenServer(*state, c)
+	} else {
+		s, e = agent.Open(*state, c)
+	}
 	if e != nil {
 		return e
 	}
 	defer func() { err = errors.Join(err, s.Close()) }()
+	if os.Args[1] == "serve" {
+		return runHTTPS(s, agent.RuntimeOptions{Root: *workRoot, Network: *network, LogBytes: *logBytes}, agent.HTTPSOptions{Listen: *listen, CertFile: *tlsCert, KeyFile: *tlsKey, CAFile: *tlsCA})
+	}
 	if os.Args[1] == "serve-local" {
 		return runLocal(s, c, agent.RuntimeOptions{Root: *workRoot, Network: *network, LogBytes: *logBytes})
 	}
