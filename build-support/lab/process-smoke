@@ -1,0 +1,653 @@
+#!/usr/bin/env python3
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+# Unless required by applicable law or agreed to in writing, software distributed under
+# the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND.
+# See the License for the specific language governing permissions and limitations under the License.
+"""Bounded physical native process checks through the operator-owned stdin lane."""
+from __future__ import annotations
+
+import argparse
+import errno
+import hashlib
+import json
+import os
+from pathlib import Path
+import platform
+import re
+import selectors
+import signal
+import socket
+import subprocess
+import sys
+import time
+
+HERE = Path(__file__).resolve().parent
+ROOT = HERE.parents[1]
+GO = ROOT / ".pi-tools/go1.27.1/go/bin/go"
+MARKER = ".aurora-process-smoke"
+CASE_NAMES = (
+    "batch-success-replay", "batch-exit-seven", "missing-executable",
+    "service-ready-graceful-stop", "service-refuses-term-escalation",
+    "bounded-drained-logs", "external-exact-port-conflict",
+    "agent-exact-port-reservation", "daemon-crash-recovery-no-relaunch",
+)
+
+
+class CheckFailure(Exception):
+    pass
+
+
+def require(condition: bool, message: str) -> None:
+    if not condition:
+        raise CheckFailure(message)
+
+
+def canonical(value) -> bytes:
+    return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=True).encode()
+
+
+def digest(value) -> str:
+    return hashlib.sha256(canonical(value)).hexdigest()
+
+
+def safe_path(path: Path) -> None:
+    require(path.is_absolute() and ".." not in path.parts, "Absolute non-traversing path required")
+    require(all(32 <= ord(char) <= 126 for char in str(path)), "Control/non-ASCII path rejected")
+    require(not any(p.is_symlink() for p in (path, *path.parents)), "Symlink path rejected")
+
+
+def file_sha(path: Path) -> str:
+    safe_path(path)
+    require(path.is_file(), "Required artifact missing")
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def tree_sha(path: Path) -> str:
+    hasher = hashlib.sha256()
+    for child in sorted(path.rglob("*")):
+        require(not child.is_symlink(), "Source symlink rejected")
+        if child.is_file():
+            hasher.update(str(child.relative_to(path)).encode() + b"\0")
+            hasher.update(bytes.fromhex(file_sha(child)))
+    return hasher.hexdigest()
+
+
+def public_error(error: Exception) -> str:
+    value = type(error).__name__ + ": " + str(error)
+    value = re.sub(r"(?i)(password|token|secret|private[_-]?key)([\"']?\s*[=:]\s*[\"']?)"
+                   r"[^\s,\"'}]+", r"\1\2<redacted>", value)
+    return value[:1024]
+
+
+def write_json(path: Path, value) -> None:
+    safe_path(path)
+    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC | os.O_NOFOLLOW, 0o600)
+    with os.fdopen(fd, "w") as stream:
+        json.dump(value, stream, indent=2, sort_keys=True)
+        stream.write("\n")
+        stream.flush()
+        os.fsync(stream.fileno())
+
+
+def command(args: list[str], env: dict, timeout: float = 120, cwd: Path | None = None):
+    try:
+        result = subprocess.run(args, env=env, cwd=cwd, text=True, capture_output=True,
+                                timeout=timeout, check=False)
+    except (OSError, subprocess.TimeoutExpired) as error:
+        raise CheckFailure("Command unavailable or timed out: " + Path(args[0]).name) from error
+    require(result.returncode == 0, "Command failed: " + Path(args[0]).name)
+    return result
+
+
+def build(run: Path) -> dict:
+    env = dict(os.environ, GOCACHE=str(ROOT / ".pi-tools/go-cache"),
+               GOMODCACHE=str(ROOT / ".pi-tools/go-mod"), GOTOOLCHAIN="local",
+               GOPROXY="off", GOMAXPROCS="2", CGO_ENABLED="0", GOOS="linux", GOARCH="arm64")
+    fixture = HERE / "fixtures/native-workload"
+    sources = {"agent_sources_sha256": tree_sha(ROOT / "agent"),
+               "fixture_sources_sha256": tree_sha(fixture)}
+    command([str(GO), "build", "-p", "2", "-trimpath", "-o", str(run / "aurora-agent"),
+             "./cmd/aurora-agent"], env, cwd=ROOT / "agent")
+    command([str(GO), "build", "-p", "2", "-trimpath", "-o", str(run / "native-workload"), "."],
+            env, cwd=fixture)
+    require(sources["agent_sources_sha256"] == tree_sha(ROOT / "agent")
+            and sources["fixture_sources_sha256"] == tree_sha(fixture), "Sources changed during build")
+    return dict(sources, agent_sha256=file_sha(run / "aurora-agent"),
+                fixture_sha256=file_sha(run / "native-workload"), go_sha256=file_sha(GO),
+                harness_sha256=file_sha(Path(__file__).resolve()),
+                rebuilt_from_current_sources=True, go="1.27.1", cgo=False)
+
+
+def process_info(pid: int):
+    try:
+        fields = Path(f"/proc/{pid}/stat").read_text().rsplit(") ", 1)[1].split()
+        return fields[19], fields[0]
+    except FileNotFoundError:
+        return None
+    except (OSError, IndexError) as error:
+        raise CheckFailure("Unable to establish process identity") from error
+
+
+class OwnedProcesses:
+    """Only pidfds pinned after inspection may receive emergency cleanup signals."""
+    def __init__(self):
+        self.handles = {}
+
+    def observe(self, attempt: dict) -> None:
+        execution = attempt.get("execution") or {}
+        pid, start = execution.get("pid", 0), execution.get("start", "")
+        if pid <= 0 or not start or (pid, start) in self.handles:
+            return
+        try:
+            fd = os.pidfd_open(pid)
+        except ProcessLookupError:
+            return
+        try:
+            current = process_info(pid)
+        except CheckFailure:
+            os.close(fd)
+            raise
+        if current is None or current[0] != start:
+            os.close(fd)
+            return
+        self.handles[(pid, start)] = fd
+
+    def alive(self, identity: tuple[int, str]) -> bool:
+        current = process_info(identity[0])
+        return current is not None and current[0] == identity[1] and current[1] not in ("Z", "X")
+
+    def cleanup(self) -> None:
+        errors = []
+        for identity, fd in self.handles.items():
+            try:
+                if self.alive(identity):
+                    signal.pidfd_send_signal(fd, signal.SIGKILL)
+                    deadline = time.monotonic() + 2
+                    while self.alive(identity) and time.monotonic() < deadline:
+                        time.sleep(0.02)
+                    require(not self.alive(identity), "Owned workload cleanup unconfirmed")
+            except (OSError, CheckFailure) as error:
+                if not isinstance(error, OSError) or error.errno != errno.ESRCH:
+                    errors.append(type(error).__name__)
+            finally:
+                os.close(fd)
+        self.handles.clear()
+        require(not errors, "Pinned workload cleanup failed")
+
+
+class Agent:
+    def __init__(self, binary: Path, run: Path, config: Path, serial: int):
+        self.stderr_path = run / f"agent-{serial}.stderr"
+        self.stderr = self.stderr_path.open("xb", buffering=0)
+        self.process = None
+        self.selector = None
+        try:
+            self.process = subprocess.Popen(
+                [str(binary), "serve-local", "--config", str(config), "--state", str(run / "state.db"),
+                 "--work-root", str(run / "work"), "--network", "agent-container", "--log-bytes", "4096"],
+                stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=self.stderr)
+            os.set_blocking(self.process.stdin.fileno(), False)
+            os.set_blocking(self.process.stdout.fileno(), False)
+            self.selector = selectors.DefaultSelector()
+            self.selector.register(self.process.stdout, selectors.EVENT_READ)
+            self.buffer = b""
+            self.closed = False
+        except BaseException:
+            if self.process is not None:
+                if self.process.poll() is None:
+                    self.process.kill()
+                    self.process.wait(timeout=3)
+                self.process.stdin.close()
+                self.process.stdout.close()
+            if self.selector is not None:
+                self.selector.close()
+            self.stderr.close()
+            raise
+
+    def request(self, value: dict, timeout: float = 5) -> dict:
+        deadline = time.monotonic() + timeout
+        data = canonical(value) + b"\n"
+        require(len(data) <= 1048576, "Request exceeds local framing bound")
+        with selectors.DefaultSelector() as writable:
+            writable.register(self.process.stdin, selectors.EVENT_WRITE)
+            while data:
+                require(time.monotonic() < deadline, "Agent input deadline")
+                if not writable.select(max(0, deadline - time.monotonic())):
+                    raise CheckFailure("Agent input deadline")
+                try:
+                    data = data[os.write(self.process.stdin.fileno(), data):]
+                except BlockingIOError:
+                    pass
+                except BrokenPipeError as error:
+                    raise CheckFailure("Agent exited before reply") from error
+        while b"\n" not in self.buffer:
+            require(time.monotonic() < deadline, "Agent reply deadline")
+            if not self.selector.select(max(0, deadline - time.monotonic())):
+                raise CheckFailure("Agent reply deadline")
+            try:
+                chunk = os.read(self.process.stdout.fileno(), 65536)
+            except BlockingIOError:
+                continue
+            require(bool(chunk), "Agent exited before reply")
+            self.buffer += chunk
+            require(len(self.buffer) <= 1048576, "Agent response exceeds evidence bound")
+        line, self.buffer = self.buffer.split(b"\n", 1)
+        try:
+            reply = json.loads(line)
+        except ValueError as error:
+            raise CheckFailure("Invalid agent JSON response") from error
+        require(isinstance(reply, dict), "Invalid agent response type")
+        return reply
+
+    def crash(self) -> None:
+        require(self.process.poll() is None, "Agent already exited before crash injection")
+        self.process.kill()
+        require(self.process.wait(timeout=3) == -signal.SIGKILL, "Daemon SIGKILL not observed")
+        self.release_streams()
+
+    def release_streams(self) -> None:
+        if not self.closed:
+            self.closed = True
+            self.selector.close()
+            self.process.stdin.close()
+            self.process.stdout.close()
+            self.stderr.close()
+
+    def close(self) -> None:
+        failure = None
+        try:
+            if self.process.poll() is None:
+                try:
+                    reply = self.request({"action": "shutdown"}, timeout=8)
+                    require(reply == {"ok": True, "result": "shutdown"}, "Shutdown not confirmed")
+                    require(self.process.wait(timeout=3) == 0, "Agent shutdown exit failed")
+                except (OSError, subprocess.TimeoutExpired, CheckFailure) as error:
+                    failure = error
+                    self.process.terminate()
+                    try:
+                        self.process.wait(timeout=3)
+                    except subprocess.TimeoutExpired:
+                        self.process.kill()
+                        self.process.wait(timeout=3)
+            elif not self.closed:
+                require(self.process.returncode == 0, "Agent exited unexpectedly")
+        finally:
+            self.release_streams()
+        if failure is not None:
+            raise CheckFailure("Agent required forced cleanup") from failure
+
+
+class Harness:
+    def __init__(self, run: Path, evidence: dict):
+        self.run = run
+        self.evidence = evidence
+        self.binary = run / "aurora-agent"
+        self.fixture = run / "native-workload"
+        self.config = run / "config.json"
+        self.agent = None
+        self.serial = 0
+        self.owned = OwnedProcesses()
+        self.current = None
+        config = {"cluster": "lab", "incarnation": "recovery-a", "node": "agent-a",
+                  "journal": "journal-a", "boot": "boot-a", "runtime": "runtime-a",
+                  "session": "session-b", "schedulerEpoch": "9007199254740994", "peer": "scheduler",
+                  "cpuMillis": 1000, "memoryBytes": 268435456}
+        write_json(self.config, config)
+
+    def start(self) -> None:
+        self.agent = Agent(self.binary, self.run, self.config, self.serial)
+        self.serial += 1
+        self.inspect()
+
+    def inspect(self) -> dict:
+        reply = self.agent.request({"action": "inspect"})
+        require(reply.get("ok") is True, "Agent inspection failed")
+        state = reply["result"]
+        for attempt in state["attempts"].values():
+            self.owned.observe(attempt)
+        return state
+
+    def begin(self, name: str) -> None:
+        self.current = {"case": name, "ok": False, "started_monotonic": time.monotonic()}
+        self.evidence["cases"].append(self.current)
+        self.save()
+
+    def complete(self, **facts) -> None:
+        self.current.update(facts, ok=True)
+        self.current["duration_seconds"] = round(time.monotonic() - self.current.pop("started_monotonic"), 3)
+        self.save()
+
+    def save(self) -> None:
+        write_json(self.run / "result.json", self.evidence)
+
+    def envelope(self, body: dict) -> dict:
+        return {"version": "native-v1alpha1", "kind": "Delivery",
+                "authority": {"cluster": "lab", "incarnation": "recovery-a",
+                              "schedulerEpoch": "9007199254740994", "session": "session-b"},
+                "body": body, "bodySha256": digest(body)}
+
+    def delivery(self, name: str, mode: str = "batch", port: int | None = None,
+                 extra: list[str] | None = None, missing: bool = False) -> dict:
+        template = "service-run-a.json" if mode == "service" else "run.json"
+        body = json.loads((ROOT / "protocol/native-v1alpha1/fixtures/valid" / template).read_text())
+        body["command"] = name
+        body["identity"].update(attempt=name + "-attempt", run=name + "-run")
+        body["assignment"]["env"] = {"LANG": "C"}
+        body["assignment"]["stop"]["graceMillis"] = 300
+        body["assignment"]["argv"] = [str(self.run / "does-not-exist" if missing else self.fixture),
+                                       "--mode", mode, "--identity", name, "--evidence",
+                                       str(self.run / "workload-evidence" / (name + ".jsonl"))]
+        if mode == "service":
+            body["assignment"]["argv"].extend(["--port", str(port)])
+            body["assignment"]["ports"][0]["number"] = port
+            body["assignment"]["readiness"].update(intervalMillis=50, timeoutMillis=100)
+        body["assignment"]["argv"].extend(extra or [])
+        return self.envelope(body)
+
+    def admit(self, delivery: dict, accepted: bool = True) -> dict:
+        reply = self.agent.request(delivery)
+        require(reply.get("ok") is accepted, "Unexpected admission disposition")
+        result = reply.get("result", {})
+        require(result.get("command") == delivery["body"]["command"]
+                and result.get("bodySha256") == delivery["bodySha256"], "Command identity/hash mismatch")
+        if accepted:
+            require(result.get("outcome") == "accepted", "Run/Stop was not accepted")
+        return reply
+
+    def stop(self, run: dict) -> dict:
+        body = {"version": "native-v1alpha1", "kind": "Stop",
+                "command": "stop-" + run["body"]["command"], "identity": run["body"]["identity"],
+                "target": run["body"]["target"], "desiredRevision": "2", "graceMillis": 300,
+                "reason": "cancel"}
+        command = self.envelope(body)
+        before = time.time_ns() // 1000000
+        result = self.admit(command)
+        after = time.time_ns() // 1000000
+        deadline = result["result"].get("deadlineUnixMillis", 0)
+        require(before + 300 <= deadline <= after + 300, "Stop deadline differs from committed grace")
+        require(self.admit(command) == result, "Stop replay changed immutable deadline/result")
+        return result
+
+    def attempt(self, delivery: dict) -> tuple[str, dict]:
+        identity = delivery["body"]["identity"]
+        found = [(key, item) for key, item in self.inspect()["attempts"].items()
+                 if item["identity"] == identity]
+        require(len(found) == 1, "Expected exactly one durable attempt")
+        return found[0]
+
+    def wait_attempt(self, delivery: dict, predicate, timeout: float = 8) -> tuple[str, dict]:
+        deadline = time.monotonic() + timeout
+        last = None
+        while time.monotonic() < deadline:
+            key, last = self.attempt(delivery)
+            if self.current is not None:
+                self.current["last_attempt"] = last
+            if predicate(last):
+                return key, last
+            time.sleep(0.03)
+        raise CheckFailure("Expected physical attempt state was not reached")
+
+    def terminal(self, delivery: dict, outcome: str, code=None, signal_number: int | None = None):
+        key, attempt = self.wait_attempt(delivery, lambda a: (a.get("execution") or {}).get("phase") == "terminal")
+        execution = attempt["execution"]
+        require(execution["outcome"] == outcome, "Unexpected terminal workload outcome")
+        require(execution["cleanup"] == "complete" and attempt["reserved"] is False,
+                "Terminal outcome has unconfirmed cleanup/reservation")
+        require(execution["ready"] is False, "Terminal workload is still ready")
+        if code is not None:
+            require(execution["exitCode"] == code, "Wrong physical exit code")
+        if signal_number is not None:
+            require(execution["signal"] == signal_number, "Wrong physical termination signal")
+        return key, attempt
+
+    def events(self, name: str) -> list[dict]:
+        path = self.run / "workload-evidence" / (name + ".jsonl")
+        safe_path(path)
+        if not path.exists():
+            return []
+        require(path.is_file() and path.stat().st_size <= 1048576, "Invalid workload evidence file")
+        events = [json.loads(line) for line in path.read_text().splitlines()]
+        require(all(item.get("identity") == name for item in events), "Unrelated workload evidence")
+        return events
+
+    def launch_count(self, name: str) -> int:
+        return sum(item.get("event") == "launch" for item in self.events(name))
+
+    def probe(self, port: int) -> dict:
+        result = command([str(self.fixture), "--mode", "probe", "--port", str(port)], os.environ.copy(), 3)
+        return json.loads(result.stdout)
+
+    def ready(self, delivery: dict, port: int) -> tuple[str, dict]:
+        key, attempt = self.wait_attempt(delivery, lambda a: (a.get("execution") or {}).get("ready") is True)
+        require(attempt["execution"]["outcome"] == "running" and attempt["reserved"],
+                "Ready service lacks running reservation")
+        deadline = time.monotonic() + 5
+        while time.monotonic() < deadline:
+            probe = self.probe(port)
+            require(probe.get("identity") == delivery["body"]["command"], "Physical service identity mismatch")
+            if probe.get("ready") is True:
+                return key, attempt
+            time.sleep(0.03)
+        raise CheckFailure("Physical /ready never became successful")
+
+    def cases(self) -> None:
+        self.start()
+        self.begin(CASE_NAMES[0])
+        run = self.delivery("batch-success")
+        first = self.admit(run)
+        self.terminal(run, "succeeded", code=0)
+        require(self.launch_count("batch-success") == 1, "Batch did not launch exactly once")
+        replay = self.admit(run)
+        require(first == replay, "Run replay changed command outcome")
+        time.sleep(0.2)
+        _, attempt = self.terminal(run, "succeeded", code=0)
+        require(self.launch_count("batch-success") == 1, "Completed batch replay relaunched")
+        late_stop = self.stop(run)
+        rejected_body = json.loads(json.dumps(run["body"]))
+        rejected_body["command"] = "late-batch-run"
+        rejected = self.admit(self.envelope(rejected_body), accepted=False)
+        require(rejected["result"]["outcome"] == "rejected-stopped", "Late Run bypassed tombstone")
+        _, attempt = self.terminal(run, "succeeded", code=0)
+        observations = [o for o in self.inspect()["observations"] if o["identity"] == run["body"]["identity"]]
+        require(observations[-1]["state"] == "succeeded"
+                and observations[-1]["cleanup"] == "complete" and observations[-1]["ready"] is False,
+                "Late Stop/rejected Run regressed terminal observation")
+        require(self.launch_count("batch-success") == 1, "Late command relaunched completed batch")
+        self.complete(admission=first, replay=replay, launch_count=1, attempt=attempt,
+                      late_stop=late_stop, rejected_late_run=rejected, terminal_observation_preserved=True)
+
+        self.begin(CASE_NAMES[1])
+        run = self.delivery("batch-exit-seven", extra=["--exit-code", "7"])
+        self.admit(run)
+        _, attempt = self.terminal(run, "failed", code=7)
+        require(self.launch_count("batch-exit-seven") == 1, "Exit-seven process never ran")
+        self.complete(attempt=attempt, launch_count=1)
+
+        self.begin(CASE_NAMES[2])
+        run = self.delivery("missing-executable", missing=True)
+        self.admit(run)
+        _, attempt = self.terminal(run, "failed")
+        require(self.launch_count("missing-executable") == 0, "Missing executable unexpectedly ran")
+        self.complete(attempt=attempt, launch_count=0)
+
+        for name, refuse in ((CASE_NAMES[3], False), (CASE_NAMES[4], True)):
+            self.begin(name)
+            port = free_port()
+            extra = ["--ready-delay-ms", "200"] + (["--refuse-sigterm"] if refuse else [])
+            run = self.delivery(name, "service", port, extra=extra)
+            self.admit(run)
+            self.ready(run, port)
+            physical = self.probe(port)
+            stopped = self.stop(run)
+            _, attempt = self.terminal(run, "stopped", code=-1 if refuse else 0,
+                                       signal_number=signal.SIGKILL if refuse else 0)
+            require(any(event.get("event") == "signal" and event.get("signal") == "terminated"
+                        for event in self.events(name)), "Physical SIGTERM receipt was not observed")
+            require(self.launch_count(name) == 1, "Service launch count differs")
+            require(port_available(port), "Stopped service retained exact socket")
+            self.complete(attempt=attempt, physical_probe=physical, stop=stopped, grace_ms=300,
+                          signal_events=self.events(name), exact_port=port, port_released=True)
+
+        self.begin(CASE_NAMES[5])
+        run = self.delivery("bounded-drained-logs", extra=["--log-spam-lines", "1000"])
+        self.admit(run)
+        key, attempt = self.terminal(run, "succeeded", code=0)
+        execution = attempt["execution"]
+        sizes = {stream: (self.run / "work" / key / (stream + ".log")).stat().st_size
+                 for stream in ("stdout", "stderr")}
+        require(all(size <= 4096 for size in sizes.values()), "Log file exceeded cap")
+        require(sizes["stderr"] == execution["stderrBytes"] == 4096
+                and execution["stderrDropped"] > 0 and sizes["stdout"] == execution["stdoutBytes"],
+                "Log truncation/drop counters were not physically demonstrated")
+        require(self.launch_count("bounded-drained-logs") == 1, "Logging fixture did not execute")
+        self.complete(attempt=attempt, file_bytes=sizes, limit=4096)
+
+        self.begin(CASE_NAMES[6])
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as blocker:
+            blocker.bind(("127.0.0.1", 0))
+            blocker.listen()
+            port = blocker.getsockname()[1]
+            run = self.delivery("external-exact-port-conflict", "service", port)
+            self.admit(run)
+            _, attempt = self.terminal(run, "failed")
+            require(self.launch_count("external-exact-port-conflict") == 0,
+                    "Runtime executed despite exact socket conflict")
+            require(blocker.getsockname()[1] == port and blocker.fileno() >= 0,
+                    "Unrelated listener changed during conflict handling")
+            self.complete(attempt=attempt, exact_port=port, launch_count=0, blocker_preserved=True)
+
+        self.begin(CASE_NAMES[7])
+        port = free_port()
+        first = self.delivery("reservation-owner", "service", port)
+        self.admit(first)
+        self.ready(first, port)
+        second = self.delivery("reservation-conflict", "service", port)
+        rejected = self.admit(second, accepted=False)
+        require(rejected["result"].get("outcome") == "rejected-socket", "Exact reserved port not rejected")
+        require(self.launch_count("reservation-conflict") == 0, "Conflicting reservation executed")
+        require(self.probe(port)["identity"] == "reservation-owner", "Original service was replaced")
+        self.stop(first)
+        self.terminal(first, "stopped", code=0)
+        self.complete(rejection=rejected, exact_port=port, original_identity_preserved=True)
+
+        self.begin(CASE_NAMES[8])
+        port = free_port()
+        run = self.delivery("daemon-crash", "service", port)
+        first = self.admit(run)
+        _, active = self.ready(run, port)
+        execution = active["execution"]
+        identity = (execution["pid"], execution["start"])
+        self.agent.crash()
+        deadline = time.monotonic() + 3
+        while self.owned.alive(identity) and time.monotonic() < deadline:
+            time.sleep(0.02)
+        require(not self.owned.alive(identity), "Daemon SIGKILL left trusted workload alive")
+        require(port_available(port), "Parent-death cleanup retained service socket")
+        self.start()
+        _, recovered = self.terminal(run, "lost")
+        require(recovered["execution"].get("exitCode") is None
+                and recovered["execution"].get("signal") == 0, "Recovery invented an exit result")
+        replay = self.admit(run)
+        require(replay == first, "Recovered command replay changed result")
+        time.sleep(0.25)
+        self.terminal(run, "lost")
+        require(self.launch_count("daemon-crash") == 1 and port_available(port), "Recovery replay relaunched")
+        self.complete(attempt=recovered, admission=first, replay=replay, launch_count=1,
+                      daemon_signal="SIGKILL", pdeathsig_observed=True, exact_port_released=True)
+
+    def cleanup(self) -> None:
+        errors = []
+        if self.agent is not None:
+            try:
+                self.agent.close()
+            except (CheckFailure, OSError, subprocess.TimeoutExpired) as error:
+                errors.append(type(error).__name__)
+        try:
+            self.owned.cleanup()
+        except (CheckFailure, OSError) as error:
+            errors.append(type(error).__name__)
+        require(not errors, "Scoped process cleanup required intervention or remains unconfirmed")
+
+
+def free_port() -> int:
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as listener:
+        listener.bind(("127.0.0.1", 0))
+        return listener.getsockname()[1]
+
+
+def port_available(port: int) -> bool:
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as listener:
+        listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        try:
+            listener.bind(("127.0.0.1", port))
+            listener.listen()
+            return True
+        except OSError:
+            return False
+
+
+def run_harness(harness: Harness) -> int:
+    status = 4
+    try:
+        harness.cases()
+        require([case["case"] for case in harness.evidence["cases"]] == list(CASE_NAMES)
+                and all(case["ok"] for case in harness.evidence["cases"]), "Declared cases incomplete")
+        status = 0
+    except (CheckFailure, OSError, ValueError, KeyError, subprocess.TimeoutExpired) as error:
+        harness.evidence["error"] = public_error(error)
+    finally:
+        harness.evidence["ok"] = False
+        harness.save()
+        try:
+            harness.cleanup()
+            harness.evidence["cleanup"] = "complete"
+        except (CheckFailure, OSError) as error:
+            harness.evidence["cleanup"] = "failed"
+            harness.evidence["cleanup_error"] = public_error(error)
+            status = 5
+        harness.evidence["ok"] = status == 0
+        harness.save()
+    return status
+
+
+def main(argv: list[str]) -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--run-root", type=Path, required=True)
+    args = parser.parse_args(argv)
+    run = args.run_root
+    try:
+        safe_path(run)
+        require(not run.exists(), "Run root must be new")
+        require(os.getuid() != 0, "Run as a non-root operator")
+        require(platform.machine() == "aarch64", "This pinned toolchain lane requires native ARM64")
+        require(hasattr(os, "pidfd_open") and hasattr(signal, "pidfd_send_signal"), "Python pidfd support required")
+        run.parent.mkdir(parents=True, exist_ok=True)
+        run.mkdir(mode=0o700)
+        write_json(run / MARKER, {"schema": 1, "run_root": str(run), "uid": os.getuid()})
+        for name in ("work", "workload-evidence"):
+            (run / name).mkdir(mode=0o700)
+        evidence = {"schema": 1, "lane": "process-smoke", "mode": "native-host",
+                    "cluster": False, "container_recovery": False, "ok": False,
+                    "host": {"architecture": platform.machine(), "kernel": platform.release(),
+                             "page_bytes": os.sysconf("SC_PAGE_SIZE")},
+                    "declared_cases": list(CASE_NAMES), "cases": []}
+        write_json(run / "result.json", evidence)
+        try:
+            evidence["provenance"] = build(run)
+        except (CheckFailure, OSError) as error:
+            evidence["error"] = public_error(error)
+            write_json(run / "result.json", evidence)
+            raise
+        harness = Harness(run, evidence)
+        status = run_harness(harness)
+        print(json.dumps({"ok": status == 0, "result": str(run / "result.json")}, sort_keys=True))
+        return status
+    except (CheckFailure, OSError, ValueError) as error:
+        print(json.dumps({"ok": False, "error": public_error(error)}), file=sys.stderr)
+        return 2
+
+
+if __name__ == "__main__":
+    raise SystemExit(main(sys.argv[1:]))
