@@ -26,7 +26,7 @@ boundary = importlib.util.module_from_spec(SPEC)
 LOADER.exec_module(boundary)
 
 
-def class_file(identity, reference=None, major=52):
+def class_file(identity, reference=None, major=69):
     constants = []
     raw = identity.encode("ascii")
     constants.append(b"\x01" + struct.pack(">H", len(raw)) + raw)
@@ -88,6 +88,7 @@ class BoundaryTests(unittest.TestCase):
     def test_exact_runtime_and_pinned_sqlite_jni_are_permitted(self):
         report = boundary.verify(self.lib)
         self.assertTrue(report["ok"])
+        self.assertEqual(25, report["javaTarget"])
         self.assertEqual(9, len(report["jars"]))
         sqlite = next(item for item in report["jars"] if item["name"] == boundary.SQLITE)
         self.assertEqual(1, sqlite["nativeLibraryCount"])
@@ -153,7 +154,8 @@ class BoundaryTests(unittest.TestCase):
             boundary.verify(self.lib, "protocol")
 
     def test_java_version_and_truncated_class_reject(self):
-        for value in (class_file(self.main, major=53), b"\xca\xfe\xba\xbe"):
+        for value in (class_file(self.main, major=52), class_file(self.main, major=68),
+                      class_file(self.main, major=70), b"\xca\xfe\xba\xbe"):
             changed = dict(self.scheduler_entries)
             changed[self.main + ".class"] = value
             jar(self.lib / "aurora-native-scheduler.jar", changed)

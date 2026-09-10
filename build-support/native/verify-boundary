@@ -157,7 +157,7 @@ def inspect_jar(path, own_kind=None):
                     if own_kind:
                         allowed = NATIVE_CLASS if own_kind == "scheduler" else PROTOCOL_CLASS
                         require(allowed.fullmatch(identity) is not None, "unexpected own runtime class: " + identity)
-                        require(major <= 52, "own runtime class requires newer than Java 8")
+                        require(major == 69, "own runtime class must target exactly Java 25 (major 69)")
                         # A native class may not reach other legacy Aurora packages
                         # through descriptors, literals, or CONSTANT_Class entries.
                         for ref in refs:
@@ -209,7 +209,7 @@ def verify(lib_dir, profile="scheduler"):
         own["aurora-native-scheduler.jar"] = "scheduler"
     require(names == set(expected) | set(own), "missing or unexpected runtime JAR: "
             + ",".join(sorted(names ^ (set(expected) | set(own)))))
-    report = {"ok": True, "profile": profile, "javaTarget": 8, "jars": []}
+    report = {"ok": True, "profile": profile, "javaTarget": 25, "jars": []}
     for path in sorted(files):
         digest = hashlib.sha256(path.read_bytes()).hexdigest()
         if path.name in expected:

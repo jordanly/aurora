@@ -97,7 +97,8 @@ def save(path, value):
 
 def source_hashes():
     paths = ("agent", "protocol/java/src", "protocol/native-v1alpha1",
-             "src/main/java/org/apache/aurora/scheduler/storage/sql", "scheduler/native/src",
+             "src/main/java/org/apache/aurora/scheduler/storage/sql",
+             "src/test/java/org/apache/aurora/scheduler/storage/sql", "scheduler/native/src",
              "build-support/lab/fixtures/native-workload", "build-support/lab/fixtures/cluster-helper")
     hashes = {p: native.tree_sha(ROOT / p) for p in paths}
     for name in ("build-support/lab/clusterctl", "build-support/lab/cluster-check", "build-support/lab/native-smoke",
@@ -235,7 +236,8 @@ class Lab:
         return "aurora-" + self.data["run"] + "-" + role
 
     def prepare(self, bundle=None):
-        bundled = load_bundle(bundle) if bundle is not None else None
+        require(bundle is not None, "New labs require --bundle ABS_DIRECTORY; build one with build-support/native/native-build")
+        bundled = load_bundle(bundle)
         require(os.getuid() > 0 and os.getgid() > 0, "Run as the ordinary Docker-authorized user")
         require(not self.root.exists(), "Run root must be new; existing state preserved")
         self.root.mkdir(mode=0o700, parents=True)
@@ -249,44 +251,14 @@ class Lab:
         for role in ("scheduler", *NODES, "proxy-a", "proxy-b"):
             for name in ("control", "state", "work", "evidence", "tls"):
                 (self.root / role / name).mkdir(mode=0o700, parents=True)
-        if bundled is not None:
-            metadata, manifest_hash = bundled
-            self.data["bundle"] = {"directory": str(bundle), "manifestSha256": manifest_hash,
-                                   "images": metadata["images"], "hostTools": metadata["hostTools"]}
-            self.data["sources"] = metadata["sourceHashes"]
-            self.data["artifacts"] = metadata["artifacts"]
-            self.data["jreSha256"] = metadata["hostTools"]["jreSha256"]
-            self.persist()
-        else:
-            base = json.loads(docker("image", "inspect", BASE).stdout)[0]
-            require(base["Architecture"] == "arm64" and base["Os"] == "linux", "Base image must be Linux ARM64")
-            self.data["imageId"] = base["Id"]
-            self.persist()
-            before = source_hashes()
-            go = ROOT / ".pi-tools/go1.27.1/go/bin/go"
-            goenv = dict(os.environ, CGO_ENABLED="0", GOOS="linux", GOARCH="arm64", GOTOOLCHAIN="local",
-                         GOPROXY="off", GOMAXPROCS="2", GOCACHE=str(ROOT / ".pi-tools/go-cache"),
-                         GOMODCACHE=str(ROOT / ".pi-tools/go-mod"))
-            for name, source, target in (("aurora-agent", "agent", "./cmd/aurora-agent"),
-                                         ("native-workload", "build-support/lab/fixtures/native-workload", "."),
-                                         ("cluster-helper", "build-support/lab/fixtures/cluster-helper", ".")):
-                command([go, "build", "-p", "2", "-trimpath", "-o", self.root / "artifacts/bin" / name,
-                         target], timeout=180, env=goenv, cwd=ROOT / source)
-            build = command([ROOT / "build-support/java/gradle-local", "-p", "scheduler/native",
-                             "--offline", "test", "installDist"], timeout=300, cwd=ROOT)
-            (self.root / "evidence/java-build.log").write_text(native.redact(build.stdout + build.stderr))
-            dist = ROOT / ".pi-tools/native-scheduler-dist/install/aurora-native-scheduler"
-            require((dist / "lib").is_dir(), "Native scheduler distribution missing")
-            shutil.copytree(dist / "lib", self.root / "artifacts/lib")
-            require(not any("mesos" in p.name.lower() for p in (self.root / "artifacts/lib").iterdir()),
-                    "Unexpected Mesos dependency in native distribution")
-            shutil.copytree(ROOT / ".pi-tools/jdk8u462-b08", self.root / "artifacts/jre", symlinks=False)
-            require(source_hashes() == before, "Sources changed during build; use a fresh run root")
-            self.data["sources"] = before
-            self.data["artifacts"] = {str(p.relative_to(self.root / "artifacts")): native.sha(p)
-                                      for folder in ("bin", "lib")
-                                      for p in (self.root / "artifacts" / folder).iterdir() if p.is_file()}
-            self.data["jreSha256"] = native.tree_sha(self.root / "artifacts/jre")
+        metadata, manifest_hash = bundled
+        self.data["bundle"] = {"directory": str(bundle), "manifestSha256": manifest_hash,
+                               "images": metadata["images"], "hostTools": metadata["hostTools"],
+                               "java": metadata.get("java", {})}
+        self.data["sources"] = metadata["sourceHashes"]
+        self.data["artifacts"] = metadata["artifacts"]
+        self.data["jreSha256"] = metadata["hostTools"]["jreSha256"]
+        self.persist()
         self.certificates()
         self.configure()
         self.data["status"] = "prepared"
@@ -509,7 +481,9 @@ class Lab:
         return mounts
 
     def scheduler_args(self):
-        return [BIN + "/cluster-helper", "keeper", "--", JAVA, "-Xms32m", "-Xmx192m",
+        flags = (["--enable-native-access=ALL-UNNAMED", "--illegal-native-access=deny"]
+                 if self.data.get("bundle", {}).get("java", {}).get("versionMajor", 0) >= 25 else [])
+        return [BIN + "/cluster-helper", "keeper", "--", JAVA, *flags, "-Xms32m", "-Xmx192m",
                 "-XX:ActiveProcessorCount=2", "-Djava.io.tmpdir=/run/aurora-native", "-cp", "/opt/aurora/lib/*",
                 "org.apache.aurora.nativescheduler.NativeSchedulerMain", "--config", "/config/scheduler.json",
                 "--state", "/state", "--listen", "0.0.0.0:8443", "--tls-keystore", "/tls/keystore.p12",

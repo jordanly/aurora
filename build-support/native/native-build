@@ -18,6 +18,7 @@ import platform
 import re
 import secrets
 import shutil
+import struct
 import subprocess
 import sys
 import time
@@ -233,6 +234,44 @@ def entrypoint_smokes(output, result, reports):
     write(reports / 'entrypoints.json', {'ok': True, 'agent': version, 'scheduler': state})
 
 
+
+def java_artifacts(directory):
+    result = {}
+    for project in ('scheduler', 'protocol'):
+        for folder in ('libs', 'distributions'):
+            for path in sorted((directory / project / folder).glob('*')):
+                if path.is_file():
+                    result[str(path.relative_to(directory))] = sha(path)
+    require(len(result) == 6, 'Expected two Java JARs and four distribution archives')
+    return result
+
+
+def verify_java_build(directory, repeat, reports, expected_major):
+    artifacts = java_artifacts(directory)
+    require(artifacts == java_artifacts(repeat), 'Java artifacts differ between isolated builds')
+    installed = {}
+    compiled = {}
+    for project, distribution in (('scheduler', 'aurora-native-scheduler'),
+                                  ('protocol', 'protocol')):
+        original = directory / project / 'install' / distribution
+        duplicate = repeat / project / 'install' / distribution
+        installed[project] = cluster.native.tree_sha(original)
+        require(installed[project] == cluster.native.tree_sha(duplicate),
+                'Installed Java distribution differs between isolated builds')
+        for source_set in ('main', 'test'):
+            files = list((directory / project / 'classes/java' / source_set).rglob('*.class'))
+            require(files, 'Missing compiled Java source set: ' + project + '/' + source_set)
+            for path in files:
+                with path.open('rb') as stream:
+                    magic, minor, major = struct.unpack('>IHH', stream.read(8))
+                require(magic == 0xcafebabe and minor == 0 and major == expected_major,
+                        'Unexpected Java class release: ' + str(path))
+            compiled[project + '/' + source_set] = len(files)
+    write(reports / 'java-reproducibility.json', {
+        'ok': True, 'bytecodeMajor': expected_major, 'archives': artifacts,
+        'installedTrees': installed, 'compiledClasses': compiled})
+
+
 def build(args):
     require(platform.system() == 'Linux' and platform.machine() in ('aarch64', 'arm64'),
             'This pinned build profile requires a Linux ARM64 host')
@@ -271,14 +310,44 @@ def build(args):
         env['PATH'] = str(tools['java'] / 'bin') + ':' + str(tools['go'] / 'bin') + ':' + env['PATH']
         if args.offline:
             env.update(GOPROXY='off', GOSUMDB='off')
-        gradle = [tools['gradle'] / 'bin/gradle', '--no-daemon', '--max-workers=2']
+        versions = {}
+        for role in ('java', 'runtime'):
+            release = (tools[role] / 'release').read_text()
+            match = re.search(r'^JAVA_VERSION="([^"]+)"$', release, re.MULTILINE)
+            require(match is not None and int(match[1].split('.')[0]) == pins['java']['versionMajor'],
+                    'Java archive release differs from selected toolchain')
+            versions[role] = {'version': match[1], 'releaseSha256': sha(tools[role] / 'release'),
+                              'output': run([tools[role] / 'bin/java', '--version'], env=env)}
+        require(not (tools['runtime'] / 'bin/javac').exists(), 'Runtime archive contains javac')
+        modules_output = run([tools['runtime'] / 'bin/java', '--list-modules'], env=env)
+        modules = {line.split('@')[0] for line in modules_output.splitlines()}
+        require({'java.base', 'java.sql', 'java.naming', 'jdk.httpserver', 'jdk.unsupported'} <= modules,
+                'Required native scheduler runtime modules missing')
+        require(not modules.intersection({'jdk.compiler', 'jdk.javadoc', 'jdk.jlink',
+                                          'jdk.jpackage', 'jdk.jshell', 'jdk.jartool'}),
+                'Development tool modules in runtime archive')
+        versions['runtimeModules'] = sorted(modules)
+        versions['compiler'] = run([tools['java'] / 'bin/javac', '--version'], env=env)
+        run([tools['gradle'] / 'bin/gradle', '--version'], env=env, log=reports / 'gradle-version.log')
+        write(reports / 'java-versions.json', versions)
+        gradle = [tools['gradle'] / 'bin/gradle', '--no-daemon', '--max-workers=2', '--warning-mode=fail',
+                  '-Dorg.gradle.java.installations.auto-detect=false',
+                  '-Dorg.gradle.java.installations.auto-download=false',
+                  '-Dorg.gradle.java.installations.paths=' + str(tools['java']),
+                  '-Dorg.gradle.java.home=' + str(tools['java']),
+                  '-Dorg.gradle.jvmargs=-Xmx256m -XX:MaxMetaspaceSize=192m -XX:ActiveProcessorCount=2 '
+                  '-Dfile.encoding=UTF-8 --enable-native-access=ALL-UNNAMED']
         if args.offline:
             gradle.append('--offline')
         run([*gradle, '-p', ROOT / 'scheduler/native', '-PnativeBuildRoot=' + str(work / 'java'),
-             'test', ':protocol:test', 'installDist'], env=env, log=reports / 'java-build.log')
+             'test', ':protocol:test', 'installDist', 'distTar', 'distZip'],
+            env=env, log=reports / 'java-build.log')
+        run([*gradle, '-p', ROOT / 'scheduler/native', '-PnativeBuildRoot=' + str(work / 'java-repro'),
+             'installDist', 'distTar', 'distZip'], env=env, log=reports / 'java-repro-build.log')
+        verify_java_build(work / 'java', work / 'java-repro', reports, pins['java']['bytecodeMajor'])
         scheduler = context / 'scheduler'
         scheduler.mkdir()
-        shutil.copytree(tools['java'] / 'jre', scheduler / 'jre')
+        shutil.copytree(tools['runtime'], scheduler / 'jre')
         shutil.copytree(work / 'java/scheduler/install/aurora-native-scheduler/lib', scheduler / 'lib')
         (scheduler / 'bin').mkdir()
         shutil.copy2(HERE / 'images/scheduler-entrypoint', scheduler / 'bin/aurora-scheduler')
@@ -329,7 +398,7 @@ def build(args):
                     'artifacts': artifacts, 'hostTools': {'helper': 'context/fixtures/cluster-helper',
                     'keytool': 'context/scheduler/jre/bin/keytool', 'jre': 'context/scheduler/jre',
                     'jreSha256': cluster.native.tree_sha(scheduler / 'jre')},
-                    'baseImage': pins['baseImage'], 'createdAt': time.time(),
+                    'baseImage': pins['baseImage'], 'java': pins['java'], 'createdAt': time.time(),
                     'sourceCommit': run(['git', 'rev-parse', 'HEAD']),
                     'sourceStatus': run(['git', 'status', '--porcelain']),
                     'reports': {str(p.relative_to(output)): sha(p) for p in sorted(reports.rglob('*')) if p.is_file()}}

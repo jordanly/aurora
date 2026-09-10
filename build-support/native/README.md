@@ -1,9 +1,10 @@
-# Native runtime packaging (CUT-01)
+# Native runtime packaging (Java 25)
 
 This is the supported packaging and qualification lane for the native cluster MVP.
-It builds a Java scheduler with SQLite and a Go agent with bbolt. It keeps Java 8
-and Gradle 4.10.2 until the native runtime boundary is qualified; Java/Gradle
-modernization is the following slice.
+It builds a Java scheduler with SQLite and a Go agent with bbolt. The JAVA-01
+profile uses Temurin 25.0.4.1+1, separately pinned JDK/JRE artifacts, and
+Gradle 9.7.1. The [JAVA-01 status](../../docs/reimagining/JAVA01_STATUS.md) records
+qualification evidence; the historical CUT-01 report preserves the Java 8 baseline.
 
 The current pinned profile is **Linux ARM64**, including this Pi's 16 KiB page
 kernel. The host needs Python 3.9+ (the Pi uses 3.13), OpenSSL, Git, Docker with
@@ -39,7 +40,7 @@ its logs and ownership records. Use another output directory for a retry.
 
 ## Artifacts and gates
 
-`toolchains.json` pins the Debian base by digest, Java/Gradle/Go archives by SHA-256,
+`toolchains.json` pins the Debian base by digest, Temurin JDK/JRE and Gradle/Go archives by SHA-256,
 and the Go runtime module graph. `go.sum` supplies module content checksums.
 The Java gate pins all seven external runtime JARs by SHA-256 and permits exactly
 two application JARs. It parses actual class identities and references, rejects
@@ -134,6 +135,19 @@ single scheduler with static enrollment, bounded history and no HA or rolling
 job-update API. This Pi has no memory cgroup enabled; admission accounting is
 not hard kernel memory isolation. See [MVP boundaries](../../docs/reimagining/CLUSTER_MVP.md).
 
-After this baseline passes, modernize Java/Gradle behind the same image/runtime
-and cluster gates, then address multi-host enrollment/container loss, history
-retention and operational observability as separate slices.
+JAVA-01 requires `--release 25`, exact class-file major version 69, two builds
+in distinct output directories, and `--warning-mode=fail`. Own JARs, tar/zip
+archives, and installed trees must be byte-for-byte identical. The runtime
+keeps the Java compiler API/JVM JIT but excludes `javac` and source compiler
+tools. SQLite JNI uses `--enable-native-access=ALL-UNNAMED`,
+`--illegal-native-access=deny`, and executable `/run/aurora-native`.
+
+Fresh labs require `clusterctl up --bundle`; existing no-bundle lab operations
+remain supported unchanged. New native builds do not use the legacy `build-support/java/gradle-local` wrapper.
+The standalone `native-jvm-compat` operation takes `--old-bundle`, `--new-bundle`,
+`--snapshot`, `--config`, `--output`, and a verified modern `--javac` path, and
+checks private copies through Java 8 → 25 → 8. Supply a standalone backup
+directory containing only `scheduler.db` and its original lab config; the
+original database and TLS files are verified unchanged.
+Language/source cleanup and broad dependency upgrades are deferred to JAVA-02/03;
+JMH, Thrift, and legacy-root work are outside this profile.

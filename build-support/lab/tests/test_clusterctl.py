@@ -339,6 +339,21 @@ class ClusterCtlTest(unittest.TestCase):
                 path.unlink()
             self.assertNotIn("scheduler/native/runtime-dependencies.sha256", cluster.source_hashes())
 
+    def test_new_lab_requires_bundle_before_directory_creation(self):
+        root = self.root / "never-created"
+        lab = cluster.Lab(root, fresh=True)
+        with self.assertRaisesRegex(cluster.native.SmokeError, "native-build"):
+            lab.prepare()
+        self.assertFalse(root.exists())
+
+    def test_native_access_flags_only_for_modern_bundle(self):
+        self.assertNotIn("--enable-native-access=ALL-UNNAMED", self.lab.scheduler_args())
+        self.lab.data["bundle"] = {"java": {"versionMajor": 8}}
+        self.assertNotIn("--illegal-native-access=deny", self.lab.scheduler_args())
+        self.lab.data["bundle"]["java"]["versionMajor"] = 25
+        self.assertIn("--enable-native-access=ALL-UNNAMED", self.lab.scheduler_args())
+        self.assertIn("--illegal-native-access=deny", self.lab.scheduler_args())
+
     def test_operation_lock_refreshes_manifest(self):
         stale = cluster.Lab(self.root)
         self.addCleanup(stale.release)

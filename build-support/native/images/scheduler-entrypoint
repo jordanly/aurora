@@ -5,6 +5,7 @@ set -eu
 exec /opt/aurora/jre/bin/java \
   -Xms32m -Xmx192m \
   -XX:ActiveProcessorCount=2 \
+  --enable-native-access=ALL-UNNAMED --illegal-native-access=deny \
   -Djava.io.tmpdir=/run/aurora-native \
   -cp '/opt/aurora/lib/*' \
   org.apache.aurora.nativescheduler.NativeSchedulerMain "$@"

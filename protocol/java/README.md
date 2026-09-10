@@ -1,6 +1,6 @@
 # Java native protocol validation
 
-This Java 8 library applies the authoritative `native-v1alpha1/schema.json`
+This Temurin 25 library applies the authoritative `native-v1alpha1/schema.json`
 and the semantic checks used by the Python reference and Go agent. It is an
 independent Gradle project so the legacy scheduler's forced Jackson versions
 do not change the validator's classpath. Integration into native scheduler
@@ -29,14 +29,16 @@ with a framing newline on success, and a generic error without the input payload
 on failure. Successful output contains the full input: use it only for fixtures
 or other intentionally inspectable documents.
 
-From repository root:
+Use the [verified native build](../../build-support/native/README.md) from repository root.
+The protocol is built and tested with the scheduler, using the same pinned JRE:
 
 ```sh
-build-support/java/gradle-local -p protocol/java test installDist
-export JAVA_HOME="$PWD/.pi-tools/jdk8u462-b08"
+aurora_bundle=/absolute/new/bundle
+build-support/native/native-build --output "$aurora_bundle" --cache /absolute/cache
+export JAVA_HOME="$aurora_bundle/context/scheduler/jre"
 python3 protocol/native-v1alpha1/conformance/check.py \
-  --validator '.pi-tools/protocol-java-dist/install/aurora-native-protocol/bin/aurora-native-protocol' \
-  --validator '.pi-tools/agent-dist/aurora-agent validate --document'
+  --validator "$aurora_bundle/build/java/protocol/install/protocol/bin/protocol" \
+  --validator "$aurora_bundle/context/agent/aurora-agent validate --document"
 ```
 
 Build the Go executable using [the agent instructions](../../agent/README.md)
@@ -55,7 +57,7 @@ Pinned runtime: networknt JSON Schema Validator 2.0.4, Jackson 2.18.4 and SLF4J
 `runtime-dependencies.sha256` before tests or installation. networknt's 2.x line
 supports Java 8 and Jackson 2; YAML/date-time support is omitted because this
 contract uses JSON and no date-time formats. These artifacts were compiled and
-executed with the checkout's ARM64 Java 8 toolchain.
+executed with the verified ARM64 Temurin 25 toolchain.
 [Upstream compatibility and API documentation](https://github.com/networknt/json-schema-validator),
 [published dependency metadata](https://repo.maven.apache.org/maven2/com/networknt/json-schema-validator/2.0.4/json-schema-validator-2.0.4.pom)
 
@@ -64,7 +66,11 @@ executed with the checkout's ARM64 Java 8 toolchain.
 `-PnativeBuildRoot=/absolute/build` sets this project's build directory to
 `/absolute/build/protocol`, including when it is the native scheduler's subproject.
 Without the property, `.pi-tools/protocol-java-dist` remains the default. Relative
-roots reject. The Java 8 / Gradle 4.10.2 baseline and isolated project graph remain.
+roots reject. JAVA-01 uses Gradle 9.7.1, `--release 25`, and exact class-file
+major version 69. The build JDK and separate runtime JRE are pinned Temurin
+25.0.4.1+1; the runtime retains the Java compiler API/JVM JIT while excluding
+`javac` and source compiler tools. The protocol’s six external JAR pins and native
+runtime boundary remain unchanged; the scheduler adds pinned SQLite as the seventh.
 
 `test`, `check`, and `installDist` require `verifyNativeBoundary` in addition to the
 six-external-JAR SHA manifest check. The boundary checker examines actual JAR entries

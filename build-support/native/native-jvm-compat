@@ -1,0 +1,192 @@
+#!/usr/bin/env python3
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+# Unless required by applicable law or agreed to in writing, software distributed
+# under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+# CONDITIONS OF ANY KIND, either express or implied. See the License for the
+# specific language governing permissions and limitations under the License.
+"""Compare Java 8/25 state and old PKCS12 compatibility using private snapshot copies."""
+import argparse
+import hashlib
+import json
+import os
+from pathlib import Path
+import shutil
+import subprocess
+import sys
+
+HELPER = r'''
+package org.apache.aurora.nativescheduler;
+import java.nio.file.*;
+import java.util.*;
+import org.apache.aurora.scheduler.storage.sql.NativeSqlStore;
+public final class JvmCompatibility {
+  public static void main(String[] args) throws Exception {
+    NativeConfig config = new NativeConfig(Files.readAllBytes(Paths.get(args[0])));
+    Map<String,String> tls = new HashMap<>();
+    tls.put("--tls-keystore", args[3] + "/keystore.p12");
+    tls.put("--tls-truststore", args[3] + "/truststore.p12");
+    tls.put("--tls-password-file", args[3] + "/password");
+    NativeSchedulerMain.tls(tls);
+    try (NativeSqlStore store = new NativeSqlStore(Paths.get(args[1]), config.cluster, config.incarnation)) {
+      NativeEngine engine = new NativeEngine(store, config, null, !"advance".equals(args[2]));
+      if (args.length == 5) { store.snapshot(Paths.get(args[4])); }
+      System.out.println(engine.state());
+    }
+  }
+}
+'''
+
+
+def require(ok, message):
+    if not ok:
+        raise ValueError(message)
+
+
+def safe(path):
+    require(path.is_absolute() and '..' not in path.parts, 'Absolute nontraversing path required')
+    for parent in (path, *path.parents):
+        require(not parent.is_symlink(), 'Symlink input/output refused')
+    return path
+
+
+def sha(path):
+    with path.open('rb') as stream:
+        digest = hashlib.sha256()
+        for block in iter(lambda: stream.read(1048576), b''):
+            digest.update(block)
+        return digest.hexdigest()
+
+
+def bundle(directory):
+    safe(directory)
+    manifest = safe(directory / 'bundle.json')
+    data = json.loads(manifest.read_text())
+    require(data['schema'] == 1 and data['architecture'] == 'arm64', 'Unsupported bundle')
+    hashes = {str(manifest): sha(manifest)}
+    for relative, expected in {**data['artifacts'], **data.get('reports', {})}.items():
+        require(not Path(relative).is_absolute() and '..' not in Path(relative).parts, 'Bundle path escapes')
+        path = safe(directory / relative)
+        require(path.is_file() and sha(path) == expected, 'Bundle checksum mismatch: ' + relative)
+        hashes[str(path)] = expected
+    relative_jre = Path(data['hostTools']['jre'])
+    require(not relative_jre.is_absolute() and '..' not in relative_jre.parts, 'Bundle JRE path escapes')
+    java = safe(directory / relative_jre / 'bin/java')
+    require(java.is_file(), 'Bundle Java missing')
+    # Verify every JRE file, including files not individually listed as artifacts.
+    jre = java.parent.parent
+    digest = hashlib.sha256()
+    for path in sorted(jre.rglob('*')):
+        safe(path)
+        if path.is_file():
+            value = sha(path)
+            hashes[str(path)] = value
+            digest.update(str(path.relative_to(jre)).encode() + b'\0' + bytes.fromhex(value))
+    require(digest.hexdigest() == data['hostTools']['jreSha256'], 'Bundle JRE checksum mismatch')
+    libs = directory / 'context/scheduler/lib'
+    require(libs.is_dir(), 'Bundle scheduler libraries missing')
+    return java, libs, hashes
+
+
+def run(command, output, name):
+    environment = {'PATH': '/usr/bin:/bin', 'LANG': 'C.UTF-8', 'LC_ALL': 'C.UTF-8'}
+    result = subprocess.run([str(x) for x in command], capture_output=True, timeout=60, env=environment)
+    require(len(result.stdout) <= 1048576 and len(result.stderr) <= 1048576, 'Compatibility output exceeds limit')
+    (output / (name + '.stderr')).write_bytes(result.stderr)
+    require(result.returncode == 0, name + ' failed; see its stderr file')
+    (output / (name + '.stdout')).write_bytes(result.stdout)
+    return result.stdout
+
+
+def check(args):
+    for path in (args.old_bundle, args.new_bundle, args.snapshot, args.config, args.output, args.javac):
+        safe(path)
+    require(not args.output.exists(), 'Compatibility output must be a new directory')
+    require(all(not args.output.is_relative_to(path) for path in
+                (args.old_bundle, args.new_bundle, args.snapshot, args.config.parent.parent)),
+            'Output must be separate from original bundles and lab state')
+    require(set(p.name for p in args.snapshot.iterdir()) == {'scheduler.db'},
+            'Use an immutable standalone SQLite backup containing only scheduler.db')
+    database = safe(args.snapshot / 'scheduler.db')
+    require(database.is_file(), 'Snapshot database must be a regular file')
+    old_java, old_libs, old_hashes = bundle(args.old_bundle)
+    new_java, new_libs, new_hashes = bundle(args.new_bundle)
+    tls = safe(args.config.parent.parent / 'scheduler/tls')
+    require(tls.is_dir(), 'Config must belong to a lab with scheduler/tls')
+    immutable = {**old_hashes, **new_hashes, str(args.snapshot / 'scheduler.db'): sha(args.snapshot / 'scheduler.db'),
+                 str(args.config): sha(args.config), str(args.javac): sha(args.javac)}
+    for name in ('keystore.p12', 'truststore.p12', 'password'):
+        path = safe(tls / name)
+        immutable[str(path)] = sha(path)
+    args.output.mkdir(mode=0o700, parents=True)
+    result = {'ok': False, 'oldBundle': str(args.old_bundle), 'newBundle': str(args.new_bundle),
+              'snapshot': str(args.snapshot), 'inputHashes': immutable}
+    try:
+        classes = args.output / 'classes'
+        classes.mkdir()
+        source = args.output / 'JvmCompatibility.java'
+        source.write_text(HELPER)
+        run([args.javac, '--release', '8', '-cp', str(new_libs / '*'), '-d', classes, source], args.output, 'compile')
+        run([old_java, '-version'], args.output, 'old-version')
+        run([new_java, '-version'], args.output, 'new-version')
+        require('version "1.8.' in (args.output / 'old-version.stderr').read_text(), 'Old bundle is not Java 8')
+        require('version "25.' in (args.output / 'new-version.stderr').read_text(), 'New bundle is not Java 25')
+        state = args.output / 'state'
+        shutil.copytree(args.snapshot, state)
+        state.chmod(0o700)
+        backup = args.output / 'java25-backup'
+        def invoke(name, modern, directory, advance=False, snapshot=None):
+            temp = args.output / (name + '-tmp')
+            temp.mkdir(mode=0o700)
+            java, libs = (new_java, new_libs) if modern else (old_java, old_libs)
+            flags = ['--enable-native-access=ALL-UNNAMED', '--illegal-native-access=deny'] if modern else []
+            command = [java, *flags, '-Xmx192m', '-XX:ActiveProcessorCount=2', '-Djava.io.tmpdir=' + str(temp),
+                       '-cp', str(classes) + os.pathsep + str(libs / '*'),
+                       'org.apache.aurora.nativescheduler.JvmCompatibility', args.config, directory,
+                       'advance' if advance else 'inspect', tls]
+            if snapshot is not None:
+                command.append(snapshot)
+            return json.loads(run(command, args.output, name))
+        old = invoke('old-inspect', False, state)
+        modern = invoke('new-inspect', True, state)
+        require(old == modern, 'Java 25 inspection changed complete durable state')
+        advanced = invoke('new-advance-backup', True, state, True, backup)
+        expected = dict(old, epoch=str(int(old['epoch']) + 1))
+        require(advanced == expected, 'Epoch advancement changed other durable state')
+        require(invoke('old-reopen', False, state) == advanced, 'Java 8 cannot reopen Java 25 state')
+        require(invoke('new-backup-reopen', True, backup) == advanced, 'Java 25 snapshot differs')
+        require(invoke('old-backup-reopen', False, backup) == advanced, 'Java 8 cannot reopen Java 25 snapshot')
+        result.update(ok=True, oldState=old, advancedState=advanced, oldPkcs12LoadedOnBoth=True,
+                      nativeAccessPolicy='enable ALL-UNNAMED; deny other native access',
+                      scriptSha256=sha(Path(__file__).resolve()))
+    except BaseException as error:
+        result['ok'] = False
+        result['error'] = str(error)
+        raise
+    finally:
+        unchanged = all(Path(path).is_file() and sha(Path(path)) == digest for path, digest in immutable.items())
+        result['originalInputsUnchanged'] = unchanged
+        if not unchanged:
+            result['ok'] = False
+        (args.output / 'result.json').write_text(json.dumps(result, indent=2, sort_keys=True) + '\n')
+        require(unchanged, 'Original inputs changed during compatibility verification')
+    return result
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    for name in ('old-bundle', 'new-bundle', 'snapshot', 'config', 'output', 'javac'):
+        parser.add_argument('--' + name, type=Path, required=True)
+    args = parser.parse_args()
+    try:
+        result = check(args)
+        print(json.dumps({'ok': result['ok'], 'result': str(args.output / 'result.json')}))
+        return 0 if result['ok'] else 1
+    except (OSError, ValueError, KeyError, subprocess.SubprocessError) as error:
+        print(json.dumps({'ok': False, 'error': str(error)}), file=sys.stderr)
+        return 1
+
+
+if __name__ == '__main__':
+    sys.exit(main())

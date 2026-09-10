@@ -106,13 +106,13 @@ for executed results, remaining recovery limits and the next integration work.
 
 ## Integrated native cluster
 
-`clusterctl` builds and runs one native Java scheduler, two Go process agents and
+`clusterctl` runs a verified native image bundle with one Java scheduler, two Go process agents and
 transparent TLS fault proxies on separate internal Docker bridges. `cluster-check`
 executes physical workload, restart, partition, cancellation and isolated restore
 scenarios. These are the integrated successors to the focused smoke lanes above.
 
 ```sh
-sg docker -c 'build-support/lab/clusterctl --run-root "$PWD/.pi-lab/cluster-new" up'
+sg docker -c 'build-support/lab/clusterctl --run-root "$PWD/.pi-lab/cluster-new" up --bundle "$PWD/.cache/aurora-native/bundle"'
 sg docker -c 'build-support/lab/cluster-check --run-root "$PWD/.pi-lab/cluster-new" --repeats 3 --mixed-seconds 600'
 sg docker -c 'build-support/lab/clusterctl --run-root "$PWD/.pi-lab/cluster-new" demo'
 build-support/lab/clusterctl --run-root "$PWD/.pi-lab/cluster-new" status
@@ -136,8 +136,9 @@ the isolated restore bind only configuration, certificates, state, work, control
 and evidence; executable files, JREs, and libraries come from the images.
 Certificate creation uses the bundle's verified host helper and keytool plus host
 OpenSSL. The bundle must remain available and unchanged through acceptance;
-evidence records its manifest hash and exact image IDs. Existing `up` without
-`--bundle` retains the local build lane. Use a fresh run root for either lane.
+evidence records its manifest hash and exact image IDs. New labs require `up --bundle`; omission fails before creating a run root.
+Existing Java 8 labs retain status, fault and cleanup support. Java 25 bundles
+enable classpath JNI explicitly and deny other native access. Use a fresh run root.
 
 
 The operator client verifies mutual TLS at the scheduler's private bridge address.

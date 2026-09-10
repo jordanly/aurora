@@ -9,18 +9,51 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-apply plugin: 'java'
-apply plugin: 'application'
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
-if (project.hasProperty('nativeBuildRoot')) {
-  def outputRoot = new File(project.property('nativeBuildRoot').toString())
+plugins {
+  id 'java'
+  id 'application'
+}
+
+// Toolchain provisioning is disabled by the portable builder. Only its verified
+// Temurin installation is eligible through the fixed Gradle installation path.
+java {
+  toolchain {
+    languageVersion = JavaLanguageVersion.of(25)
+    vendor = JvmVendorSpec.ADOPTIUM
+  }
+}
+def nativeCompiler = javaToolchains.compilerFor(java.toolchain)
+def nativeLauncher = javaToolchains.launcherFor(java.toolchain)
+tasks.withType(JavaCompile).configureEach {
+  javaCompiler = nativeCompiler
+  options.release = 25
+  options.encoding = 'UTF-8'
+}
+tasks.withType(Test).configureEach {
+  javaLauncher = nativeLauncher
+  useJUnit()
+  maxParallelForks = 1
+  maxHeapSize = '192m'
+  jvmArgs '-XX:ActiveProcessorCount=2'
+  jvmArgs '--enable-native-access=ALL-UNNAMED', '--illegal-native-access=deny'
+}
+tasks.withType(JavaExec).configureEach {
+  javaLauncher = nativeLauncher
+  jvmArgs '--enable-native-access=ALL-UNNAMED', '--illegal-native-access=deny'
+}
+tasks.withType(AbstractArchiveTask).configureEach {
+  preserveFileTimestamps = false
+  reproducibleFileOrder = true
+}
+
+if (providers.gradleProperty('nativeBuildRoot').isPresent()) {
+  def outputRoot = new File(providers.gradleProperty('nativeBuildRoot').get())
   if (!outputRoot.isAbsolute()) {
     throw new GradleException('nativeBuildRoot must be absolute')
   }
-  buildDir = new File(outputRoot, 'scheduler')
+  layout.buildDirectory = new File(outputRoot, 'scheduler')
 } else {
-  buildDir = file('../../.pi-tools/native-scheduler-dist')
+  layout.buildDirectory = file('../../.pi-tools/native-scheduler-dist')
 }
 repositories { mavenCentral() }
 dependencies {
@@ -34,58 +67,70 @@ sourceSets.main.java {
   include 'org/apache/aurora/nativescheduler/**'
   include 'org/apache/aurora/scheduler/storage/sql/**'
 }
-mainClassName = 'org.apache.aurora.nativescheduler.NativeSchedulerMain'
-test {
-  maxParallelForks = 1
-  systemProperty 'aurora.fixtures', file('../../protocol/native-v1alpha1/fixtures').absolutePath
-}
-installDist.dependsOn ':protocol:verifyRuntimeArtifacts'
-
 sourceSets.test.java {
   srcDir '../../src/test/java'
   include 'org/apache/aurora/nativescheduler/**'
   include 'org/apache/aurora/scheduler/storage/sql/**'
 }
-task verifyJdbcArtifact {
-  inputs.files configurations.runtimeClasspath
+application {
+  mainClass = 'org.apache.aurora.nativescheduler.NativeSchedulerMain'
+  applicationDefaultJvmArgs = ['--enable-native-access=ALL-UNNAMED', '--illegal-native-access=deny']
+}
+tasks.named('test', Test) {
+  systemProperty 'aurora.fixtures', file('../../protocol/native-v1alpha1/fixtures').absolutePath
+}
+def jdbcRuntime = configurations.runtimeClasspath
+def verifyJdbcArtifact = tasks.register('verifyJdbcArtifact') {
+  inputs.files jdbcRuntime
   doLast {
-    def jdbc = configurations.runtimeClasspath.find { it.name == 'sqlite-jdbc-3.53.4.0.jar' }
+    def jdbc = jdbcRuntime.find { it.name == 'sqlite-jdbc-3.53.4.0.jar' }
     if (jdbc == null || java.security.MessageDigest.getInstance('SHA-256').digest(jdbc.bytes).encodeHex().toString()
         != 'bcb1f51e36f940867e83342f9efbf5968ac44a6bef4d397bb4af7b17b45cd2fb') {
       throw new GradleException('SQLite JDBC artifact checksum mismatch')
     }
   }
 }
-test.dependsOn verifyJdbcArtifact, ':protocol:verifyRuntimeArtifacts'
-installDist.dependsOn verifyJdbcArtifact
+tasks.named('test') { dependsOn verifyJdbcArtifact, ':protocol:verifyRuntimeArtifacts' }
+tasks.named('installDist') { dependsOn verifyJdbcArtifact, ':protocol:verifyRuntimeArtifacts' }
+// Qualification-only CLI remains in compiled test runtime, never in production.
+tasks.named('jar', Jar) { exclude 'org/apache/aurora/scheduler/storage/sql/NativeStoreTool*' }
 
-// Qualification-only CLI remains in test classes, never in the production runtime.
-jar { exclude 'org/apache/aurora/scheduler/storage/sql/NativeStoreTool*' }
+// Gate built runtime JARs before tests, then independently gate the actual
+// installed lib directory. Exec tasks avoid removed project.exec APIs.
+def boundaryTool = layout.projectDirectory.file('../../build-support/native/verify-boundary')
+def nativeJar = tasks.named('jar', Jar)
+def boundaryLib = layout.buildDirectory.dir('boundary/lib')
+def runtimeReport = layout.buildDirectory.file('reports/native-runtime.json')
+def installedReport = layout.buildDirectory.file('reports/installed-native-runtime.json')
+def runtimeJars = configurations.runtimeClasspath
 
-// Verify built JAR contents before tests, and verify the actual copied lib directory
-// at the end of installDist. Neither gate invokes the legacy root project.
-def boundaryTool = file('../../build-support/native/verify-boundary')
-task stageBoundaryRuntime(type: Sync, dependsOn: jar) {
-  from configurations.runtimeClasspath
-  from jar.archivePath
-  into "$buildDir/boundary/lib"
+def stageBoundaryRuntime = tasks.register('stageBoundaryRuntime', Sync) {
+  from runtimeJars
+  from nativeJar.flatMap { it.archiveFile }
+  into boundaryLib
 }
-task verifyNativeBoundary(type: Exec, dependsOn: stageBoundaryRuntime) {
+def verifyNativeBoundary = tasks.register('verifyNativeBoundary', Exec) {
+  dependsOn stageBoundaryRuntime
   inputs.file boundaryTool
-  inputs.files configurations.runtimeClasspath, jar.archivePath
-  commandLine 'python3', boundaryTool.absolutePath,
-      '--lib-dir', file("$buildDir/boundary/lib").absolutePath,
-      '--report', file("$buildDir/reports/native-runtime.json").absolutePath,
+  inputs.files runtimeJars, nativeJar.flatMap { it.archiveFile }
+  commandLine 'python3', boundaryTool.asFile.absolutePath,
+      '--lib-dir', boundaryLib.get().asFile.absolutePath,
+      '--report', runtimeReport.get().asFile.absolutePath,
       '--profile', 'scheduler'
 }
-check.dependsOn verifyNativeBoundary
-test.dependsOn verifyNativeBoundary
-installDist.dependsOn verifyNativeBoundary
-installDist.doLast {
-  exec {
-    commandLine 'python3', boundaryTool.absolutePath,
-        '--lib-dir', new File(installDist.destinationDir, 'lib').absolutePath,
-        '--report', file("$buildDir/reports/installed-native-runtime.json").absolutePath,
-        '--profile', 'scheduler'
-  }
+def install = tasks.named('installDist', Sync)
+def verifyInstalledNativeBoundary = tasks.register('verifyInstalledNativeBoundary', Exec) {
+  dependsOn install
+  onlyIf { install.get().state.failure == null }
+  inputs.file boundaryTool
+  commandLine 'python3', boundaryTool.asFile.absolutePath,
+      '--lib-dir', install.map { new File(it.destinationDir, 'lib') }.get().absolutePath,
+      '--report', installedReport.get().asFile.absolutePath,
+      '--profile', 'scheduler'
+}
+tasks.named('check') { dependsOn verifyNativeBoundary }
+tasks.named('test') { dependsOn verifyNativeBoundary }
+install.configure {
+  dependsOn verifyNativeBoundary
+  finalizedBy verifyInstalledNativeBoundary
 }

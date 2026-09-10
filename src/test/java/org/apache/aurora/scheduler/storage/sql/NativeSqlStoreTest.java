@@ -320,7 +320,8 @@ public class NativeSqlStoreTest {
     String classpath = System.getProperty("java.class.path");
     for (String mode : new String[] {"crash-before", "crash-after"}) {
       Path dir = temporary.newFolder().toPath();
-      Process child = new ProcessBuilder(java, "-cp", classpath,
+      Process child = new ProcessBuilder(java, "--enable-native-access=ALL-UNNAMED",
+          "--illegal-native-access=deny", "-cp", classpath,
           NativeStoreTool.class.getName(), mode, dir.toString()).inheritIO().start();
       assertTrue(child.waitFor(20, TimeUnit.SECONDS));
       assertEquals("crash-before".equals(mode) ? 71 : 72, child.exitValue());

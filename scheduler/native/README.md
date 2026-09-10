@@ -1,16 +1,19 @@
 <!-- Licensed under the Apache License, Version 2.0. See LICENSE. -->
 # Native Java scheduler
 
-This isolated Java 8 daemon uses the native protocol validator and SQLite core.
-It does not load Mesos or legacy scheduler stores. Build with cached dependencies:
+This isolated Temurin 25 daemon uses the native protocol validator and SQLite core.
+Use the [native build and qualification guide](../../build-support/native/README.md)
+to build it with verified Temurin 25.0.4.1+1 JDK/JRE archives and Gradle 9.7.1:
 
 ```sh
-build-support/java/gradle-local -p scheduler/native test installDist --offline
+build-support/native/native-build --output /absolute/new/bundle --cache /absolute/cache
 ```
 
-Distribution: `.pi-tools/native-scheduler-dist/install/aurora-native-scheduler`.
-The wrapper selects the repository Java 8 installation and two Gradle workers.
-The build verifies the protocol runtime dependency manifest and SQLite JDBC hash.
+The Java distribution is `BUNDLE/build/java/scheduler/install/aurora-native-scheduler`.
+The container runtime uses the separately pinned JRE at `BUNDLE/context/scheduler/jre`.
+All own classes target Java 25 (major 69). The build verifies the protocol runtime
+dependency manifest and SQLite JDBC hash. Its launcher grants SQLite classpath
+JNI access with `--enable-native-access=ALL-UNNAMED` and denies other native access.
 
 ```sh
 aurora-native-scheduler --config /lab/config.json --state /lab/state \
@@ -104,8 +107,8 @@ gradle -p scheduler/native -PnativeBuildRoot=/absolute/build test installDist
 The distribution is `/absolute/build/scheduler/install/aurora-native-scheduler`;
 protocol build output is `/absolute/build/protocol`. Relative roots reject. Without
 this property, the existing `.pi-tools/native-scheduler-dist` and
-`.pi-tools/protocol-java-dist` defaults remain. Java 8 and Gradle 4.10.2 remain the
-build baseline. This project includes only `protocol/java`; it does not configure
+`.pi-tools/protocol-java-dist` defaults remain. JAVA-01 uses Gradle 9.7.1 and
+Temurin 25.0.4.1+1. This project includes only `protocol/java`; it does not configure
 or invoke the legacy root build, Thrift generators, frontend, or Mesos tasks.
 
 `test`, `check`, and `installDist` require the native runtime boundary gate.
@@ -121,7 +124,7 @@ platform JNI libraries are explicitly permitted.
 Own JARs admit only the enumerated native scheduler, SQL core and native protocol
 classes, plus the protocol schema and JAR manifests. Qualification-only
 `NativeStoreTool` is compiled for existing SQL tests but excluded from production.
-Own classes must target Java 8. This is an artifact/content boundary check; it does
+Own classes must target Java 25 (class-file major 69). This is an artifact/content boundary check; it does
 not replace behavioral tests or prove safety of arbitrary dynamically supplied code.
 
 JSON dependency reports are generated at:

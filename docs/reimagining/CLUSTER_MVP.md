@@ -25,8 +25,9 @@ run inside the agent container through a verified Docker creation identity.
 For a fresh checkout, use the [CUT-01 image build and qualification lane](../../build-support/native/README.md),
 which [passed its complete Pi gate](CUT01_STATUS.md).
 It packages its own JRE, scheduler libraries and Go executables; the lab needs no
-executable bind mounts. The commands below describe the original checkout-tool
-lane, which remains supported for the already-running MVP.
+executable bind mounts. New labs require a bundle. The operational commands below
+remain supported for the already-running original MVP; use a new run root and
+`up --bundle /absolute/bundle` to start a separate current cluster.
 
 Use the checkout toolchains and the previously qualified digest-pinned Debian
 ARM64 base image. The runner rebuilds binaries from current source offline,
@@ -37,7 +38,6 @@ No Docker socket is mounted into a container.
 From this checkout on the Pi:
 
 ```sh
-sg docker -c 'build-support/lab/clusterctl --run-root "$PWD/.pi-lab/cluster-mvp" up'
 sg docker -c 'build-support/lab/clusterctl --run-root "$PWD/.pi-lab/cluster-mvp" demo'
 build-support/lab/clusterctl --run-root "$PWD/.pi-lab/cluster-mvp" status
 build-support/lab/clusterctl --run-root "$PWD/.pi-lab/cluster-mvp" stop --job mvp-service
