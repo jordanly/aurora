@@ -74,3 +74,31 @@ collisions, unknown resource preservation, identity reuse, replay corruption,
 symlink/control paths, UID rejection and redaction. Compose parser checks use
 the installed client/plugin and need no daemon. Actual Docker/native execution
 is a separate qualification gate; unit mocks do not establish it.
+
+## Real process runtime lanes
+
+`process-smoke` now drives a local Go agent through its operator-owned JSONL
+control interface. Nine physical cases qualify batch outcomes/replay, service
+readiness, graceful/forced stop, log bounds, exact port conflicts and daemon
+crash recovery. `process-container-smoke` independently qualifies four cases in
+one ARM64 agent container using the existing pinned Debian base. Its service
+checks record received TERM and rebind the exact socket after cleanup; no host
+PID is inferred from container PID values. Neither lane is a scheduler cluster.
+
+```sh
+build-support/lab/process-smoke --run-root "$PWD/.pi-lab/process-new"
+sg docker -c 'build-support/lab/process-container-smoke --run-root "$PWD/.pi-lab/container-process-new"'
+```
+
+Both require a new absolute private root and rebuild current source with cached
+Go modules. Acquire the pinned base above before the container lane. It uses
+Docker's creation-ID file, validates ownership/isolation/mounts before removing
+its container, and preserves unknown resources. The container has a read-only
+view of artifacts/configuration/evidence and writes only its explicit state,
+work and fixture-evidence mounts. It cannot write the host's result file.
+Failures, partial case evidence and cleanup outcomes are retained in `result.json`.
+Run roots, binaries, journals and logs are never automatically deleted.
+
+The process lanes add 24 failure/ownership tests to the preceding 21 lab tests.
+See [the runtime gate ledger](../../docs/reimagining/PROCESS_RUNTIME_STATUS.md)
+for executed results, remaining recovery limits and the next integration work.

@@ -4,7 +4,7 @@ Updated 2026-09-10; companion to the [unified roadmap](UNIFIED_AURORA_ROADMAP.md
 
 The [Compose blueprint](lab/compose.blueprint.yaml) is a syntax-checkable design. Its Aurora images, configuration schemas, probe tools and lifetime keeper are proposed implementation contracts. They do not exist in the application yet. Parsing the file is not a successful image build or cluster launch.
 
-The implementation provides [labctl](../../build-support/lab/README.md) preflight, private run initialization, rendering and inspection. Its blueprint configurations remain explicitly unconfigured; full-cluster launch and destruction are unavailable. A separate `native-smoke` lane now executes one Java durable-store check and two Go admission checks in actual ARM64 containers, verifies retained state after recreation, and tears down its owned resources. See the [durable core status](DURABLE_CORE_STATUS.md) for current results and remaining cluster integration work.
+The implementation provides [labctl](../../build-support/lab/README.md) preflight, private run initialization, rendering and inspection. Its blueprint configurations remain explicitly unconfigured; full-cluster launch and destruction are unavailable. A separate `native-smoke` lane now executes one Java durable-store check and two Go admission checks in actual ARM64 containers, verifies retained state after recreation, and tears down its owned resources. The newer `process-smoke` and `process-container-smoke` lanes exercise real batch/service execution and cleanup. See the [process runtime status](PROCESS_RUNTIME_STATUS.md) for current results and remaining cluster integration work.
 
 **Fresh host evidence**
 

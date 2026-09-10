@@ -1,5 +1,9 @@
 # Slice 1 continuation: durable core and native containers
 
+This file records the durable-core increment. The subsequent
+[process runtime status](PROCESS_RUNTIME_STATUS.md) adds real Go workload execution
+and supersedes the remaining runtime work below.
+
 Implemented on `codex/standalone-foundations`, based on upstream
 `11ebaeeb071cb182c388a40755e84f60dda32260`. Both remote master refs were refreshed
 again on 2026-09-10; there were no new upstream commits. This extends the
