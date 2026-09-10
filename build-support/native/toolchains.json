@@ -1,0 +1,31 @@
+{
+  "schema": 1,
+  "platform": "linux/arm64",
+  "baseImage": "debian:bookworm-slim@sha256:6bd27d44e6c32a66bbd72d7cb2b76a8ae3497ec2e5274a81abd1b37f6013fa1f",
+  "tools": {
+    "java": {
+      "file": "OpenJDK8U-jdk_aarch64_linux_hotspot_8u462b08.tar.gz",
+      "url": "https://github.com/adoptium/temurin8-binaries/releases/download/jdk8u462-b08/OpenJDK8U-jdk_aarch64_linux_hotspot_8u462b08.tar.gz",
+      "sha256": "19552c1cf7f5c18290a6bdcd6757f70ea5c331a2bc0dd7a3b3120e8dbc4b4891",
+      "directory": "jdk8u462-b08"
+    },
+    "gradle": {
+      "file": "gradle-4.10.2-bin.zip",
+      "url": "https://services.gradle.org/distributions/gradle-4.10.2-bin.zip",
+      "sha256": "b49c6da1b2cb67a0caf6c7480630b51c70a11ca2016ff2f555eaeda863143a29",
+      "directory": "gradle-4.10.2"
+    },
+    "go": {
+      "file": "go1.27.1.linux-arm64.tar.gz",
+      "url": "https://go.dev/dl/go1.27.1.linux-arm64.tar.gz",
+      "sha256": "3450b45a3f9ee8568792736a5c5e70a1f2e9b36c35a8f74958c03e51d7d92bec",
+      "directory": "go"
+    }
+  },
+  "agentRuntimeModules": {
+    "github.com/santhosh-tekuri/jsonschema/v6": "v6.0.3",
+    "go.etcd.io/bbolt": "v1.5.0",
+    "golang.org/x/sys": "v0.45.0",
+    "golang.org/x/text": "v0.14.0"
+  }
+}

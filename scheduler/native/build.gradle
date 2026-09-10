@@ -13,7 +13,15 @@ apply plugin: 'java'
 apply plugin: 'application'
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
-buildDir = file('../../.pi-tools/native-scheduler-dist')
+if (project.hasProperty('nativeBuildRoot')) {
+  def outputRoot = new File(project.property('nativeBuildRoot').toString())
+  if (!outputRoot.isAbsolute()) {
+    throw new GradleException('nativeBuildRoot must be absolute')
+  }
+  buildDir = new File(outputRoot, 'scheduler')
+} else {
+  buildDir = file('../../.pi-tools/native-scheduler-dist')
+}
 repositories { mavenCentral() }
 dependencies {
   implementation project(':protocol')
@@ -50,3 +58,34 @@ task verifyJdbcArtifact {
 }
 test.dependsOn verifyJdbcArtifact, ':protocol:verifyRuntimeArtifacts'
 installDist.dependsOn verifyJdbcArtifact
+
+// Qualification-only CLI remains in test classes, never in the production runtime.
+jar { exclude 'org/apache/aurora/scheduler/storage/sql/NativeStoreTool*' }
+
+// Verify built JAR contents before tests, and verify the actual copied lib directory
+// at the end of installDist. Neither gate invokes the legacy root project.
+def boundaryTool = file('../../build-support/native/verify-boundary')
+task stageBoundaryRuntime(type: Sync, dependsOn: jar) {
+  from configurations.runtimeClasspath
+  from jar.archivePath
+  into "$buildDir/boundary/lib"
+}
+task verifyNativeBoundary(type: Exec, dependsOn: stageBoundaryRuntime) {
+  inputs.file boundaryTool
+  inputs.files configurations.runtimeClasspath, jar.archivePath
+  commandLine 'python3', boundaryTool.absolutePath,
+      '--lib-dir', file("$buildDir/boundary/lib").absolutePath,
+      '--report', file("$buildDir/reports/native-runtime.json").absolutePath,
+      '--profile', 'scheduler'
+}
+check.dependsOn verifyNativeBoundary
+test.dependsOn verifyNativeBoundary
+installDist.dependsOn verifyNativeBoundary
+installDist.doLast {
+  exec {
+    commandLine 'python3', boundaryTool.absolutePath,
+        '--lib-dir', new File(installDist.destinationDir, 'lib').absolutePath,
+        '--report', file("$buildDir/reports/installed-native-runtime.json").absolutePath,
+        '--profile', 'scheduler'
+  }
+}

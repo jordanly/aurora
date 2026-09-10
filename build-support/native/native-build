@@ -1,0 +1,350 @@
+#!/usr/bin/env python3
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+# Unless required by applicable law or agreed to in writing, software distributed
+# under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+# CONDITIONS OF ANY KIND, either express or implied. See the License for the
+# specific language governing permissions and limitations under the License.
+"""Build and verify self-contained native Linux/arm64 runtime and lab images."""
+import argparse
+import fcntl
+import importlib.machinery
+import importlib.util
+import json
+import os
+from pathlib import Path
+import platform
+import re
+import secrets
+import shutil
+import subprocess
+import sys
+import time
+
+from bootstrap import BuildError, get_tools, real_path, require, sha
+
+HERE = Path(__file__).resolve().parent
+ROOT = HERE.parents[1]
+
+
+def module(name, path):
+    loader = importlib.machinery.SourceFileLoader(name, str(path))
+    spec = importlib.util.spec_from_loader(loader.name, loader)
+    result = importlib.util.module_from_spec(spec)
+    loader.exec_module(result)
+    return result
+
+
+cluster = module('bundle_cluster', ROOT / 'build-support/lab/clusterctl')
+
+
+def write(path, value):
+    real_path(path)
+    path.write_text(json.dumps(value, sort_keys=True, indent=2) + '\n')
+
+
+def run(args, *, cwd=ROOT, env=None, log=None, timeout=900):
+    print('+ ' + ' '.join(map(str, args)), flush=True)
+    if log:
+        with log.open('w') as output:
+            result = subprocess.run(list(map(str, args)), cwd=cwd, env=env,
+                                    stdout=output, stderr=subprocess.STDOUT, timeout=timeout)
+        if result.returncode:
+            print(log.read_text()[-12000:], file=sys.stderr)
+            raise BuildError('Command failed; see ' + str(log))
+        return ''
+    result = subprocess.run(list(map(str, args)), cwd=cwd, env=env, text=True,
+                            stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=timeout)
+    require(result.returncode == 0, 'Command failed: ' + result.stderr[-8000:])
+    return result.stdout.strip()
+
+
+def inspect(kind, identity):
+    values = json.loads(run(['docker', kind, 'inspect', identity], timeout=30))
+    require(isinstance(values, list) and len(values) == 1, 'Ambiguous Docker identity')
+    return values[0]
+
+
+class Probe:
+    """Every temporary container has an immutable ID and a private ownership record."""
+    def __init__(self, image_id, output, role, args=None, flags=None):
+        self.token = secrets.token_hex(16)
+        self.image = image_id
+        self.record = output / ('probe-' + role + '.json')
+        self.cidfile = output / ('probe-' + role + '.cid')
+        self.id = None
+        require(not self.record.exists() and not self.cidfile.exists(), 'Probe record collision')
+        write(self.record, {'token': self.token, 'image': image_id, 'status': 'creating'})
+        try:
+            try:
+                run(['docker', 'create', '--pull', 'never', '--platform', 'linux/arm64',
+                     '--cidfile', self.cidfile, '--network', 'none', '--read-only', '--cap-drop', 'ALL',
+                     '--security-opt', 'no-new-privileges', '--pids-limit', '128', '--cpus', '1',
+                     '--label', 'com.aurora.native.probe=' + self.token,
+                     *(flags or []), image_id, *(args or [])], timeout=60)
+            finally:
+                if self.cidfile.is_file():
+                    real_path(self.cidfile)
+                    identity = self.cidfile.read_text().strip()
+                    require(re.fullmatch(r'[a-f0-9]{64}', identity), 'Invalid probe creation identity')
+                    self.id = identity
+                    write(self.record, {'token': self.token, 'image': image_id, 'id': identity, 'status': 'created'})
+            require(self.id is not None, 'No probe creation identity; record preserved')
+            self.verify()
+        except BaseException:
+            if self.id is not None:
+                # Only a matching ID/image/label permits removal after ambiguous creation.
+                self.close()
+            raise
+
+    def verify(self):
+        item = inspect('container', self.id)
+        require(item['Id'] == self.id and item['Image'] == self.image
+                and item['Config']['Labels'].get('com.aurora.native.probe') == self.token,
+                'Probe ownership mismatch; preserved')
+        return item
+
+    def close(self):
+        self.verify()
+        run(['docker', 'container', 'rm', '-f', self.id], timeout=60)
+        write(self.record, {'token': self.token, 'image': self.image, 'id': self.id, 'status': 'removed'})
+
+
+def payload(context, role):
+    files = {}
+    mappings = []
+    if role.startswith('scheduler'):
+        mappings += [('scheduler', '/opt/aurora')]
+    if role.startswith('agent'):
+        mappings += [('agent/aurora-agent', '/opt/aurora/bin/aurora-agent')]
+    if role.endswith('-lab'):
+        mappings += [('fixtures', '/opt/aurora/bin')]
+    if role == 'tools':
+        mappings += [('fixtures/cluster-helper', '/opt/aurora/bin/cluster-helper')]
+    for relative, absolute in mappings:
+        source = context / relative
+        if source.is_file():
+            files[absolute] = sha(source)
+        else:
+            for path in sorted(source.rglob('*')):
+                require(not path.is_symlink(), 'Payload must be self-contained')
+                if path.is_file():
+                    files[absolute + '/' + str(path.relative_to(source))] = sha(path)
+    return files
+
+
+def images(output, context, pins, reports, offline):
+    base = pins['baseImage']
+    available = subprocess.run(['docker', 'image', 'inspect', base], stdout=subprocess.DEVNULL,
+                               stderr=subprocess.DEVNULL, timeout=30).returncode == 0
+    if not available:
+        require(not offline, 'Pinned base image missing in offline mode')
+        run(['docker', 'pull', '--platform', pins['platform'], base], log=reports / 'base-pull.log')
+    base_info = inspect('image', base)
+    require(base_info['Architecture'] == 'arm64' and base_info['Os'] == 'linux', 'Base architecture mismatch')
+    repository, digest = base.split('@', 1)
+    repository = repository.rsplit(':', 1)[0]
+    require(repository + '@' + digest in base_info.get('RepoDigests', []), 'Base repository digest mismatch')
+    base_archive = output / 'pinned-base-rootfs.tar'
+    base_probe = Probe(base_info['Id'], reports, 'pinned-base', ['/bin/true'])
+    try:
+        run(['docker', 'export', '--output', base_archive, base_probe.id])
+    finally:
+        base_probe.close()
+    tag_prefix = 'aurora-native-local:' + secrets.token_hex(8) + '-'
+    result = {}
+    for role in ('scheduler', 'agent', 'scheduler-lab', 'agent-lab', 'tools'):
+        parent = result[role[:-4]]['id'] if role.endswith('-lab') else base
+        dockerfile = 'Dockerfile.lab' if role.endswith('-lab') else 'Dockerfile.' + role
+        reference = tag_prefix + role
+        run(['docker', 'build', '--network', 'none', '--platform', pins['platform'], '--pull=false',
+             '--label', 'com.aurora.native.role=' + role,
+             '--label', 'com.aurora.native.source=' + sha(reports / 'sources.json'),
+             '--build-arg', ('RUNTIME_IMAGE=' if role.endswith('-lab') else 'BASE_IMAGE=') + parent,
+             '-f', context / dockerfile, '-t', reference, context], log=reports / (role + '-build.log'))
+        item = inspect('image', reference)
+        expected_entry = '/opt/aurora/bin/' + ('aurora-scheduler' if role.startswith('scheduler') else
+                                              'aurora-agent' if role.startswith('agent') else 'cluster-helper')
+        require(item['Architecture'] == 'arm64' and item['Os'] == 'linux'
+                and item['Config']['User'] == '1000:1000'
+                and item['Config']['Entrypoint'] == [expected_entry]
+                and not item['Config'].get('Volumes')
+                and item['Config']['Labels']['com.aurora.native.role'] == role,
+                'Runtime image metadata differs: ' + role)
+        parent_layers = inspect('image', parent)['RootFS']['Layers']
+        require(item['RootFS']['Layers'][:len(parent_layers)] == parent_layers, 'Image parent layers differ')
+        result[role] = {'id': item['Id'], 'reference': reference}
+        write(reports / (role + '-image.json'), item)
+        expected = reports / (role + '-payload.json')
+        write(expected, payload(context, role))
+        archive = output / (role + '-rootfs.tar')
+        probe = Probe(item['Id'], reports, role)
+        try:
+            run(['docker', 'export', '--output', archive, probe.id])
+            run([sys.executable, HERE / 'verify-image', '--archive', archive, '--expected', expected,
+                 '--base', base_archive, '--report', reports / (role + '-boundary.json')])
+        finally:
+            probe.close()
+            if archive.is_file():
+                archive.unlink()
+    base_archive.unlink()
+    write(reports / 'base-image.json', base_info)
+    return result
+
+
+def entrypoint_smokes(output, result, reports):
+    probe = Probe(result['agent']['id'], reports, 'agent-entrypoint', ['version'])
+    try:
+        run(['docker', 'start', '-a', probe.id])
+        require(probe.verify()['State']['ExitCode'] == 0, 'Packaged agent version failed')
+        version = json.loads(run(['docker', 'logs', probe.id]))
+        require(version['store'] == 'bbolt-v1.5.0', 'Packaged agent identity mismatch')
+    finally:
+        probe.close()
+    config = reports / 'entrypoint-config.json'
+    write(config, {'cluster': 'package-test', 'incarnation': 'one', 'nodes': [
+        {'node': 'agent-a', 'journal': 'journal-a', 'boot': 'boot-a', 'runtime': 'runtime-a',
+         'cpuMillis': 1000, 'memoryBytes': 536870912, 'url': 'https://agent-a:9443',
+         'network': 'agent-container', 'portStart': 18080},
+        {'node': 'agent-b', 'journal': 'journal-b', 'boot': 'boot-b', 'runtime': 'runtime-b',
+         'cpuMillis': 1000, 'memoryBytes': 536870912, 'url': 'https://agent-b:9443',
+         'network': 'agent-container', 'portStart': 18080}]})
+    config.chmod(0o644)
+    probe = Probe(result['scheduler']['id'], reports, 'scheduler-entrypoint',
+                  ['--inspect-only', '--config', '/config.json', '--state', '/state'],
+                  ['--mount', 'type=bind,src=' + str(config) + ',dst=/config.json,readonly',
+                   '--tmpfs', '/state:rw,noexec,nosuid,size=32m,mode=0700,uid=1000,gid=1000',
+                   '--tmpfs', '/run/aurora-native:rw,exec,nosuid,size=32m,mode=0700,uid=1000,gid=1000'])
+    try:
+        run(['docker', 'start', '-a', probe.id])
+        require(probe.verify()['State']['ExitCode'] == 0, 'Packaged scheduler/SQLite startup failed')
+        state = json.loads(run(['docker', 'logs', probe.id]))
+        require(isinstance(state, dict) and state['jobs'] == [], 'Unexpected fresh packaged scheduler state')
+    finally:
+        probe.close()
+    write(reports / 'entrypoints.json', {'ok': True, 'agent': version, 'scheduler': state})
+
+
+def build(args):
+    require(platform.system() == 'Linux' and platform.machine() in ('aarch64', 'arm64'),
+            'This pinned build profile requires a Linux ARM64 host')
+    require(os.getuid() != 0, 'Build as the ordinary Docker-authorized user')
+    output, cache = args.output, args.cache
+    real_path(output)
+    real_path(cache)
+    require(not output.exists(), 'Output must be a new directory; existing bundles are preserved')
+    require(not cache.is_relative_to(output), 'Cache must not be inside the new output directory')
+    cache.mkdir(parents=True, exist_ok=True, mode=0o700)
+    require(cache.stat().st_uid == os.getuid() and cache.stat().st_mode & 0o022 == 0,
+            'Build cache must be owned by this user and not group/world writable')
+    lock_path = cache / 'build.lock'
+    real_path(lock_path)
+    with lock_path.open('a') as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        output.mkdir(parents=True, mode=0o700)
+        reports = output / 'reports'
+        reports.mkdir()
+        context = output / 'context'
+        context.mkdir()
+        work = output / 'build'
+        work.mkdir()
+        pins = json.loads((HERE / 'toolchains.json').read_text())
+        sources = cluster.source_hashes()
+        write(reports / 'sources.json', sources)
+        write(reports / 'toolchains.json', pins)
+        tool_work = work / 'tools'
+        tool_work.mkdir()
+        tools = get_tools(pins, cache, tool_work, args.seed_archives, args.offline)
+        env = dict(os.environ)
+        env.update(JAVA_HOME=str(tools['java']), GRADLE_USER_HOME=str(cache / 'gradle'),
+                   GOMODCACHE=str(cache / 'go-mod'), GOCACHE=str(cache / 'go-build'),
+                   GOTOOLCHAIN='local', GOMAXPROCS='2', CGO_ENABLED='0', GOOS='linux', GOARCH='arm64',
+                   GOFLAGS='-mod=readonly', GRADLE_OPTS='-Xmx256m -XX:ActiveProcessorCount=2')
+        env['PATH'] = str(tools['java'] / 'bin') + ':' + str(tools['go'] / 'bin') + ':' + env['PATH']
+        if args.offline:
+            env.update(GOPROXY='off', GOSUMDB='off')
+        gradle = [tools['gradle'] / 'bin/gradle', '--no-daemon', '--max-workers=2']
+        if args.offline:
+            gradle.append('--offline')
+        run([*gradle, '-p', ROOT / 'scheduler/native', '-PnativeBuildRoot=' + str(work / 'java'),
+             'test', ':protocol:test', 'installDist'], env=env, log=reports / 'java-build.log')
+        scheduler = context / 'scheduler'
+        scheduler.mkdir()
+        shutil.copytree(tools['java'] / 'jre', scheduler / 'jre')
+        shutil.copytree(work / 'java/scheduler/install/aurora-native-scheduler/lib', scheduler / 'lib')
+        (scheduler / 'bin').mkdir()
+        shutil.copy2(HERE / 'images/scheduler-entrypoint', scheduler / 'bin/aurora-scheduler')
+        (scheduler / 'bin/aurora-scheduler').chmod(0o555)
+        run([sys.executable, HERE / 'verify-boundary', '--lib-dir', scheduler / 'lib',
+             '--report', reports / 'java-boundary.json'])
+        go = tools['go'] / 'bin/go'
+        for name, relative, target in (
+                ('agent', 'agent', 'agent/aurora-agent'),
+                ('cluster-helper', 'build-support/lab/fixtures/cluster-helper', 'fixtures/cluster-helper'),
+                ('native-workload', 'build-support/lab/fixtures/native-workload', 'fixtures/native-workload')):
+            cwd = ROOT / relative
+            run([go, 'mod', 'verify'], cwd=cwd, env=env, log=reports / (name + '-modules.log'))
+            run([go, 'test', '-count=1', './...'], cwd=cwd, env=env, log=reports / (name + '-test.log'))
+            run([go, 'vet', './...'], cwd=cwd, env=env, log=reports / (name + '-vet.log'))
+            destination = context / target
+            destination.parent.mkdir(exist_ok=True)
+            run([go, 'build', '-trimpath', '-buildvcs=false', '-o', destination,
+                 './cmd/aurora-agent' if name == 'agent' else '.'], cwd=cwd, env=env)
+            destination.chmod(0o555)
+            build_info = run([go, 'version', '-m', destination], env=env)
+            (reports / (name + '-build-info.txt')).write_text(build_info + '\n')
+            modules = {}
+            for line in build_info.splitlines():
+                fields = line.split()
+                require(not fields or fields[0] != '=>', 'Replaced Go dependency forbidden')
+                if fields and fields[0] == 'dep':
+                    require(len(fields) == 4 and fields[1] not in modules, 'Invalid Go dependency metadata')
+                    modules[fields[1]] = fields[2]
+                    require((fields[1] + ' ' + fields[2] + ' ' + fields[3]) in (cwd / 'go.sum').read_text().splitlines(),
+                            'Go dependency checksum not in reviewed go.sum')
+            require(modules == (pins['agentRuntimeModules'] if name == 'agent' else {}),
+                    'Go runtime module boundary differs: ' + name)
+            require('\tbuild\tCGO_ENABLED=0' in build_info and '\tbuild\tGOARCH=arm64' in build_info,
+                    'Go platform/build mode differs')
+        for pattern in ('test_*.py',):
+            run([sys.executable, '-m', 'unittest', 'discover', '-s', HERE / 'tests', '-p', pattern],
+                 log=reports / 'packaging-tests.log')
+        run([sys.executable, '-m', 'unittest', 'discover', '-s', ROOT / 'build-support/lab/tests'],
+             log=reports / 'lab-tests.log')
+        for path in (HERE / 'images').glob('Dockerfile.*'):
+            shutil.copy2(path, context / path.name)
+        result = images(output, context, pins, reports, args.offline)
+        entrypoint_smokes(output, result, reports)
+        require(cluster.source_hashes() == sources, 'Sources changed during build; bundle not published')
+        artifacts = {str(p.relative_to(output)): sha(p) for p in sorted(context.rglob('*')) if p.is_file()}
+        manifest = {'schema': 1, 'architecture': 'arm64', 'sourceHashes': sources, 'images': result,
+                    'artifacts': artifacts, 'hostTools': {'helper': 'context/fixtures/cluster-helper',
+                    'keytool': 'context/scheduler/jre/bin/keytool', 'jre': 'context/scheduler/jre',
+                    'jreSha256': cluster.native.tree_sha(scheduler / 'jre')},
+                    'baseImage': pins['baseImage'], 'createdAt': time.time(),
+                    'sourceCommit': run(['git', 'rev-parse', 'HEAD']),
+                    'sourceStatus': run(['git', 'status', '--porcelain']),
+                    'reports': {str(p.relative_to(output)): sha(p) for p in sorted(reports.rglob('*')) if p.is_file()}}
+        write(output / 'bundle.json', manifest)
+        cluster.load_bundle(output)
+        print(json.dumps({'ok': True, 'bundle': str(output / 'bundle.json'), 'images': result}), flush=True)
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--output', type=Path, required=True, help='New absolute bundle directory')
+    parser.add_argument('--cache', type=Path, default=ROOT / '.cache/aurora-native')
+    parser.add_argument('--seed-archives', type=Path, help='Optional checksum-verified archive download seed')
+    parser.add_argument('--offline', action='store_true', help='Require cached archives, modules, jars and base image')
+    args = parser.parse_args()
+    try:
+        build(args)
+    except (BuildError, cluster.native.SmokeError, OSError, ValueError, KeyError, subprocess.TimeoutExpired) as error:
+        print('Native build failed: ' + str(error), file=sys.stderr)
+        return 1
+    return 0
+
+
+if __name__ == '__main__':
+    sys.exit(main())

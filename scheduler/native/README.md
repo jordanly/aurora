@@ -92,3 +92,57 @@ the epoch or making agent requests. It creates the restored directory's local lo
 and SQLite sidecars. The original config and cluster/incarnation are required.
 Do not start a restored scheduler against a live old cluster as a takeover method.
 Failed/interrupted backups are not success artifacts and are never overwritten.
+
+## Portable build output and runtime boundary
+
+A supplied absolute build root moves **both** isolated Java projects' outputs:
+
+```sh
+gradle -p scheduler/native -PnativeBuildRoot=/absolute/build test installDist
+```
+
+The distribution is `/absolute/build/scheduler/install/aurora-native-scheduler`;
+protocol build output is `/absolute/build/protocol`. Relative roots reject. Without
+this property, the existing `.pi-tools/native-scheduler-dist` and
+`.pi-tools/protocol-java-dist` defaults remain. Java 8 and Gradle 4.10.2 remain the
+build baseline. This project includes only `protocol/java`; it does not configure
+or invoke the legacy root build, Thrift generators, frontend, or Mesos tasks.
+
+`test`, `check`, and `installDist` require the native runtime boundary gate.
+`installDist` also verifies the actual copied `lib` directory after installation.
+The gate admits exactly seven external runtime artifacts, identified by both name
+and complete SHA-256 in `build-support/native/verify-boundary`: Jackson annotations,
+core and databind 2.18.4; networknt JSON Schema validator 2.0.4; SLF4J API and nop
+2.0.17; and SQLite JDBC 3.53.4.0. It scans every JAR entry and every class constant
+pool. Renaming a foreign JAR, repackaging Mesos/ZooKeeper/Curator/executor references,
+or including Python workers cannot satisfy the gate. The pinned SQLite JAR's
+platform JNI libraries are explicitly permitted.
+
+Own JARs admit only the enumerated native scheduler, SQL core and native protocol
+classes, plus the protocol schema and JAR manifests. Qualification-only
+`NativeStoreTool` is compiled for existing SQL tests but excluded from production.
+Own classes must target Java 8. This is an artifact/content boundary check; it does
+not replace behavioral tests or prove safety of arbitrary dynamically supplied code.
+
+JSON dependency reports are generated at:
+
+- `scheduler/reports/native-runtime.json`: staged runtime, before tests.
+- `scheduler/reports/installed-native-runtime.json`: actual distribution runtime.
+
+Each report includes actual JAR hashes, coordinates, byte sizes, class/reference
+counts, native-library counts and the own-class inventory. Root packaging must
+recheck the final copied runtime independently:
+
+```sh
+python3 build-support/native/verify-boundary \
+  --lib-dir /absolute/package/lib --report /absolute/package/runtime-dependencies.json
+```
+
+Nonzero exit rejects the package. A successful report has `ok: true`; a validation
+failure replaces any old success report with `ok: false`. The checker uses Python
+standard libraries and has no `.pi-tools`, Java, Gradle or network dependency.
+Run its offline unit tests with:
+
+```sh
+python3 -m unittest discover -s build-support/native/tests -p test_boundary.py
+```

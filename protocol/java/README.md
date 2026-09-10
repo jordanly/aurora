@@ -58,3 +58,27 @@ contract uses JSON and no date-time formats. These artifacts were compiled and
 executed with the checkout's ARM64 Java 8 toolchain.
 [Upstream compatibility and API documentation](https://github.com/networknt/json-schema-validator),
 [published dependency metadata](https://repo.maven.apache.org/maven2/com/networknt/json-schema-validator/2.0.4/json-schema-validator-2.0.4.pom)
+
+## Portable output and packaged boundary
+
+`-PnativeBuildRoot=/absolute/build` sets this project's build directory to
+`/absolute/build/protocol`, including when it is the native scheduler's subproject.
+Without the property, `.pi-tools/protocol-java-dist` remains the default. Relative
+roots reject. The Java 8 / Gradle 4.10.2 baseline and isolated project graph remain.
+
+`test`, `check`, and `installDist` require `verifyNativeBoundary` in addition to the
+six-external-JAR SHA manifest check. The boundary checker examines actual JAR entries
+and class constant pools, restricts own classes to ProtocolValidator/ProtocolTool
+and nested classes, and admits only the schema and manifest as own resources.
+Installation rechecks the actual copied `lib` directory. Reports are written under
+`buildDir/reports/{native-runtime,installed-native-runtime}.json`.
+
+For a copied standalone protocol distribution (six external JARs plus its own JAR):
+
+```sh
+python3 build-support/native/verify-boundary --profile protocol \
+  --lib-dir /absolute/protocol/lib --report /absolute/protocol/runtime-dependencies.json
+```
+
+The default checker profile instead requires the complete native scheduler runtime:
+seven external JARs, the native protocol JAR, and the native scheduler JAR.

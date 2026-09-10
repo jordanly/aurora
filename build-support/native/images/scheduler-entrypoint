@@ -1,0 +1,10 @@
+#!/bin/sh
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+set -eu
+exec /opt/aurora/jre/bin/java \
+  -Xms32m -Xmx192m \
+  -XX:ActiveProcessorCount=2 \
+  -Djava.io.tmpdir=/run/aurora-native \
+  -cp '/opt/aurora/lib/*' \
+  org.apache.aurora.nativescheduler.NativeSchedulerMain "$@"

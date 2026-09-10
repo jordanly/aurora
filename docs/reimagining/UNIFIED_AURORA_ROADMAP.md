@@ -6,16 +6,16 @@ The first deliverable is a fresh, trusted laboratory on this Raspberry Pi: one s
 
 Read this with the [container lab and failure matrix](PI_CONTAINER_LAB.md), [ordered implementation backlog](IMPLEMENTATION_BACKLOG.md), and [Compose blueprint](lab/compose.blueprint.yaml). The blueprint describes future images and entry points; it is not a runnable Aurora deployment today.
 
-Implementation has started with build recovery, bounded protocol conformance and lab preparation tooling. The [first implementation slice status](FIRST_SLICE_STATUS.md) records executed checks and remaining gates; the integrated two-agent demonstration below is still the target.
+The native scheduler and two Go agents now form a working, authenticated Docker
+cluster. The [cluster MVP guide](CLUSTER_MVP.md) records three complete recovery
+rounds and the ten-minute mixed workload gate. Earlier [foundation](FIRST_SLICE_STATUS.md),
+[durable core](DURABLE_CORE_STATUS.md) and [process runtime](PROCESS_RUNTIME_STATUS.md)
+reports preserve the preceding increments.
 
-The [durable core continuation](DURABLE_CORE_STATUS.md) now adds real SQL and Go
-admission transactions plus native Docker persistence checks. The integrated
-scheduler/agent workload and fault scenarios remain the next runtime milestone.
-
-The [process runtime increment](PROCESS_RUNTIME_STATUS.md) now qualifies actual
-Go batch/service execution, stop/cleanup and daemon-crash recovery on the Pi,
-including a separate Docker runtime lane. Authenticated scheduler integration and
-the complete two-agent scenarios remain outstanding.
+CUT-01 packages that cluster as isolated runtime images with pinned tools and
+content-verified dependency boundaries. Use the [native build and qualification
+commands](../../build-support/native/README.md) for a fresh checkout. Java/Gradle
+modernization follows qualification of this packaged baseline.
 
 **Verified master and provenance**
 

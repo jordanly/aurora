@@ -22,6 +22,11 @@ run inside the agent container through a verified Docker creation identity.
 
 ## Operate the lab
 
+For a fresh checkout, use the [CUT-01 image build and qualification lane](../../build-support/native/README.md).
+It packages its own JRE, scheduler libraries and Go executables; the lab needs no
+executable bind mounts. The commands below describe the original checkout-tool
+lane, which remains supported for the already-running MVP.
+
 Use the checkout toolchains and the previously qualified digest-pinned Debian
 ARM64 base image. The runner rebuilds binaries from current source offline,
 verifies native Java runtime artifacts, generates private lab certificates and

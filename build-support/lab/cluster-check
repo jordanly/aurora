@@ -48,14 +48,26 @@ class Check:
         self.lab, self.repeats, self.seconds = lab, repeats, seconds
         require(cluster.source_hashes() == lab.data["sources"],
                 "Sources or harness changed since lab build; qualify a freshly built lab")
-        for name, expected in lab.data["artifacts"].items():
-            path = lab.root / "artifacts" / name
-            require(path.is_relative_to(lab.root / "artifacts") and ".." not in path.parts
-                    and cluster.native.sha(path) == expected, "Lab artifact changed since build")
+        bundle = lab.data.get("bundle")
+        if bundle:
+            metadata, manifest_hash = cluster.load_bundle(Path(bundle["directory"]))
+            require(manifest_hash == bundle["manifestSha256"] and metadata["images"] == bundle["images"],
+                    "Bundle manifest changed since lab creation")
+        else:
+            for name, expected in lab.data["artifacts"].items():
+                path = lab.root / "artifacts" / name
+                require(path.is_relative_to(lab.root / "artifacts") and ".." not in path.parts
+                        and cluster.native.sha(path) == expected, "Lab artifact changed since build")
         self.prefix = "c" + str(int(time.time()))
         self.evidence = {"ok": False, "startedAt": time.time(), "run": lab.data["run"],
                          "sources": lab.data["sources"], "cases": [], "repeats": repeats,
                          "mixedSeconds": seconds, "checkSha256": cluster.native.sha(Path(__file__).resolve())}
+        if bundle:
+            self.evidence["images"] = bundle["images"]
+            self.evidence["bundleSha256"] = bundle["manifestSha256"]
+            self.evidence["executableBindMounts"] = False
+            for role in lab.data["containers"]:
+                lab.inspect_container(role)
         self.path = lab.root / "evidence" / (self.prefix + "-result.json")
         self.write()
 
@@ -268,9 +280,7 @@ class Check:
         shutil.copytree(snapshot, root / "state")
         (root / "control").mkdir(mode=0o700)
         self.lab.create_network("restore")
-        mounts = [(self.lab.root / "artifacts/bin", cluster.BIN, False),
-                  (self.lab.root / "artifacts/jre", "/opt/aurora/jre", False),
-                  (self.lab.root / "artifacts/lib", "/opt/aurora/lib", False),
+        mounts = self.lab.executable_mounts(role) + [
                   (self.lab.root / "config/scheduler.json", "/config/scheduler.json", False),
                   (self.lab.root / "scheduler/tls", "/tls", False),
                   (root / "state", "/state", True), (root / "control", "/control", True)]

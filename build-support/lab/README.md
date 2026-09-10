@@ -119,6 +119,27 @@ build-support/lab/clusterctl --run-root "$PWD/.pi-lab/cluster-new" status
 sg docker -c 'build-support/lab/clusterctl --run-root "$PWD/.pi-lab/cluster-new" down'
 ```
 
+The image-backed lane accepts an absolute directory containing the native build's
+`bundle.json`:
+
+```sh
+sg docker -c 'build-support/lab/clusterctl --run-root "$PWD/.pi-lab/cluster-images" up --bundle "$PWD/.cache/aurora-native/bundle"'
+sg docker -c 'build-support/lab/cluster-check --run-root "$PWD/.pi-lab/cluster-images" --repeats 3 --mixed-seconds 600'
+```
+
+Use the actual bundle output directory from the native build. The launcher checks
+its source hashes against this checkout, verifies artifact and host JRE hashes,
+and checks all five local Linux ARM64 image IDs. It runs `scheduler-lab`,
+`agent-lab`, and `tools` by immutable image ID. These lab images include the
+keeper and workload fixture needed for fault acceptance. Runtime containers and
+the isolated restore bind only configuration, certificates, state, work, controls,
+and evidence; executable files, JREs, and libraries come from the images.
+Certificate creation uses the bundle's verified host helper and keytool plus host
+OpenSSL. The bundle must remain available and unchanged through acceptance;
+evidence records its manifest hash and exact image IDs. Existing `up` without
+`--bundle` retains the local build lane. Use a fresh run root for either lane.
+
+
 The operator client verifies mutual TLS at the scheduler's private bridge address.
 No host port is published. The Pi's Docker session may require `sg docker`; HTTPS
 status/submit/stop can run as the same UID without Docker access. Each lab retains

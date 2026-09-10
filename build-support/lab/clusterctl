@@ -102,11 +102,70 @@ def source_hashes():
     hashes = {p: native.tree_sha(ROOT / p) for p in paths}
     for name in ("build-support/lab/clusterctl", "build-support/lab/cluster-check", "build-support/lab/native-smoke",
                  "build-support/lab/native-smoke-manifest.json", "build-support/java/gradle-local", "scheduler/native/build.gradle",
-                 "scheduler/native/runtime-dependencies.sha256"):
+                 "scheduler/native/settings.gradle", "protocol/java/build.gradle",
+                 "protocol/java/settings.gradle", "protocol/java/runtime-dependencies.sha256"):
         path = ROOT / name
         if path.is_file():
             hashes[name] = native.sha(path)
+    packaging = ROOT / "build-support/native"
+    if packaging.is_dir():
+        digest = hashlib.sha256()
+        for path in sorted(packaging.rglob("*")):
+            if "__pycache__" in path.parts or path.suffix == ".pyc":
+                continue
+            require(not path.is_symlink(), "Symlink in packaging source")
+            if path.is_file():
+                digest.update(str(path.relative_to(packaging)).encode() + b"\0")
+                digest.update(bytes.fromhex(native.sha(path)))
+        hashes["build-support/native"] = digest.hexdigest()
     return hashes
+
+
+def bundle_path(root, relative):
+    require(isinstance(relative, str) and relative and not Path(relative).is_absolute()
+            and ".." not in Path(relative).parts, "Invalid bundle-relative path")
+    path = root / relative
+    native.safe_path(path)
+    return path
+
+
+def load_bundle(root):
+    require(root.is_absolute(), "Bundle path must be absolute")
+    native.safe_path(root)
+    manifest = root / "bundle.json"
+    native.regular(manifest)
+    require(manifest.stat().st_size <= 8 * 1048576, "Bundle manifest too large")
+    def unique(pairs):
+        result = {}
+        for key, value in pairs:
+            require(key not in result, "Duplicate bundle manifest key")
+            result[key] = value
+        return result
+    data = json.loads(manifest.read_text(), object_pairs_hook=unique)
+    require(data["schema"] == 1 and data["architecture"] == "arm64", "Unsupported bundle profile")
+    require(data["sourceHashes"] == source_hashes(), "Bundle sources differ from this checkout")
+    require(set(data["images"]) == {"scheduler", "agent", "scheduler-lab", "agent-lab", "tools"},
+            "Missing or unexpected bundle images")
+    for image in data["images"].values():
+        require(isinstance(image["id"], str) and re.fullmatch(r"sha256:[a-f0-9]{64}", image["id"]),
+                "Invalid immutable bundle image ID")
+        item = inspect_item(docker("image", "inspect", image["id"]))
+        require(item["Id"] == image["id"] and item["Architecture"] == "arm64" and item["Os"] == "linux",
+                "Bundle image identity/platform differs")
+    require(isinstance(data["artifacts"], dict) and data["artifacts"], "Missing bundle artifacts")
+    for relative, digest in data["artifacts"].items():
+        path = bundle_path(root, relative)
+        native.regular(path)
+        require(re.fullmatch(r"[a-f0-9]{64}", digest) and native.sha(path) == digest,
+                "Bundle artifact checksum differs: " + relative)
+    host = data["hostTools"]
+    for key in ("helper", "keytool"):
+        require(host[key] in data["artifacts"], "Host tool absent from verified artifacts")
+        require(os.access(bundle_path(root, host[key]), os.X_OK), "Host tool is not executable")
+    jre = bundle_path(root, host["jre"])
+    require(bundle_path(root, host["keytool"]).is_relative_to(jre)
+            and native.tree_sha(jre) == host["jreSha256"], "Bundle host JRE checksum differs")
+    return data, native.sha(manifest)
 
 
 class LocalTLS(http.client.HTTPSConnection):
@@ -175,7 +234,8 @@ class Lab:
     def name(self, role):
         return "aurora-" + self.data["run"] + "-" + role
 
-    def prepare(self):
+    def prepare(self, bundle=None):
+        bundled = load_bundle(bundle) if bundle is not None else None
         require(os.getuid() > 0 and os.getgid() > 0, "Run as the ordinary Docker-authorized user")
         require(not self.root.exists(), "Run root must be new; existing state preserved")
         self.root.mkdir(mode=0o700, parents=True)
@@ -189,35 +249,44 @@ class Lab:
         for role in ("scheduler", *NODES, "proxy-a", "proxy-b"):
             for name in ("control", "state", "work", "evidence", "tls"):
                 (self.root / role / name).mkdir(mode=0o700, parents=True)
-        base = json.loads(docker("image", "inspect", BASE).stdout)[0]
-        require(base["Architecture"] == "arm64" and base["Os"] == "linux", "Base image must be Linux ARM64")
-        self.data["imageId"] = base["Id"]
-        self.persist()
-        before = source_hashes()
-        go = ROOT / ".pi-tools/go1.27.1/go/bin/go"
-        goenv = dict(os.environ, CGO_ENABLED="0", GOOS="linux", GOARCH="arm64", GOTOOLCHAIN="local",
-                     GOPROXY="off", GOMAXPROCS="2", GOCACHE=str(ROOT / ".pi-tools/go-cache"),
-                     GOMODCACHE=str(ROOT / ".pi-tools/go-mod"))
-        for name, source, target in (("aurora-agent", "agent", "./cmd/aurora-agent"),
-                                     ("native-workload", "build-support/lab/fixtures/native-workload", "."),
-                                     ("cluster-helper", "build-support/lab/fixtures/cluster-helper", ".")):
-            command([go, "build", "-p", "2", "-trimpath", "-o", self.root / "artifacts/bin" / name,
-                     target], timeout=180, env=goenv, cwd=ROOT / source)
-        build = command([ROOT / "build-support/java/gradle-local", "-p", "scheduler/native",
-                         "--offline", "test", "installDist"], timeout=300, cwd=ROOT)
-        (self.root / "evidence/java-build.log").write_text(native.redact(build.stdout + build.stderr))
-        dist = ROOT / ".pi-tools/native-scheduler-dist/install/aurora-native-scheduler"
-        require((dist / "lib").is_dir(), "Native scheduler distribution missing")
-        shutil.copytree(dist / "lib", self.root / "artifacts/lib")
-        require(not any("mesos" in p.name.lower() for p in (self.root / "artifacts/lib").iterdir()),
-                "Unexpected Mesos dependency in native distribution")
-        shutil.copytree(ROOT / ".pi-tools/jdk8u462-b08", self.root / "artifacts/jre", symlinks=False)
-        require(source_hashes() == before, "Sources changed during build; use a fresh run root")
-        self.data["sources"] = before
-        self.data["artifacts"] = {str(p.relative_to(self.root / "artifacts")): native.sha(p)
-                                  for folder in ("bin", "lib")
-                                  for p in (self.root / "artifacts" / folder).iterdir() if p.is_file()}
-        self.data["jreSha256"] = native.tree_sha(self.root / "artifacts/jre")
+        if bundled is not None:
+            metadata, manifest_hash = bundled
+            self.data["bundle"] = {"directory": str(bundle), "manifestSha256": manifest_hash,
+                                   "images": metadata["images"], "hostTools": metadata["hostTools"]}
+            self.data["sources"] = metadata["sourceHashes"]
+            self.data["artifacts"] = metadata["artifacts"]
+            self.data["jreSha256"] = metadata["hostTools"]["jreSha256"]
+            self.persist()
+        else:
+            base = json.loads(docker("image", "inspect", BASE).stdout)[0]
+            require(base["Architecture"] == "arm64" and base["Os"] == "linux", "Base image must be Linux ARM64")
+            self.data["imageId"] = base["Id"]
+            self.persist()
+            before = source_hashes()
+            go = ROOT / ".pi-tools/go1.27.1/go/bin/go"
+            goenv = dict(os.environ, CGO_ENABLED="0", GOOS="linux", GOARCH="arm64", GOTOOLCHAIN="local",
+                         GOPROXY="off", GOMAXPROCS="2", GOCACHE=str(ROOT / ".pi-tools/go-cache"),
+                         GOMODCACHE=str(ROOT / ".pi-tools/go-mod"))
+            for name, source, target in (("aurora-agent", "agent", "./cmd/aurora-agent"),
+                                         ("native-workload", "build-support/lab/fixtures/native-workload", "."),
+                                         ("cluster-helper", "build-support/lab/fixtures/cluster-helper", ".")):
+                command([go, "build", "-p", "2", "-trimpath", "-o", self.root / "artifacts/bin" / name,
+                         target], timeout=180, env=goenv, cwd=ROOT / source)
+            build = command([ROOT / "build-support/java/gradle-local", "-p", "scheduler/native",
+                             "--offline", "test", "installDist"], timeout=300, cwd=ROOT)
+            (self.root / "evidence/java-build.log").write_text(native.redact(build.stdout + build.stderr))
+            dist = ROOT / ".pi-tools/native-scheduler-dist/install/aurora-native-scheduler"
+            require((dist / "lib").is_dir(), "Native scheduler distribution missing")
+            shutil.copytree(dist / "lib", self.root / "artifacts/lib")
+            require(not any("mesos" in p.name.lower() for p in (self.root / "artifacts/lib").iterdir()),
+                    "Unexpected Mesos dependency in native distribution")
+            shutil.copytree(ROOT / ".pi-tools/jdk8u462-b08", self.root / "artifacts/jre", symlinks=False)
+            require(source_hashes() == before, "Sources changed during build; use a fresh run root")
+            self.data["sources"] = before
+            self.data["artifacts"] = {str(p.relative_to(self.root / "artifacts")): native.sha(p)
+                                      for folder in ("bin", "lib")
+                                      for p in (self.root / "artifacts" / folder).iterdir() if p.is_file()}
+            self.data["jreSha256"] = native.tree_sha(self.root / "artifacts/jre")
         self.certificates()
         self.configure()
         self.data["status"] = "prepared"
@@ -225,7 +294,12 @@ class Lab:
 
     def certificates(self):
         out = self.root / "certificates/generated"
-        command([self.root / "artifacts/bin/cluster-helper", "certgen", "--out", out])
+        bundle = self.data.get("bundle")
+        helper = (bundle_path(Path(bundle["directory"]), bundle["hostTools"]["helper"])
+                  if bundle else self.root / "artifacts/bin/cluster-helper")
+        keytool = (bundle_path(Path(bundle["directory"]), bundle["hostTools"]["keytool"])
+                   if bundle else ROOT / ".pi-tools/jdk8u462-b08/bin/keytool")
+        command([helper, "certgen", "--out", out])
         password = self.root / "scheduler/tls/password"
         password.write_text(secrets.token_hex(24) + "\n")
         password.chmod(0o600)
@@ -236,7 +310,7 @@ class Lab:
                  "-in", out / "scheduler.crt", "-certfile", out / "ca.crt", "-out",
                  self.root / "scheduler/tls/keystore.p12", "-passout", "file:" + str(password),
                  "-keypbe", "PBE-SHA1-3DES", "-certpbe", "PBE-SHA1-3DES", "-macalg", "sha1"])
-        command([ROOT / ".pi-tools/jdk8u462-b08/bin/keytool", "-importcert", "-noprompt", "-alias", "ca",
+        command([keytool, "-importcert", "-noprompt", "-alias", "ca",
                  "-file", out / "ca.crt", "-keystore", self.root / "scheduler/tls/truststore.p12",
                  "-storetype", "PKCS12", "-storepass:file", password])
         for p in (self.root / "scheduler/tls").iterdir():
@@ -310,6 +384,10 @@ class Lab:
             create += ["--network-alias", role]
         for key, val in self.labels(role).items():
             create += ["--label", key + "=" + val]
+        if self.data.get("bundle"):
+            require(all(target in ("/config/agent.json", "/config/scheduler.json", "/state",
+                                   "/work", "/evidence", "/control", "/tls") for _, target, _ in mounts),
+                    "Bundle containers may bind only configuration, certificates and runtime state")
         require(len({target for _, target, _ in mounts}) == len(mounts), "Duplicate bind destination")
         for src, target, writable in mounts:
             native.safe_path(src)
@@ -320,7 +398,10 @@ class Lab:
                 require(target in ("/state", "/work", "/evidence", "/control")
                         and src == self.root / role / target[1:], "Writable bind escapes role scope")
             create += ["--mount", f"type=bind,source={src},target={target}" + ("" if writable else ",readonly")]
-        create += [BASE, *args]
+        if self.data.get("bundle"):
+            create += ["--entrypoint", args[0], self.image_id(role), *args[1:]]
+        else:
+            create += [BASE, *args]
         # Save the expected identity/config first, so partial creation remains reviewable.
         self.data["containers"][role] = {"id": None, "name": name, "args": args, "networks": networks,
                                          "mounts": [[str(s), t, w] for s, t, w in mounts], "publish": publish,
@@ -353,17 +434,23 @@ class Lab:
         item = inspect_item(docker("inspect", ident))
         host = item["HostConfig"]
         require(item["Id"] == ident and item["Name"] == "/" + record["name"]
-                and item["Image"] == self.data["imageId"]
+                and item["Image"] == self.image_id(role)
                 and all(item["Config"]["Labels"].get(k) == v for k, v in self.labels(role).items()),
                 "Container ownership mismatch; preserved")
         require(item["Config"]["User"] == f"{self.data['uid']}:{self.data['gid']}" and host["ReadonlyRootfs"]
                 and host["Init"] and not host["Privileged"] and host["PidMode"] == ""
                 and host["CapDrop"] == ["ALL"] and not host.get("CapAdd")
                 and host["SecurityOpt"] == ["no-new-privileges:true"]
-                and item["Config"]["Cmd"] == record["args"], "Container isolation/command differs; preserved")
+                and item["Config"]["Cmd"] == (record["args"][1:] if self.data.get("bundle") else record["args"])
+                and (not self.data.get("bundle") or item["Config"]["Entrypoint"] == [record["args"][0]]),
+                "Container isolation/command differs; preserved")
         require(all(m["Type"] in ("bind", "tmpfs") for m in item["Mounts"]), "Unexpected volume mount; preserved")
         actual = sorted((m["Source"], m["Destination"], m["RW"]) for m in item["Mounts"] if m["Type"] == "bind")
         require(actual == sorted(tuple(m) for m in record["mounts"]), "Unexpected bind roots; preserved")
+        if self.data.get("bundle"):
+            require(all(target in ("/config/agent.json", "/config/scheduler.json", "/state",
+                                   "/work", "/evidence", "/control", "/tls") for _, target, _ in actual),
+                    "Executable bundle bind mount; preserved")
         require(record["networks"] == TOPOLOGY[role], "Recorded network topology differs; preserved")
         actual_networks = item["NetworkSettings"]["Networks"]
         expected_networks = {self.name(n) for n in record["networks"]}
@@ -404,6 +491,23 @@ class Lab:
                     "Private API endpoint changed; preserved")
         return item
 
+    def image_id(self, role):
+        if not self.data.get("bundle"):
+            return self.data["imageId"]
+        kind = "scheduler-lab" if role == "scheduler" or role in RESTORE_ROLES else (
+            "agent-lab" if role in NODES else "tools")
+        return self.data["bundle"]["images"][kind]["id"]
+
+    def executable_mounts(self, role):
+        """The legacy lane mounts build outputs; image bundles contain executables."""
+        if self.data.get("bundle"):
+            return []
+        mounts = [(self.root / "artifacts/bin", BIN, False)]
+        if role == "scheduler" or role in RESTORE_ROLES:
+            mounts += [(self.root / "artifacts/jre", "/opt/aurora/jre", False),
+                       (self.root / "artifacts/lib", "/opt/aurora/lib", False)]
+        return mounts
+
     def scheduler_args(self):
         return [BIN + "/cluster-helper", "keeper", "--", JAVA, "-Xms32m", "-Xmx192m",
                 "-XX:ActiveProcessorCount=2", "-Djava.io.tmpdir=/run/aurora-native", "-cp", "/opt/aurora/lib/*",
@@ -414,7 +518,7 @@ class Lab:
     def start(self):
         for role in ("control", "worker-a", "worker-b"):
             self.create_network(role)
-        artifacts = [(self.root / "artifacts/bin", BIN, False)]
+        artifacts = self.executable_mounts("agent-a")
         for node in NODES:
             suffix = node[-1]
             args = [BIN + "/cluster-helper", "keeper", "--", BIN + "/aurora-agent", "serve",
@@ -429,9 +533,8 @@ class Lab:
                                           "--target", self.name(node) + ":8443", "--control", "/control"],
                                   artifacts + [(self.root / proxy / "control", "/control", True)],
                                   ["worker-" + suffix, "control"])
-        mounts = artifacts + [(self.root / "artifacts/jre", "/opt/aurora/jre", False),
-                               (self.root / "artifacts/lib", "/opt/aurora/lib", False),
-                               (self.root / "config/scheduler.json", "/config/scheduler.json", False)]
+        mounts = self.executable_mounts("scheduler") + [
+            (self.root / "config/scheduler.json", "/config/scheduler.json", False)]
         mounts += [(self.root / "scheduler" / n, "/" + n, n != "tls") for n in ("state", "control", "tls")]
         self.create_container("scheduler", self.scheduler_args(), mounts, ["control"], publish=True)
         self.await_state(lambda s: len(s["nodes"]) == 2 and all(n["reachable"] for n in s["nodes"]), timeout=60)
@@ -589,7 +692,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--run-root", type=Path, default=ROOT / ".pi-lab/cluster-mvp")
     sub = parser.add_subparsers(dest="action", required=True)
-    sub.add_parser("up")
+    up = sub.add_parser("up")
+    up.add_argument("--bundle", type=Path, help="Absolute directory containing a verified native image bundle")
     sub.add_parser("status")
     sub.add_parser("down")
     sub.add_parser("demo")
@@ -608,7 +712,7 @@ def main():
     try:
         lab = Lab(args.run_root, fresh=args.action == "up")
         if args.action == "up":
-            lab.prepare()
+            lab.prepare(args.bundle)
             lab.start()
             result = {"ok": True, "runRoot": str(lab.root), "address": lab.data["containers"]["scheduler"]["address"], "port": 8443, "nodes": 2}
         elif args.action == "status":

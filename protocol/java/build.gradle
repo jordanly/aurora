@@ -13,7 +13,15 @@ apply plugin: 'java'
 apply plugin: 'application'
 
 // Isolated from the legacy scheduler's forced Jackson versions until native wiring.
-buildDir = file('../../.pi-tools/protocol-java-dist')
+if (project.hasProperty('nativeBuildRoot')) {
+  def outputRoot = new File(project.property('nativeBuildRoot').toString())
+  if (!outputRoot.isAbsolute()) {
+    throw new GradleException('nativeBuildRoot must be absolute')
+  }
+  buildDir = new File(outputRoot, 'protocol')
+} else {
+  buildDir = file('../../.pi-tools/protocol-java-dist')
+}
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 repositories { mavenCentral() }
@@ -56,3 +64,31 @@ task verifyRuntimeArtifacts {
 }
 test.dependsOn verifyRuntimeArtifacts
 installDist.dependsOn verifyRuntimeArtifacts
+
+// Verify built JAR contents before tests, and verify the actual copied lib directory
+// at the end of installDist. Neither gate invokes the legacy root project.
+def boundaryTool = file('../../build-support/native/verify-boundary')
+task stageBoundaryRuntime(type: Sync, dependsOn: jar) {
+  from configurations.runtimeClasspath
+  from jar.archivePath
+  into "$buildDir/boundary/lib"
+}
+task verifyNativeBoundary(type: Exec, dependsOn: stageBoundaryRuntime) {
+  inputs.file boundaryTool
+  inputs.files configurations.runtimeClasspath, jar.archivePath
+  commandLine 'python3', boundaryTool.absolutePath,
+      '--lib-dir', file("$buildDir/boundary/lib").absolutePath,
+      '--report', file("$buildDir/reports/native-runtime.json").absolutePath,
+      '--profile', 'protocol'
+}
+check.dependsOn verifyNativeBoundary
+test.dependsOn verifyNativeBoundary
+installDist.dependsOn verifyNativeBoundary
+installDist.doLast {
+  exec {
+    commandLine 'python3', boundaryTool.absolutePath,
+        '--lib-dir', new File(installDist.destinationDir, 'lib').absolutePath,
+        '--report', file("$buildDir/reports/installed-native-runtime.json").absolutePath,
+        '--profile', 'protocol'
+  }
+}

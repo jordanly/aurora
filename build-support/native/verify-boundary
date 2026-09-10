@@ -1,0 +1,263 @@
+#!/usr/bin/env python3
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+# http://www.apache.org/licenses/LICENSE-2.0
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+"""Verify the actual isolated native Java runtime, including renamed/repacked code."""
+
+import argparse
+import hashlib
+import json
+import os
+from pathlib import Path, PurePosixPath
+import re
+import struct
+import sys
+import tempfile
+import zipfile
+
+EXTERNAL = {
+    "jackson-annotations-2.18.4.jar": "2166156094cd146397eb4814bd117cabe3353390dfa894bcc06ce46b15bd428e",
+    "jackson-core-2.18.4.jar": "2f35b7abbf829c30d1143b58879ec30ad37d6c1fde22469aba14429fb2606b48",
+    "jackson-databind-2.18.4.jar": "452dcfd2cf381390090b7e14479d294d134320c55c3b744405c2270827a83c03",
+    "json-schema-validator-2.0.4.jar": "4856729c8f38ffba02380b0895b7e98a511f6e68a1fb6424782f3e6549dbba07",
+    "slf4j-api-2.0.17.jar": "7b751d952061954d5abfed7181c1f645d336091b679891591d63329c622eb832",
+    "slf4j-nop-2.0.17.jar": "3716f83649ec66161a2edefd4f49df34d1dd1c51cdcf941996c6987260f0a829",
+    "sqlite-jdbc-3.53.4.0.jar": "bcb1f51e36f940867e83342f9efbf5968ac44a6bef4d397bb4af7b17b45cd2fb",
+}
+# Keep the artifact source identity alongside the exact content allowlist.
+COORDINATES = {
+    name: ("com.fasterxml.jackson.core:" if name.startswith("jackson-") else
+           "com.networknt:" if name.startswith("json-schema-") else
+           "org.slf4j:" if name.startswith("slf4j-") else "org.xerial:")
+    + name[:-4].rsplit("-", 1)[0] + ":" + name[:-4].rsplit("-", 1)[1]
+    for name in EXTERNAL
+}
+SQLITE = "sqlite-jdbc-3.53.4.0.jar"
+NATIVE_CLASS = re.compile(
+    r"org/apache/aurora/(?:nativescheduler/(?:Json|NativeConfig|NativeEngine|NativeSchedulerMain)"
+    r"|scheduler/storage/sql/NativeSqlStore)(?:\$[A-Za-z0-9_$]+)?\Z")
+PROTOCOL_CLASS = re.compile(
+    r"org/apache/aurora/nativeprotocol/(?:ProtocolValidator|ProtocolTool)(?:\$[A-Za-z0-9_$]+)?\Z")
+FORBIDDEN = (
+    "org/apache/mesos", "org/apache/zookeeper", "org/apache/curator",
+    "org/apache/aurora/executor", "org/apache/aurora/thermos",
+    "apache/aurora/executor", "apache/thermos", "apache/aurora/worker",
+    "pythonworker", "python_worker", "nativestoretool",
+)
+
+
+class BoundaryError(Exception):
+    """The runtime differs from the reviewed native boundary."""
+
+
+def require(condition, message):
+    if not condition:
+        raise BoundaryError(message)
+
+
+def forbidden(value):
+    normalized = value.lower().replace(".", "/")
+    compact = value.lower()
+    if any(term in normalized or term in compact for term in FORBIDDEN):
+        return True
+    # Descriptors and reflection strings can name a class without CONSTANT_Class.
+    for match in re.finditer(r"org/apache/aurora/[A-Za-z0-9_$/]+", value.replace(".", "/")):
+        identity = match.group(0)
+        if not NATIVE_CLASS.fullmatch(identity) and not PROTOCOL_CLASS.fullmatch(identity):
+            return True
+    return False
+
+
+def class_info(data):
+    """Parse JVM constant pool rather than trusting a ZIP entry's filename."""
+    require(len(data) >= 10 and data[:4] == b"\xca\xfe\xba\xbe", "invalid class magic")
+    major, count = struct.unpack_from(">HH", data, 6)
+    offset, index = 10, 1
+    pool, strings, references = {}, [], []
+
+    def take(size):
+        nonlocal offset
+        require(offset + size <= len(data), "truncated class constant pool")
+        result = data[offset:offset + size]
+        offset += size
+        return result
+
+    while index < count:
+        tag = take(1)[0]
+        if tag == 1:
+            size = struct.unpack(">H", take(2))[0]
+            # Accept Java's modified-null and surrogate encoding, but reject
+            # malformed/overlong ASCII that could conceal a package reference.
+            encoded = take(size).replace(b"\xc0\x80", b"\x00")
+            try:
+                text = encoded.decode("utf-8", errors="surrogatepass")
+            except UnicodeDecodeError as error:
+                raise BoundaryError("invalid modified UTF-8 class constant") from error
+            pool[index] = text
+            strings.append(text)
+        elif tag == 7:
+            target = struct.unpack(">H", take(2))[0]
+            pool[index] = target
+            references.append(target)
+        elif tag in (3, 4, 9, 10, 11, 12, 17, 18):
+            take(4)
+        elif tag in (5, 6):
+            take(8)
+            index += 1
+        elif tag in (8, 16, 19, 20):
+            take(2)
+        elif tag == 15:
+            take(3)
+        else:
+            raise BoundaryError("unknown class constant-pool tag")
+        index += 1
+    _, this_class = struct.unpack(">HH", take(4))
+    name = pool.get(pool.get(this_class))
+    require(isinstance(name, str), "invalid class identity")
+    require(all(isinstance(pool.get(ref), str) for ref in references), "invalid class reference")
+    require(not any(forbidden(value) for value in strings), "forbidden class reference: " + name)
+    return name, major, [pool[ref] for ref in references]
+
+
+def inspect_jar(path, own_kind=None):
+    classes, reference_count, native_count = [], 0, 0
+    try:
+        with zipfile.ZipFile(path) as archive:
+            entries = archive.infolist()
+            require(len(entries) <= 30000, "excessive JAR entries")
+            seen = set()
+            total = 0
+            for entry in entries:
+                name = entry.filename
+                require(name not in seen, "duplicate JAR entry: " + name)
+                seen.add(name)
+                require(not name.startswith("/") and "\\" not in name
+                        and ".." not in PurePosixPath(name).parts, "unsafe JAR entry")
+                require(not any(term in name.lower().replace(".", "/") or term in name.lower()
+                                for term in FORBIDDEN), "forbidden JAR entry: " + name)
+                require(not name.lower().endswith((".py", ".pyc", ".pyo", ".jar")),
+                        "worker or nested archive in runtime: " + name)
+                require(not entry.flag_bits & 1 and (entry.external_attr >> 16) & 0o170000 != 0o120000,
+                        "encrypted/symlink JAR entry")
+                if entry.is_dir():
+                    continue
+                total += entry.file_size
+                require(entry.file_size <= 32 * 1024 * 1024 and total <= 128 * 1024 * 1024,
+                        "JAR decompression limit")
+                if name.endswith(".class"):
+                    identity, major, refs = class_info(archive.read(entry))
+                    logical_name = re.sub(r"^META-INF/versions/[0-9]+/", "", name)[:-6]
+                    require(logical_name == identity, "class name differs from archive entry")
+                    if own_kind:
+                        allowed = NATIVE_CLASS if own_kind == "scheduler" else PROTOCOL_CLASS
+                        require(allowed.fullmatch(identity) is not None, "unexpected own runtime class: " + identity)
+                        require(major <= 52, "own runtime class requires newer than Java 8")
+                        # A native class may not reach other legacy Aurora packages
+                        # through descriptors, literals, or CONSTANT_Class entries.
+                        for ref in refs:
+                            if ref.startswith("org/apache/aurora/"):
+                                require(NATIVE_CLASS.fullmatch(ref) is not None
+                                        or PROTOCOL_CLASS.fullmatch(ref) is not None,
+                                        "legacy Aurora class reference: " + ref)
+                    classes.append(identity)
+                    reference_count += len(refs)
+                elif own_kind:
+                    require(name == "META-INF/MANIFEST.MF"
+                            or own_kind == "protocol" and name == "schema.json",
+                            "unexpected own runtime resource: " + name)
+                elif name.lower().endswith((".so", ".dll", ".dylib", ".jnilib")):
+                    require(path.name == SQLITE and name.startswith("org/sqlite/native/"),
+                            "unreviewed native library")
+                    native_count += 1
+            if own_kind == "scheduler":
+                require("org/apache/aurora/nativescheduler/NativeSchedulerMain" in classes,
+                        "scheduler main class missing")
+                require("org/apache/aurora/scheduler/storage/sql/NativeSqlStore" in classes,
+                        "SQL core class missing")
+            elif own_kind == "protocol":
+                require("org/apache/aurora/nativeprotocol/ProtocolValidator" in classes,
+                        "protocol validator missing")
+                require("schema.json" in seen, "native protocol schema missing")
+    except (zipfile.BadZipFile, RuntimeError, EOFError, struct.error) as error:
+        raise BoundaryError("invalid JAR: " + path.name) from error
+    return {"classCount": len(classes), "classReferenceCount": reference_count,
+            "nativeLibraryCount": native_count,
+            **({"classes": sorted(classes)} if own_kind else {})}
+
+
+def verify(lib_dir, profile="scheduler"):
+    directory = Path(lib_dir)
+    require(directory.is_absolute() and directory.is_dir() and directory.resolve() == directory,
+            "lib-dir must be an absolute real directory")
+    files = list(directory.iterdir())
+    require(all(path.is_file() and not path.is_symlink() and path.suffix == ".jar" for path in files),
+            "runtime lib directory contains non-JAR or symlink")
+    expected = dict(EXTERNAL)
+    if profile == "protocol":
+        del expected[SQLITE]
+    names = {path.name for path in files}
+    protocol_names = names & {"protocol.jar", "aurora-native-protocol.jar"}
+    require(len(protocol_names) == 1, "exactly one native protocol JAR required")
+    own = {next(iter(protocol_names)): "protocol"}
+    if profile == "scheduler":
+        own["aurora-native-scheduler.jar"] = "scheduler"
+    require(names == set(expected) | set(own), "missing or unexpected runtime JAR: "
+            + ",".join(sorted(names ^ (set(expected) | set(own)))))
+    report = {"ok": True, "profile": profile, "javaTarget": 8, "jars": []}
+    for path in sorted(files):
+        digest = hashlib.sha256(path.read_bytes()).hexdigest()
+        if path.name in expected:
+            require(digest == expected[path.name], "external JAR SHA-256 mismatch: " + path.name)
+        item = {"name": path.name, "sha256": digest, "bytes": path.stat().st_size,
+                "kind": "own" if path.name in own else "external"}
+        if path.name in expected:
+            item["coordinate"] = COORDINATES[path.name]
+        item.update(inspect_jar(path, own.get(path.name)))
+        report["jars"].append(item)
+    return report
+
+
+def write_report(path, report):
+    destination = Path(path)
+    require(destination.is_absolute(), "report must be absolute")
+    require(not any(part.is_symlink() for part in (destination, *destination.parents)),
+            "report symlink rejected")
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    handle, temporary = tempfile.mkstemp(prefix=".boundary-", dir=destination.parent)
+    try:
+        with os.fdopen(handle, "w") as output:
+            json.dump(report, output, sort_keys=True, indent=2)
+            output.write("\n")
+            output.flush()
+            os.fsync(output.fileno())
+        os.replace(temporary, destination)
+    finally:
+        if os.path.exists(temporary):
+            os.unlink(temporary)
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--lib-dir", required=True)
+    parser.add_argument("--report", required=True)
+    parser.add_argument("--profile", choices=("scheduler", "protocol"), default="scheduler")
+    args = parser.parse_args()
+    try:
+        report = verify(args.lib_dir, args.profile)
+    except (BoundaryError, OSError, ValueError) as error:
+        write_report(args.report, {"ok": False, "profile": args.profile, "error": str(error)})
+        print("Native runtime boundary rejected: " + str(error), file=sys.stderr)
+        return 1
+    write_report(args.report, report)
+    print("Native runtime boundary verified: " + str(len(report["jars"])) + " JARs")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -1,0 +1,70 @@
+#!/usr/bin/env python3
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+# Unless required by applicable law or agreed to in writing, software distributed
+# under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+# CONDITIONS OF ANY KIND, either express or implied. See the License for the
+# specific language governing permissions and limitations under the License.
+"""Qualify a native image bundle: three recovery rounds and ten minutes of mixed work."""
+import argparse
+import importlib.machinery
+import importlib.util
+import json
+from pathlib import Path
+import sys
+import time
+
+HERE = Path(__file__).resolve().parent
+loader = importlib.machinery.SourceFileLoader('bundle_check', str(HERE.parent / 'lab/cluster-check'))
+spec = importlib.util.spec_from_loader(loader.name, loader)
+check_module = importlib.util.module_from_spec(spec)
+loader.exec_module(check_module)
+cluster = check_module.cluster
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--bundle', type=Path, required=True)
+    parser.add_argument('--run-root', type=Path, required=True, help='New absolute private lab directory')
+    args = parser.parse_args()
+    lab = None
+    result = {'ok': False, 'startedAt': time.time(), 'repeats': 3, 'mixedSeconds': 600}
+    try:
+        cluster.require(args.run_root.is_absolute() and not args.run_root.exists(),
+                        'Qualification run root must be a new absolute directory')
+        cluster.load_bundle(args.bundle)
+        lab = cluster.Lab(args.run_root, fresh=True)
+        lab.prepare(args.bundle)
+        lab.start()
+        check = check_module.Check(lab, 3, 600)
+        result['evidence'] = str(check.path)
+        check.run()
+        result['ok'] = True
+    except BaseException as error:
+        result['error'] = cluster.native.redact(str(error))
+    finally:
+        # Only this exact Lab instance's recorded Docker identities authorize cleanup.
+        if lab is not None and lab.data is not None and lab.lock is not None:
+            try:
+                try:
+                    lab.collect()
+                finally:
+                    lab.down()
+                result['cleanup'] = {'status': lab.data['status'], 'containers': lab.data['containers'],
+                                     'networks': lab.data['networks']}
+            except BaseException as error:
+                result['ok'] = False
+                result['cleanupError'] = cluster.native.redact(str(error))
+            finally:
+                result['completedAt'] = time.time()
+                try:
+                    cluster.save(lab.root / 'qualification.json', result)
+                finally:
+                    lab.release()
+    print(json.dumps(result, sort_keys=True), flush=True)
+    return 0 if result['ok'] else 1
+
+
+if __name__ == '__main__':
+    sys.exit(main())

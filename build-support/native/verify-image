@@ -1,0 +1,115 @@
+#!/usr/bin/env python3
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+# Unless required by applicable law or agreed to in writing, software distributed
+# under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+# CONDITIONS OF ANY KIND, either express or implied. See the License for the
+# specific language governing permissions and limitations under the License.
+"""Compare an exported runtime with the pinned base and exact Aurora file payload."""
+import argparse
+import hashlib
+import json
+from pathlib import Path, PurePosixPath
+import re
+import sys
+import tarfile
+
+GENERATED = {'etc/hostname', 'etc/hosts', 'etc/resolv.conf'}
+
+
+def unique(items):
+    result = {}
+    for key, value in items:
+        if key in result:
+            raise ValueError('Duplicate manifest key: ' + key)
+        result[key] = value
+    return result
+
+
+def archive_entries(path):
+    """Hash regular files in bounded memory; never extract or follow archive links."""
+    result = {}
+    with tarfile.open(path, 'r:') as archive:
+        for member in archive:
+            name = member.name.rstrip('/') if member.isdir() else member.name
+            if (not name or name.startswith('/') or '\\' in name
+                    or any(part in ('', '.', '..') for part in name.split('/'))):
+                raise ValueError('Unsafe archive path: ' + name)
+            if name in result:
+                raise ValueError('Duplicate archive path: ' + name)
+            digest = None
+            if member.isfile():
+                hasher = hashlib.sha256()
+                with archive.extractfile(member) as stream:
+                    for block in iter(lambda: stream.read(1024 * 1024), b''):
+                        hasher.update(block)
+                digest = hasher.hexdigest()
+            result[name] = {'type': member.type.decode('ascii'), 'mode': member.mode,
+                            'uid': member.uid, 'gid': member.gid, 'size': member.size,
+                            'link': member.linkname, 'sha256': digest}
+    return result
+
+
+def verify(archive, expected_path, base):
+    expected = json.loads(Path(expected_path).read_text(), object_pairs_hook=unique)
+    if not isinstance(expected, dict) or not expected:
+        raise ValueError('Expected a nonempty payload manifest')
+    for name, digest in expected.items():
+        if (not isinstance(name, str) or not name.startswith('/opt/aurora/')
+                or str(PurePosixPath(name)) != name or '..' in PurePosixPath(name).parts
+                or '\\' in name or not isinstance(digest, str) or not re.fullmatch('[a-f0-9]{64}', digest)):
+            raise ValueError('Invalid expected payload entry')
+    trusted = archive_entries(base)
+    actual = archive_entries(archive)
+    files = {}
+    errors = []
+    for name, item in actual.items():
+        if name == 'opt/aurora' and item['type'] != '5':
+            errors.append('Payload root is not a directory')
+        elif name.startswith('opt/aurora/'):
+            if item['type'] == '5':
+                continue
+            if item['type'] not in ('0', '\x00'):
+                errors.append('Payload link or special file: ' + name)
+            elif '/' + name not in expected:
+                errors.append('Unexpected payload file: ' + name)
+            else:
+                files['/' + name] = item['sha256']
+        elif name in GENERATED:
+            if item['type'] not in ('0', '\x00'):
+                errors.append('Docker-generated path is not a regular file: ' + name)
+        elif item['type'] == '5':
+            if name in trusted and trusted[name]['type'] != '5':
+                errors.append('Base file replaced with directory: ' + name)
+        elif trusted.get(name) != item:
+            errors.append('Unexpected or changed base file: ' + name)
+    for name, item in trusted.items():
+        if item['type'] != '5' and name not in GENERATED and name not in actual:
+            errors.append('Missing base file: ' + name)
+    for name, digest in expected.items():
+        if files.get(name) != digest:
+            errors.append('Missing or changed payload file: ' + name)
+    if errors:
+        raise ValueError('; '.join(errors))
+    return {'ok': True, 'fileCount': len(files), 'files': files,
+            'baseEntriesChecked': sum(item['type'] != '5' for item in trusted.values()),
+            'generatedExceptions': sorted(GENERATED)}
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    for flag in ('archive', 'base', 'expected', 'report'):
+        parser.add_argument('--' + flag, type=Path, required=True)
+    args = parser.parse_args()
+    try:
+        result = verify(args.archive, args.expected, args.base)
+    except (OSError, ValueError, tarfile.TarError) as error:
+        result = {'ok': False, 'error': str(error)}
+    args.report.write_text(json.dumps(result, indent=2, sort_keys=True) + '\n')
+    print(json.dumps({'ok': result['ok'], 'report': str(args.report)}))
+    return 0 if result['ok'] else 1
+
+
+if __name__ == '__main__':
+    sys.exit(main())

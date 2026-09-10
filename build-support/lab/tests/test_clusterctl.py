@@ -231,6 +231,114 @@ class ClusterCtlTest(unittest.TestCase):
                     patch.object(reopened, "inspect_network", return_value={}):
                 self.assertEqual(CID, reopened.inspect_container("scheduler")["Id"])
 
+    def image_bundle(self):
+        directory = self.root / "bundle"
+        (directory / "context/scheduler/jre/bin").mkdir(parents=True)
+        (directory / "context/fixtures").mkdir(parents=True)
+        paths = ("context/fixtures/cluster-helper", "context/scheduler/jre/bin/keytool")
+        for relative in paths:
+            (directory / relative).write_text("fixture executable")
+            (directory / relative).chmod(0o700)
+        metadata = {"schema": 1, "architecture": "arm64", "sourceHashes": {"test": "source"},
+                    "images": {kind: {"id": "sha256:" + str(index) * 64, "reference": "fixture:" + kind}
+                               for index, kind in enumerate(("scheduler", "agent", "scheduler-lab", "agent-lab", "tools"), 1)},
+                    "artifacts": {relative: cluster.native.sha(directory / relative) for relative in paths},
+                    "hostTools": {"helper": paths[0], "keytool": paths[1], "jre": "context/scheduler/jre",
+                                  "jreSha256": cluster.native.tree_sha(directory / "context/scheduler/jre")}}
+        (directory / "bundle.json").write_text(json.dumps(metadata))
+        return directory, metadata
+
+    def bundle_load(self, directory):
+        def docker(*args):
+            return response(json.dumps([{"Id": args[-1], "Architecture": "arm64", "Os": "linux"}]))
+        with patch.object(cluster, "source_hashes", return_value={"test": "source"}), \
+                patch.object(cluster, "docker", side_effect=docker):
+            return cluster.load_bundle(directory)
+
+    def test_bundle_verifies_artifacts_and_host_jre(self):
+        directory, metadata = self.image_bundle()
+        self.assertEqual(metadata, self.bundle_load(directory)[0])
+        (directory / metadata["hostTools"]["helper"]).write_text("tampered")
+        with self.assertRaises(cluster.native.SmokeError): self.bundle_load(directory)
+
+    def test_bundle_rejects_source_drift_and_path_escape(self):
+        directory, metadata = self.image_bundle()
+        metadata["sourceHashes"] = {"test": "changed"}
+        (directory / "bundle.json").write_text(json.dumps(metadata))
+        with self.assertRaises(cluster.native.SmokeError): self.bundle_load(directory)
+        for path in ("/etc/passwd", "../outside"):
+            with self.assertRaises(cluster.native.SmokeError): cluster.bundle_path(directory, path)
+        (directory / "escape").symlink_to(self.root)
+        with self.assertRaises(cluster.native.SmokeError): cluster.bundle_path(directory, "escape")
+
+    def test_bundle_rejects_wrong_image_architecture(self):
+        directory, _ = self.image_bundle()
+        with patch.object(cluster, "source_hashes", return_value={"test": "source"}), \
+                patch.object(cluster, "docker", return_value=response(json.dumps([
+                    {"Id": "sha256:" + "1" * 64, "Architecture": "amd64", "Os": "linux"}]))):
+            with self.assertRaises(cluster.native.SmokeError): cluster.load_bundle(directory)
+
+    def test_bundle_role_images_and_entrypoints_are_verified(self):
+        directory, metadata = self.image_bundle()
+        for role, kind in (("agent-a", "agent-lab"), ("scheduler", "scheduler-lab"),
+                           ("scheduler-restore-1", "scheduler-lab"), ("proxy-a", "tools")):
+            item = self.container(role)
+            self.lab.data["bundle"] = dict(metadata, directory=str(directory))
+            item["Image"] = metadata["images"][kind]["id"]
+            item["Config"]["Entrypoint"] = ["owned-binary"]
+            item["Config"]["Cmd"] = []
+            self.assertEqual([], self.lab.executable_mounts(role))
+            self.inspect(role, item)
+            item["Config"]["Entrypoint"] = ["unexpected"]
+            with self.assertRaises(cluster.native.SmokeError): self.inspect(role, item)
+
+    def test_bundle_creation_uses_image_id_and_no_executable_mounts(self):
+        directory, metadata = self.image_bundle()
+        self.lab.data["bundle"] = dict(metadata, directory=str(directory))
+        calls = []
+        def docker(*args, **kwargs):
+            calls.append(args)
+            if args[0] == "create":
+                (self.root / "agent-a.cid").write_text(CID)
+            return response()
+        with patch.object(self.lab, "inspect_network"), patch.object(self.lab, "inspect_container"), \
+                patch.object(cluster, "docker", side_effect=docker):
+            self.lab.create_container("agent-a", ["/opt/aurora/bin/cluster-helper", "keeper"], [], ["worker-a"])
+        create = next(args for args in calls if args[0] == "create")
+        self.assertEqual(("--entrypoint", "/opt/aurora/bin/cluster-helper",
+                          metadata["images"]["agent-lab"]["id"], "keeper"), create[-4:])
+        self.assertNotIn("--mount", create)
+
+    def test_bundle_rejects_executable_bind_even_if_record_matches(self):
+        directory, metadata = self.image_bundle()
+        item = self.container("agent-a")
+        self.lab.data["bundle"] = dict(metadata, directory=str(directory))
+        item["Image"] = metadata["images"]["agent-lab"]["id"]
+        item["Config"]["Entrypoint"] = ["owned-binary"]
+        item["Config"]["Cmd"] = []
+        item["Mounts"][0]["Destination"] = "/opt/aurora/bin"
+        self.lab.data["containers"]["agent-a"]["mounts"][0][1] = "/opt/aurora/bin"
+        with self.assertRaises(cluster.native.SmokeError): self.inspect("agent-a", item)
+
+    def test_java_build_inputs_each_influence_source_provenance(self):
+        inputs = ("protocol/java/build.gradle", "protocol/java/settings.gradle",
+                  "protocol/java/runtime-dependencies.sha256", "scheduler/native/settings.gradle")
+        with patch.object(cluster, "ROOT", self.root), \
+                patch.object(cluster.native, "tree_sha", return_value="source-tree"):
+            baseline = cluster.source_hashes()
+            for relative in inputs:
+                path = self.root / relative
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text("first")
+                first = cluster.source_hashes()
+                self.assertIn(relative, first)
+                self.assertNotEqual(baseline, first)
+                path.write_text("changed")
+                changed = cluster.source_hashes()
+                self.assertNotEqual(first[relative], changed[relative])
+                path.unlink()
+            self.assertNotIn("scheduler/native/runtime-dependencies.sha256", cluster.source_hashes())
+
     def test_operation_lock_refreshes_manifest(self):
         stale = cluster.Lab(self.root)
         self.addCleanup(stale.release)
