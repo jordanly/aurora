@@ -1,0 +1,27 @@
+{
+  "version": "native-v1alpha1",
+  "kind": "Stop",
+  "command": "stop-command-a",
+  "identity": {
+    "cluster": "lab",
+    "incarnation": "recovery-a",
+    "instance": "instance-a",
+    "attempt": "attempt-a",
+    "process": "main",
+    "run": "run-a",
+    "jobKey": {
+      "role": "fixtures",
+      "environment": "test",
+      "name": "batch"
+    }
+  },
+  "target": {
+    "node": "agent-a",
+    "journal": "journal-a",
+    "boot": "boot-a",
+    "runtime": "runtime-a"
+  },
+  "desiredRevision": "2",
+  "graceMillis": -0,
+  "reason": "cancel"
+}

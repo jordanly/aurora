@@ -1,0 +1,7 @@
+{
+  "batchTemplateSha256": "156f547eaf72cfa1a35adb7353372f9d31cdb99892a85704d9769640a86711a8",
+  "batchAssignmentSha256": "1e4be4f6036f6672b08da011341113f8d50749376bdbd1037fefc6d7b57cab80",
+  "serviceTemplateSha256": "7af03dc518a2790afbd304ad3eb2d42cb8c88cca9394a1b5a9939d212e90c4e3",
+  "serviceAssignmentASha256": "4aa74d45fde42eb8136b1eb4baa55d2533828b53c1a4e9471ef07283658c837c",
+  "serviceAssignmentBSha256": "d8ab7e55c3ad3c11b9224d3a4f56f68c61d3b21e12c8c4272185675ffa1c3f37"
+}
