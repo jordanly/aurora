@@ -1,0 +1,644 @@
+#!/usr/bin/env python3
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+# Unless required by applicable law or agreed to in writing, software distributed under
+# the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND.
+# See the License for the specific language governing permissions and limitations under the License.
+"""Build, operate and qualify a private native Java/two-Go-agent Docker cluster."""
+from __future__ import annotations
+
+import argparse
+import fcntl
+import hashlib
+import http.client
+import ipaddress
+import importlib.machinery
+import importlib.util
+import json
+import os
+from pathlib import Path
+import re
+import secrets
+import shutil
+import socket
+import ssl
+import subprocess
+import sys
+import time
+
+HERE = Path(__file__).resolve().parent
+ROOT = HERE.parents[1]
+loader = importlib.machinery.SourceFileLoader("cluster_native", str(HERE / "native-smoke"))
+spec = importlib.util.spec_from_loader(loader.name, loader)
+native = importlib.util.module_from_spec(spec)
+loader.exec_module(native)
+BASE = json.loads((HERE / "native-smoke-manifest.json").read_text())["base_image"]
+MARKER = ".aurora-cluster-lab.json"
+NODES = ("agent-a", "agent-b")
+BIN = "/opt/aurora/bin"
+JAVA = "/opt/aurora/jre/bin/java"
+RESTORE_ROLES = ("scheduler-restore", "scheduler-restore-0", "scheduler-restore-1", "scheduler-restore-2")
+ROLES = ("scheduler", *RESTORE_ROLES, *NODES, "proxy-a", "proxy-b")
+TOPOLOGY = {"scheduler": ["control"], "scheduler-restore": ["restore"],
+            "agent-a": ["worker-a"], "agent-b": ["worker-b"],
+            "proxy-a": ["worker-a", "control"], "proxy-b": ["worker-b", "control"]}
+TOPOLOGY.update({role: ["restore"] for role in RESTORE_ROLES})
+
+
+def network_aliases(role, network):
+    if role in NODES:
+        return {role}
+    if role.startswith("proxy-") and network == "control":
+        return {"agent-" + role[-1]}
+    return set()
+
+
+def creation_id(path):
+    native.regular(path)
+    require(path.stat().st_size <= 65, "Creation identity too large")
+    value = path.read_text().strip()
+    require(re.fullmatch(r"[a-f0-9]{64}", value), "Invalid creation identity")
+    return value
+
+
+def inspect_item(result):
+    items = json.loads(result.stdout)
+    require(isinstance(items, list) and len(items) == 1 and isinstance(items[0], dict),
+            "Ambiguous Docker inspection; preserved")
+    return items[0]
+
+
+
+def require(value, message):
+    if not value:
+        raise native.SmokeError(message)
+
+
+def command(args, timeout=30, check=True, cwd=None, env=None):
+    return native.run(list(map(str, args)), env or dict(os.environ), timeout, check, cwd)
+
+
+def docker(*args, **kwargs):
+    return command(["docker", *args], **kwargs)
+
+
+def save(path, value):
+    native.safe_path(path)
+    temporary = path.with_name(path.name + ".tmp")
+    native.write_json(temporary, value)
+    os.replace(temporary, path)
+    fd = os.open(path.parent, os.O_RDONLY | os.O_DIRECTORY)
+    try:
+        os.fsync(fd)
+    finally:
+        os.close(fd)
+
+
+def source_hashes():
+    paths = ("agent", "protocol/java/src", "protocol/native-v1alpha1",
+             "src/main/java/org/apache/aurora/scheduler/storage/sql", "scheduler/native/src",
+             "build-support/lab/fixtures/native-workload", "build-support/lab/fixtures/cluster-helper")
+    hashes = {p: native.tree_sha(ROOT / p) for p in paths}
+    for name in ("build-support/lab/clusterctl", "build-support/lab/cluster-check", "build-support/lab/native-smoke",
+                 "build-support/lab/native-smoke-manifest.json", "build-support/java/gradle-local", "scheduler/native/build.gradle",
+                 "scheduler/native/runtime-dependencies.sha256"):
+        path = ROOT / name
+        if path.is_file():
+            hashes[name] = native.sha(path)
+    return hashes
+
+
+class LocalTLS(http.client.HTTPSConnection):
+    """Connect to the verified private endpoint while verifying scheduler DNS/SNI."""
+    def __init__(self, address, context):
+        endpoint = ipaddress.IPv4Address(address)
+        require(endpoint.is_private and not endpoint.is_loopback and not endpoint.is_unspecified
+                and not endpoint.is_multicast and not endpoint.is_link_local, "Invalid private API address")
+        self.address = str(endpoint)
+        super().__init__("scheduler", 8443, timeout=5, context=context)
+
+    def connect(self):
+        raw = socket.create_connection((self.address, self.port), self.timeout)
+        try:
+            self.sock = self._context.wrap_socket(raw, server_hostname="scheduler")
+        except BaseException:
+            raw.close()
+            raise
+
+
+class Lab:
+    def __init__(self, root, fresh=False):
+        native.safe_path(root)
+        require("," not in str(root), "Comma in mount path unsupported")
+        self.root = root
+        self.manifest = root / MARKER
+        self.data = None
+        self.lock = None
+        if not fresh:
+            native.regular(self.manifest)
+            self.data = json.loads(self.manifest.read_text())
+            owner = root.stat()
+            require(owner.st_uid == os.getuid() and owner.st_mode & 0o077 == 0,
+                    "Lab root must remain private and owned by the current UID")
+            require(self.data["root"] == str(root) and self.data["uid"] == os.getuid()
+                    and type(self.data["gid"]) is int and self.data["gid"] > 0 and self.data["schema"] == 1,
+                    "Lab ownership marker differs")
+            require(re.fullmatch(r"[a-f0-9]{16}", self.data["run"]), "Invalid lab identity")
+
+    def persist(self):
+        save(self.manifest, self.data)
+
+    def acquire(self):
+        native.safe_path(self.root / "operation.lock")
+        self.lock = os.open(self.root / "operation.lock", os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW, 0o600)
+        try:
+            fcntl.flock(self.lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            # Another operation may have committed since this Lab was constructed.
+            current = Lab(self.root).data
+            require(current["run"] == self.data["run"], "Lab identity changed before lock")
+            self.data = current
+        except BaseException:
+            os.close(self.lock)
+            self.lock = None
+            raise
+
+    def release(self):
+        if self.lock is not None:
+            os.close(self.lock)
+            self.lock = None
+
+    def labels(self, role):
+        return {"com.aurora.lab.lane": "cluster-mvp", "com.aurora.lab.run": self.data["run"],
+                "com.aurora.lab.root": str(self.root), "com.aurora.lab.role": role}
+
+    def name(self, role):
+        return "aurora-" + self.data["run"] + "-" + role
+
+    def prepare(self):
+        require(os.getuid() > 0 and os.getgid() > 0, "Run as the ordinary Docker-authorized user")
+        require(not self.root.exists(), "Run root must be new; existing state preserved")
+        self.root.mkdir(mode=0o700, parents=True)
+        self.data = {"schema": 1, "root": str(self.root), "run": secrets.token_hex(8),
+                     "uid": os.getuid(), "gid": os.getgid(), "base": BASE,
+                     "networks": {}, "containers": {}, "status": "preparing"}
+        self.persist()
+        self.acquire()
+        for name in ("artifacts/bin", "certificates", "config", "evidence"):
+            (self.root / name).mkdir(mode=0o700, parents=True)
+        for role in ("scheduler", *NODES, "proxy-a", "proxy-b"):
+            for name in ("control", "state", "work", "evidence", "tls"):
+                (self.root / role / name).mkdir(mode=0o700, parents=True)
+        base = json.loads(docker("image", "inspect", BASE).stdout)[0]
+        require(base["Architecture"] == "arm64" and base["Os"] == "linux", "Base image must be Linux ARM64")
+        self.data["imageId"] = base["Id"]
+        self.persist()
+        before = source_hashes()
+        go = ROOT / ".pi-tools/go1.27.1/go/bin/go"
+        goenv = dict(os.environ, CGO_ENABLED="0", GOOS="linux", GOARCH="arm64", GOTOOLCHAIN="local",
+                     GOPROXY="off", GOMAXPROCS="2", GOCACHE=str(ROOT / ".pi-tools/go-cache"),
+                     GOMODCACHE=str(ROOT / ".pi-tools/go-mod"))
+        for name, source, target in (("aurora-agent", "agent", "./cmd/aurora-agent"),
+                                     ("native-workload", "build-support/lab/fixtures/native-workload", "."),
+                                     ("cluster-helper", "build-support/lab/fixtures/cluster-helper", ".")):
+            command([go, "build", "-p", "2", "-trimpath", "-o", self.root / "artifacts/bin" / name,
+                     target], timeout=180, env=goenv, cwd=ROOT / source)
+        build = command([ROOT / "build-support/java/gradle-local", "-p", "scheduler/native",
+                         "--offline", "test", "installDist"], timeout=300, cwd=ROOT)
+        (self.root / "evidence/java-build.log").write_text(native.redact(build.stdout + build.stderr))
+        dist = ROOT / ".pi-tools/native-scheduler-dist/install/aurora-native-scheduler"
+        require((dist / "lib").is_dir(), "Native scheduler distribution missing")
+        shutil.copytree(dist / "lib", self.root / "artifacts/lib")
+        require(not any("mesos" in p.name.lower() for p in (self.root / "artifacts/lib").iterdir()),
+                "Unexpected Mesos dependency in native distribution")
+        shutil.copytree(ROOT / ".pi-tools/jdk8u462-b08", self.root / "artifacts/jre", symlinks=False)
+        require(source_hashes() == before, "Sources changed during build; use a fresh run root")
+        self.data["sources"] = before
+        self.data["artifacts"] = {str(p.relative_to(self.root / "artifacts")): native.sha(p)
+                                  for folder in ("bin", "lib")
+                                  for p in (self.root / "artifacts" / folder).iterdir() if p.is_file()}
+        self.data["jreSha256"] = native.tree_sha(self.root / "artifacts/jre")
+        self.certificates()
+        self.configure()
+        self.data["status"] = "prepared"
+        self.persist()
+
+    def certificates(self):
+        out = self.root / "certificates/generated"
+        command([self.root / "artifacts/bin/cluster-helper", "certgen", "--out", out])
+        password = self.root / "scheduler/tls/password"
+        password.write_text(secrets.token_hex(24) + "\n")
+        password.chmod(0o600)
+        for node in NODES:
+            for src, dst in (("ca.crt", "ca.crt"), (node + ".crt", "cert.crt"), (node + ".key", "key.pem")):
+                shutil.copy2(out / src, self.root / node / "tls" / dst)
+        command(["openssl", "pkcs12", "-export", "-name", "scheduler", "-inkey", out / "scheduler.key",
+                 "-in", out / "scheduler.crt", "-certfile", out / "ca.crt", "-out",
+                 self.root / "scheduler/tls/keystore.p12", "-passout", "file:" + str(password),
+                 "-keypbe", "PBE-SHA1-3DES", "-certpbe", "PBE-SHA1-3DES", "-macalg", "sha1"])
+        command([ROOT / ".pi-tools/jdk8u462-b08/bin/keytool", "-importcert", "-noprompt", "-alias", "ca",
+                 "-file", out / "ca.crt", "-keystore", self.root / "scheduler/tls/truststore.p12",
+                 "-storetype", "PKCS12", "-storepass:file", password])
+        for p in (self.root / "scheduler/tls").iterdir():
+            p.chmod(0o600)
+
+    def configure(self):
+        nodes = []
+        for node in NODES:
+            suffix = node[-1]
+            config = {"cluster": "lab", "incarnation": "recovery-a", "node": node,
+                      "journal": "journal-" + suffix, "boot": "boot-" + suffix,
+                      "runtime": "runtime-" + suffix, "session": "initial-" + suffix,
+                      "schedulerEpoch": "0", "peer": "scheduler", "cpuMillis": 1000,
+                      "memoryBytes": 536870912}
+            save(self.root / "config" / (node + ".json"), config)
+            nodes.append({k: config[k] for k in ("node", "journal", "boot", "runtime", "cpuMillis", "memoryBytes")})
+            nodes[-1].update(url="https://" + node + ":9443", network="agent-container", portStart=18080)
+        save(self.root / "config/scheduler.json", {"cluster": "lab", "incarnation": "recovery-a", "nodes": nodes})
+
+    def create_network(self, role):
+        require(role in ("control", "worker-a", "worker-b", "restore")
+                and role not in self.data["networks"], "Invalid or recorded network role")
+        name = self.name(role)
+        require(not docker("network", "ls", "-q", "--filter", "name=^" + name + "$").stdout.strip(),
+                "Network name collision")
+        args = ["network", "create", "--internal", "--driver", "bridge"]
+        for key, val in self.labels(role).items():
+            args += ["--label", key + "=" + val]
+        self.data["networks"][role] = {"id": None, "name": name}
+        self.persist()
+        result = docker(*args, name, check=False)
+        ident = result.stdout.strip()
+        if re.fullmatch(r"[a-f0-9]{64}", ident):
+            self.data["networks"][role]["id"] = ident
+            self.persist()
+        require(result.returncode == 0 and self.data["networks"][role]["id"] is not None,
+                "Network creation uncertain; pending ownership record preserved")
+
+    def inspect_network(self, role):
+        record = self.data["networks"][role]
+        require(record["name"] == self.name(role) and isinstance(record["id"], str)
+                and re.fullmatch(r"[a-f0-9]{64}", record["id"]), "Unknown network creation; preserved")
+        item = inspect_item(docker("network", "inspect", record["id"]))
+        require(item["Id"] == record["id"] and item["Name"] == record["name"]
+                and item["Internal"] and item["Driver"] == "bridge"
+                and all(item["Labels"].get(k) == v for k, v in self.labels(role).items()),
+                "Network ownership/isolation mismatch; preserved")
+        return item
+
+    def create_container(self, role, args, mounts, networks, publish=False):
+        require(role in ROLES and networks == TOPOLOGY[role], "Invalid role/network topology")
+        require(publish is (role == "scheduler" or role in RESTORE_ROLES), "Only scheduler API may publish")
+        require(role not in self.data["containers"], "Container role already recorded")
+        for network in networks:
+            self.inspect_network(network)
+        name = self.name(role)
+        require(not docker("ps", "-aq", "--filter", "name=^/" + name + "$").stdout.strip(),
+                "Container name collision; preserved")
+        cidfile = self.root / (role + ".cid")
+        native.safe_path(cidfile)
+        require(not cidfile.exists(), "Container creation marker collision")
+        create = ["create", "--cidfile", str(cidfile), "--name", name, "--pull", "never",
+                  "--platform", "linux/arm64", "--init", "--read-only", "--cap-drop", "ALL",
+                  "--security-opt", "no-new-privileges:true", "--user", f"{self.data['uid']}:{self.data['gid']}",
+                  "--pids-limit", "128", "--cpus", "1.0", "--network", self.name(networks[0]),
+                  "--tmpfs", "/tmp:rw,nosuid,nodev,noexec,size=16m,mode=1777",
+                  "--log-opt", "max-size=1m", "--log-opt", "max-file=2"]
+        if role.startswith("scheduler"):
+            create += ["--tmpfs", f"/run/aurora-native:rw,nosuid,nodev,exec,size=32m,mode=0700,uid={self.data['uid']},gid={self.data['gid']}"]
+        if role in NODES:
+            create += ["--network-alias", role]
+        for key, val in self.labels(role).items():
+            create += ["--label", key + "=" + val]
+        require(len({target for _, target, _ in mounts}) == len(mounts), "Duplicate bind destination")
+        for src, target, writable in mounts:
+            native.safe_path(src)
+            require(src.is_relative_to(self.root) and src.exists() and "," not in str(src), "Invalid bind source")
+            require(Path(target).is_absolute() and ".." not in Path(target).parts and target != "/"
+                    and "," not in target, "Invalid bind destination")
+            if writable:
+                require(target in ("/state", "/work", "/evidence", "/control")
+                        and src == self.root / role / target[1:], "Writable bind escapes role scope")
+            create += ["--mount", f"type=bind,source={src},target={target}" + ("" if writable else ",readonly")]
+        create += [BASE, *args]
+        # Save the expected identity/config first, so partial creation remains reviewable.
+        self.data["containers"][role] = {"id": None, "name": name, "args": args, "networks": networks,
+                                         "mounts": [[str(s), t, w] for s, t, w in mounts], "publish": publish,
+                                         "apiMode": "private" if publish else None}
+        self.persist()
+        docker(*create)
+        ident = creation_id(cidfile)
+        self.data["containers"][role]["id"] = ident
+        self.persist()
+        for network in networks[1:]:
+            aliases = ["--alias", "agent-" + role[-1]] if role.startswith("proxy-") else []
+            docker("network", "connect", *aliases, self.name(network), ident)
+        # Worker names are visible only in their individual worker bridge.
+        # Proxy aliases on control route the scheduler through the fault boundary.
+        self.inspect_container(role)
+        docker("start", ident)
+        item = self.inspect_container(role)
+        if publish:
+            self.data["containers"][role]["address"] = item["NetworkSettings"]["Networks"][self.name(networks[0])]["IPAddress"]
+            self.data["containers"][role]["port"] = 8443
+            self.persist()
+
+    def inspect_container(self, role, allow_partial=False):
+        record = self.data["containers"][role]
+        ident = record["id"]
+        if ident is None:
+            cidfile = self.root / (role + ".cid")
+            ident = creation_id(cidfile)
+        require(re.fullmatch(r"[a-f0-9]{64}", ident), "Missing creation ID; unknown resource preserved")
+        item = inspect_item(docker("inspect", ident))
+        host = item["HostConfig"]
+        require(item["Id"] == ident and item["Name"] == "/" + record["name"]
+                and item["Image"] == self.data["imageId"]
+                and all(item["Config"]["Labels"].get(k) == v for k, v in self.labels(role).items()),
+                "Container ownership mismatch; preserved")
+        require(item["Config"]["User"] == f"{self.data['uid']}:{self.data['gid']}" and host["ReadonlyRootfs"]
+                and host["Init"] and not host["Privileged"] and host["PidMode"] == ""
+                and host["CapDrop"] == ["ALL"] and not host.get("CapAdd")
+                and host["SecurityOpt"] == ["no-new-privileges:true"]
+                and item["Config"]["Cmd"] == record["args"], "Container isolation/command differs; preserved")
+        require(all(m["Type"] in ("bind", "tmpfs") for m in item["Mounts"]), "Unexpected volume mount; preserved")
+        actual = sorted((m["Source"], m["Destination"], m["RW"]) for m in item["Mounts"] if m["Type"] == "bind")
+        require(actual == sorted(tuple(m) for m in record["mounts"]), "Unexpected bind roots; preserved")
+        require(record["networks"] == TOPOLOGY[role], "Recorded network topology differs; preserved")
+        actual_networks = item["NetworkSettings"]["Networks"]
+        expected_networks = {self.name(n) for n in record["networks"]}
+        require((set(actual_networks) <= expected_networks and self.name(record["networks"][0]) in actual_networks)
+                if allow_partial else set(actual_networks) == expected_networks,
+                "Container network membership differs; preserved")
+        for network in record["networks"]:
+            endpoint = actual_networks.get(self.name(network))
+            if endpoint is None:
+                continue
+            created = item["State"].get("Status") == "created" and not item["State"]["Running"]
+            require(endpoint["NetworkID"] == self.data["networks"][network]["id"]
+                    or (created and endpoint["NetworkID"] == ""),
+                    "Container network identity differs; preserved")
+            self.inspect_network(network)
+            aliases = set(endpoint.get("Aliases") or [])
+            required = network_aliases(role, network)
+            automatic = {record["name"], ident, ident[:12]}
+            require(required <= aliases and aliases <= required | automatic,
+                    "Container network aliases differ; preserved")
+        require(record["publish"] is (role == "scheduler" or role in RESTORE_ROLES), "Invalid publication record")
+        bindings = host.get("PortBindings") or {}
+        active_ports = item["NetworkSettings"].get("Ports") or {}
+        # Only cleanup may accept the old, discarded Docker internal-bridge request.
+        legacy_pending = (allow_partial and record["publish"] and "apiMode" not in record
+                          and "port" not in record and bindings ==
+                          {"8443/tcp": [{"HostIp": "127.0.0.1", "HostPort": ""}]})
+        require(not bindings or legacy_pending, "Unexpected host port publication; preserved")
+        require(not any(active_ports.values()), "Unexpected live publication; preserved")
+        if record["publish"] and item["State"]["Running"] and not legacy_pending:
+            require(record.get("apiMode") == "private", "Unverified API access mode; preserved")
+            address = item["NetworkSettings"]["Networks"][self.name(record["networks"][0])]["IPAddress"]
+            endpoint = ipaddress.IPv4Address(address)
+            require(endpoint.is_private and not endpoint.is_loopback and not endpoint.is_unspecified
+                    and not endpoint.is_multicast and not endpoint.is_link_local,
+                    "Invalid private API endpoint; preserved")
+            require("address" not in record or record["address"] == str(endpoint),
+                    "Private API endpoint changed; preserved")
+        return item
+
+    def scheduler_args(self):
+        return [BIN + "/cluster-helper", "keeper", "--", JAVA, "-Xms32m", "-Xmx192m",
+                "-XX:ActiveProcessorCount=2", "-Djava.io.tmpdir=/run/aurora-native", "-cp", "/opt/aurora/lib/*",
+                "org.apache.aurora.nativescheduler.NativeSchedulerMain", "--config", "/config/scheduler.json",
+                "--state", "/state", "--listen", "0.0.0.0:8443", "--tls-keystore", "/tls/keystore.p12",
+                "--tls-truststore", "/tls/truststore.p12", "--tls-password-file", "/tls/password"]
+
+    def start(self):
+        for role in ("control", "worker-a", "worker-b"):
+            self.create_network(role)
+        artifacts = [(self.root / "artifacts/bin", BIN, False)]
+        for node in NODES:
+            suffix = node[-1]
+            args = [BIN + "/cluster-helper", "keeper", "--", BIN + "/aurora-agent", "serve",
+                    "--config", "/config/agent.json", "--state", "/state/state.db", "--work-root", "/work",
+                    "--network", "agent-container", "--log-bytes", "4096", "--listen", ":8443",
+                    "--tls-cert", "/tls/cert.crt", "--tls-key", "/tls/key.pem", "--tls-ca", "/tls/ca.crt"]
+            mounts = artifacts + [(self.root / "config" / (node + ".json"), "/config/agent.json", False)]
+            mounts += [(self.root / node / n, "/" + n, n != "tls") for n in ("state", "work", "evidence", "control", "tls")]
+            self.create_container(node, args, mounts, ["worker-" + suffix])
+            proxy = "proxy-" + suffix
+            self.create_container(proxy, [BIN + "/cluster-helper", "proxy", "--listen", ":9443",
+                                          "--target", self.name(node) + ":8443", "--control", "/control"],
+                                  artifacts + [(self.root / proxy / "control", "/control", True)],
+                                  ["worker-" + suffix, "control"])
+        mounts = artifacts + [(self.root / "artifacts/jre", "/opt/aurora/jre", False),
+                               (self.root / "artifacts/lib", "/opt/aurora/lib", False),
+                               (self.root / "config/scheduler.json", "/config/scheduler.json", False)]
+        mounts += [(self.root / "scheduler" / n, "/" + n, n != "tls") for n in ("state", "control", "tls")]
+        self.create_container("scheduler", self.scheduler_args(), mounts, ["control"], publish=True)
+        self.await_state(lambda s: len(s["nodes"]) == 2 and all(n["reachable"] for n in s["nodes"]), timeout=60)
+        self.data["status"] = "running"
+        self.persist()
+
+    def request(self, method, path, body=None, role="scheduler", identity="operator", expected=(200, 201, 202)):
+        record = self.data["containers"][role]
+        require(record.get("apiMode") == "private" and record.get("port") == 8443,
+                "Unverified scheduler API endpoint")
+        address = record["address"]
+        certs = self.root / "certificates/generated"
+        context = ssl.create_default_context(cafile=str(certs / "ca.crt"))
+        context.minimum_version = ssl.TLSVersion.TLSv1_2
+        if identity is not None:
+            context.load_cert_chain(certs / (identity + ".crt"), certs / (identity + ".key"))
+        connection = LocalTLS(address, context)
+        payload = None if body is None else json.dumps(body, separators=(",", ":")).encode()
+        try:
+            connection.request(method, path, payload, {"Content-Type": "application/json", "Connection": "close"})
+            response = connection.getresponse()
+            data = response.read(1048577)
+            require(len(data) <= 1048576, "Operator response limit")
+            require(response.status in expected, "Scheduler HTTP " + str(response.status) + ": " + native.redact(data.decode(errors="replace"))[:300])
+            return json.loads(data)
+        finally:
+            connection.close()
+
+    def state(self, role="scheduler"):
+        return self.request("GET", "/v1/state", role=role)
+
+    def await_state(self, predicate, timeout=30, role="scheduler"):
+        deadline = time.monotonic() + timeout
+        last = None
+        while time.monotonic() < deadline:
+            try:
+                last = self.state(role)
+                if predicate(last):
+                    return last
+            except (OSError, http.client.HTTPException, native.SmokeError):
+                pass
+            time.sleep(0.25)
+        if last is not None:
+            save(self.root / "evidence/last-state.json", last)
+        raise native.SmokeError("Cluster condition timed out; see evidence/last-state.json and container logs")
+
+    def fault(self, role, action):
+        require(role in ("scheduler", *NODES, "proxy-a", "proxy-b"), "Unknown fault target")
+        self.inspect_container(role)
+        control = self.root / role / "control"
+        native.safe_path(control)
+        if role.startswith("proxy-"):
+            require(action in ("block", "unblock"), "Proxy accepts block/unblock")
+            path = control / "blocked"
+            native.safe_path(path)
+            if action == "block":
+                fd = os.open(path, os.O_CREAT | os.O_WRONLY | os.O_NOFOLLOW, 0o600)
+                os.close(fd)
+            else:
+                path.unlink(missing_ok=True)
+        else:
+            require(action in ("restart", "crash", "pause", "resume"), "Unknown keeper action")
+            path = control / action
+            native.safe_path(path)
+            fd = os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY | os.O_NOFOLLOW, 0o600)
+            os.close(fd)
+
+    def collect(self):
+        for role in self.data["containers"]:
+            try:
+                item = self.inspect_container(role)
+                result = docker("logs", "--tail", "200", item["Id"], check=False)
+                (self.root / "evidence" / (role + ".log")).write_text(native.redact(result.stdout + result.stderr))
+            except (native.SmokeError, OSError, ValueError, KeyError, TypeError):
+                pass
+
+    def container_absent(self, role):
+        record = self.data["containers"][role]
+        ident = record["id"]
+        if ident is None:
+            # A cidfile is the only recovery authority for partial creation.
+            ident = creation_id(self.root / (role + ".cid"))
+        require(re.fullmatch(r"[a-f0-9]{64}", ident), "Unknown container identity; preserved")
+        listed = docker("ps", "-aq", "--no-trunc", "--filter", "id=" + ident).stdout.split()
+        require(all(re.fullmatch(r"[a-f0-9]{64}", value) for value in listed),
+                "Container absence query ambiguous")
+        return ident not in listed
+
+    def network_absent(self, role):
+        ident = self.data["networks"][role]["id"]
+        require(isinstance(ident, str) and re.fullmatch(r"[a-f0-9]{64}", ident),
+                "Unknown network creation; preserved")
+        listed = docker("network", "ls", "-q", "--no-trunc").stdout.split()
+        require(all(re.fullmatch(r"[a-f0-9]{64}", value) for value in listed),
+                "Network absence query ambiguous")
+        return ident not in listed
+
+    def down(self):
+        failures = []
+        roles = sorted(self.data["containers"], key=lambda r: (not r.startswith("scheduler"), r))
+        for role in roles:
+            try:
+                if self.container_absent(role):
+                    del self.data["containers"][role]
+                    self.persist()
+                    continue
+                item = self.inspect_container(role, allow_partial=True)
+                result = docker("logs", "--tail", "200", item["Id"], check=False)
+                (self.root / "evidence" / (role + ".log")).write_text(native.redact(result.stdout + result.stderr))
+                if item["State"]["Running"]:
+                    docker("stop", "--time", "10", item["Id"], timeout=20)
+                self.inspect_container(role, allow_partial=True)
+                docker("rm", item["Id"])
+                require(self.container_absent(role), "Container removal unconfirmed")
+                del self.data["containers"][role]
+                self.persist()
+            except (native.SmokeError, OSError, ValueError, KeyError, TypeError) as error:
+                failures.append(str(error))
+        for role in list(self.data["networks"]):
+            try:
+                if self.network_absent(role):
+                    del self.data["networks"][role]
+                    self.persist()
+                    continue
+                item = self.inspect_network(role)
+                require(not item["Containers"], "Network has remaining endpoints; preserved")
+                docker("network", "rm", item["Id"])
+                require(self.network_absent(role), "Network removal unconfirmed")
+                del self.data["networks"][role]
+                self.persist()
+            except (native.SmokeError, OSError, ValueError, KeyError, TypeError) as error:
+                failures.append(str(error))
+        self.data["status"] = "stopped" if not failures else "cleanup-incomplete"
+        self.persist()
+        require(not failures, "; ".join(failures))
+
+
+def job(name, mode="batch", refuse=False):
+    require(re.fullmatch(r"[a-z][a-z0-9-]{0,48}", name), "Invalid fixture job name")
+    body = json.loads((ROOT / "protocol/native-v1alpha1/fixtures/valid" / ("service.json" if mode == "service" else "batch.json")).read_text())
+    body["jobKey"]["name"] = name
+    template = body["template"]
+    template["argv"] = [BIN + "/native-workload", "--mode", mode, "--identity", name,
+                        "--evidence", "/evidence/" + name + ".jsonl"]
+    template["env"] = {"LANG": "C"}
+    template["stop"]["graceMillis"] = 300
+    if mode == "service":
+        template["argv"] += ["--port", {"portRef": "http"}, "--ready-delay-ms", "100"]
+        if refuse:
+            template["argv"] += ["--refuse-sigterm"]
+    return body
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--run-root", type=Path, default=ROOT / ".pi-lab/cluster-mvp")
+    sub = parser.add_subparsers(dest="action", required=True)
+    sub.add_parser("up")
+    sub.add_parser("status")
+    sub.add_parser("down")
+    sub.add_parser("demo")
+    submit = sub.add_parser("submit")
+    submit.add_argument("--file", type=Path, required=True)
+    stop = sub.add_parser("stop")
+    stop.add_argument("--job", required=True)
+    fault = sub.add_parser("fault")
+    fault.add_argument("--target", required=True, choices=("scheduler", *NODES, "proxy-a", "proxy-b"))
+    fault.add_argument("--action", dest="fault_action", required=True, choices=("restart", "crash", "pause", "resume", "block", "unblock"))
+    args = parser.parse_args()
+    if args.action == "fault" and ((args.target.startswith("proxy-") and args.fault_action not in ("block", "unblock"))
+                                  or (not args.target.startswith("proxy-") and args.fault_action in ("block", "unblock"))):
+        parser.error("fault action does not apply to target")
+    lab = None
+    try:
+        lab = Lab(args.run_root, fresh=args.action == "up")
+        if args.action == "up":
+            lab.prepare()
+            lab.start()
+            result = {"ok": True, "runRoot": str(lab.root), "address": lab.data["containers"]["scheduler"]["address"], "port": 8443, "nodes": 2}
+        elif args.action == "status":
+            result = lab.state()
+        else:
+            lab.acquire()
+            if args.action == "down":
+                lab.down()
+                result = {"ok": True, "status": "stopped", "evidence": str(lab.root / "evidence")}
+            elif args.action == "submit":
+                result = lab.request("POST", "/v1/jobs", json.loads(args.file.read_text()))
+            elif args.action == "stop":
+                result = lab.request("POST", "/v1/jobs/stop", {"role": "fixtures", "environment": "test", "name": args.job})
+            elif args.action == "fault":
+                lab.fault(args.target, args.fault_action)
+                result = {"ok": True}
+            elif args.action == "demo":
+                result = [lab.request("POST", "/v1/jobs", job("mvp-batch")),
+                          lab.request("POST", "/v1/jobs", job("mvp-service", "service"))]
+        print(json.dumps(result, indent=2, sort_keys=True))
+        return 0
+    except (native.SmokeError, OSError, ValueError, KeyError, TypeError, http.client.HTTPException) as error:
+        if lab is not None and lab.data is not None:
+            lab.collect()
+        print(json.dumps({"ok": False, "error": native.redact(str(error)), "runRoot": str(args.run_root)}), file=sys.stderr)
+        return 1
+    finally:
+        if lab is not None:
+            lab.release()
+
+
+if __name__ == "__main__":
+    sys.exit(main())

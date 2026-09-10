@@ -1,0 +1,368 @@
+#!/usr/bin/env python3
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+# Unless required by applicable law or agreed to in writing, software distributed under
+# the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND.
+# See the License for the specific language governing permissions and limitations under the License.
+"""Physical batch/service, restart, partition and isolated restore acceptance for clusterctl."""
+import argparse
+import copy
+import http.client
+import importlib.machinery
+import importlib.util
+import json
+import os
+from pathlib import Path
+import shutil
+import socket
+import ssl
+import sys
+import time
+
+HERE = Path(__file__).resolve().parent
+loader = importlib.machinery.SourceFileLoader("clusterctl", str(HERE / "clusterctl"))
+spec = importlib.util.spec_from_loader(loader.name, loader)
+cluster = importlib.util.module_from_spec(spec)
+loader.exec_module(cluster)
+require, save, docker = cluster.require, cluster.save, cluster.docker
+
+
+def attempts(state, name):
+    return [a for a in state["attempts"] if a["identity"]["jobKey"]["name"] == name]
+
+
+def terminal(items):
+    return bool(items) and all(a["state"] in ("succeeded", "failed", "stopped", "lost")
+                               and a["cleanup"] == "complete" and not a["reserved"] for a in items)
+
+
+def ready(items):
+    active = [a for a in items if a["reserved"]]
+    return len(active) == 2 and len({a["node"] for a in active}) == 2 and all(
+        a["state"] == "running" and a["ready"] and a["cleanup"] != "complete" for a in active)
+
+
+class Check:
+    def __init__(self, lab, repeats, seconds):
+        self.lab, self.repeats, self.seconds = lab, repeats, seconds
+        require(cluster.source_hashes() == lab.data["sources"],
+                "Sources or harness changed since lab build; qualify a freshly built lab")
+        for name, expected in lab.data["artifacts"].items():
+            path = lab.root / "artifacts" / name
+            require(path.is_relative_to(lab.root / "artifacts") and ".." not in path.parts
+                    and cluster.native.sha(path) == expected, "Lab artifact changed since build")
+        self.prefix = "c" + str(int(time.time()))
+        self.evidence = {"ok": False, "startedAt": time.time(), "run": lab.data["run"],
+                         "sources": lab.data["sources"], "cases": [], "repeats": repeats,
+                         "mixedSeconds": seconds, "checkSha256": cluster.native.sha(Path(__file__).resolve())}
+        self.path = lab.root / "evidence" / (self.prefix + "-result.json")
+        self.write()
+
+    def write(self):
+        save(self.path, self.evidence)
+
+    def case(self, name, **details):
+        self.evidence["cases"].append(dict(name=name, ok=True, at=time.time(), **details))
+        self.write()
+        print(json.dumps({"case": name, "ok": True}), flush=True)
+
+    def state(self):
+        return self.lab.state()
+
+    def wait(self, name, predicate, timeout=40):
+        return self.lab.await_state(lambda s: predicate(attempts(s, name)), timeout)
+
+    def submit(self, body):
+        return self.lab.request("POST", "/v1/jobs", body)
+
+    def stop(self, name):
+        self.lab.request("POST", "/v1/jobs/stop", {"role": "fixtures", "environment": "test", "name": name})
+
+    def launches(self, name, node=None):
+        result = []
+        for worker in ([node] if node else cluster.NODES):
+            path = self.lab.root / worker / "evidence" / (name + ".jsonl")
+            cluster.native.safe_path(path)
+            if path.exists():
+                require(path.stat().st_size <= 1048576, "Workload evidence too large")
+                result += [dict(json.loads(line), node=worker) for line in path.read_text().splitlines()
+                           if json.loads(line).get("event") == "launch"]
+        return result
+
+    def signals(self, name, node):
+        path = self.lab.root / node / "evidence" / (name + ".jsonl")
+        return [json.loads(line) for line in path.read_text().splitlines()
+                if json.loads(line).get("event") == "signal"]
+
+    def physical(self, item, available=False):
+        container = self.lab.inspect_container(item["node"])
+        port = item["run"]["assignment"]["ports"][0]["number"]
+        result = docker("exec", container["Id"], cluster.BIN + "/native-workload", "--mode",
+                        "port-check" if available else "probe", "--port", str(port), timeout=5)
+        data = json.loads(result.stdout)
+        if available:
+            require(data == {"available": True, "port": port}, "Exact port did not rebind after cleanup")
+        else:
+            require(data == {"identity": item["identity"]["jobKey"]["name"], "ready": True},
+                    "Physical HTTP response differs from scheduled workload")
+        return data
+
+    def generation(self, role):
+        path = self.lab.root / role / "control/daemon.json"
+        return json.loads(path.read_text())["generation"]
+
+    def agent_snapshot(self, node):
+        """Read actual wait results through the agent's authenticated transport."""
+        item = self.lab.inspect_container(node)
+        address = item["NetworkSettings"]["Networks"][self.lab.name("worker-" + node[-1])]["IPAddress"]
+        cursor = next(n for n in self.state()["nodes"] if n["node"] == node)["cursor"]
+        certificates = self.lab.root / "certificates/generated"
+        context = ssl.create_default_context(cafile=str(certificates / "ca.crt"))
+        context.load_cert_chain(certificates / "scheduler.crt", certificates / "scheduler.key")
+        connection = http.client.HTTPSConnection(node, 8443, timeout=5, context=context)
+        raw = socket.create_connection((address, 8443), timeout=5)
+        try:
+            connection.sock = context.wrap_socket(raw, server_hostname=node)
+            connection.request("GET", "/v1/state?afterCursor=" + cursor + "&limit=128",
+                               headers={"Connection": "close"})
+            response = connection.getresponse()
+            data = response.read(1048577)
+            require(response.status == 200 and len(data) <= 1048576, "Agent evidence read failed")
+            snapshot = json.loads(data)
+            enrolled = json.loads((self.lab.root / "config" / (node + ".json")).read_text())
+            require(all(snapshot["config"][field] == enrolled[field] for field in
+                        ("cluster", "incarnation", "node", "journal", "boot", "runtime", "peer")),
+                    "Agent evidence identity differs from enrolled node")
+            return snapshot["state"]
+        finally:
+            connection.close()
+            raw.close()
+
+    def crash(self, role):
+        old = self.generation(role)
+        self.lab.fault(role, "crash")
+        deadline = time.monotonic() + 15
+        while time.monotonic() < deadline:
+            if self.generation(role) > old:
+                return self.generation(role)
+            time.sleep(0.1)
+        raise cluster.native.SmokeError("Keeper did not restart " + role)
+
+    def auth(self):
+        denied = False
+        try:
+            self.lab.request("GET", "/v1/state", identity=None)
+        except (ssl.SSLError, OSError, http.client.HTTPException, cluster.native.SmokeError):
+            denied = True
+        require(denied, "Unauthenticated operator request succeeded")
+        self.lab.request("GET", "/v1/state", identity="agent-a", expected=(403,))
+        self.case("operator-mtls-and-role-rejection")
+
+    def round(self, number):
+        label = self.prefix + "-r" + str(number)
+        batch = label + "-batch"
+        body = cluster.job(batch)
+        self.submit(body)
+        state = self.wait(batch, lambda a: len(a) == 1 and terminal(a) and a[0]["state"] == "succeeded")
+        require(len(self.launches(batch)) == 1, "Batch physical launch missing/duplicated")
+        self.submit(body)
+        conflicting = copy.deepcopy(body)
+        conflicting["template"]["argv"] += ["--exit-code", "7"]
+        self.lab.request("POST", "/v1/jobs", conflicting, expected=(409,))
+        self.case(label + "-batch-submit-replay", attempts=attempts(state, batch), launches=1)
+
+        service = label + "-service"
+        self.submit(cluster.job(service, "service"))
+        state = self.wait(service, ready)
+        live = attempts(state, service)
+        for item in live:
+            self.physical(item)
+        require(len(self.launches(service)) == 2, "Two service replicas not physically launched")
+        original_ids = {a["identity"]["attempt"] for a in live}
+        self.case(label + "-two-agent-service-ready", attempts=live)
+
+        old_epoch = int(state["epoch"])
+        generation = self.crash("scheduler")
+        state = self.lab.await_state(lambda s: int(s["epoch"]) > old_epoch
+                                    and all(n["reachable"] for n in s["nodes"])
+                                    and ready(attempts(s, service)), timeout=40)
+        require({a["identity"]["attempt"] for a in attempts(state, service)} == original_ids,
+                "Scheduler restart replaced a live service")
+        require(len(self.launches(batch)) == 1 and len(self.launches(service)) == 2,
+                "Scheduler restart relaunched an existing workload")
+        require(terminal(attempts(state, batch)), "Completed batch state regressed after restart")
+        self.case(label + "-scheduler-crash-recovery", epoch=state["epoch"], generation=generation)
+
+        self.lab.fault("proxy-a", "block")
+        try:
+            state = self.lab.await_state(lambda s: not next(n for n in s["nodes"] if n["node"] == "agent-a")["reachable"])
+            require({a["identity"]["attempt"] for a in attempts(state, service)} == original_ids,
+                    "Partition created a replacement")
+            self.stop(service)
+            state = self.lab.await_state(lambda s: all(a["cleanup"] == "complete" for a in attempts(s, service)
+                                                      if a["node"] == "agent-b"))
+            isolated = next(a for a in attempts(state, service) if a["node"] == "agent-a")
+            require(isolated["reserved"], "Partition incorrectly released reservation")
+            self.physical(isolated)
+            require(len(self.launches(service)) == 2, "Partition or stop created a duplicate")
+        finally:
+            self.lab.fault("proxy-a", "unblock")
+        state = self.wait(service, lambda a: len(a) == 2 and terminal(a))
+        for item in attempts(state, service):
+            self.physical(item, available=True)
+            require(any(e["signal"] == "terminated" for e in self.signals(service, item["node"])),
+                    "Graceful Stop lacked physical TERM receipt")
+        require(len(self.launches(service)) == 2, "Cancelled service resurrected on reconnect")
+        self.case(label + "-partition-stop-reconnect", attempts=attempts(state, service))
+
+        recovery = label + "-recovery"
+        self.submit(cluster.job(recovery, "service", refuse=True))
+        state = self.wait(recovery, ready)
+        prior = next(a for a in attempts(state, recovery) if a["node"] == "agent-a")
+        generation = self.crash("agent-a")
+        state = self.wait(recovery, lambda a: len(a) == 3 and ready(a)
+                          and any(x["identity"]["attempt"] == prior["identity"]["attempt"]
+                                  and x["state"] == "lost" and x["cleanup"] == "complete" for x in a), 45)
+        require(len(self.launches(recovery)) == 3, "Daemon recovery did not launch exactly one replacement")
+        for item in attempts(state, recovery):
+            if item["reserved"]:
+                self.physical(item)
+        self.stop(recovery)
+        state = self.wait(recovery, lambda a: len(a) == 3 and terminal(a))
+        snapshots = {node: self.agent_snapshot(node) for node in cluster.NODES}
+        wait_results = []
+        for item in attempts(state, recovery):
+            self.physical(item, available=True)
+            execution = next(a for a in snapshots[item["node"]]["attempts"].values()
+                             if a["identity"] == item["identity"])["execution"]
+            if item["state"] == "stopped":
+                require(execution["signal"] == 9 and execution["exitCode"] == -1,
+                        "Refuse-TERM workload did not actually exit by SIGKILL")
+                require(any(e["signal"] == "terminated" for e in self.signals(recovery, item["node"])),
+                        "Forced Stop lacked preceding TERM receipt")
+            else:
+                require(item["state"] == "lost" and execution["exitCode"] is None,
+                        "Daemon recovery invented an exit code")
+            wait_results.append({"identity": item["identity"], "node": item["node"], "execution": execution})
+        self.case(label + "-agent-crash-lost-replace-forced-stop", generation=generation,
+                  attempts=attempts(state, recovery), launches=3, waitResults=wait_results)
+        # Completed batches and cancelled services remain absent through a subsequent restart.
+        self.crash("scheduler")
+        state = self.lab.await_state(lambda s: all(n["reachable"] for n in s["nodes"])
+                                    and terminal(attempts(s, batch)) and terminal(attempts(s, service))
+                                    and terminal(attempts(s, recovery)), timeout=40)
+        require(len(self.launches(batch)) == 1 and len(self.launches(service)) == 2
+                and len(self.launches(recovery)) == 3, "Finished/cancelled job resurrected after restart")
+        self.case(label + "-no-resurrection")
+
+    def restore(self, number):
+        name = "snapshot-" + self.prefix + "-" + str(number)
+        original = self.state()
+        self.lab.request("POST", "/v1/backup", {"name": name})
+        snapshot = self.lab.root / "scheduler/state/backups" / name
+        require(snapshot.is_dir(), "Scheduler did not produce backup")
+        role = "scheduler-restore-" + str(number)
+        root = self.lab.root / role
+        root.mkdir(mode=0o700)
+        shutil.copytree(snapshot, root / "state")
+        (root / "control").mkdir(mode=0o700)
+        self.lab.create_network("restore")
+        mounts = [(self.lab.root / "artifacts/bin", cluster.BIN, False),
+                  (self.lab.root / "artifacts/jre", "/opt/aurora/jre", False),
+                  (self.lab.root / "artifacts/lib", "/opt/aurora/lib", False),
+                  (self.lab.root / "config/scheduler.json", "/config/scheduler.json", False),
+                  (self.lab.root / "scheduler/tls", "/tls", False),
+                  (root / "state", "/state", True), (root / "control", "/control", True)]
+        self.lab.create_container(role, self.lab.scheduler_args(), mounts, ["restore"], publish=True)
+        try:
+            restored = self.lab.await_state(lambda s: int(s["epoch"]) > int(original["epoch"]), role=role)
+            require(restored["jobs"] == original["jobs"] and restored["attempts"] == original["attempts"],
+                    "Restored desired/history state differs")
+            require(all(not n["reachable"] for n in restored["nodes"]), "Restore contacted live agents")
+            item = self.lab.inspect_container(role)
+            require(set(item["NetworkSettings"]["Networks"]) == {self.lab.name("restore")},
+                    "Restore shares live cluster network")
+            self.case("isolated-live-scheduler-backup-restore-" + str(number), epoch=restored["epoch"],
+                      jobs=len(restored["jobs"]), attempts=len(restored["attempts"]), container=item["Id"])
+        finally:
+            item = self.lab.inspect_container(role)
+            docker("stop", "--time", "10", item["Id"], timeout=20)
+            docker("rm", item["Id"])
+            del self.lab.data["containers"][role]
+            self.lab.persist()
+            item = self.lab.inspect_network("restore")
+            require(not item["Containers"], "Restore network remains occupied")
+            docker("network", "rm", item["Id"])
+            del self.lab.data["networks"]["restore"]
+            self.lab.persist()
+
+    def mixed(self):
+        if self.seconds == 0:
+            return
+        name = self.prefix + "-mixed-service"
+        self.submit(cluster.job(name, "service"))
+        self.wait(name, ready)
+        started, count = time.monotonic(), 0
+        batch_names = []
+        while time.monotonic() - started < self.seconds:
+            batch = self.prefix + "-mixed-b" + str(count)
+            batch_names.append(batch)
+            self.submit(cluster.job(batch))
+            self.wait(batch, lambda a: len(a) == 1 and terminal(a) and a[0]["state"] == "succeeded")
+            state = self.wait(name, ready)
+            for item in attempts(state, name):
+                self.physical(item)
+            require(len(self.launches(batch)) == 1 and len(self.launches(name)) == 2,
+                    "Mixed workload duplicated a launch")
+            count += 1
+            self.evidence["mixedProgress"] = {"batches": count, "elapsedSeconds": time.monotonic() - started}
+            self.write()
+            print(json.dumps({"mixedBatches": count, "elapsedSeconds": int(time.monotonic() - started)}), flush=True)
+            remaining = self.seconds - (time.monotonic() - started)
+            if remaining > 0:
+                time.sleep(min(30, remaining))
+        self.stop(name)
+        self.wait(name, lambda a: len(a) == 2 and terminal(a))
+        require(all(len(self.launches(b)) == 1 for b in batch_names), "Mixed batch rerun detected")
+        self.case("bounded-mixed-workload", elapsedSeconds=time.monotonic() - started, batches=count, replicas=2)
+
+    def run(self):
+        try:
+            self.auth()
+            for number in range(self.repeats):
+                self.round(number)
+                self.restore(number)
+            self.mixed()
+            self.evidence["ok"] = True
+            self.evidence["completedAt"] = time.time()
+            self.evidence["finalState"] = self.state()
+        except BaseException as error:
+            self.evidence["error"] = cluster.native.redact(str(error))
+            raise
+        finally:
+            self.lab.collect()
+            self.write()
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--run-root", type=Path, required=True)
+    parser.add_argument("--repeats", type=int, choices=(1, 2, 3), default=3)
+    parser.add_argument("--mixed-seconds", type=int, default=600)
+    args = parser.parse_args()
+    try:
+        require(0 <= args.mixed_seconds <= 600, "Mixed duration must be 0..600 seconds")
+        lab = cluster.Lab(args.run_root)
+        lab.acquire()
+        check = Check(lab, args.repeats, args.mixed_seconds)
+        check.run()
+        print(json.dumps({"ok": True, "evidence": str(check.path)}))
+        return 0
+    except (cluster.native.SmokeError, OSError, ValueError, KeyError, http.client.HTTPException) as error:
+        print(json.dumps({"ok": False, "error": cluster.native.redact(str(error))}), file=sys.stderr)
+        return 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())

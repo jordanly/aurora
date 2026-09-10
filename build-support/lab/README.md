@@ -102,3 +102,33 @@ Run roots, binaries, journals and logs are never automatically deleted.
 The process lanes add 24 failure/ownership tests to the preceding 21 lab tests.
 See [the runtime gate ledger](../../docs/reimagining/PROCESS_RUNTIME_STATUS.md)
 for executed results, remaining recovery limits and the next integration work.
+
+
+## Integrated native cluster
+
+`clusterctl` builds and runs one native Java scheduler, two Go process agents and
+transparent TLS fault proxies on separate internal Docker bridges. `cluster-check`
+executes physical workload, restart, partition, cancellation and isolated restore
+scenarios. These are the integrated successors to the focused smoke lanes above.
+
+```sh
+sg docker -c 'build-support/lab/clusterctl --run-root "$PWD/.pi-lab/cluster-new" up'
+sg docker -c 'build-support/lab/cluster-check --run-root "$PWD/.pi-lab/cluster-new" --repeats 3 --mixed-seconds 600'
+sg docker -c 'build-support/lab/clusterctl --run-root "$PWD/.pi-lab/cluster-new" demo'
+build-support/lab/clusterctl --run-root "$PWD/.pi-lab/cluster-new" status
+sg docker -c 'build-support/lab/clusterctl --run-root "$PWD/.pi-lab/cluster-new" down'
+```
+
+The operator client verifies mutual TLS at the scheduler's private bridge address.
+No host port is published. The Pi's Docker session may require `sg docker`; HTTPS
+status/submit/stop can run as the same UID without Docker access. Each lab retains
+its creation GID for container ownership across caller group changes.
+
+Use Python 3.9 or newer for the integrated runner. Certificate/private key material
+stays in the private run directory and is mounted only into the relevant role.
+The seven-day lab CA is recreated with each new lab. Agent container recreation
+with an old runtime journal remains unsupported; keepers exercise daemon-only
+restart in the unchanged namespace. `down` preserves state and evidence, verifies
+creation IDs before removing resources and never touches unrelated Docker images
+or containers. See [the cluster guide](../../docs/reimagining/CLUSTER_MVP.md) for
+commands, durable semantics, profile limits and qualification details.
