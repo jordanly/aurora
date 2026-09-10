@@ -39,7 +39,7 @@ allprojects {
     mavenCentral()
   }
 
-  compileJava {
+  tasks.withType(JavaCompile) {
     sourceCompatibility = minJavaVersion
     targetCompatibility = minJavaVersion
   }
@@ -178,9 +178,12 @@ project(':ui') {
   tasks.build.dependsOn(webpack)
   tasks.build.dependsOn(npm_test)
 }
-// Make sure UI webpack is run as part of 'processResources --continuous'. Also makes sure when
-// building the Scheduler JAR, the JS bundle is built first.
-tasks.processResources.dependsOn(':ui:webpack')
+// Scheduler compilation and focused tests need only core resources. Full tests and
+// packaging retain the frontend build, including the bundle copied by processResources.
+tasks.jar.dependsOn(':ui:webpack')
+tasks.run.dependsOn(':ui:webpack')
+tasks.test.dependsOn(':ui:webpack')
+tasks.processResources.mustRunAfter(':ui:webpack')
 
 project(':commons') {
   apply plugin: 'license'
@@ -213,25 +216,18 @@ project(':api') {
   apply plugin: org.apache.aurora.build.ThriftPlugin
   apply plugin: org.apache.aurora.build.ThriftEntitiesPlugin
 
-  task checkPython {
-    doLast {
-      def python27Executable = ['python2.7', 'python'].find { python ->
-        try {
-          def check = "import sys; sys.exit(0 if sys.version_info >= (2,7) and sys.version_info < (3,) else 1)"
-          return [python, "-c", check].execute().waitFor() == 0
-        } catch (IOException e) {
-          return false
-        }
-      }
-
-      if (python27Executable == null) {
-        throw new GradleException('Build requires Python 2.7.')
-      } else {
-        thriftEntities.python = python27Executable
-      }
-    }
+  task checkPython(type: Exec) {
+    // Only the Java wrapper generator uses this interpreter; Pants remains separate.
+    commandLine thriftEntities.python, '-c',
+        'import sys; sys.exit(0 if sys.version_info >= (3, 8) else 1)'
+  }
+  task testThriftWrapperGenerator(type: Exec, dependsOn: checkPython) {
+    workingDir rootDir
+    commandLine thriftEntities.python, '-m', 'unittest', 'discover',
+        '-s', 'build-support/java', '-p', 'test_*.py', '-v'
   }
   generateThriftEntitiesJava.dependsOn checkPython
+  check.dependsOn testThriftWrapperGenerator
 
   tasks.withType(Jar) {
     baseName "aurora-api"
@@ -463,8 +459,20 @@ pmdTest {
   ruleSetFiles = files('config/pmd/common.xml', 'config/pmd/test.xml')
 }
 
-tasks.withType(Test) {
-  maxParallelForks = Runtime.runtime.availableProcessors()
+allprojects {
+  tasks.withType(Test) {
+    maxParallelForks = Math.min(2, Runtime.runtime.availableProcessors())
+  }
+}
+
+// Use --tests to select scheduler unit or integration tests without full-suite coverage.
+// Keep this task out of check/build: those retain test and its coverage finalizers.
+task focusedTest(type: Test) {
+  description = 'Run selected scheduler tests without frontend or whole-suite coverage gates.'
+  group = 'verification'
+  testClassesDirs = sourceSets.test.output.classesDirs
+  classpath = sourceSets.test.runtimeClasspath
+  jacoco.enabled = false
 }
 
 idea {

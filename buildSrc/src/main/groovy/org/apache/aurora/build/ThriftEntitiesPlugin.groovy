@@ -40,10 +40,13 @@ class ThriftEntitiesPlugin implements Plugin<Project>  {
       task('generateThriftEntitiesJava') {
         inputs.files {thriftEntities.inputFiles}
         inputs.files {thriftEntities.codeGenerator}
+        inputs.property('python') {thriftEntities.python}
         outputs.dir {thriftEntities.genJavaDir}
+        outputs.dir {thriftEntities.genResourcesDir}
         doLast {
-          thriftEntities.genJavaDir.exists() || thriftEntities.genJavaDir.mkdirs()
-          thriftEntities.inputFiles.each { File file ->
+          delete thriftEntities.genJavaDir, thriftEntities.genResourcesDir
+          thriftEntities.genJavaDir.mkdirs()
+          thriftEntities.inputFiles.sort().each { File file ->
             exec {
               commandLine thriftEntities.python,
                   thriftEntities.codeGenerator,
@@ -77,7 +80,7 @@ class ThriftEntitiesPlugin implements Plugin<Project>  {
 }
 
 class ThriftEntitiesPluginExtension {
-  def python = 'python2.7'
+  def python
   File genClassesDir
   File genResourcesDir
   File genJavaDir
@@ -103,6 +106,7 @@ class ThriftEntitiesPluginExtension {
   }
 
   ThriftEntitiesPluginExtension(Project project) {
+    python = project.findProperty('wrapperPython') ?: 'python3'
     genClassesDir = project.file("${project.buildDir}/thriftEntities/classes")
     genResourcesDir = project.file("${project.buildDir}/thriftEntities/gen-resources")
     genJavaDir = project.file("${project.buildDir}/thriftEntities/gen-java")

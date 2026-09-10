@@ -34,34 +34,54 @@ class ThriftPlugin implements Plugin<Project> {
         }
       }
 
-      task('generateThriftJava') {
-        inputs.files {thrift.inputFiles}
-        outputs.dir {thrift.genJavaDir}
+      task('checkThriftCompiler') {
         doLast {
-          thrift.genJavaDir.exists() || thrift.genJavaDir.mkdirs()
-          thrift.inputFiles.each { File file ->
+          if (thrift.compilerPath != null) {
+            def versionOutput = new ByteArrayOutputStream()
             exec {
-              commandLine thrift.wrapperPath, thrift.version,
-                  '--gen', 'java:private-members',
-                  '-out', thrift.genJavaDir.path,
-                  file.path
+              commandLine thrift.compilerPath, '--version'
+              standardOutput = versionOutput
+            }
+            if (versionOutput.toString('UTF-8').trim() != "Thrift version ${thrift.version}") {
+              throw new GradleException("Expected Thrift ${thrift.version}: ${versionOutput}")
             }
           }
         }
       }
 
-      task('generateThriftResources') {
+      task('generateThriftJava', dependsOn: 'checkThriftCompiler') {
         inputs.files {thrift.inputFiles}
+        inputs.files {thrift.compilerPath ?: thrift.wrapperPath}
+        inputs.property('thriftVersion') {thrift.version}
+        outputs.dir {thrift.genJavaDir}
+        doLast {
+          delete thrift.genJavaDir
+          thrift.genJavaDir.mkdirs()
+          thrift.inputFiles.sort().each { File file ->
+            exec {
+              commandLine thrift.compilerCommand() + [
+                  '--gen', 'java:private-members',
+                  '-out', thrift.genJavaDir.path, file.path]
+            }
+          }
+        }
+      }
+
+      task('generateThriftResources', dependsOn: 'checkThriftCompiler') {
+        inputs.files {thrift.inputFiles}
+        inputs.files {thrift.compilerPath ?: thrift.wrapperPath}
+        inputs.property('thriftVersion') {thrift.version}
         outputs.dir {thrift.genResourcesDir}
         doLast {
+          delete thrift.genResourcesDir
           def dest = file("${thrift.genResourcesDir}/${thrift.resourcePrefix}")
           dest.exists() || dest.mkdirs()
-          thrift.inputFiles.each { File file ->
+          thrift.inputFiles.sort().each { File file ->
             exec {
-              commandLine thrift.wrapperPath, thrift.version,
+              commandLine thrift.compilerCommand() + [
                   '--gen', 'js:jquery',
                   '--gen', 'html:standalone',
-                  '-out', dest.path, file.path
+                  '-out', dest.path, file.path]
             }
           }
         }
@@ -93,10 +113,15 @@ class ThriftPlugin implements Plugin<Project> {
 
 class ThriftPluginExtension {
   def wrapperPath
+  File compilerPath
   File genResourcesDir
   File genJavaDir
   File genClassesDir
   FileTree inputFiles
+
+  List compilerCommand() {
+    compilerPath == null ? [wrapperPath, version] : [compilerPath.path]
+  }
 
   String version
   String getVersion() {
@@ -119,6 +144,9 @@ class ThriftPluginExtension {
   }
 
   ThriftPluginExtension(Project project) {
+    if (project.hasProperty('thriftCompiler')) {
+      compilerPath = project.file(project.property('thriftCompiler'))
+    }
     wrapperPath = "${project.rootDir}/build-support/thrift/thriftw"
     genResourcesDir = project.file("${project.buildDir}/thrift/gen-resources")
     genJavaDir = project.file("${project.buildDir}/thrift/gen-java")
