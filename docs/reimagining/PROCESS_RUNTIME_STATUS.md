@@ -1,5 +1,9 @@
 # Slice 1 continuation: real agent process execution
 
+This is the historical process-runtime increment. The
+[native cluster guide](CLUSTER_MVP.md) describes the subsequent integrated Java
+scheduler/two-agent lab, authenticated transport and cluster recovery runner.
+
 Implemented on `codex/standalone-foundations`, following the
 [durable core increment](DURABLE_CORE_STATUS.md). Fork and upstream master were
 refreshed on 2026-09-10 and still match

@@ -1,6 +1,6 @@
 **Ordered implementation backlog**
 
-Companion to the [unified roadmap](UNIFIED_AURORA_ROADMAP.md) and [Docker lab](PI_CONTAINER_LAB.md). These rows define intended deliverables and acceptance contracts, not created issues. The [process runtime status](PROCESS_RUNTIME_STATUS.md) records the latest implementation and remaining acceptance gates; the [durable core status](DURABLE_CORE_STATUS.md) covers the preceding persistence increment; the [first foundation status](FIRST_SLICE_STATUS.md) preserves the earlier build/protocol/lab evidence. Keep each PR focused; split a row if its reviewable diff becomes too large. Dependencies are gate dependencies, not a requirement for one enormous PR per stage.
+Companion to the [unified roadmap](UNIFIED_AURORA_ROADMAP.md) and [Docker lab](PI_CONTAINER_LAB.md). These rows define intended deliverables and acceptance contracts, not created issues. The [native cluster guide](CLUSTER_MVP.md) records the integrated scheduler/two-agent implementation and its bounded operating profile. The [process runtime status](PROCESS_RUNTIME_STATUS.md), [durable core status](DURABLE_CORE_STATUS.md) and [first foundation status](FIRST_SLICE_STATUS.md) preserve the preceding increments and evidence. Keep each PR focused; split a row if its reviewable diff becomes too large. Dependencies are gate dependencies, not a requirement for one enormous PR per stage.
 
 **First work and independent tracks**
 
