@@ -1,0 +1,429 @@
+#!/usr/bin/env python3
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+# Unless required by applicable law or agreed to in writing, software distributed under
+# the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND.
+# See the License for the specific language governing permissions and limitations under the License.
+"""Qualify durable Java/Go cores on ARM64; this is not a networked scheduler."""
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import os
+from pathlib import Path
+import re
+import shutil
+import subprocess
+import sys
+
+HERE = Path(__file__).resolve().parent
+ROOT = HERE.parents[1]
+COMPOSE = ROOT / "docs/reimagining/lab/compose.native-smoke.yaml"
+DOCKERFILE = HERE / "Dockerfile.native-smoke"
+MANIFEST = HERE / "native-smoke-manifest.json"
+SERVICES = {
+    "store-check": "store",
+    "agent-1-admission-check": "agent-1",
+    "agent-2-admission-check": "agent-2",
+}
+MARKER = ".aurora-native-smoke"
+
+
+class SmokeError(Exception):
+    pass
+
+
+def redact(value: str) -> str:
+    value = re.sub(r"-----BEGIN [^-]*PRIVATE KEY-----.*?-----END [^-]*PRIVATE KEY-----",
+                   "<redacted private key>", value, flags=re.S)
+    value = re.sub(r"(?i)(authorization[\"']?\s*[:=]\s*)[^\r\n]+", r"\1<redacted>", value)
+    value = re.sub(r"(?i)(password|token|secret|private[_-]?key)([\"']?\s*[=:]\s*[\"']?)"
+                   r"[^\s,\"'}]+", r"\1\2<redacted>", value)
+    return value[:65536]
+
+
+def run(command: list[str], env: dict[str, str], timeout: int = 30,
+        check: bool = True, cwd: Path | None = None):
+    try:
+        result = subprocess.run(command, env=env, cwd=cwd, text=True,
+                                capture_output=True, timeout=timeout, check=False)
+    except subprocess.TimeoutExpired as error:
+        raise SmokeError("Command timed out: " + Path(command[0]).name) from error
+    except OSError as error:
+        raise SmokeError("Command unavailable: " + Path(command[0]).name) from error
+    if check and result.returncode:
+        raise SmokeError("Command failed: " + Path(command[0]).name + ": "
+                         + redact(result.stderr or result.stdout))
+    return result
+
+
+def safe_path(path: Path) -> None:
+    if not path.is_absolute() or ".." in path.parts:
+        raise SmokeError("Path must be absolute without traversal")
+    if any(ord(char) < 32 or ord(char) > 126 for char in str(path)):
+        raise SmokeError("Control/non-ASCII characters are unsupported in paths")
+    for ancestor in (path, *path.parents):
+        if ancestor.is_symlink():
+            raise SmokeError("Symlink paths are unsupported")
+
+
+def regular(path: Path) -> None:
+    safe_path(path.absolute())
+    if not path.is_file():
+        raise SmokeError("Required regular artifact missing: " + str(path))
+
+
+def sha(path: Path) -> str:
+    regular(path)
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def tree_sha(directory: Path, allow_internal_links: bool = False) -> str:
+    digest = hashlib.sha256()
+    for path in sorted(directory.rglob("*")):
+        if path.is_symlink():
+            try:
+                path.resolve(strict=True).relative_to(directory.resolve())
+            except (ValueError, OSError) as error:
+                raise SmokeError("Symlink escapes toolchain tree") from error
+            if not allow_internal_links:
+                raise SmokeError("Symlink in source tree")
+            digest.update(str(path.relative_to(directory)).encode() + b"\0link\0")
+            digest.update(os.readlink(path).encode() + b"\0")
+            continue
+        if path.is_file():
+            digest.update(str(path.relative_to(directory)).encode() + b"\0")
+            digest.update(bytes.fromhex(sha(path)))
+    return digest.hexdigest()
+
+
+def write_json(path: Path, value: dict) -> None:
+    safe_path(path)
+    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC | os.O_NOFOLLOW, 0o600)
+    with os.fdopen(fd, "w") as output:
+        json.dump(value, output, indent=2, sort_keys=True)
+        output.write("\n")
+        output.flush()
+        os.fsync(output.fileno())
+
+
+def validate_args(args) -> None:
+    if args.uid <= 0 or args.gid <= 0 or args.uid != os.getuid() or args.gid != os.getgid():
+        raise SmokeError("UID/GID must be non-root and match the invoking user")
+    if not re.fullmatch(r"[A-Za-z0-9./:_-]+@sha256:[0-9a-f]{64}", args.base_image):
+        raise SmokeError("Base image must be a digest-pinned reference")
+    safe_path(args.run_root)
+    if args.run_root.exists():
+        raise SmokeError("Run root must be new and non-colliding")
+
+
+def prepare(args, manifest: dict, env: dict) -> dict:
+    root = args.run_root
+    root.parent.mkdir(parents=True, exist_ok=True)
+    root.mkdir(mode=0o700)
+    write_json(root / MARKER, {"schema": 1, "run_root": str(root), "uid": args.uid})
+    for name in ("state/store", "state/agent-1", "state/agent-2", "evidence", "build-context/runtime"):
+        (root / name).mkdir(parents=True, mode=0o700)
+    context = root / "build-context"
+    runtime = context / "runtime"
+    jre = ROOT / ".pi-tools/jdk8u462-b08"
+    go = ROOT / ".pi-tools/go1.27.1/go/bin/go"
+    regular(go)
+    if sha(args.sqlite_jdbc) != manifest["sqlite_jdbc_sha256"]:
+        raise SmokeError("JDBC artifact does not match pinned manifest")
+    provenance = {
+        "manifest_sha256": sha(MANIFEST),
+        "compose_sha256": sha(COMPOSE),
+        "dockerfile_sha256": sha(DOCKERFILE),
+        "go_sources_sha256": tree_sha(ROOT / "agent"),
+        "java_sources_sha256": tree_sha(
+            ROOT / "src/main/java/org/apache/aurora/scheduler/storage/sql"),
+        "jre_tree_sha256": tree_sha(jre, allow_internal_links=True),
+        "go_tool_sha256": sha(go),
+        "rebuilt_from_current_sources": True,
+    }
+    shutil.copy2(DOCKERFILE, context / "Dockerfile")
+    shutil.copy2(args.sqlite_jdbc, runtime / "sqlite-jdbc.jar")
+    go_env = dict(env, GOTOOLCHAIN="local", GOMAXPROCS="2", CGO_ENABLED="0",
+                  GOOS="linux", GOARCH="arm64", GOPROXY="off",
+                  GOMODCACHE=str(ROOT / ".pi-tools/go-mod"),
+                  GOCACHE=str(ROOT / ".pi-tools/go-cache"))
+    run([str(go), "build", "-p", "2", "-trimpath", "-o", str(runtime / "aurora-agent"),
+         "./cmd/aurora-agent"], go_env, 120, cwd=ROOT / "agent")
+    classes = runtime / "native-store-classes"
+    classes.mkdir()
+    sources = sorted((ROOT / "src/main/java/org/apache/aurora/scheduler/storage/sql").glob("*.java"))
+    run([str(jre / "bin/javac"), "-source", "8", "-target", "8", "-d", str(classes),
+         *map(str, sources)], env, 120)
+    run([str(jre / "bin/jar"), "cf", str(runtime / "native-store-tool.jar"),
+         "-C", str(classes), "."], env)
+    if provenance["go_sources_sha256"] != tree_sha(ROOT / "agent") or provenance[
+            "java_sources_sha256"] != tree_sha(
+                ROOT / "src/main/java/org/apache/aurora/scheduler/storage/sql"):
+        raise SmokeError("Sources changed while building; retry with stable sources")
+    shutil.copytree(jre, runtime / "jre", symlinks=False)
+    provenance["artifacts"] = {name: sha(runtime / name) for name in
+                               ("aurora-agent", "native-store-tool.jar", "sqlite-jdbc.jar")}
+    expected = prepare_fixtures(runtime)
+    wrapper = runtime / "run-check"
+    wrapper.write_text("""#!/bin/sh
+set -eu
+case "$1" in
+  store)
+    exec /opt/aurora/jre/bin/java -Djava.io.tmpdir=/run/aurora-native \\
+      -cp /opt/aurora/bin/native-store-tool.jar:/opt/aurora/lib/sqlite-jdbc.jar \\
+      org.apache.aurora.scheduler.storage.sql.NativeStoreTool self-check /var/lib/aurora
+    ;;
+  agent)
+    /opt/aurora/bin/aurora-agent admit --config /opt/aurora/bin/agent-config-$2.json \\
+      --state /var/lib/aurora/state.db --command /opt/aurora/bin/delivery-$2.json
+    exec /opt/aurora/bin/aurora-agent inspect --config /opt/aurora/bin/agent-config-$2.json \\
+      --state /var/lib/aurora/state.db
+    ;;
+  *) exit 64 ;;
+esac
+""")
+    wrapper.chmod(0o755)
+    return {"provenance": provenance, "expected": expected}
+
+
+def prepare_fixtures(runtime: Path) -> dict:
+    fixture = json.loads((ROOT / "protocol/native-v1alpha1/fixtures/valid/"
+                          "delivery-refreshed-authority.json").read_text())
+    expected = {}
+    for node in ("agent-1", "agent-2"):
+        config = {"cluster": "lab", "incarnation": "recovery-a", "node": node,
+                  "journal": "journal-" + node, "boot": "boot-" + node,
+                  "runtime": "runtime-" + node, "session": "session-b",
+                  "schedulerEpoch": "9007199254740994", "peer": "scheduler",
+                  "cpuMillis": 1000, "memoryBytes": 268435456}
+        delivery = json.loads(json.dumps(fixture))
+        body = delivery["body"]
+        body["command"] = "run-command-" + node
+        body["target"].update({key: config[key] for key in ("node", "journal", "boot", "runtime")})
+        delivery["bodySha256"] = hashlib.sha256(
+            json.dumps(body, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+        expected[node] = {"command": body["command"], "bodySha256": delivery["bodySha256"],
+                          "outcome": "accepted", "cursor": "1"}
+        write_json(runtime / ("agent-config-" + node + ".json"), config)
+        write_json(runtime / ("delivery-" + node + ".json"), delivery)
+    return expected
+
+
+class DockerLane:
+    def __init__(self, args, env: dict):
+        self.args = args
+        self.env = env
+        digest = hashlib.sha256(str(args.run_root).encode()).hexdigest()
+        self.project = "aurora-native-smoke-" + digest[:12]
+        self.image = "aurora-native-smoke:" + digest[:16]
+        self.docker = env.get("AURORA_LAB_DOCKER", "docker")
+        self.env.update(AURORA_NATIVE_PROJECT=self.project, AURORA_NATIVE_IMAGE=self.image,
+                        AURORA_NATIVE_RUN=str(args.run_root), AURORA_LAB_UID=str(args.uid),
+                        AURORA_LAB_GID=str(args.gid))
+        self.compose = ["compose", "-p", self.project, "-f", str(COMPOSE)]
+        self.image_id = None
+        self.cleanup_allowed = False
+
+    def call(self, command: list[str], timeout: int = 30):
+        return run([self.docker, *command], self.env, timeout)
+
+    def ids(self, kind: str, filters: list[str]) -> list[str]:
+        commands = {"container": ["ps", "-aq", "--no-trunc"], "network": ["network", "ls", "-q"],
+                    "volume": ["volume", "ls", "-q"], "image": ["image", "ls", "-q"]}
+        command = commands[kind][:]
+        for value in filters:
+            command.extend(["--filter", value])
+        return self.call(command).stdout.split()
+
+    def project_ids(self, kind: str) -> list[str]:
+        return self.ids(kind, ["label=com.docker.compose.project=" + self.project])
+
+    def preflight(self) -> None:
+        for kind in ("container", "network", "volume"):
+            if self.project_ids(kind):
+                raise SmokeError("Existing project resources refused: " + kind)
+        # Unlabelled name collisions must also survive untouched.
+        for kind in ("container", "network", "volume"):
+            if self.ids(kind, ["name=" + self.project]):
+                raise SmokeError("Existing named resources refused: " + kind)
+        if self.ids("image", ["reference=" + self.image]):
+            raise SmokeError("Existing image tag refused")
+        base = json.loads(self.call(["image", "inspect", self.args.base_image]).stdout)
+        if len(base) != 1 or base[0].get("Architecture") != "arm64" or base[0].get("Os") != "linux":
+            raise SmokeError("Pinned base must already exist locally as Linux ARM64")
+
+    def owned_labels(self, labels: dict) -> bool:
+        return all(labels.get(key) == value for key, value in {
+            "com.docker.compose.project": self.project,
+            "com.aurora.lab.lane": "native-smoke", "com.aurora.lab.owned": "true",
+            "com.aurora.lab.run": str(self.args.run_root),
+        }.items())
+
+    def inspect_containers(self, ids: list[str]) -> dict:
+        if not ids:
+            return {}
+        documents = json.loads(self.call(["inspect", *ids]).stdout)
+        found = {}
+        for item in documents:
+            labels = item.get("Config", {}).get("Labels", {})
+            service = labels.get("com.docker.compose.service")
+            if (not self.owned_labels(labels) or service not in SERVICES or service in found
+                    or item.get("Image") != self.image_id
+                    or item.get("Config", {}).get("User") != f"{self.args.uid}:{self.args.gid}"):
+                raise SmokeError("Unknown or mismatched container preserved")
+            binds = [mount for mount in item.get("Mounts", []) if mount.get("Type") == "bind"]
+            if len(binds) != 1 or binds[0].get("Source") != str(
+                    self.args.run_root / "state" / SERVICES[service]) or binds[0].get(
+                        "Destination") != "/var/lib/aurora" or not binds[0].get("RW"):
+                raise SmokeError("Unexpected container bind roots")
+            found[service] = item["Id"]
+        if set(found.values()) != set(ids):
+            raise SmokeError("Container inspection did not match selected IDs")
+        return found
+
+    def cleanup(self) -> None:
+        if not self.cleanup_allowed:
+            return
+        self.inspect_containers(self.project_ids("container"))
+        if self.project_ids("volume"):
+            raise SmokeError("Unknown volumes preserved; cleanup refused")
+        networks = self.project_ids("network")
+        if networks:
+            docs = json.loads(self.call(["network", "inspect", *networks]).stdout)
+            for item in docs:
+                if (not self.owned_labels(item.get("Labels", {})) or not item.get("Internal")
+                        or item.get("Name") not in {self.project + "_" + name
+                                                     for name in SERVICES.values()}):
+                    raise SmokeError("Unknown networks preserved; cleanup refused")
+        self.call(self.compose + ["down"], 60)
+        for kind in ("container", "network", "volume"):
+            if self.project_ids(kind):
+                raise SmokeError("Scoped cleanup left resources; run root preserved")
+
+    def build(self) -> None:
+        context = self.args.run_root / "build-context"
+        self.call(["build", "--platform", "linux/arm64", "--pull=false", "-f",
+                   str(context / "Dockerfile"), "-t", self.image, "--build-arg",
+                   "BASE_IMAGE=" + self.args.base_image, "--build-arg",
+                   f"RUNTIME_UID={self.args.uid}", "--build-arg", f"RUNTIME_GID={self.args.gid}",
+                   str(context)], 900)
+        info = json.loads(self.call(["image", "inspect", self.image]).stdout)
+        if len(info) != 1 or info[0].get("Architecture") != "arm64":
+            raise SmokeError("Built image architecture mismatch")
+        self.image_id = info[0]["Id"]
+
+    def round(self, recreated: bool, evidence: dict, expected: dict) -> None:
+        item = {"recreated": recreated, "services": {}}
+        evidence["rounds"].append(item)
+        self.cleanup_allowed = True
+        self.call(self.compose + ["up", "-d"] + (["--force-recreate"] if recreated else []), 120)
+        ids = self.project_ids("container")
+        item["container_ids"] = ids
+        found = self.inspect_containers(ids)
+        if set(found) != set(SERVICES):
+            raise SmokeError("Expected exactly three named smoke services")
+        if recreated and set(ids) & set(evidence["rounds"][0]["container_ids"]):
+            raise SmokeError("Every service must receive a fresh container identity")
+        for service, container in sorted(found.items()):
+            result = {"container_id": container}
+            item["services"][service] = result
+            waited = self.call(["wait", container], 300)
+            if not waited.stdout.strip().isdigit():
+                raise SmokeError("Invalid docker wait result")
+            result["exit_code"] = int(waited.stdout.strip())
+            logs = self.call(["logs", "--tail", "200", container])
+            result["logs"] = redact(logs.stdout + logs.stderr)
+            if result["exit_code"] != 0:
+                raise SmokeError("Smoke service failed: " + service)
+            validate_output(service, logs.stdout, recreated, expected)
+            result["validated"] = True
+
+
+def validate_output(service: str, output: str, recreated: bool, expected: dict) -> None:
+    if service == "store-check":
+        lines = output.strip().splitlines()
+        marker = " preexisting=" + str(recreated).lower()
+        if (len(lines) != 1 or not lines[0].startswith(
+                "NATIVE_SQL_OK sqlite-jdbc=3.53.4.0 WAL FULL reopen rollback-only arch=aarch64 "
+                "java=1.8.0_462") or not lines[0].endswith(marker)):
+            raise SmokeError("Java durable marker/ABI validation failed")
+        return
+    node = SERVICES[service]
+    try:
+        result, snapshot = [json.loads(line) for line in output.strip().splitlines()]
+        if result != expected[node]:
+            raise SmokeError("Admission result differs from expected immutable command")
+        attempts = list(snapshot["attempts"].values())
+        observations = snapshot["observations"]
+        if (snapshot["cursor"] != "1" or snapshot["ack"] != "0"
+                or snapshot["commands"] != {result["command"]: result}
+                or len(attempts) != 1 or not attempts[0]["reserved"] or attempts[0]["stopped"]
+                or len(observations) != 1 or observations[0]["cursor"] != "1"
+                or observations[0]["sequence"] != "1" or observations[0]["source"]["node"] != node):
+            raise SmokeError("Fresh agent inspection did not prove durable dedupe/reservation/outbox")
+    except (ValueError, KeyError, TypeError) as error:
+        raise SmokeError("Invalid structured agent result/inspection") from error
+
+
+def execute(lane: DockerLane, evidence: dict, expected: dict) -> int:
+    status = 4
+    try:
+        lane.preflight()
+        lane.build()
+        evidence["image_id"] = lane.image_id
+        lane.round(False, evidence, expected)
+        lane.round(True, evidence, expected)
+        evidence["recreated"] = True
+        status = 0
+    except (SmokeError, ValueError, KeyError, OSError) as error:
+        evidence["error"] = redact(str(error))
+        status = 4
+    finally:
+        # Persist partial results before attempting cleanup, then record its separate outcome.
+        evidence["ok"] = status == 0
+        write_json(lane.args.run_root / "evidence/result.json", evidence)
+        try:
+            lane.cleanup()
+            evidence["cleanup"] = "complete" if lane.cleanup_allowed else "not-started"
+        except (SmokeError, ValueError, KeyError, OSError) as error:
+            evidence["cleanup"] = "failed"
+            evidence["cleanup_error"] = redact(str(error))
+            status = 5
+        evidence["ok"] = status == 0
+        write_json(lane.args.run_root / "evidence/result.json", evidence)
+    return status
+
+
+def main(argv: list[str]) -> int:
+    manifest = json.loads(MANIFEST.read_text())
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--run-root", required=True, type=Path)
+    parser.add_argument("--base-image", default=manifest["base_image"])
+    parser.add_argument("--sqlite-jdbc", type=Path, default=ROOT / (
+        ".pi-tools/gradle-home/caches/modules-2/files-2.1/org.xerial/sqlite-jdbc/3.53.4.0/"
+        "47e21dd53efe1524fe0df6965cb65003ffe17172/sqlite-jdbc-3.53.4.0.jar"))
+    parser.add_argument("--uid", type=int, default=os.getuid())
+    parser.add_argument("--gid", type=int, default=os.getgid())
+    args = parser.parse_args(argv)
+    try:
+        validate_args(args)
+        inputs = prepare(args, manifest, os.environ.copy())
+        lane = DockerLane(args, os.environ.copy())
+        evidence = {"schema": 2, "lane": "native-smoke", "qualification": "durable-core/ABI",
+                    "cluster": False, "project": lane.project, "image": lane.image,
+                    "base_image": args.base_image, "provenance": inputs["provenance"],
+                    "rounds": [], "recreated": False}
+        status = execute(lane, evidence, inputs["expected"])
+        print(json.dumps({"ok": status == 0, "run_root": str(args.run_root),
+                          "evidence": str(args.run_root / "evidence/result.json")}, sort_keys=True))
+        return status
+    except (SmokeError, OSError, ValueError) as error:
+        print(json.dumps({"ok": False, "error": redact(str(error))}), file=sys.stderr)
+        return 2
+
+
+if __name__ == "__main__":
+    raise SystemExit(main(sys.argv[1:]))

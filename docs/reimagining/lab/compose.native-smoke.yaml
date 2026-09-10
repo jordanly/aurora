@@ -1,0 +1,63 @@
+# Native durable-core/ABI smoke lane. Each container runs one bounded
+# self-check and exits; this is not a scheduler or agent network cluster.
+name: ${AURORA_NATIVE_PROJECT:?native-smoke supplies the project name}
+x-base: &base
+  platform: linux/arm64
+  image: ${AURORA_NATIVE_IMAGE:?native-smoke supplies the locally built image}
+  pull_policy: never
+  user: "${AURORA_LAB_UID:?}:${AURORA_LAB_GID:?}"
+  init: true
+  read_only: true
+  cap_drop: [ALL]
+  security_opt: ["no-new-privileges:true"]
+  pids_limit: 128
+  cpus: 0.50
+  restart: "no"
+  tmpfs:
+    - /tmp:rw,nosuid,nodev,noexec,size=8m,mode=1777
+    - /run:rw,nosuid,nodev,noexec,size=4m,mode=0700,uid=${AURORA_LAB_UID},gid=${AURORA_LAB_GID}
+    - /run/aurora-native:rw,nosuid,nodev,exec,size=32m,mode=0700,uid=${AURORA_LAB_UID},gid=${AURORA_LAB_GID}
+  logging:
+    driver: json-file
+    options: {max-size: "1m", max-file: "2"}
+  labels:
+    com.aurora.lab.lane: native-smoke
+    com.aurora.lab.owned: "true"
+    com.aurora.lab.run: ${AURORA_NATIVE_RUN}
+services:
+  store-check:
+    <<: *base
+    command: [store]
+    volumes:
+      - type: bind
+        source: ${AURORA_NATIVE_RUN:?native-smoke supplies run root}/state/store
+        target: /var/lib/aurora
+        bind: {create_host_path: false}
+    networks: [store]
+  agent-1-admission-check:
+    <<: *base
+    command: [agent, agent-1]
+    volumes:
+      - type: bind
+        source: ${AURORA_NATIVE_RUN}/state/agent-1
+        target: /var/lib/aurora
+        bind: {create_host_path: false}
+    networks: [agent-1]
+  agent-2-admission-check:
+    <<: *base
+    command: [agent, agent-2]
+    volumes:
+      - type: bind
+        source: ${AURORA_NATIVE_RUN}/state/agent-2
+        target: /var/lib/aurora
+        bind: {create_host_path: false}
+    networks: [agent-2]
+networks:
+  store: &network
+    internal: true
+    labels:
+      com.aurora.lab.lane: native-smoke
+      com.aurora.lab.owned: "true"
+      com.aurora.lab.run: ${AURORA_NATIVE_RUN}
+  agent-1: *network
+  agent-2: *network

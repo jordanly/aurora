@@ -1,0 +1,12 @@
+{
+  "schema": 1,
+  "base_image": "debian:bookworm-slim@sha256:6bd27d44e6c32a66bbd72d7cb2b76a8ae3497ec2e5274a81abd1b37f6013fa1f",
+  "architecture": "arm64",
+  "java": "Temurin 8u462-b08 Linux ARM64",
+  "java_archive_sha256": "19552c1cf7f5c18290a6bdcd6757f70ea5c331a2bc0dd7a3b3120e8dbc4b4891",
+  "go": "1.27.1",
+  "go_archive_sha256": "3450b45a3f9ee8568792736a5c5e70a1f2e9b36c35a8f74958c03e51d7d92bec",
+  "sqlite_jdbc": "3.53.4.0",
+  "sqlite_jdbc_sha256": "bcb1f51e36f940867e83342f9efbf5968ac44a6bef4d397bb4af7b17b45cd2fb",
+  "provenance": "Tool archive verification: build-support/java/README.md and protocol/native-v1alpha1/README.md. JDBC: src/main/java/org/apache/aurora/scheduler/storage/sql/README.md. Base digest executed on Pi ARM64; native-smoke requires it already present and verifies architecture. Each run rebuilds Java/Go sources and records source, binary, JRE-tree, Compose and Dockerfile SHA-256."
+}

@@ -15,12 +15,62 @@ build-support/lab/labctl inspect "$PWD/.pi-lab/review"
 
 `destroy --confirm` is intentionally unavailable in this slice. It refuses when Docker state cannot be queried and otherwise exits with an unimplemented status without removing anything. `up`, `build`, and scenario execution are not implemented and must not be treated as successful.
 
-Run the daemon-free checks with:
+The separate `native-smoke` command qualifies durable cores and native ABI only.
+One Java store check and two Go admission checks run, exit, and are recreated
+with the same separate state bind roots. This is not a scheduler cluster,
+network protocol integration, or runtime-incarnation fencing demonstration.
+Fixture runtime identities deliberately remain fixed in this lane.
+
+The script builds Go and Java from the current checkout on every run with local
+Go 1.27.1 and Java 8. It uses cached Go modules (`GOPROXY=off`) and requires the
+pinned SQLite JDBC artifact. There are no prebuilt-agent overrides that can
+silently qualify stale source. The checked-in
+[native smoke manifest](native-smoke-manifest.json) pins the qualified ARM64 base
+and JDBC hash, and records tool archive provenance. Evidence records the current
+source trees, produced binaries, copied JRE tree, Compose and Dockerfile hashes.
+The two internal JRE symlinks are accepted only when they resolve inside that
+verified toolchain tree.
+
+Acquire the exact pinned base explicitly if it is not already in Docker's image
+store (BuildKit's private layer cache alone is insufficient):
+
+```sh
+docker pull --platform linux/arm64 \
+  'debian:bookworm-slim@sha256:6bd27d44e6c32a66bbd72d7cb2b76a8ae3497ec2e5274a81abd1b37f6013fa1f'
+build-support/lab/native-smoke --run-root "$PWD/.pi-lab/native-smoke-review"
+```
+
+Use a session with Docker group access, or `sg docker -c '...'` as described in
+the status documentation. The smoke script itself performs no tool downloads,
+image pulls, package installs or host setting changes. UID/GID must match the
+non-root invoking user. Each run requires a fresh absolute private directory;
+symlinks, control characters and path traversal reject.
+
+A run succeeds only when all three expected service labels, image IDs, user IDs
+and exact state bind roots match; every exit is zero; all three replacement
+container IDs differ; each agent's distinct command/hash remains accepted at
+cursor 1 after a separate fresh `inspect` process; and the Java check reports a
+new durable marker in round one and the preexisting marker in round two. The
+agent inspection also verifies the retained reservation and one outbox record.
+Containers cannot write the host evidence directory. Bounded redacted logs and
+partial failure evidence are preserved under `evidence/result.json`.
+
+Collision checks cover project labels, resource names and the output image tag
+before Docker mutation or cleanup ownership begins. Cleanup validates every
+selected resource, uses scoped Compose `down` without orphan removal, and
+never deletes run roots, state, images or unknown resources. A cleanup failure
+returns nonzero and is recorded separately; preserved unknown resources require
+operator inspection. State directories remain available for durability review.
+
+Run the daemon-free tests with:
 
 ```sh
 python3 -m unittest discover -s build-support/lab/tests -v
 ```
 
-Seven checks cover the CLI and, when the Docker CLI/Compose plugin is installed,
-actual Compose parsing for both service profiles, literal paths and project/network
-boundaries. The parser check needs no daemon and skips if the client/plugin is absent.
+The existing seven labctl checks remain, plus fourteen mocked native-smoke
+regressions for service failures, timeouts, partial startup, cleanup failure,
+collisions, unknown resource preservation, identity reuse, replay corruption,
+symlink/control paths, UID rejection and redaction. Compose parser checks use
+the installed client/plugin and need no daemon. Actual Docker/native execution
+is a separate qualification gate; unit mocks do not establish it.
