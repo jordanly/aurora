@@ -6,6 +6,12 @@ scheduler, agent, authentication, persistent admission, state transitions,
 reconciliation, or durable acknowledgements. Fixture observations are examples,
 not evidence that a workload ran. The alpha contract may change before integration.
 
+The next increment now adds [Java structural/semantic validation](../java/README.md)
+and a [Go validator and durable admission store](../../agent/README.md). Both use
+this authoritative schema and run the complete shared rejection corpus. The
+standalone canonical adapters below remain deliberately smaller comparison tools;
+the schema package itself still implements no running cluster.
+
 `schema.json` uses JSON Schema draft 2020-12. Every message and nested fixed
 object rejects unknown fields. There are no implicit defaults. `conformance/check.py`
 adds bounds and cross-field rules that JSON Schema alone does not express here.
@@ -153,8 +159,10 @@ Verified tool archives (Linux ARM64):
 The independent adapters use only Java 8 and Go standard libraries. They parse and
 re-encode all valid wire vectors, including numbers above JavaScript's safe range
 encoded as strings, escaped characters and refreshed authority. Python verifies
-their exact output bytes and SHA-256 values. **Java/Go schema and admission parity
-is not implemented**; malformed/schema/semantic rejection tests run in Python.
+their exact output bytes and SHA-256 values. These standalone adapters do not
+implement schema or admission checks. Structural/semantic rejection tests now
+also run through the reusable Java/Go validators with
+`conformance/check.py --validator 'command'`; see the linked validator packages.
 Twelve shared parser-negative vectors execute in Python and both adapters:
 duplicate keys, trailing JSON, malformed syntax, fractional/exponent/negative
 numbers, leading zero, unsafe numeric integer, malformed Unicode escape,

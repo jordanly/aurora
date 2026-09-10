@@ -17,13 +17,13 @@
 # under the License.
 
 """Strict schema + bounded semantic/golden checks; no durable state machine."""
+import argparse
 import copy
 import hashlib
 import json
 import pathlib
 import re
 import subprocess
-import sys
 
 from jsonschema import Draft202012Validator
 
@@ -133,6 +133,11 @@ def admit_capabilities(process, advertised):
 
 
 def check():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('adapters', nargs='*', help='canonical-only adapter command')
+    parser.add_argument('--validator', action='append', default=[],
+                        help='full structural/semantic validator command, canonical stdout')
+    arguments = parser.parse_args()
     schema = read(ROOT / 'schema.json')
     Draft202012Validator.check_schema(schema)
     validator = Draft202012Validator(schema)
@@ -212,7 +217,7 @@ def check():
     print('PASS: %d Python parser/profile rejection vectors' % len(parser_invalid))
     # Optional standalone adapters print canonical document bytes followed by newline.
     # Invoke once per fixture, compare actual language parsing/encoding/hash semantics.
-    for command in sys.argv[1:]:
+    for command in arguments.adapters + arguments.validator:
         import shlex
         for path in valid:
             encoded = subprocess.check_output(shlex.split(command) + [str(path)], timeout=10)
@@ -224,6 +229,12 @@ def check():
             assert result.returncode != 0, ('parser accepted invalid input', command, path)
         print('PASS: %d decode/encode/hash and %d parser rejection vectors via %s'
               % (len(valid), len(parser_invalid), command))
+        if command in arguments.validator:
+            for path in invalid:
+                result = subprocess.run(shlex.split(command) + [str(path)],
+                                        stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=10)
+                assert result.returncode != 0, ('validator accepted invalid input', command, path)
+            print('PASS: %d structural/semantic rejection vectors via %s' % (len(invalid), command))
 
 
 if __name__ == '__main__':
