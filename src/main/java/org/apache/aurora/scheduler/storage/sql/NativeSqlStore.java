@@ -111,7 +111,7 @@ public final class NativeSqlStore implements AutoCloseable {
     try (Connection c = connect(false)) {
       int version = Integer.parseInt(scalar(c, "PRAGMA user_version"));
       int application = Integer.parseInt(scalar(c, "PRAGMA application_id"));
-      if (existing && (version != 1 || application != APPLICATION_ID)) {
+      if (existing && ((version != 1 && version != 2) || application != APPLICATION_ID)) {
         throw new SQLException("Unsupported native schema/application");
       }
       if (version == 0 && (application != 0 || !"0".equals(scalar(c,
@@ -120,12 +120,16 @@ public final class NativeSqlStore implements AutoCloseable {
       }
       c.setAutoCommit(false);
       if (!existing) {
-        schema(c);
+        schema(c, 2);
         try (PreparedStatement p = c.prepareStatement("INSERT INTO metadata VALUES (1,?,?)")) {
           p.setString(1, cluster); p.setString(2, incarnation); p.executeUpdate();
         }
       }
-      verifySchema(c);
+      if (existing && version == 1) {
+        verifySchema(c, 1);
+        schedulerSchema(c);
+      }
+      verifySchema(c, 2);
       if (!"1".equals(scalar(c, "SELECT count(*) FROM metadata"))) {
         throw new SQLException("Missing or multiple metadata rows");
       }
@@ -162,7 +166,7 @@ public final class NativeSqlStore implements AutoCloseable {
     } catch (SQLException e) { c.close(); throw e; }
   }
 
-  private void schema(Connection c) throws SQLException {
+  private void schema(Connection c, int version) throws SQLException {
     execute(c, "CREATE TABLE metadata(id INTEGER PRIMARY KEY CHECK(id=1),"
         + "cluster TEXT NOT NULL,incarnation TEXT NOT NULL)");
     execute(c, "CREATE TABLE jobs(job TEXT PRIMARY KEY,revision TEXT NOT NULL CHECK("
@@ -186,13 +190,23 @@ public final class NativeSqlStore implements AutoCloseable {
         + "cursor TEXT NOT NULL,body TEXT NOT NULL,PRIMARY KEY(scope,cursor))");
     execute(c, "PRAGMA application_id=" + APPLICATION_ID);
     execute(c, "PRAGMA user_version=1");
+    if (version == 2) { schedulerSchema(c); }
   }
 
-  private void verifySchema(Connection c) throws SQLException {
+  private void schedulerSchema(Connection c) throws SQLException {
+    execute(c, "CREATE TABLE scheduler_state(id INTEGER PRIMARY KEY CHECK(id=1),"
+        + "config TEXT NOT NULL,epoch TEXT NOT NULL)");
+    execute(c, "CREATE TABLE attempt_observations(attempt TEXT PRIMARY KEY REFERENCES attempts(attempt),"
+        + "sequence TEXT NOT NULL,state TEXT NOT NULL,cleanup TEXT NOT NULL,"
+        + "ready INTEGER NOT NULL CHECK(ready IN (0,1)),updated_millis INTEGER NOT NULL)");
+    execute(c, "PRAGMA user_version=2");
+  }
+
+  private void verifySchema(Connection c, int version) throws SQLException {
     String catalog = "SELECT group_concat(type||':'||name||':'||coalesce(sql,''),char(10)) "
         + "FROM (SELECT type,name,sql FROM sqlite_master ORDER BY name)";
     try (Connection expected = DriverManager.getConnection("jdbc:sqlite::memory:")) {
-      schema(expected);
+      schema(expected, version);
       if (!scalar(expected, catalog).equals(scalar(c, catalog))) {
         throw new SQLException("Native schema definition mismatch");
       }
@@ -368,6 +382,109 @@ public final class NativeSqlStore implements AutoCloseable {
         update("UPDATE commands SET pending=0 WHERE command=?", token(command));
       });
     }
+    public String schedulerConfig() throws SQLException {
+      return get("SELECT config FROM scheduler_state WHERE id=1");
+    }
+    public String schedulerEpoch() throws SQLException {
+      String epoch = get("SELECT epoch FROM scheduler_state WHERE id=1");
+      return epoch == null ? "0" : counter(epoch);
+    }
+    public String startScheduler(String config) throws SQLException {
+      mutate(() -> {
+        String prior = schedulerConfig();
+        if (prior == null) {
+          update("INSERT INTO scheduler_state VALUES (1,?,'0')", config);
+        } else if (!prior.equals(config)) {
+          throw new SQLException("Scheduler enrollment/configuration changed");
+        }
+        String next = counter(new BigInteger(schedulerEpoch()).add(BigInteger.ONE).toString());
+        update("UPDATE scheduler_state SET epoch=? WHERE id=1", next);
+      });
+      return schedulerEpoch();
+    }
+    public List<String> jobBodies() throws SQLException {
+      return strings("SELECT body FROM jobs ORDER BY job");
+    }
+    public List<String> desiredInstances(JobKey job) throws SQLException {
+      return strings("SELECT instance FROM instances WHERE job=? AND desired=1 ORDER BY instance",
+          job.key);
+    }
+    public List<String> allInstances(JobKey job) throws SQLException {
+      return strings("SELECT instance FROM instances WHERE job=? ORDER BY instance", job.key);
+    }
+    private List<String> strings(String sql, String... values) throws SQLException {
+      check(false);
+      List<String> result = new ArrayList<>();
+      try (PreparedStatement statement = connection.prepareStatement(sql)) {
+        for (int i = 0; i < values.length; i++) { statement.setString(i + 1, values[i]); }
+        try (ResultSet rows = statement.executeQuery()) {
+          while (rows.next()) { result.add(rows.getString(1)); }
+        }
+      }
+      return Collections.unmodifiableList(result);
+    }
+    public List<AttemptRecord> attempts() throws SQLException {
+      check(false);
+      List<AttemptRecord> result = new ArrayList<>();
+      try (Statement statement = connection.createStatement(); ResultSet rows = statement.executeQuery(
+          "SELECT a.attempt,a.job,a.instance,coalesce(o.state,a.state),"
+              + "coalesce(o.sequence,'0'),coalesce(o.cleanup,'unknown'),coalesce(o.ready,0),"
+              + "coalesce(o.updated_millis,0),l.node,l.body FROM attempts a "
+              + "LEFT JOIN attempt_observations o ON a.attempt=o.attempt "
+              + "LEFT JOIN allocations l ON a.attempt=l.attempt ORDER BY a.rowid")) {
+        while (rows.next()) {
+          result.add(new AttemptRecord(rows.getString(1), rows.getString(2), rows.getString(3),
+              rows.getString(4), counter(rows.getString(5)), rows.getString(6), rows.getInt(7) != 0,
+              rows.getLong(8), rows.getString(9), rows.getString(10)));
+        }
+      }
+      return Collections.unmodifiableList(result);
+    }
+    public List<CommandRecord> commands() throws SQLException {
+      check(false);
+      List<CommandRecord> result = new ArrayList<>();
+      try (Statement statement = connection.createStatement(); ResultSet rows = statement.executeQuery(
+          "SELECT command,attempt,body,pending FROM commands ORDER BY rowid")) {
+        while (rows.next()) {
+          result.add(new CommandRecord(rows.getString(1), rows.getString(2), rows.getString(3),
+              rows.getInt(4) != 0));
+        }
+      }
+      return Collections.unmodifiableList(result);
+    }
+    public void reduceAttempt(String attempt, String sequence, String state,
+        String cleanup, boolean ready, long updatedMillis) throws SQLException {
+      mutate(() -> {
+        token(attempt); counter(sequence);
+        if (!state.matches("pending|unknown|running|succeeded|failed|stopped|lost")
+            || !cleanup.matches("unknown|pending|complete")
+            || ("complete".equals(cleanup) && !terminal(state))
+            || (ready && !"running".equals(state))) {
+          throw new IllegalArgumentException("Invalid observation state");
+        }
+        String oldSequence = get("SELECT sequence FROM attempt_observations WHERE attempt=?", attempt);
+        if (oldSequence != null && new BigInteger(sequence).compareTo(new BigInteger(oldSequence)) < 0) {
+          return;
+        }
+        String oldState = get("SELECT state FROM attempt_observations WHERE attempt=?", attempt);
+        String oldCleanup = get("SELECT cleanup FROM attempt_observations WHERE attempt=?", attempt);
+        if (sequence.equals(oldSequence)) {
+          String oldReady = get("SELECT ready FROM attempt_observations WHERE attempt=?", attempt);
+          if (!state.equals(oldState) || !cleanup.equals(oldCleanup)
+              || !(ready ? "1" : "0").equals(oldReady)) {
+            throw new SQLException("Conflicting observation sequence");
+          }
+          return;
+        }
+        if ("complete".equals(oldCleanup) && !state.equals(oldState)) {
+          throw new SQLException("Conflicting completed terminal outcome");
+        }
+        if (oldState != null && terminal(oldState) && !terminal(state)) { return; }
+        if ("complete".equals(oldCleanup) && !"complete".equals(cleanup)) { return; }
+        update("INSERT OR REPLACE INTO attempt_observations VALUES (?,?,?,?,?,?)", attempt,
+            sequence, state, cleanup, ready ? "1" : "0", Long.toString(updatedMillis));
+      });
+    }
     private String scope(Journal journal) {
       if (!cluster.equals(journal.cluster) || !incarnation.equals(journal.incarnation)) {
         throw new IllegalArgumentException("Wrong journal cluster/recovery scope");
@@ -402,6 +519,68 @@ public final class NativeSqlStore implements AutoCloseable {
     public String committedCursor(Journal journal) throws SQLException {
       String value = get("SELECT cursor FROM journals WHERE scope=?", scope(journal));
       return value == null ? "0" : counter(value);
+    }
+  }
+
+  public static boolean terminal(String state) {
+    return "succeeded".equals(state) || "failed".equals(state)
+        || "stopped".equals(state) || "lost".equals(state);
+  }
+
+  public static final class AttemptRecord {
+    public final String attempt;
+    public final String job;
+    public final String instance;
+    public final String state;
+    public final String sequence;
+    public final String cleanup;
+    public final boolean ready;
+    public final long updatedMillis;
+    public final String node;
+    public final String runBody;
+    private AttemptRecord(String attempt, String job, String instance, String state, String sequence,
+        String cleanup, boolean ready, long updatedMillis, String node, String runBody) {
+      this.attempt = attempt; this.job = job; this.instance = instance; this.state = state;
+      this.sequence = sequence; this.cleanup = cleanup; this.ready = ready;
+      this.updatedMillis = updatedMillis; this.node = node; this.runBody = runBody;
+    }
+    public boolean reserved() { return !terminal(state) || !"complete".equals(cleanup); }
+  }
+
+  public static final class CommandRecord {
+    public final String command;
+    public final String attempt;
+    public final String body;
+    public final boolean pending;
+    private CommandRecord(String command, String attempt, String body, boolean pending) {
+      this.command = command; this.attempt = attempt; this.body = body; this.pending = pending;
+    }
+  }
+
+  /** Consistent online SQLite snapshot. Destination must be a new private directory. */
+  public void snapshot(Path destination) throws Exception {
+    synchronized (writer) {
+      lifecycle.readLock().lock();
+      try {
+        if (closed || current.get() != null) { throw new IllegalStateException("Invalid snapshot scope"); }
+        if (!destination.isAbsolute() || Files.exists(destination)) {
+          throw new IOException("Snapshot destination must be new and absolute");
+        }
+        for (Path path = destination; path != null; path = path.getParent()) {
+          if (Files.isSymbolicLink(path)) { throw new IOException("Snapshot symlink rejected"); }
+        }
+        Files.createDirectories(destination);
+        Path output = destination.resolve("scheduler.db");
+        try (Connection c = connect(false); PreparedStatement statement = c.prepareStatement(
+            "VACUUM INTO ?")) {
+          statement.setString(1, output.toString()); statement.execute();
+        }
+        try (FileChannel file = FileChannel.open(output, StandardOpenOption.WRITE)) { file.force(true); }
+        try (FileChannel dir = FileChannel.open(destination, StandardOpenOption.READ)) { dir.force(true); }
+        try (FileChannel parent = FileChannel.open(destination.getParent(), StandardOpenOption.READ)) {
+          parent.force(true);
+        }
+      } finally { lifecycle.readLock().unlock(); }
     }
   }
 

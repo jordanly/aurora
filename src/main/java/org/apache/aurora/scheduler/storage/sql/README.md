@@ -26,24 +26,28 @@ advancing the contiguous cursor. Counters use validated decimal strings and
 BigInteger, never floating point or signed 64-bit storage.
 
 Callers must perform protocol/admission validation before submitting opaque
-canonical body strings. This component is not an intake validator, placement
-policy, attempt reducer, dispatcher, inventory assembler, or replica controller.
+canonical body strings. This component is not an intake validator or placement policy. The isolated
+`scheduler/native` daemon provides the controller; SQL exposes its durable epoch
+and monotonic attempt projection.
 A transport may use a cursor only after the outer transaction returns
-successfully; a value read inside a callback is not permission to ACK. Future
-observation reduction must share the same write as receipt. No connection/session
+successfully; a value read inside a callback is not permission to ACK. Observation reduction shares the same write as receipt in the native daemon. No connection/session
 or execution fencing is inferred from storage identity.
 
 Every connection requires `journal_mode=WAL`, `synchronous=FULL`, foreign keys,
-and read-uncommitted disabled. Schema version 1 and application ID identify the
+and read-uncommitted disabled. Schema version 2 and application ID identify the
 file; unknown versions, existing empty/unidentified databases, a deleted database in a
 previously owned directory, missing metadata, and
 changed schema definitions reject. Startup also checks SQLite integrity and
 foreign keys. Metadata is initialized only with a new database. State and owner
-symlinks reject, and initial creation forces the parent directory to storage. There is no
-migration or backup/restore command yet. Commit I/O failures are surfaced; their
+symlinks reject, and initial creation forces the parent directory to storage. Version 1 is verified before transactional migration to version 2. The migration
+adds scheduler configuration/epoch and attempt observation projections.
+`snapshot(newDirectory)` uses SQLite [VACUUM INTO](https://www.sqlite.org/lang_vacuum.html)
+under the store writer lock, followed by file and directory synchronization.
+Existing destinations and symlink ancestors reject. Restored copies are checked
+by the normal constructor; this is not a live-cluster takeover mechanism. Commit I/O failures are surfaced; their
 outcomes require reopen/reconciliation before external effects. Tests cover
 process crash boundaries, not injected uncertain-commit I/O failure, media
-corruption, physical power loss, backup consistency or deployment wiring.
+corruption, physical power loss or uncertain distributed ownership.
 
 ## Pinned native dependency and executed evidence
 
@@ -66,7 +70,8 @@ Executed on 2026-09-10, aarch64 Raspberry Pi, kernel
   actual JNI execution above is the compatibility proof on this kernel.
 - `build-support/java/gradle-local focusedTest --tests '*sql.NativeSqlStoreTest'`
   runs the focused suite using Java 8 / Gradle 4.10.2 with at most two workers.
-  Eleven tests pass (zero failures/errors/skips). Tests cover atomic rollback, nested Exception/Error, reader snapshot/no dirty
+  The isolated scheduler build also includes this SQL suite, with migration and
+  snapshot regressions in addition to the original eleven tests. Tests cover atomic rollback, nested Exception/Error, reader snapshot/no dirty
   read, terminal batch/cancelled membership persistence, immutable command
   conflicts, dedupe/cursor gaps and scope, ownership/schema rejection, escaped
   views, uint64 boundary and actual subprocess halt before/after commit.

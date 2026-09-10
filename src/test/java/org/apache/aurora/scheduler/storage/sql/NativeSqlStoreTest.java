@@ -41,6 +41,79 @@ public class NativeSqlStoreTest {
       return null;
     });
   }
+  @Test public void versionOneMigratesAtomicallyAndPreservesDurableJobs() throws Exception {
+    Path dir = temporary.newFolder().toPath();
+    try (NativeSqlStore store = open(dir)) { seed(store); }
+    try (Connection connection = DriverManager.getConnection("jdbc:sqlite:" + dir.resolve("scheduler.db"))) {
+      connection.createStatement().execute("DROP TABLE attempt_observations");
+      connection.createStatement().execute("DROP TABLE scheduler_state");
+      connection.createStatement().execute("PRAGMA user_version=1");
+    }
+    try (NativeSqlStore store = open(dir)) {
+      assertEquals("immutable-job", store.read(tx -> tx.jobBody(job)));
+      assertEquals("1", store.write(tx -> tx.startScheduler("configuration")));
+      store.write(tx -> {
+        tx.reduceAttempt("a", "18446744073709551615", "lost", "unknown", false, 10);
+        return null;
+      });
+    }
+    try (NativeSqlStore store = open(dir)) {
+      assertEquals("2", store.write(tx -> tx.startScheduler("configuration")));
+      assertEquals("18446744073709551615", store.read(tx -> tx.attempts().get(0).sequence));
+      assertTrue(store.read(tx -> tx.attempts().get(0).reserved()));
+      rejects(() -> store.write(tx -> tx.startScheduler("different")));
+      assertEquals("2", store.read(NativeSqlStore.Tx::schedulerEpoch));
+    }
+  }
+  @Test public void snapshotRetainsEpochProjectionAndRefusesOverwriteOrSymlink() throws Exception {
+    Path dir = temporary.newFolder().toPath();
+    Path copy = temporary.getRoot().toPath().resolve("snapshot");
+    try (NativeSqlStore store = open(dir)) {
+      seed(store);
+      store.write(tx -> {
+        tx.startScheduler("config"); tx.reduceAttempt("a", "1", "succeeded", "complete", false, 10);
+        return null;
+      });
+      store.snapshot(copy); rejects(() -> store.snapshot(copy));
+      Path link = temporary.getRoot().toPath().resolve("link");
+      java.nio.file.Files.createSymbolicLink(link, dir);
+      rejects(() -> store.snapshot(link.resolve("child")));
+    }
+    try (NativeSqlStore store = open(copy)) {
+      assertEquals("1", store.read(NativeSqlStore.Tx::schedulerEpoch));
+      assertFalse(store.read(tx -> tx.attempts().get(0).reserved()));
+      assertTrue(store.read(tx -> tx.hasInstance(job, "0")));
+    }
+  }
+  @Test public void completedTerminalOutcomeIsImmutableAndConflictRollsBackReceipt() throws Exception {
+    Path dir = temporary.newFolder().toPath();
+    try (NativeSqlStore store = open(dir)) {
+      seed(store);
+      store.write(tx -> {
+        tx.reduceAttempt("a", "1", "succeeded", "pending", false, 1);
+        tx.observe(journal, "1", "pending"); return null;
+      });
+      store.write(tx -> {
+        tx.reduceAttempt("a", "2", "succeeded", "complete", false, 2);
+        tx.observe(journal, "2", "complete"); return null;
+      });
+      for (String outcome : new String[] {"failed", "stopped", "lost"}) {
+        rejects(() -> store.write(tx -> {
+          tx.observe(journal, "3", "conflicting");
+          // Catching the mutator failure must still poison the complete write.
+          rejects(() -> tx.reduceAttempt("a", "3", outcome, "complete", false, 3));
+          return null;
+        }));
+        assertEquals("2", store.read(tx -> tx.committedCursor(journal)));
+        assertEquals("succeeded", store.read(tx -> tx.attempts().get(0).state));
+      }
+      store.write(tx -> {
+        tx.reduceAttempt("a", "3", "succeeded", "complete", false, 3);
+        tx.observe(journal, "3", "same terminal outcome"); return null;
+      });
+      assertEquals("3", store.read(tx -> tx.committedCursor(journal)));
+    }
+  }
   private interface Failing { void run() throws Exception; }
   private void rejects(Failing work) throws Exception {
     try { work.run(); fail("Expected rejection"); } catch (Exception expected) { }
