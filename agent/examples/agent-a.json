@@ -1,0 +1,13 @@
+{
+  "cluster": "lab",
+  "incarnation": "recovery-a",
+  "node": "agent-a",
+  "journal": "journal-a",
+  "boot": "boot-a",
+  "runtime": "runtime-a",
+  "session": "session-a",
+  "schedulerEpoch": "9007199254740993",
+  "peer": "scheduler",
+  "cpuMillis": 1000,
+  "memoryBytes": 1073741824
+}

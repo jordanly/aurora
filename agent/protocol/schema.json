@@ -1,0 +1,964 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:aurora:native-v1alpha1",
+  "title": "Aurora bounded native fixture contract",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/job"
+    },
+    {
+      "$ref": "#/$defs/run"
+    },
+    {
+      "$ref": "#/$defs/stop"
+    },
+    {
+      "$ref": "#/$defs/delivery"
+    },
+    {
+      "$ref": "#/$defs/observation"
+    },
+    {
+      "$ref": "#/$defs/inventory"
+    },
+    {
+      "$ref": "#/$defs/ack"
+    }
+  ],
+  "$defs": {
+    "identity": {
+      "type": "object",
+      "properties": {
+        "cluster": {
+          "$ref": "#/$defs/id"
+        },
+        "incarnation": {
+          "$ref": "#/$defs/id"
+        },
+        "instance": {
+          "$ref": "#/$defs/id"
+        },
+        "attempt": {
+          "$ref": "#/$defs/id"
+        },
+        "process": {
+          "$ref": "#/$defs/id"
+        },
+        "run": {
+          "$ref": "#/$defs/id"
+        },
+        "jobKey": {
+          "$ref": "#/$defs/jobKey"
+        }
+      },
+      "required": [
+        "cluster",
+        "incarnation",
+        "jobKey",
+        "instance",
+        "attempt",
+        "process",
+        "run"
+      ],
+      "additionalProperties": false
+    },
+    "agent": {
+      "type": "object",
+      "properties": {
+        "node": {
+          "$ref": "#/$defs/id"
+        },
+        "journal": {
+          "$ref": "#/$defs/id"
+        },
+        "boot": {
+          "$ref": "#/$defs/id"
+        },
+        "runtime": {
+          "$ref": "#/$defs/id"
+        }
+      },
+      "required": [
+        "node",
+        "journal",
+        "boot",
+        "runtime"
+      ],
+      "additionalProperties": false
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]{0,63}(?![\\s\\S])"
+    },
+    "counter": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,19})(?![\\s\\S])"
+    },
+    "port": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/id"
+        },
+        "number": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535
+        },
+        "protocol": {
+          "enum": [
+            "tcp"
+          ]
+        },
+        "family": {
+          "enum": [
+            "ipv4"
+          ]
+        },
+        "network": {
+          "$ref": "#/$defs/id"
+        }
+      },
+      "required": [
+        "name",
+        "number",
+        "protocol",
+        "family",
+        "network"
+      ],
+      "additionalProperties": false
+    },
+    "process": {
+      "type": "object",
+      "properties": {
+        "process": {
+          "$ref": "#/$defs/id"
+        },
+        "argv": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[ -~]*(?![\\s\\S])",
+            "maxLength": 4096
+          },
+          "minItems": 1,
+          "maxItems": 64
+        },
+        "env": {
+          "type": "object",
+          "propertyNames": {
+            "pattern": "^[A-Z_][A-Z0-9_]*(?![\\s\\S])"
+          },
+          "additionalProperties": {
+            "type": "string",
+            "pattern": "^[ -~]*(?![\\s\\S])",
+            "maxLength": 4096
+          }
+        },
+        "resources": {
+          "type": "object",
+          "properties": {
+            "cpuMillis": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 2147483647
+            },
+            "memoryBytes": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "memoryEnforcement": {
+              "enum": [
+                "reservation",
+                "hard"
+              ]
+            }
+          },
+          "required": [
+            "cpuMillis",
+            "memoryBytes",
+            "memoryEnforcement"
+          ],
+          "additionalProperties": false
+        },
+        "ports": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/port"
+          },
+          "minItems": 0,
+          "maxItems": 16
+        },
+        "readiness": {
+          "oneOf": [
+            {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "enum": [
+                    "none"
+                  ]
+                }
+              },
+              "required": [
+                "kind"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "enum": [
+                    "tcp"
+                  ]
+                },
+                "port": {
+                  "$ref": "#/$defs/id"
+                },
+                "intervalMillis": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 60000
+                },
+                "timeoutMillis": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 60000
+                }
+              },
+              "required": [
+                "kind",
+                "port",
+                "intervalMillis",
+                "timeoutMillis"
+              ],
+              "additionalProperties": false
+            }
+          ]
+        },
+        "retry": {
+          "type": "object",
+          "properties": {
+            "maxRuns": {
+              "enum": [
+                1
+              ]
+            }
+          },
+          "required": [
+            "maxRuns"
+          ],
+          "additionalProperties": false
+        },
+        "stop": {
+          "type": "object",
+          "properties": {
+            "graceMillis": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 60000
+            }
+          },
+          "required": [
+            "graceMillis"
+          ],
+          "additionalProperties": false
+        },
+        "runtime": {
+          "enum": [
+            "trusted-host-process"
+          ]
+        },
+        "requiredCapabilities": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "hard-memory"
+            ]
+          },
+          "uniqueItems": true,
+          "maxItems": 1
+        }
+      },
+      "required": [
+        "process",
+        "argv",
+        "env",
+        "resources",
+        "ports",
+        "readiness",
+        "retry",
+        "stop",
+        "runtime",
+        "requiredCapabilities"
+      ],
+      "additionalProperties": false
+    },
+    "job": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "enum": [
+            "native-v1alpha1"
+          ]
+        },
+        "kind": {
+          "enum": [
+            "Job"
+          ]
+        },
+        "cluster": {
+          "$ref": "#/$defs/id"
+        },
+        "incarnation": {
+          "$ref": "#/$defs/id"
+        },
+        "revision": {
+          "$ref": "#/$defs/counter"
+        },
+        "mode": {
+          "enum": [
+            "batch",
+            "service"
+          ]
+        },
+        "instances": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2
+        },
+        "maxPerAgent": {
+          "enum": [
+            1
+          ]
+        },
+        "completion": {
+          "enum": [
+            "retain-completed",
+            "maintain-desired"
+          ]
+        },
+        "template": {
+          "$ref": "#/$defs/template"
+        },
+        "jobKey": {
+          "$ref": "#/$defs/jobKey"
+        }
+      },
+      "required": [
+        "version",
+        "kind",
+        "cluster",
+        "incarnation",
+        "jobKey",
+        "revision",
+        "mode",
+        "instances",
+        "maxPerAgent",
+        "completion",
+        "template"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "mode": {
+                "const": "batch"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "instances": {
+                "const": 1
+              },
+              "completion": {
+                "const": "retain-completed"
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "completion": {
+                "const": "maintain-desired"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "run": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "enum": [
+            "native-v1alpha1"
+          ]
+        },
+        "kind": {
+          "enum": [
+            "Run"
+          ]
+        },
+        "command": {
+          "$ref": "#/$defs/id"
+        },
+        "identity": {
+          "$ref": "#/$defs/identity"
+        },
+        "target": {
+          "$ref": "#/$defs/agent"
+        },
+        "desiredRevision": {
+          "$ref": "#/$defs/counter"
+        },
+        "assignment": {
+          "$ref": "#/$defs/process"
+        },
+        "templateSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}(?![\\s\\S])"
+        }
+      },
+      "required": [
+        "version",
+        "kind",
+        "command",
+        "identity",
+        "target",
+        "desiredRevision",
+        "assignment",
+        "templateSha256"
+      ],
+      "additionalProperties": false
+    },
+    "stop": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "enum": [
+            "native-v1alpha1"
+          ]
+        },
+        "kind": {
+          "enum": [
+            "Stop"
+          ]
+        },
+        "command": {
+          "$ref": "#/$defs/id"
+        },
+        "identity": {
+          "$ref": "#/$defs/identity"
+        },
+        "target": {
+          "$ref": "#/$defs/agent"
+        },
+        "desiredRevision": {
+          "$ref": "#/$defs/counter"
+        },
+        "graceMillis": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 60000
+        },
+        "reason": {
+          "enum": [
+            "cancel",
+            "restart",
+            "drain"
+          ]
+        }
+      },
+      "required": [
+        "version",
+        "kind",
+        "command",
+        "identity",
+        "target",
+        "desiredRevision",
+        "graceMillis",
+        "reason"
+      ],
+      "additionalProperties": false
+    },
+    "delivery": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "enum": [
+            "native-v1alpha1"
+          ]
+        },
+        "kind": {
+          "enum": [
+            "Delivery"
+          ]
+        },
+        "authority": {
+          "type": "object",
+          "properties": {
+            "cluster": {
+              "$ref": "#/$defs/id"
+            },
+            "incarnation": {
+              "$ref": "#/$defs/id"
+            },
+            "schedulerEpoch": {
+              "$ref": "#/$defs/counter"
+            },
+            "session": {
+              "$ref": "#/$defs/id"
+            }
+          },
+          "required": [
+            "cluster",
+            "incarnation",
+            "schedulerEpoch",
+            "session"
+          ],
+          "additionalProperties": false
+        },
+        "body": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/run"
+            },
+            {
+              "$ref": "#/$defs/stop"
+            }
+          ]
+        },
+        "bodySha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}(?![\\s\\S])"
+        }
+      },
+      "required": [
+        "version",
+        "kind",
+        "authority",
+        "body",
+        "bodySha256"
+      ],
+      "additionalProperties": false
+    },
+    "observation": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "enum": [
+            "native-v1alpha1"
+          ]
+        },
+        "kind": {
+          "enum": [
+            "Observation"
+          ]
+        },
+        "identity": {
+          "$ref": "#/$defs/identity"
+        },
+        "source": {
+          "$ref": "#/$defs/agent"
+        },
+        "sequence": {
+          "$ref": "#/$defs/counter"
+        },
+        "cursor": {
+          "$ref": "#/$defs/counter"
+        },
+        "state": {
+          "enum": [
+            "running",
+            "succeeded",
+            "failed",
+            "lost",
+            "stopped",
+            "unknown"
+          ]
+        },
+        "ready": {
+          "type": "boolean"
+        },
+        "cleanup": {
+          "enum": [
+            "pending",
+            "complete",
+            "unknown"
+          ]
+        }
+      },
+      "required": [
+        "version",
+        "kind",
+        "identity",
+        "source",
+        "sequence",
+        "cursor",
+        "state",
+        "ready",
+        "cleanup"
+      ],
+      "additionalProperties": false
+    },
+    "inventory": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "enum": [
+            "native-v1alpha1"
+          ]
+        },
+        "kind": {
+          "enum": [
+            "InventoryPage"
+          ]
+        },
+        "source": {
+          "$ref": "#/$defs/agent"
+        },
+        "snapshot": {
+          "$ref": "#/$defs/id"
+        },
+        "generation": {
+          "$ref": "#/$defs/counter"
+        },
+        "watermark": {
+          "$ref": "#/$defs/counter"
+        },
+        "page": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2147483647
+        },
+        "last": {
+          "type": "boolean"
+        },
+        "attempts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "identity": {
+                "$ref": "#/$defs/identity"
+              },
+              "sequence": {
+                "$ref": "#/$defs/counter"
+              },
+              "state": {
+                "enum": [
+                  "running",
+                  "succeeded",
+                  "failed",
+                  "lost",
+                  "stopped",
+                  "unknown"
+                ]
+              },
+              "cleanup": {
+                "enum": [
+                  "pending",
+                  "complete",
+                  "unknown"
+                ]
+              }
+            },
+            "required": [
+              "identity",
+              "sequence",
+              "state",
+              "cleanup"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 0,
+          "maxItems": 128
+        }
+      },
+      "required": [
+        "version",
+        "kind",
+        "source",
+        "snapshot",
+        "generation",
+        "watermark",
+        "page",
+        "last",
+        "attempts"
+      ],
+      "additionalProperties": false
+    },
+    "ack": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "enum": [
+            "native-v1alpha1"
+          ]
+        },
+        "kind": {
+          "enum": [
+            "ObservationAck"
+          ]
+        },
+        "cluster": {
+          "$ref": "#/$defs/id"
+        },
+        "incarnation": {
+          "$ref": "#/$defs/id"
+        },
+        "node": {
+          "$ref": "#/$defs/id"
+        },
+        "journal": {
+          "$ref": "#/$defs/id"
+        },
+        "committedCursor": {
+          "$ref": "#/$defs/counter"
+        }
+      },
+      "required": [
+        "version",
+        "kind",
+        "cluster",
+        "incarnation",
+        "node",
+        "journal",
+        "committedCursor"
+      ],
+      "additionalProperties": false
+    },
+    "jobKey": {
+      "type": "object",
+      "properties": {
+        "role": {
+          "$ref": "#/$defs/id"
+        },
+        "environment": {
+          "$ref": "#/$defs/id"
+        },
+        "name": {
+          "$ref": "#/$defs/id"
+        }
+      },
+      "required": [
+        "role",
+        "environment",
+        "name"
+      ],
+      "additionalProperties": false
+    },
+    "template": {
+      "type": "object",
+      "properties": {
+        "process": {
+          "$ref": "#/$defs/id"
+        },
+        "argv": {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {
+                "type": "string",
+                "pattern": "^[ -~]*(?![\\s\\S])",
+                "maxLength": 4096
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "portRef": {
+                    "$ref": "#/$defs/id"
+                  }
+                },
+                "required": [
+                  "portRef"
+                ],
+                "additionalProperties": false
+              }
+            ]
+          },
+          "minItems": 1,
+          "maxItems": 64
+        },
+        "env": {
+          "type": "object",
+          "propertyNames": {
+            "pattern": "^[A-Z_][A-Z0-9_]*(?![\\s\\S])"
+          },
+          "additionalProperties": {
+            "type": "string",
+            "pattern": "^[ -~]*(?![\\s\\S])",
+            "maxLength": 4096
+          }
+        },
+        "resources": {
+          "type": "object",
+          "properties": {
+            "cpuMillis": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 2147483647
+            },
+            "memoryBytes": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "memoryEnforcement": {
+              "enum": [
+                "reservation",
+                "hard"
+              ]
+            }
+          },
+          "required": [
+            "cpuMillis",
+            "memoryBytes",
+            "memoryEnforcement"
+          ],
+          "additionalProperties": false
+        },
+        "ports": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/portDeclaration"
+          },
+          "minItems": 0,
+          "maxItems": 16
+        },
+        "readiness": {
+          "oneOf": [
+            {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "enum": [
+                    "none"
+                  ]
+                }
+              },
+              "required": [
+                "kind"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "enum": [
+                    "tcp"
+                  ]
+                },
+                "port": {
+                  "$ref": "#/$defs/id"
+                },
+                "intervalMillis": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 60000
+                },
+                "timeoutMillis": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 60000
+                }
+              },
+              "required": [
+                "kind",
+                "port",
+                "intervalMillis",
+                "timeoutMillis"
+              ],
+              "additionalProperties": false
+            }
+          ]
+        },
+        "retry": {
+          "type": "object",
+          "properties": {
+            "maxRuns": {
+              "enum": [
+                1
+              ]
+            }
+          },
+          "required": [
+            "maxRuns"
+          ],
+          "additionalProperties": false
+        },
+        "stop": {
+          "type": "object",
+          "properties": {
+            "graceMillis": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 60000
+            }
+          },
+          "required": [
+            "graceMillis"
+          ],
+          "additionalProperties": false
+        },
+        "runtime": {
+          "enum": [
+            "trusted-host-process"
+          ]
+        },
+        "requiredCapabilities": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "hard-memory"
+            ]
+          },
+          "uniqueItems": true,
+          "maxItems": 1
+        }
+      },
+      "required": [
+        "process",
+        "argv",
+        "env",
+        "resources",
+        "ports",
+        "readiness",
+        "retry",
+        "stop",
+        "runtime",
+        "requiredCapabilities"
+      ],
+      "additionalProperties": false
+    },
+    "portDeclaration": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/id"
+        },
+        "protocol": {
+          "enum": [
+            "tcp"
+          ]
+        },
+        "family": {
+          "enum": [
+            "ipv4"
+          ]
+        }
+      },
+      "required": [
+        "name",
+        "protocol",
+        "family"
+      ],
+      "additionalProperties": false
+    }
+  }
+}
