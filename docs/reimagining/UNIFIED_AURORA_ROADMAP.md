@@ -15,7 +15,8 @@ reports preserve the preceding increments.
 CUT-01 packages that cluster as isolated runtime images with pinned tools and
 content-verified dependency boundaries. Use the [native build and qualification
 commands](../../build-support/native/README.md) for a fresh checkout. Java/Gradle
-modernization follows qualification of this packaged baseline.
+modernization follows this [qualified packaged baseline](CUT01_STATUS.md), which
+passed the full Pi gate on 2026-09-10.
 
 **Verified master and provenance**
 

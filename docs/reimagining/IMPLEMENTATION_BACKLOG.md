@@ -3,10 +3,10 @@
 Companion to the [unified roadmap](UNIFIED_AURORA_ROADMAP.md) and [Docker lab](PI_CONTAINER_LAB.md). These rows define intended deliverables and acceptance contracts, not created issues. The [native cluster guide](CLUSTER_MVP.md) records the integrated scheduler/two-agent implementation and its bounded operating profile. The [process runtime status](PROCESS_RUNTIME_STATUS.md), [durable core status](DURABLE_CORE_STATUS.md) and [first foundation status](FIRST_SLICE_STATUS.md) preserve the preceding increments and evidence. Keep each PR focused; split a row if its reviewable diff becomes too large. Dependencies are gate dependencies, not a requirement for one enormous PR per stage.
 
 The integrated SLICE-01 MVP has passed its three-round and ten-minute gate.
-CUT-01 now has an implemented [native packaging lane](../../build-support/native/README.md):
+CUT-01 has passed its [packaged Pi qualification](CUT01_STATUS.md), with a [native packaging lane](../../build-support/native/README.md):
 pinned standalone builds, production and lab images, exact runtime content gates,
-and an image-backed qualification command. Its final Pi evidence is recorded with
-the cluster guide after qualification. JAVA-01 follows this packaged baseline.
+and an image-backed qualification command. The [evidence ledger](cut01-evidence.json)
+records all 23 passing cases and verified cleanup. JAVA-01 follows this packaged baseline.
 
 **First work and independent tracks**
 

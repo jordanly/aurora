@@ -22,7 +22,8 @@ run inside the agent container through a verified Docker creation identity.
 
 ## Operate the lab
 
-For a fresh checkout, use the [CUT-01 image build and qualification lane](../../build-support/native/README.md).
+For a fresh checkout, use the [CUT-01 image build and qualification lane](../../build-support/native/README.md),
+which [passed its complete Pi gate](CUT01_STATUS.md).
 It packages its own JRE, scheduler libraries and Go executables; the lab needs no
 executable bind mounts. The commands below describe the original checkout-tool
 lane, which remains supported for the already-running MVP.

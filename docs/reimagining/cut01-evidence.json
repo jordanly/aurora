@@ -1,0 +1,2817 @@
+{
+  "bundle": {
+    "artifactCount": 129,
+    "images": {
+      "agent": {
+        "id": "sha256:aeaca46894f48a86b02b69243b71165ef35b345488e65d10a07f1d51ec7eb455",
+        "reference": "aurora-native-local:af7cb6db9e681957-agent"
+      },
+      "agent-lab": {
+        "id": "sha256:9f8cb70ac981b1e63852c57475740434101a181bfa3e702b44844006b942dba8",
+        "reference": "aurora-native-local:af7cb6db9e681957-agent-lab"
+      },
+      "scheduler": {
+        "id": "sha256:f522e8a30b62521592dc3d3af880fb85b1acb1ec544443de1a704d7b864d657a",
+        "reference": "aurora-native-local:af7cb6db9e681957-scheduler"
+      },
+      "scheduler-lab": {
+        "id": "sha256:93f2b7a6bf482dc2f2bf982fb60178b59bddb0a8becfb73bef4d422d3b272294",
+        "reference": "aurora-native-local:af7cb6db9e681957-scheduler-lab"
+      },
+      "tools": {
+        "id": "sha256:722e9a9b7cbb491d50ce14315b963d56adf786684179ccefd080ca95bba16cda",
+        "reference": "aurora-native-local:af7cb6db9e681957-tools"
+      }
+    },
+    "path": ".cache/cut01-fresh-bundle-2",
+    "reportCount": 57,
+    "sha256": "fd14356ef3e4ced0ecd7ec6744e1ece827a866c27f5310900197b0ae26123863",
+    "sourceHashes": {
+      "agent": "265d329086bcdf97283dc5ec86fd272341ac12dd3902dac551ae4d72baf35874",
+      "build-support/java/gradle-local": "256b38db4b619deaa54a57b294e6154387428ef69b75cc0cddad9defd43dc7d4",
+      "build-support/lab/cluster-check": "76d47707e321dc7c546311a95beb1063db0217f0eae1f4136654233650bca8a3",
+      "build-support/lab/clusterctl": "6999914c5de1d9ec423f654a7f9699fb13cf81eb6d4d44e75bc75c5e0eba4871",
+      "build-support/lab/fixtures/cluster-helper": "da069ff44924ae6baba7a71a58409eb41091c5fa95373a7aea60c386aed612e6",
+      "build-support/lab/fixtures/native-workload": "b4c72cb6bd899696f82aee790d1fd198631942a85c25e8c49c29ca540442db1b",
+      "build-support/lab/native-smoke": "5c173e3f8daf9a2341602098f89c390b45de717e0974b0d233d9470611b41f34",
+      "build-support/lab/native-smoke-manifest.json": "1733fa1e45c3850cf651774ea48d5bd11206f7f47691411bb4d9fdd3d937c0e6",
+      "build-support/native": "86dcb5097808d49a0628b415ffea02985d8e55c77dfbc4247b3e60f6da96bc22",
+      "protocol/java/build.gradle": "d2a36fa8fcd8fd76ea84150d68134465bb2e94c407eb003a2c72bcbb014bf8bc",
+      "protocol/java/runtime-dependencies.sha256": "88bfc398967edd2d37129a3040db6f81bb88e6252ac26dfbe3c5704025436521",
+      "protocol/java/settings.gradle": "54e38d4946957fc56d1b3da2ad94f69a9da59fa145af7cb17ab5a3d8e405547b",
+      "protocol/java/src": "a267133a9ba11f888860e069723af9d4e822f308881c2aef7f152411d8ce0a54",
+      "protocol/native-v1alpha1": "3847e470186e9c902288b15ebb3890a3cb695dd9eb8cce97702d5b894a38074e",
+      "scheduler/native/build.gradle": "6305921370260bcf9f9635d1ffd8b958cc2373bc3c65c00b14adefdb7ce250ae",
+      "scheduler/native/settings.gradle": "39c6e75955759457593f13da6e01571da036338f9cfa0fd398a1f5a52b61d0f7",
+      "scheduler/native/src": "5bdfe0c3d1dbc53086853b803ee282c6ce0a1ced740e88ecf1a440f5b2ad846b",
+      "src/main/java/org/apache/aurora/scheduler/storage/sql": "8bc7cf4f5447b17580e034a888c08423422cc9b71de1e90c1691a4f31612edd3"
+    }
+  },
+  "cleanCheckout": true,
+  "existingMvp": {
+    "path": ".pi-lab/cluster-mvp/evidence/cut01-post-verification.json",
+    "sha256": "2904265f3396fa54e5cd58aa0a175c16b19faaa1520bccf4cd0608527c69c79f",
+    "verification": {
+      "attemptCount": 3,
+      "checkedAt": 1789079177.1590264,
+      "mvpRun": "108ede8a5cb16d26",
+      "nodes": [
+        {
+          "cursor": "6",
+          "lastError": null,
+          "node": "agent-a",
+          "reachable": true
+        },
+        {
+          "cursor": "3",
+          "lastError": null,
+          "node": "agent-b",
+          "reachable": true
+        }
+      ],
+      "ok": true,
+      "packagingProbeContainersRemaining": 0,
+      "physical": [
+        {
+          "attempt": "attempt-153e6adb-033d-4d7a-835e-c1236d66397a",
+          "http": {
+            "identity": "mvp-service",
+            "ready": true
+          },
+          "node": "agent-a"
+        },
+        {
+          "attempt": "attempt-7ed6388a-fa0c-426e-a6c0-a4e78a20dd08",
+          "http": {
+            "identity": "mvp-service",
+            "ready": true
+          },
+          "node": "agent-b"
+        }
+      ],
+      "qualificationDockerResourcesRemaining": 0
+    }
+  },
+  "masterCommit": "11ebaeeb071cb182c388a40755e84f60dda32260",
+  "ok": true,
+  "platform": {
+    "architecture": "aarch64",
+    "kernel": "6.18.39+rpt-rpi-2712",
+    "pageBytes": 16384
+  },
+  "qualification": {
+    "allTerminalAndCleaned": true,
+    "attempts": 40,
+    "cases": [
+      {
+        "at": 1789078447.6149771,
+        "name": "operator-mtls-and-role-rejection",
+        "ok": true
+      },
+      {
+        "at": 1789078448.623123,
+        "attempts": [
+          {
+            "cleanup": "complete",
+            "identity": {
+              "attempt": "attempt-1ffe3dd8-03b5-4871-b2bc-ec53f2e215d1",
+              "cluster": "lab",
+              "incarnation": "recovery-a",
+              "instance": "instance-0",
+              "jobKey": {
+                "environment": "test",
+                "name": "c1789078447-r0-batch",
+                "role": "fixtures"
+              },
+              "process": "main",
+              "run": "run-617023be-806b-46bc-aeea-dd05fd1cdb8b"
+            },
+            "node": "agent-a",
+            "ready": false,
+            "reserved": false,
+            "run": {
+              "assignment": {
+                "argv": [
+                  "/opt/aurora/bin/native-workload",
+                  "--mode",
+                  "batch",
+                  "--identity",
+                  "c1789078447-r0-batch",
+                  "--evidence",
+                  "/evidence/c1789078447-r0-batch.jsonl"
+                ],
+                "env": {
+                  "LANG": "C"
+                },
+                "ports": [],
+                "process": "main",
+                "readiness": {
+                  "kind": "none"
+                },
+                "requiredCapabilities": [],
+                "resources": {
+                  "cpuMillis": 100,
+                  "memoryBytes": 16777216,
+                  "memoryEnforcement": "reservation"
+                },
+                "retry": {
+                  "maxRuns": 1
+                },
+                "runtime": "trusted-host-process",
+                "stop": {
+                  "graceMillis": 300
+                }
+              },
+              "command": "command-2ab26eef-6b9d-48eb-8535-396507671d4c",
+              "desiredRevision": "1",
+              "identity": {
+                "attempt": "attempt-1ffe3dd8-03b5-4871-b2bc-ec53f2e215d1",
+                "cluster": "lab",
+                "incarnation": "recovery-a",
+                "instance": "instance-0",
+                "jobKey": {
+                  "environment": "test",
+                  "name": "c1789078447-r0-batch",
+                  "role": "fixtures"
+                },
+                "process": "main",
+                "run": "run-617023be-806b-46bc-aeea-dd05fd1cdb8b"
+              },
+              "kind": "Run",
+              "target": {
+                "boot": "boot-a",
+                "journal": "journal-a",
+                "node": "agent-a",
+                "runtime": "runtime-a"
+              },
+              "templateSha256": "891853a91b18d7f21362b5dc608d18dee1423e9f1bb1ccac28bff517f6ed9c1e",
+              "version": "native-v1alpha1"
+            },
+            "sequence": "3",
+            "state": "succeeded"
+          }
+        ],
+        "launches": 1,
+        "name": "c1789078447-r0-batch-submit-replay",
+        "ok": true
+      },
+      {
+        "at": 1789078450.615057,
+        "attempts": [
+          {
+            "cleanup": "pending",
+            "identity": {
+              "attempt": "attempt-4d70d3d3-98e8-4bb0-b953-46cb6e1647df",
+              "cluster": "lab",
+              "incarnation": "recovery-a",
+              "instance": "instance-0",
+              "jobKey": {
+                "environment": "test",
+                "name": "c1789078447-r0-service",
+                "role": "fixtures"
+              },
+              "process": "main",
+              "run": "run-c21fa194-7fdb-4fbe-b722-a7c04ce360aa"
+            },
+            "node": "agent-a",
+            "ready": true,
+            "reserved": true,
+            "run": {
+              "assignment": {
+                "argv": [
+                  "/opt/aurora/bin/native-workload",
+                  "--mode",
+                  "service",
+                  "--identity",
+                  "c1789078447-r0-service",
+                  "--evidence",
+                  "/evidence/c1789078447-r0-service.jsonl",
+                  "--port",
+                  "18080",
+                  "--ready-delay-ms",
+                  "100"
+                ],
+                "env": {
+                  "LANG": "C"
+                },
+                "ports": [
+                  {
+                    "family": "ipv4",
+                    "name": "http",
+                    "network": "agent-container",
+                    "number": 18080,
+                    "protocol": "tcp"
+                  }
+                ],
+                "process": "main",
+                "readiness": {
+                  "intervalMillis": 1000,
+                  "kind": "tcp",
+                  "port": "http",
+                  "timeoutMillis": 500
+                },
+                "requiredCapabilities": [],
+                "resources": {
+                  "cpuMillis": 100,
+                  "memoryBytes": 16777216,
+                  "memoryEnforcement": "reservation"
+                },
+                "retry": {
+                  "maxRuns": 1
+                },
+                "runtime": "trusted-host-process",
+                "stop": {
+                  "graceMillis": 300
+                }
+              },
+              "command": "command-f69f1510-cad8-4abd-ba51-9e640150faf6",
+              "desiredRevision": "1",
+              "identity": {
+                "attempt": "attempt-4d70d3d3-98e8-4bb0-b953-46cb6e1647df",
+                "cluster": "lab",
+                "incarnation": "recovery-a",
+                "instance": "instance-0",
+                "jobKey": {
+                  "environment": "test",
+                  "name": "c1789078447-r0-service",
+                  "role": "fixtures"
+                },
+                "process": "main",
+                "run": "run-c21fa194-7fdb-4fbe-b722-a7c04ce360aa"
+              },
+              "kind": "Run",
+              "target": {
+                "boot": "boot-a",
+                "journal": "journal-a",
+                "node": "agent-a",
+                "runtime": "runtime-a"
+              },
+              "templateSha256": "69f4659ce560031163f7b41ff5da59aabf1e3298428a40ee4c8c4ed076e18f64",
+              "version": "native-v1alpha1"
+            },
+            "sequence": "3",
+            "state": "running"
+          },
+          {
+            "cleanup": "pending",
+            "identity": {
+              "attempt": "attempt-91dd7d23-98cf-44dc-b2a2-1060bbbc5157",
+              "cluster": "lab",
+              "incarnation": "recovery-a",
+              "instance": "instance-1",
+              "jobKey": {
+                "environment": "test",
+                "name": "c1789078447-r0-service",
+                "role": "fixtures"
+              },
+              "process": "main",
+              "run": "run-b0f63f4f-eaec-4a9f-93b9-22ad1612d6b1"
+            },
+            "node": "agent-b",
+            "ready": true,
+            "reserved": true,
+            "run": {
+              "assignment": {
+                "argv": [
+                  "/opt/aurora/bin/native-workload",
+                  "--mode",
+                  "service",
+                  "--identity",
+                  "c1789078447-r0-service",
+                  "--evidence",
+                  "/evidence/c1789078447-r0-service.jsonl",
+                  "--port",
+                  "18080",
+                  "--ready-delay-ms",
+                  "100"
+                ],
+                "env": {
+                  "LANG": "C"
+                },
+                "ports": [
+                  {
+                    "family": "ipv4",
+                    "name": "http",
+                    "network": "agent-container",
+                    "number": 18080,
+                    "protocol": "tcp"
+                  }
+                ],
+                "process": "main",
+                "readiness": {
+                  "intervalMillis": 1000,
+                  "kind": "tcp",
+                  "port": "http",
+                  "timeoutMillis": 500
+                },
+                "requiredCapabilities": [],
+                "resources": {
+                  "cpuMillis": 100,
+                  "memoryBytes": 16777216,
+                  "memoryEnforcement": "reservation"
+                },
+                "retry": {
+                  "maxRuns": 1
+                },
+                "runtime": "trusted-host-process",
+                "stop": {
+                  "graceMillis": 300
+                }
+              },
+              "command": "command-070a7611-f31d-4d71-8180-4d6c89aaeb40",
+              "desiredRevision": "1",
+              "identity": {
+                "attempt": "attempt-91dd7d23-98cf-44dc-b2a2-1060bbbc5157",
+                "cluster": "lab",
+                "incarnation": "recovery-a",
+                "instance": "instance-1",
+                "jobKey": {
+                  "environment": "test",
+                  "name": "c1789078447-r0-service",
+                  "role": "fixtures"
+                },
+                "process": "main",
+                "run": "run-b0f63f4f-eaec-4a9f-93b9-22ad1612d6b1"
+              },
+              "kind": "Run",
+              "target": {
+                "boot": "boot-b",
+                "journal": "journal-b",
+                "node": "agent-b",
+                "runtime": "runtime-b"
+              },
+              "templateSha256": "69f4659ce560031163f7b41ff5da59aabf1e3298428a40ee4c8c4ed076e18f64",
+              "version": "native-v1alpha1"
+            },
+            "sequence": "3",
+            "state": "running"
+          }
+        ],
+        "name": "c1789078447-r0-two-agent-service-ready",
+        "ok": true
+      },
+      {
+        "at": 1789078453.5390809,
+        "epoch": "2",
+        "generation": 2,
+        "name": "c1789078447-r0-scheduler-crash-recovery",
+        "ok": true
+      },
+      {
+        "at": 1789078455.747163,
+        "attempts": [
+          {
+            "cleanup": "complete",
+            "identity": {
+              "attempt": "attempt-4d70d3d3-98e8-4bb0-b953-46cb6e1647df",
+              "cluster": "lab",
+              "incarnation": "recovery-a",
+              "instance": "instance-0",
+              "jobKey": {
+                "environment": "test",
+                "name": "c1789078447-r0-service",
+                "role": "fixtures"
+              },
+              "process": "main",
+              "run": "run-c21fa194-7fdb-4fbe-b722-a7c04ce360aa"
+            },
+            "node": "agent-a",
+            "ready": false,
+            "reserved": false,
+            "run": {
+              "assignment": {
+                "argv": [
+                  "/opt/aurora/bin/native-workload",
+                  "--mode",
+                  "service",
+                  "--identity",
+                  "c1789078447-r0-service",
+                  "--evidence",
+                  "/evidence/c1789078447-r0-service.jsonl",
+                  "--port",
+                  "18080",
+                  "--ready-delay-ms",
+                  "100"
+                ],
+                "env": {
+                  "LANG": "C"
+                },
+                "ports": [
+                  {
+                    "family": "ipv4",
+                    "name": "http",
+                    "network": "agent-container",
+                    "number": 18080,
+                    "protocol": "tcp"
+                  }
+                ],
+                "process": "main",
+                "readiness": {
+                  "intervalMillis": 1000,
+                  "kind": "tcp",
+                  "port": "http",
+                  "timeoutMillis": 500
+                },
+                "requiredCapabilities": [],
+                "resources": {
+                  "cpuMillis": 100,
+                  "memoryBytes": 16777216,
+                  "memoryEnforcement": "reservation"
+                },
+                "retry": {
+                  "maxRuns": 1
+                },
+                "runtime": "trusted-host-process",
+                "stop": {
+                  "graceMillis": 300
+                }
+              },
+              "command": "command-f69f1510-cad8-4abd-ba51-9e640150faf6",
+              "desiredRevision": "1",
+              "identity": {
+                "attempt": "attempt-4d70d3d3-98e8-4bb0-b953-46cb6e1647df",
+                "cluster": "lab",
+                "incarnation": "recovery-a",
+                "instance": "instance-0",
+                "jobKey": {
+                  "environment": "test",
+                  "name": "c1789078447-r0-service",
+                  "role": "fixtures"
+                },
+                "process": "main",
+                "run": "run-c21fa194-7fdb-4fbe-b722-a7c04ce360aa"
+              },
+              "kind": "Run",
+              "target": {
+                "boot": "boot-a",
+                "journal": "journal-a",
+                "node": "agent-a",
+                "runtime": "runtime-a"
+              },
+              "templateSha256": "69f4659ce560031163f7b41ff5da59aabf1e3298428a40ee4c8c4ed076e18f64",
+              "version": "native-v1alpha1"
+            },
+            "sequence": "5",
+            "state": "stopped"
+          },
+          {
+            "cleanup": "complete",
+            "identity": {
+              "attempt": "attempt-91dd7d23-98cf-44dc-b2a2-1060bbbc5157",
+              "cluster": "lab",
+              "incarnation": "recovery-a",
+              "instance": "instance-1",
+              "jobKey": {
+                "environment": "test",
+                "name": "c1789078447-r0-service",
+                "role": "fixtures"
+              },
+              "process": "main",
+              "run": "run-b0f63f4f-eaec-4a9f-93b9-22ad1612d6b1"
+            },
+            "node": "agent-b",
+            "ready": false,
+            "reserved": false,
+            "run": {
+              "assignment": {
+                "argv": [
+                  "/opt/aurora/bin/native-workload",
+                  "--mode",
+                  "service",
+                  "--identity",
+                  "c1789078447-r0-service",
+                  "--evidence",
+                  "/evidence/c1789078447-r0-service.jsonl",
+                  "--port",
+                  "18080",
+                  "--ready-delay-ms",
+                  "100"
+                ],
+                "env": {
+                  "LANG": "C"
+                },
+                "ports": [
+                  {
+                    "family": "ipv4",
+                    "name": "http",
+                    "network": "agent-container",
+                    "number": 18080,
+                    "protocol": "tcp"
+                  }
+                ],
+                "process": "main",
+                "readiness": {
+                  "intervalMillis": 1000,
+                  "kind": "tcp",
+                  "port": "http",
+                  "timeoutMillis": 500
+                },
+                "requiredCapabilities": [],
+                "resources": {
+                  "cpuMillis": 100,
+                  "memoryBytes": 16777216,
+                  "memoryEnforcement": "reservation"
+                },
+                "retry": {
+                  "maxRuns": 1
+                },
+                "runtime": "trusted-host-process",
+                "stop": {
+                  "graceMillis": 300
+                }
+              },
+              "command": "command-070a7611-f31d-4d71-8180-4d6c89aaeb40",
+              "desiredRevision": "1",
+              "identity": {
+                "attempt": "attempt-91dd7d23-98cf-44dc-b2a2-1060bbbc5157",
+                "cluster": "lab",
+                "incarnation": "recovery-a",
+                "instance": "instance-1",
+                "jobKey": {
+                  "environment": "test",
+                  "name": "c1789078447-r0-service",
+                  "role": "fixtures"
+                },
+                "process": "main",
+                "run": "run-b0f63f4f-eaec-4a9f-93b9-22ad1612d6b1"
+              },
+              "kind": "Run",
+              "target": {
+                "boot": "boot-b",
+                "journal": "journal-b",
+                "node": "agent-b",
+                "runtime": "runtime-b"
+              },
+              "templateSha256": "69f4659ce560031163f7b41ff5da59aabf1e3298428a40ee4c8c4ed076e18f64",
+              "version": "native-v1alpha1"
+            },
+            "sequence": "5",
+            "state": "stopped"
+          }
+        ],
+        "name": "c1789078447-r0-partition-stop-reconnect",
+        "ok": true
+      },
+      {
+        "at": 1789078462.1620078,
+        "attempts": [
+          {
+            "cleanup": "complete",
+            "identity": {
+              "attempt": "attempt-cb177541-9ae3-4749-973e-cb847d598bd0",
+              "cluster": "lab",
+              "incarnation": "recovery-a",
+              "instance": "instance-0",
+              "jobKey": {
+                "environment": "test",
+                "name": "c1789078447-r0-recovery",
+                "role": "fixtures"
+              },
+              "process": "main",
+              "run": "run-b8276770-f70c-42d8-b88e-910d7140201a"
+            },
+            "node": "agent-a",
+            "ready": false,
+            "reserved": false,
+            "run": {
+              "assignment": {
+                "argv": [
+                  "/opt/aurora/bin/native-workload",
+                  "--mode",
+                  "service",
+                  "--identity",
+                  "c1789078447-r0-recovery",
+                  "--evidence",
+                  "/evidence/c1789078447-r0-recovery.jsonl",
+                  "--port",
+                  "18080",
+                  "--ready-delay-ms",
+                  "100",
+                  "--refuse-sigterm"
+                ],
+                "env": {
+                  "LANG": "C"
+                },
+                "ports": [
+                  {
+                    "family": "ipv4",
+                    "name": "http",
+                    "network": "agent-container",
+                    "number": 18080,
+                    "protocol": "tcp"
+                  }
+                ],
+                "process": "main",
+                "readiness": {
+                  "intervalMillis": 1000,
+                  "kind": "tcp",
+                  "port": "http",
+                  "timeoutMillis": 500
+                },
+                "requiredCapabilities": [],
+                "resources": {
+                  "cpuMillis": 100,
+                  "memoryBytes": 16777216,
+                  "memoryEnforcement": "reservation"
+                },
+                "retry": {
+                  "maxRuns": 1
+                },
+                "runtime": "trusted-host-process",
+                "stop": {
+                  "graceMillis": 300
+                }
+              },
+              "command": "command-ce2a3232-f00f-4858-b4b9-a4357ee4158a",
+              "desiredRevision": "1",
+              "identity": {
+                "attempt": "attempt-cb177541-9ae3-4749-973e-cb847d598bd0",
+                "cluster": "lab",
+                "incarnation": "recovery-a",
+                "instance": "instance-0",
+                "jobKey": {
+                  "environment": "test",
+                  "name": "c1789078447-r0-recovery",
+                  "role": "fixtures"
+                },
+                "process": "main",
+                "run": "run-b8276770-f70c-42d8-b88e-910d7140201a"
+              },
+              "kind": "Run",
+              "target": {
+                "boot": "boot-a",
+                "journal": "journal-a",
+                "node": "agent-a",
+                "runtime": "runtime-a"
+              },
+              "templateSha256": "2458e8948d3aaaaee29a8986421ea820ae2cc38a5ff3ba5098cff3d87bee26b0",
+              "version": "native-v1alpha1"
+            },
+            "sequence": "4",
+            "state": "lost"
+          },
+          {
+            "cleanup": "complete",
+            "identity": {
+              "attempt": "attempt-1d253900-ee16-4b70-a953-d15fe83a3aaa",
+              "cluster": "lab",
+              "incarnation": "recovery-a",
+              "instance": "instance-1",
+              "jobKey": {
+                "environment": "test",
+                "name": "c1789078447-r0-recovery",
+                "role": "fixtures"
+              },
+              "process": "main",
+              "run": "run-42815f23-cb98-4bf2-8234-7c0c4a5b6b17"
+            },
+            "node": "agent-b",
+            "ready": false,
+            "reserved": false,
+            "run": {
+              "assignment": {
+                "argv": [
+                  "/opt/aurora/bin/native-workload",
+                  "--mode",
+                  "service",
+                  "--identity",
+                  "c1789078447-r0-recovery",
+                  "--evidence",
+                  "/evidence/c1789078447-r0-recovery.jsonl",
+                  "--port",
+                  "18080",
+                  "--ready-delay-ms",
+                  "100",
+                  "--refuse-sigterm"
+                ],
+                "env": {
+                  "LANG": "C"
+                },
+                "ports": [
+                  {
+                    "family": "ipv4",
+                    "name": "http",
+                    "network": "agent-container",
+                    "number": 18080,
+                    "protocol": "tcp"
+                  }
+                ],
+                "process": "main",
+                "readiness": {
+                  "intervalMillis": 1000,
+                  "kind": "tcp",
+                  "port": "http",
+                  "timeoutMillis": 500
+                },
+                "requiredCapabilities": [],
+                "resources": {
+                  "cpuMillis": 100,
+                  "memoryBytes": 16777216,
+                  "memoryEnforcement": "reservation"
+                },
+                "retry": {
+                  "maxRuns": 1
+                },
+                "runtime": "trusted-host-process",
+                "stop": {
+                  "graceMillis": 300
+                }
+              },
+              "command": "command-1d6bd5a1-f720-4ee4-bec4-04e356ba457c",
+              "desiredRevision": "1",
+              "identity": {
+                "attempt": "attempt-1d253900-ee16-4b70-a953-d15fe83a3aaa",
+                "cluster": "lab",
+                "incarnation": "recovery-a",
+                "instance": "instance-1",
+                "jobKey": {
+                  "environment": "test",
+                  "name": "c1789078447-r0-recovery",
+                  "role": "fixtures"
+                },
+                "process": "main",
+                "run": "run-42815f23-cb98-4bf2-8234-7c0c4a5b6b17"
+              },
+              "kind": "Run",
+              "target": {
+                "boot": "boot-b",
+                "journal": "journal-b",
+                "node": "agent-b",
+                "runtime": "runtime-b"
+              },
+              "templateSha256": "2458e8948d3aaaaee29a8986421ea820ae2cc38a5ff3ba5098cff3d87bee26b0",
+              "version": "native-v1alpha1"
+            },
+            "sequence": "5",
+            "state": "stopped"
+          },
+          {
+            "cleanup": "complete",
+            "identity": {
+              "attempt": "attempt-4a05a14c-0449-4ec5-afd7-d7bac3de71ab",
+              "cluster": "lab",
+              "incarnation": "recovery-a",
+              "instance": "instance-0",
+              "jobKey": {
+                "environment": "test",
+                "name": "c1789078447-r0-recovery",
+                "role": "fixtures"
+              },
+              "process": "main",
+              "run": "run-e96fd4c7-be50-459f-a5b2-4c897eccf2ba"
+            },
+            "node": "agent-a",
+            "ready": false,
+            "reserved": false,
+            "run": {
+              "assignment": {
+                "argv": [
+                  "/opt/aurora/bin/native-workload",
+                  "--mode",
+                  "service",
+                  "--identity",
+                  "c1789078447-r0-recovery",
+                  "--evidence",
+                  "/evidence/c1789078447-r0-recovery.jsonl",
+                  "--port",
+                  "18080",
+                  "--ready-delay-ms",
+                  "100",
+                  "--refuse-sigterm"
+                ],
+                "env": {
+                  "LANG": "C"
+                },
+                "ports": [
+                  {
+                    "family": "ipv4",
+                    "name": "http",
+                    "network": "agent-container",
+                    "number": 18080,
+                    "protocol": "tcp"
+                  }
+                ],
+                "process": "main",
+                "readiness": {
+                  "intervalMillis": 1000,
+                  "kind": "tcp",
+                  "port": "http",
+                  "timeoutMillis": 500
+                },
+                "requiredCapabilities": [],
+                "resources": {
+                  "cpuMillis": 100,
+                  "memoryBytes": 16777216,
+                  "memoryEnforcement": "reservation"
+                },
+                "retry": {
+                  "maxRuns": 1
+                },
+                "runtime": "trusted-host-process",
+                "stop": {
+                  "graceMillis": 300
+                }
+              },
+              "command": "command-d2cfd0af-cb76-41c6-bd1d-ff07bd34d3d9",
+              "desiredRevision": "1",
+              "identity": {
+                "attempt": "attempt-4a05a14c-0449-4ec5-afd7-d7bac3de71ab",
+                "cluster": "lab",
+                "incarnation": "recovery-a",
+                "instance": "instance-0",
+                "jobKey": {
+                  "environment": "test",
+                  "name": "c1789078447-r0-recovery",
+                  "role": "fixtures"
+                },
+                "process": "main",
+                "run": "run-e96fd4c7-be50-459f-a5b2-4c897eccf2ba"
+              },
+              "kind": "Run",
+              "target": {
+                "boot": "boot-a",
+                "journal": "journal-a",
+                "node": "agent-a",
+                "runtime": "runtime-a"
+              },
+              "templateSha256": "2458e8948d3aaaaee29a8986421ea820ae2cc38a5ff3ba5098cff3d87bee26b0",
+              "version": "native-v1alpha1"
+            },
+            "sequence": "5",
+            "state": "stopped"
+          }
+        ],
+        "generation": 2,
+        "launches": 3,
+        "name": "c1789078447-r0-agent-crash-lost-replace-forced-stop",
+        "ok": true,
+        "waitResults": [
+          {
+            "execution": {
+              "cleanup": "complete",
+              "exitCode": null,
+              "outcome": "lost",
+              "phase": "terminal",
+              "pid": 73,
+              "ready": false,
+              "signal": 0,
+              "start": "58838001",
+              "stderrBytes": 0,
+              "stderrDropped": 0,
+              "stdoutBytes": 0,
+              "stdoutDropped": 0
+            },
+            "identity": {
+              "attempt": "attempt-cb177541-9ae3-4749-973e-cb847d598bd0",
+              "cluster": "lab",
+              "incarnation": "recovery-a",
+              "instance": "instance-0",
+              "jobKey": {
+                "environment": "test",
+                "name": "c1789078447-r0-recovery",
+                "role": "fixtures"
+              },
+              "process": "main",
+              "run": "run-b8276770-f70c-42d8-b88e-910d7140201a"
+            },
+            "node": "agent-a"
+          },
+          {
+            "execution": {
+              "cleanup": "complete",
+              "exitCode": -1,
+              "outcome": "stopped",
+              "phase": "terminal",
+              "pid": 56,
+              "ready": false,
+              "signal": 9,
+              "start": "58838009",
+              "stderrBytes": 0,
+              "stderrDropped": 0,
+              "stdoutBytes": 0,
+              "stdoutDropped": 0
+            },
+            "identity": {
+              "attempt": "attempt-1d253900-ee16-4b70-a953-d15fe83a3aaa",
+              "cluster": "lab",
+              "incarnation": "recovery-a",
+              "instance": "instance-1",
+              "jobKey": {
+                "environment": "test",
+                "name": "c1789078447-r0-recovery",
+                "role": "fixtures"
+              },
+              "process": "main",
+              "run": "run-42815f23-cb98-4bf2-8234-7c0c4a5b6b17"
+            },
+            "node": "agent-b"
+          },
+          {
+            "execution": {
+              "cleanup": "complete",
+              "exitCode": -1,
+              "outcome": "stopped",
+              "phase": "terminal",
+              "pid": 94,
+              "ready": false,
+              "signal": 9,
+              "start": "58838302",
+              "stderrBytes": 0,
+              "stderrDropped": 0,
+              "stdoutBytes": 0,
+              "stdoutDropped": 0
+            },
+            "identity": {
+              "attempt": "attempt-4a05a14c-0449-4ec5-afd7-d7bac3de71ab",
+              "cluster": "lab",
+              "incarnation": "recovery-a",
+              "instance": "instance-0",
+              "jobKey": {
+                "environment": "test",
+                "name": "c1789078447-r0-recovery",
+                "role": "fixtures"
+              },
+              "process": "main",
+              "run": "run-e96fd4c7-be50-459f-a5b2-4c897eccf2ba"
+            },
+            "node": "agent-a"
+          }
+        ]
+      },
+      {
+        "at": 1789078465.2108192,
+        "name": "c1789078447-r0-no-resurrection",
+        "ok": true
+      },
+      {
+        "at": 1789078468.8717287,
+        "attempts": 6,
+        "container": "2b00f6d48e3338970c085696e798a3f69b94917db54e24ad9b9762b66bfa6680",
+        "epoch": "4",
+        "jobs": 3,
+        "name": "isolated-live-scheduler-backup-restore-0",
+        "ok": true
+      },
+      {
+        "at": 1789078471.4240458,
+        "attempts": [
+          {
+            "cleanup": "complete",
+            "identity": {
+              "attempt": "attempt-db0561c7-4c21-4f63-8ffd-6e25b7ea5780",
+              "cluster": "lab",
+              "incarnation": "recovery-a",
+              "instance": "instance-0",
+              "jobKey": {
+                "environment": "test",
+                "name": "c1789078447-r1-batch",
+                "role": "fixtures"
+              },
+              "process": "main",
+              "run": "run-1bffaae3-27a3-47bb-a17e-8f1c7a36fd93"
+            },
+            "node": "agent-a",
+            "ready": false,
+            "reserved": false,
+            "run": {
+              "assignment": {
+                "argv": [
+                  "/opt/aurora/bin/native-workload",
+                  "--mode",
+                  "batch",
+                  "--identity",
+                  "c1789078447-r1-batch",
+                  "--evidence",
+                  "/evidence/c1789078447-r1-batch.jsonl"
+                ],
+                "env": {
+                  "LANG": "C"
+                },
+                "ports": [],
+                "process": "main",
+                "readiness": {
+                  "kind": "none"
+                },
+                "requiredCapabilities": [],
+                "resources": {
+                  "cpuMillis": 100,
+                  "memoryBytes": 16777216,
+                  "memoryEnforcement": "reservation"
+                },
+                "retry": {
+                  "maxRuns": 1
+                },
+                "runtime": "trusted-host-process",
+                "stop": {
+                  "graceMillis": 300
+                }
+              },
+              "command": "command-b75c1779-d641-4ca4-83be-c7c58bfd1bcf",
+              "desiredRevision": "1",
+              "identity": {
+                "attempt": "attempt-db0561c7-4c21-4f63-8ffd-6e25b7ea5780",
+                "cluster": "lab",
+                "incarnation": "recovery-a",
+                "instance": "instance-0",
+                "jobKey": {
+                  "environment": "test",
+                  "name": "c1789078447-r1-batch",
+                  "role": "fixtures"
+                },
+                "process": "main",
+                "run": "run-1bffaae3-27a3-47bb-a17e-8f1c7a36fd93"
+              },
+              "kind": "Run",
+              "target": {
+                "boot": "boot-a",
+                "journal": "journal-a",
+                "node": "agent-a",
+                "runtime": "runtime-a"
+              },
+              "templateSha256": "2fc2ebdc54afb00e66cd7a903aa67931120af2fdcd71ef0d7cab229e57168ed3",
+              "version": "native-v1alpha1"
+            },
+            "sequence": "3",
+            "state": "succeeded"
+          }
+        ],
+        "launches": 1,
+        "name": "c1789078447-r1-batch-submit-replay",
+        "ok": true
+      },
+      {
+        "at": 1789078473.278433,
+        "attempts": [
+          {
+            "cleanup": "pending",
+            "identity": {
+              "attempt": "attempt-30e45919-5609-4458-a320-9464f1ce1a17",
+              "cluster": "lab",
+              "incarnation": "recovery-a",
+              "instance": "instance-0",
+              "jobKey": {
+                "environment": "test",
+                "name": "c1789078447-r1-service",
+                "role": "fixtures"
+              },
+              "process": "main",
+              "run": "run-f16f0b9c-8ed5-4ffe-9f63-10dda470ca7d"
+            },
+            "node": "agent-a",
+            "ready": true,
+            "reserved": true,
+            "run": {
+              "assignment": {
+                "argv": [
+                  "/opt/aurora/bin/native-workload",
+                  "--mode",
+                  "service",
+                  "--identity",
+                  "c1789078447-r1-service",
+                  "--evidence",
+                  "/evidence/c1789078447-r1-service.jsonl",
+                  "--port",
+                  "18080",
+                  "--ready-delay-ms",
+                  "100"
+                ],
+                "env": {
+                  "LANG": "C"
+                },
+                "ports": [
+                  {
+                    "family": "ipv4",
+                    "name": "http",
+                    "network": "agent-container",
+                    "number": 18080,
+                    "protocol": "tcp"
+                  }
+                ],
+                "process": "main",
+                "readiness": {
+                  "intervalMillis": 1000,
+                  "kind": "tcp",
+                  "port": "http",
+                  "timeoutMillis": 500
+                },
+                "requiredCapabilities": [],
+                "resources": {
+                  "cpuMillis": 100,
+                  "memoryBytes": 16777216,
+                  "memoryEnforcement": "reservation"
+                },
+                "retry": {
+                  "maxRuns": 1
+                },
+                "runtime": "trusted-host-process",
+                "stop": {
+                  "graceMillis": 300
+                }
+              },
+              "command": "command-1bb6052f-f40d-4dbe-af9d-a45552ba0f22",
+              "desiredRevision": "1",
+              "identity": {
+                "attempt": "attempt-30e45919-5609-4458-a320-9464f1ce1a17",
+                "cluster": "lab",
+                "incarnation": "recovery-a",
+                "instance": "instance-0",
+                "jobKey": {
+                  "environment": "test",
+                  "name": "c1789078447-r1-service",
+                  "role": "fixtures"
+                },
+                "process": "main",
+                "run": "run-f16f0b9c-8ed5-4ffe-9f63-10dda470ca7d"
+              },
+              "kind": "Run",
+              "target": {
+                "boot": "boot-a",
+                "journal": "journal-a",
+                "node": "agent-a",
+                "runtime": "runtime-a"
+              },
+              "templateSha256": "37c5051d1e88a575742ef09ea20281b9c825fbadc68030a97ab36acdbf110ad8",
+              "version": "native-v1alpha1"
+            },
+            "sequence": "3",
+            "state": "running"
+          },
+          {
+            "cleanup": "pending",
+            "identity": {
+              "attempt": "attempt-880636c0-532a-4354-8e15-64c694f5e748",
+              "cluster": "lab",
+              "incarnation": "recovery-a",
+              "instance": "instance-1",
+              "jobKey": {
+                "environment": "test",
+                "name": "c1789078447-r1-service",
+                "role": "fixtures"
+              },
+              "process": "main",
+              "run": "run-1efaeda2-8c46-4973-ab48-79fb2df51a44"
+            },
+            "node": "agent-b",
+            "ready": true,
+            "reserved": true,
+            "run": {
+              "assignment": {
+                "argv": [
+                  "/opt/aurora/bin/native-workload",
+                  "--mode",
+                  "service",
+                  "--identity",
+                  "c1789078447-r1-service",
+                  "--evidence",
+                  "/evidence/c1789078447-r1-service.jsonl",
+                  "--port",
+                  "18080",
+                  "--ready-delay-ms",
+                  "100"
+                ],
+                "env": {
+                  "LANG": "C"
+                },
+                "ports": [
+                  {
+                    "family": "ipv4",
+                    "name": "http",
+                    "network": "agent-container",
+                    "number": 18080,
+                    "protocol": "tcp"
+                  }
+                ],
+                "process": "main",
+                "readiness": {
+                  "intervalMillis": 1000,
+                  "kind": "tcp",
+                  "port": "http",
+                  "timeoutMillis": 500
+                },
+                "requiredCapabilities": [],
+                "resources": {
+                  "cpuMillis": 100,
+                  "memoryBytes": 16777216,
+                  "memoryEnforcement": "reservation"
+                },
+                "retry": {
+                  "maxRuns": 1
+                },
+                "runtime": "trusted-host-process",
+                "stop": {
+                  "graceMillis": 300
+                }
+              },
+              "command": "command-2d177f8b-8308-4467-b418-4f82c0249006",
+              "desiredRevision": "1",
+              "identity": {
+                "attempt": "attempt-880636c0-532a-4354-8e15-64c694f5e748",
+                "cluster": "lab",
+                "incarnation": "recovery-a",
+                "instance": "instance-1",
+                "jobKey": {
+                  "environment": "test",
+                  "name": "c1789078447-r1-service",
+                  "role": "fixtures"
+                },
+                "process": "main",
+                "run": "run-1efaeda2-8c46-4973-ab48-79fb2df51a44"
+              },
+              "kind": "Run",
+              "target": {
+                "boot": "boot-b",
+                "journal": "journal-b",
+                "node": "agent-b",
+                "runtime": "runtime-b"
+              },
+              "templateSha256": "37c5051d1e88a575742ef09ea20281b9c825fbadc68030a97ab36acdbf110ad8",
+              "version": "native-v1alpha1"
+            },
+            "sequence": "3",
+            "state": "running"
+          }
+        ],
+        "name": "c1789078447-r1-two-agent-service-ready",
+        "ok": true
+      },
+      {
+        "at": 1789078476.223767,
+        "epoch": "4",
+        "generation": 4,
+        "name": "c1789078447-r1-scheduler-crash-recovery",
+        "ok": true
+      },
+      {
+        "at": 1789078478.7680786,
+        "attempts": [
+          {
+            "cleanup": "complete",
+            "identity": {
+              "attempt": "attempt-30e45919-5609-4458-a320-9464f1ce1a17",
+              "cluster": "lab",
+              "incarnation": "recovery-a",
+              "instance": "instance-0",
+              "jobKey": {
+                "environment": "test",
+                "name": "c1789078447-r1-service",
+                "role": "fixtures"
+              },
+              "process": "main",
+              "run": "run-f16f0b9c-8ed5-4ffe-9f63-10dda470ca7d"
+            },
+            "node": "agent-a",
+            "ready": false,
+            "reserved": false,
+            "run": {
+              "assignment": {
+                "argv": [
+                  "/opt/aurora/bin/native-workload",
+                  "--mode",
+                  "service",
+                  "--identity",
+                  "c1789078447-r1-service",
+                  "--evidence",
+                  "/evidence/c1789078447-r1-service.jsonl",
+                  "--port",
+                  "18080",
+                  "--ready-delay-ms",
+                  "100"
+                ],
+                "env": {
+                  "LANG": "C"
+                },
+                "ports": [
+                  {
+                    "family": "ipv4",
+                    "name": "http",
+                    "network": "agent-container",
+                    "number": 18080,
+                    "protocol": "tcp"
+                  }
+                ],
+                "process": "main",
+                "readiness": {
+                  "intervalMillis": 1000,
+                  "kind": "tcp",
+                  "port": "http",
+                  "timeoutMillis": 500
+                },
+                "requiredCapabilities": [],
+                "resources": {
+                  "cpuMillis": 100,
+                  "memoryBytes": 16777216,
+                  "memoryEnforcement": "reservation"
+                },
+                "retry": {
+                  "maxRuns": 1
+                },
+                "runtime": "trusted-host-process",
+                "stop": {
+                  "graceMillis": 300
+                }
+              },
+              "command": "command-1bb6052f-f40d-4dbe-af9d-a45552ba0f22",
+              "desiredRevision": "1",
+              "identity": {
+                "attempt": "attempt-30e45919-5609-4458-a320-9464f1ce1a17",
+                "cluster": "lab",
+                "incarnation": "recovery-a",
+                "instance": "instance-0",
+                "jobKey": {
+                  "environment": "test",
+                  "name": "c1789078447-r1-service",
+                  "role": "fixtures"
+                },
+                "process": "main",
+                "run": "run-f16f0b9c-8ed5-4ffe-9f63-10dda470ca7d"
+              },
+              "kind": "Run",
+              "target": {
+                "boot": "boot-a",
+                "journal": "journal-a",
+                "node": "agent-a",
+                "runtime": "runtime-a"
+              },
+              "templateSha256": "37c5051d1e88a575742ef09ea20281b9c825fbadc68030a97ab36acdbf110ad8",
+              "version": "native-v1alpha1"
+            },
+            "sequence": "5",
+            "state": "stopped"
+          },
+          {
+            "cleanup": "complete",
+            "identity": {
+              "attempt": "attempt-880636c0-532a-4354-8e15-64c694f5e748",
+              "cluster": "lab",
+              "incarnation": "recovery-a",
+              "instance": "instance-1",
+              "jobKey": {
+                "environment": "test",
+                "name": "c1789078447-r1-service",
+                "role": "fixtures"
+              },
+              "process": "main",
+              "run": "run-1efaeda2-8c46-4973-ab48-79fb2df51a44"
+            },
+            "node": "agent-b",
+            "ready": false,
+            "reserved": false,
+            "run": {
+              "assignment": {
+                "argv": [
+                  "/opt/aurora/bin/native-workload",
+                  "--mode",
+                  "service",
+                  "--identity",
+                  "c1789078447-r1-service",
+                  "--evidence",
+                  "/evidence/c1789078447-r1-service.jsonl",
+                  "--port",
+                  "18080",
+                  "--ready-delay-ms",
+                  "100"
+                ],
+                "env": {
+                  "LANG": "C"
+                },
+                "ports": [
+                  {
+                    "family": "ipv4",
+                    "name": "http",
+                    "network": "agent-container",
+                    "number": 18080,
+                    "protocol": "tcp"
+                  }
+                ],
+                "process": "main",
+                "readiness": {
+                  "intervalMillis": 1000,
+                  "kind": "tcp",
+                  "port": "http",
+                  "timeoutMillis": 500
+                },
+                "requiredCapabilities": [],
+                "resources": {
+                  "cpuMillis": 100,
+                  "memoryBytes": 16777216,
+                  "memoryEnforcement": "reservation"
+                },
+                "retry": {
+                  "maxRuns": 1
+                },
+                "runtime": "trusted-host-process",
+                "stop": {
+                  "graceMillis": 300
+                }
+              },
+              "command": "command-2d177f8b-8308-4467-b418-4f82c0249006",
+              "desiredRevision": "1",
+              "identity": {
+                "attempt": "attempt-880636c0-532a-4354-8e15-64c694f5e748",
+                "cluster": "lab",
+                "incarnation": "recovery-a",
+                "instance": "instance-1",
+                "jobKey": {
+                  "environment": "test",
+                  "name": "c1789078447-r1-service",
+                  "role": "fixtures"
+                },
+                "process": "main",
+                "run": "run-1efaeda2-8c46-4973-ab48-79fb2df51a44"
+              },
+              "kind": "Run",
+              "target": {
+                "boot": "boot-b",
+                "journal": "journal-b",
+                "node": "agent-b",
+                "runtime": "runtime-b"
+              },
+              "templateSha256": "37c5051d1e88a575742ef09ea20281b9c825fbadc68030a97ab36acdbf110ad8",
+              "version": "native-v1alpha1"
+            },
+            "sequence": "5",
+            "state": "stopped"
+          }
+        ],
+        "name": "c1789078447-r1-partition-stop-reconnect",
+        "ok": true
+      },
+      {
+        "at": 1789078485.2446234,
+        "attempts": [
+          {
+            "cleanup": "complete",
+            "identity": {
+              "attempt": "attempt-58a208fc-9276-430d-8d38-164448c65e1c",
+              "cluster": "lab",
+              "incarnation": "recovery-a",
+              "instance": "instance-0",
+              "jobKey": {
+                "environment": "test",
+                "name": "c1789078447-r1-recovery",
+                "role": "fixtures"
+              },
+              "process": "main",
+              "run": "run-e57e712e-55d8-4640-b6f6-b3655ec6522d"
+            },
+            "node": "agent-a",
+            "ready": false,
+            "reserved": false,
+            "run": {
+              "assignment": {
+                "argv": [
+                  "/opt/aurora/bin/native-workload",
+                  "--mode",
+                  "service",
+                  "--identity",
+                  "c1789078447-r1-recovery",
+                  "--evidence",
+                  "/evidence/c1789078447-r1-recovery.jsonl",
+                  "--port",
+                  "18080",
+                  "--ready-delay-ms",
+                  "100",
+                  "--refuse-sigterm"
+                ],
+                "env": {
+                  "LANG": "C"
+                },
+                "ports": [
+                  {
+                    "family": "ipv4",
+                    "name": "http",
+                    "network": "agent-container",
+                    "number": 18080,
+                    "protocol": "tcp"
+                  }
+                ],
+                "process": "main",
+                "readiness": {
+                  "intervalMillis": 1000,
+                  "kind": "tcp",
+                  "port": "http",
+                  "timeoutMillis": 500
+                },
+                "requiredCapabilities": [],
+                "resources": {
+                  "cpuMillis": 100,
+                  "memoryBytes": 16777216,
+                  "memoryEnforcement": "reservation"
+                },
+                "retry": {
+                  "maxRuns": 1
+                },
+                "runtime": "trusted-host-process",
+                "stop": {
+                  "graceMillis": 300
+                }
+              },
+              "command": "command-e02ca5d7-9932-4dfc-bb6c-82a9320dddfa",
+              "desiredRevision": "1",
+              "identity": {
+                "attempt": "attempt-58a208fc-9276-430d-8d38-164448c65e1c",
+                "cluster": "lab",
+                "incarnation": "recovery-a",
+                "instance": "instance-0",
+                "jobKey": {
+                  "environment": "test",
+                  "name": "c1789078447-r1-recovery",
+                  "role": "fixtures"
+                },
+                "process": "main",
+                "run": "run-e57e712e-55d8-4640-b6f6-b3655ec6522d"
+              },
+              "kind": "Run",
+              "target": {
+                "boot": "boot-a",
+                "journal": "journal-a",
+                "node": "agent-a",
+                "runtime": "runtime-a"
+              },
+              "templateSha256": "0daa56a5cccaf1ba79a12ca30f2b5c1597b449205965e07526e8c0a6a2901c45",
+              "version": "native-v1alpha1"
+            },
+            "sequence": "4",
+            "state": "lost"
+          },
+          {
+            "cleanup": "complete",
+            "identity": {
+              "attempt": "attempt-908ffa6c-01db-4ef8-a76e-731c1be9f958",
+              "cluster": "lab",
+              "incarnation": "recovery-a",
+              "instance": "instance-1",
+              "jobKey": {
+                "environment": "test",
+                "name": "c1789078447-r1-recovery",
+                "role": "fixtures"
+              },
+              "process": "main",
+              "run": "run-183b6a5d-f7e1-4700-b898-cbdb29a3bde4"
+            },
+            "node": "agent-b",
+            "ready": false,
+            "reserved": false,
+            "run": {
+              "assignment": {
+                "argv": [
+                  "/opt/aurora/bin/native-workload",
+                  "--mode",
+                  "service",
+                  "--identity",
+                  "c1789078447-r1-recovery",
+                  "--evidence",
+                  "/evidence/c1789078447-r1-recovery.jsonl",
+                  "--port",
+                  "18080",
+                  "--ready-delay-ms",
+                  "100",
+                  "--refuse-sigterm"
+                ],
+                "env": {
+                  "LANG": "C"
+                },
+                "ports": [
+                  {
+                    "family": "ipv4",
+                    "name": "http",
+                    "network": "agent-container",
+                    "number": 18080,
+                    "protocol": "tcp"
+                  }
+                ],
+                "process": "main",
+                "readiness": {
+                  "intervalMillis": 1000,
+                  "kind": "tcp",
+                  "port": "http",
+                  "timeoutMillis": 500
+                },
+                "requiredCapabilities": [],
+                "resources": {
+                  "cpuMillis": 100,
+                  "memoryBytes": 16777216,
+                  "memoryEnforcement": "reservation"
+                },
+                "retry": {
+                  "maxRuns": 1
+                },
+                "runtime": "trusted-host-process",
+                "stop": {
+                  "graceMillis": 300
+                }
+              },
+              "command": "command-0be21a47-aa7c-43ed-bc4d-4244a1d1751c",
+              "desiredRevision": "1",
+              "identity": {
+                "attempt": "attempt-908ffa6c-01db-4ef8-a76e-731c1be9f958",
+                "cluster": "lab",
+                "incarnation": "recovery-a",
+                "instance": "instance-1",
+                "jobKey": {
+                  "environment": "test",
+                  "name": "c1789078447-r1-recovery",
+                  "role": "fixtures"
+                },
+                "process": "main",
+                "run": "run-183b6a5d-f7e1-4700-b898-cbdb29a3bde4"
+              },
+              "kind": "Run",
+              "target": {
+                "boot": "boot-b",
+                "journal": "journal-b",
+                "node": "agent-b",
+                "runtime": "runtime-b"
+              },
+              "templateSha256": "0daa56a5cccaf1ba79a12ca30f2b5c1597b449205965e07526e8c0a6a2901c45",
+              "version": "native-v1alpha1"
+            },
+            "sequence": "6",
+            "state": "stopped"
+          },
+          {
+            "cleanup": "complete",
+            "identity": {
+              "attempt": "attempt-34a0811a-4ea8-40a0-b859-bdf270a0f0a9",
+              "cluster": "lab",
+              "incarnation": "recovery-a",
+              "instance": "instance-0",
+              "jobKey": {
+                "environment": "test",
+                "name": "c1789078447-r1-recovery",
+                "role": "fixtures"
+              },
+              "process": "main",
+              "run": "run-5f633f27-2519-4520-a0da-ba5337201e7e"
+            },
+            "node": "agent-a",
+            "ready": false,
+            "reserved": false,
+            "run": {
+              "assignment": {
+                "argv": [
+                  "/opt/aurora/bin/native-workload",
+                  "--mode",
+                  "service",
+                  "--identity",
+                  "c1789078447-r1-recovery",
+                  "--evidence",
+                  "/evidence/c1789078447-r1-recovery.jsonl",
+                  "--port",
+                  "18080",
+                  "--ready-delay-ms",
+                  "100",
+                  "--refuse-sigterm"
+                ],
+                "env": {
+                  "LANG": "C"
+                },
+                "ports": [
+                  {
+                    "family": "ipv4",
+                    "name": "http",
+                    "network": "agent-container",
+                    "number": 18080,
+                    "protocol": "tcp"
+                  }
+                ],
+                "process": "main",
+                "readiness": {
+                  "intervalMillis": 1000,
+                  "kind": "tcp",
+                  "port": "http",
+                  "timeoutMillis": 500
+                },
+                "requiredCapabilities": [],
+                "resources": {
+                  "cpuMillis": 100,
+                  "memoryBytes": 16777216,
+                  "memoryEnforcement": "reservation"
+                },
+                "retry": {
+                  "maxRuns": 1
+                },
+                "runtime": "trusted-host-process",
+                "stop": {
+                  "graceMillis": 300
+                }
+              },
+              "command": "command-18b0151c-6065-4fa4-bb80-f49bfa37f20a",
+              "desiredRevision": "1",
+              "identity": {
+                "attempt": "attempt-34a0811a-4ea8-40a0-b859-bdf270a0f0a9",
+                "cluster": "lab",
+                "incarnation": "recovery-a",
+                "instance": "instance-0",
+                "jobKey": {
+                  "environment": "test",
+                  "name": "c1789078447-r1-recovery",
+                  "role": "fixtures"
+                },
+                "process": "main",
+                "run": "run-5f633f27-2519-4520-a0da-ba5337201e7e"
+              },
+              "kind": "Run",
+              "target": {
+                "boot": "boot-a",
+                "journal": "journal-a",
+                "node": "agent-a",
+                "runtime": "runtime-a"
+              },
+              "templateSha256": "0daa56a5cccaf1ba79a12ca30f2b5c1597b449205965e07526e8c0a6a2901c45",
+              "version": "native-v1alpha1"
+            },
+            "sequence": "6",
+            "state": "stopped"
+          }
+        ],
+        "generation": 3,
+        "launches": 3,
+        "name": "c1789078447-r1-agent-crash-lost-replace-forced-stop",
+        "ok": true,
+        "waitResults": [
+          {
+            "execution": {
+              "cleanup": "complete",
+              "exitCode": null,
+              "outcome": "lost",
+              "phase": "terminal",
+              "pid": 180,
+              "ready": false,
+              "signal": 0,
+              "start": "58840291",
+              "stderrBytes": 0,
+              "stderrDropped": 0,
+              "stdoutBytes": 0,
+              "stdoutDropped": 0
+            },
+            "identity": {
+              "attempt": "attempt-58a208fc-9276-430d-8d38-164448c65e1c",
+              "cluster": "lab",
+              "incarnation": "recovery-a",
+              "instance": "instance-0",
+              "jobKey": {
+                "environment": "test",
+                "name": "c1789078447-r1-recovery",
+                "role": "fixtures"
+              },
+              "process": "main",
+              "run": "run-e57e712e-55d8-4640-b6f6-b3655ec6522d"
+            },
+            "node": "agent-a"
+          },
+          {
+            "execution": {
+              "cleanup": "complete",
+              "exitCode": -1,
+              "outcome": "stopped",
+              "phase": "terminal",
+              "pid": 114,
+              "ready": false,
+              "signal": 9,
+              "start": "58840294",
+              "stderrBytes": 0,
+              "stderrDropped": 0,
+              "stdoutBytes": 0,
+              "stdoutDropped": 0
+            },
+            "identity": {
+              "attempt": "attempt-908ffa6c-01db-4ef8-a76e-731c1be9f958",
+              "cluster": "lab",
+              "incarnation": "recovery-a",
+              "instance": "instance-1",
+              "jobKey": {
+                "environment": "test",
+                "name": "c1789078447-r1-recovery",
+                "role": "fixtures"
+              },
+              "process": "main",
+              "run": "run-183b6a5d-f7e1-4700-b898-cbdb29a3bde4"
+            },
+            "node": "agent-b"
+          },
+          {
+            "execution": {
+              "cleanup": "complete",
+              "exitCode": -1,
+              "outcome": "stopped",
+              "phase": "terminal",
+              "pid": 200,
+              "ready": false,
+              "signal": 9,
+              "start": "58840603",
+              "stderrBytes": 0,
+              "stderrDropped": 0,
+              "stdoutBytes": 0,
+              "stdoutDropped": 0
+            },
+            "identity": {
+              "attempt": "attempt-34a0811a-4ea8-40a0-b859-bdf270a0f0a9",
+              "cluster": "lab",
+              "incarnation": "recovery-a",
+              "instance": "instance-0",
+              "jobKey": {
+                "environment": "test",
+                "name": "c1789078447-r1-recovery",
+                "role": "fixtures"
+              },
+              "process": "main",
+              "run": "run-5f633f27-2519-4520-a0da-ba5337201e7e"
+            },
+            "node": "agent-a"
+          }
+        ]
+      },
+      {
+        "at": 1789078488.119022,
+        "name": "c1789078447-r1-no-resurrection",
+        "ok": true
+      },
+      {
+        "at": 1789078491.8896132,
+        "attempts": 12,
+        "container": "6da256ce1cb5d05b93af9135ad0a4e81138f87d8149ce3d4b0387e6ebeb039b6",
+        "epoch": "6",
+        "jobs": 6,
+        "name": "isolated-live-scheduler-backup-restore-1",
+        "ok": true
+      },
+      {
+        "at": 1789078494.1410384,
+        "attempts": [
+          {
+            "cleanup": "complete",
+            "identity": {
+              "attempt": "attempt-8f7ddf3a-ca59-4368-b515-1d0e40f960d9",
+              "cluster": "lab",
+              "incarnation": "recovery-a",
+              "instance": "instance-0",
+              "jobKey": {
+                "environment": "test",
+                "name": "c1789078447-r2-batch",
+                "role": "fixtures"
+              },
+              "process": "main",
+              "run": "run-660a416c-4ae5-4ae6-8fff-a5344793f1d4"
+            },
+            "node": "agent-a",
+            "ready": false,
+            "reserved": false,
+            "run": {
+              "assignment": {
+                "argv": [
+                  "/opt/aurora/bin/native-workload",
+                  "--mode",
+                  "batch",
+                  "--identity",
+                  "c1789078447-r2-batch",
+                  "--evidence",
+                  "/evidence/c1789078447-r2-batch.jsonl"
+                ],
+                "env": {
+                  "LANG": "C"
+                },
+                "ports": [],
+                "process": "main",
+                "readiness": {
+                  "kind": "none"
+                },
+                "requiredCapabilities": [],
+                "resources": {
+                  "cpuMillis": 100,
+                  "memoryBytes": 16777216,
+                  "memoryEnforcement": "reservation"
+                },
+                "retry": {
+                  "maxRuns": 1
+                },
+                "runtime": "trusted-host-process",
+                "stop": {
+                  "graceMillis": 300
+                }
+              },
+              "command": "command-9bd9599e-e55d-4b8d-8009-8357f3bac871",
+              "desiredRevision": "1",
+              "identity": {
+                "attempt": "attempt-8f7ddf3a-ca59-4368-b515-1d0e40f960d9",
+                "cluster": "lab",
+                "incarnation": "recovery-a",
+                "instance": "instance-0",
+                "jobKey": {
+                  "environment": "test",
+                  "name": "c1789078447-r2-batch",
+                  "role": "fixtures"
+                },
+                "process": "main",
+                "run": "run-660a416c-4ae5-4ae6-8fff-a5344793f1d4"
+              },
+              "kind": "Run",
+              "target": {
+                "boot": "boot-a",
+                "journal": "journal-a",
+                "node": "agent-a",
+                "runtime": "runtime-a"
+              },
+              "templateSha256": "e8e2928f59e0a4918443caf07ac392ec2560998309bfc944a93f9cc9610c7314",
+              "version": "native-v1alpha1"
+            },
+            "sequence": "3",
+            "state": "succeeded"
+          }
+        ],
+        "launches": 1,
+        "name": "c1789078447-r2-batch-submit-replay",
+        "ok": true
+      },
+      {
+        "at": 1789078496.0632927,
+        "attempts": [
+          {
+            "cleanup": "pending",
+            "identity": {
+              "attempt": "attempt-92aff87e-a27c-4593-9595-188d3d12ea41",
+              "cluster": "lab",
+              "incarnation": "recovery-a",
+              "instance": "instance-0",
+              "jobKey": {
+                "environment": "test",
+                "name": "c1789078447-r2-service",
+                "role": "fixtures"
+              },
+              "process": "main",
+              "run": "run-4d9f30ab-5115-437e-b2bf-a0ad891dbef0"
+            },
+            "node": "agent-a",
+            "ready": true,
+            "reserved": true,
+            "run": {
+              "assignment": {
+                "argv": [
+                  "/opt/aurora/bin/native-workload",
+                  "--mode",
+                  "service",
+                  "--identity",
+                  "c1789078447-r2-service",
+                  "--evidence",
+                  "/evidence/c1789078447-r2-service.jsonl",
+                  "--port",
+                  "18080",
+                  "--ready-delay-ms",
+                  "100"
+                ],
+                "env": {
+                  "LANG": "C"
+                },
+                "ports": [
+                  {
+                    "family": "ipv4",
+                    "name": "http",
+                    "network": "agent-container",
+                    "number": 18080,
+                    "protocol": "tcp"
+                  }
+                ],
+                "process": "main",
+                "readiness": {
+                  "intervalMillis": 1000,
+                  "kind": "tcp",
+                  "port": "http",
+                  "timeoutMillis": 500
+                },
+                "requiredCapabilities": [],
+                "resources": {
+                  "cpuMillis": 100,
+                  "memoryBytes": 16777216,
+                  "memoryEnforcement": "reservation"
+                },
+                "retry": {
+                  "maxRuns": 1
+                },
+                "runtime": "trusted-host-process",
+                "stop": {
+                  "graceMillis": 300
+                }
+              },
+              "command": "command-ed95c12f-8837-4c08-9997-63dec5686e8e",
+              "desiredRevision": "1",
+              "identity": {
+                "attempt": "attempt-92aff87e-a27c-4593-9595-188d3d12ea41",
+                "cluster": "lab",
+                "incarnation": "recovery-a",
+                "instance": "instance-0",
+                "jobKey": {
+                  "environment": "test",
+                  "name": "c1789078447-r2-service",
+                  "role": "fixtures"
+                },
+                "process": "main",
+                "run": "run-4d9f30ab-5115-437e-b2bf-a0ad891dbef0"
+              },
+              "kind": "Run",
+              "target": {
+                "boot": "boot-a",
+                "journal": "journal-a",
+                "node": "agent-a",
+                "runtime": "runtime-a"
+              },
+              "templateSha256": "57f15ac238d73abf82311af29bb43ce0abbf83144c77ae2f89489c6835d3fe88",
+              "version": "native-v1alpha1"
+            },
+            "sequence": "3",
+            "state": "running"
+          },
+          {
+            "cleanup": "pending",
+            "identity": {
+              "attempt": "attempt-3d662909-c276-4ac3-aa4c-b02293cf755c",
+              "cluster": "lab",
+              "incarnation": "recovery-a",
+              "instance": "instance-1",
+              "jobKey": {
+                "environment": "test",
+                "name": "c1789078447-r2-service",
+                "role": "fixtures"
+              },
+              "process": "main",
+              "run": "run-3e26c531-0b0d-4399-9a62-38434af3f871"
+            },
+            "node": "agent-b",
+            "ready": true,
+            "reserved": true,
+            "run": {
+              "assignment": {
+                "argv": [
+                  "/opt/aurora/bin/native-workload",
+                  "--mode",
+                  "service",
+                  "--identity",
+                  "c1789078447-r2-service",
+                  "--evidence",
+                  "/evidence/c1789078447-r2-service.jsonl",
+                  "--port",
+                  "18080",
+                  "--ready-delay-ms",
+                  "100"
+                ],
+                "env": {
+                  "LANG": "C"
+                },
+                "ports": [
+                  {
+                    "family": "ipv4",
+                    "name": "http",
+                    "network": "agent-container",
+                    "number": 18080,
+                    "protocol": "tcp"
+                  }
+                ],
+                "process": "main",
+                "readiness": {
+                  "intervalMillis": 1000,
+                  "kind": "tcp",
+                  "port": "http",
+                  "timeoutMillis": 500
+                },
+                "requiredCapabilities": [],
+                "resources": {
+                  "cpuMillis": 100,
+                  "memoryBytes": 16777216,
+                  "memoryEnforcement": "reservation"
+                },
+                "retry": {
+                  "maxRuns": 1
+                },
+                "runtime": "trusted-host-process",
+                "stop": {
+                  "graceMillis": 300
+                }
+              },
+              "command": "command-f900a3e4-7c64-4584-afb0-e982c8d07df6",
+              "desiredRevision": "1",
+              "identity": {
+                "attempt": "attempt-3d662909-c276-4ac3-aa4c-b02293cf755c",
+                "cluster": "lab",
+                "incarnation": "recovery-a",
+                "instance": "instance-1",
+                "jobKey": {
+                  "environment": "test",
+                  "name": "c1789078447-r2-service",
+                  "role": "fixtures"
+                },
+                "process": "main",
+                "run": "run-3e26c531-0b0d-4399-9a62-38434af3f871"
+              },
+              "kind": "Run",
+              "target": {
+                "boot": "boot-b",
+                "journal": "journal-b",
+                "node": "agent-b",
+                "runtime": "runtime-b"
+              },
+              "templateSha256": "57f15ac238d73abf82311af29bb43ce0abbf83144c77ae2f89489c6835d3fe88",
+              "version": "native-v1alpha1"
+            },
+            "sequence": "3",
+            "state": "running"
+          }
+        ],
+        "name": "c1789078447-r2-two-agent-service-ready",
+        "ok": true
+      },
+      {
+        "at": 1789078499.0320218,
+        "epoch": "6",
+        "generation": 6,
+        "name": "c1789078447-r2-scheduler-crash-recovery",
+        "ok": true
+      },
+      {
+        "at": 1789078501.5694482,
+        "attempts": [
+          {
+            "cleanup": "complete",
+            "identity": {
+              "attempt": "attempt-92aff87e-a27c-4593-9595-188d3d12ea41",
+              "cluster": "lab",
+              "incarnation": "recovery-a",
+              "instance": "instance-0",
+              "jobKey": {
+                "environment": "test",
+                "name": "c1789078447-r2-service",
+                "role": "fixtures"
+              },
+              "process": "main",
+              "run": "run-4d9f30ab-5115-437e-b2bf-a0ad891dbef0"
+            },
+            "node": "agent-a",
+            "ready": false,
+            "reserved": false,
+            "run": {
+              "assignment": {
+                "argv": [
+                  "/opt/aurora/bin/native-workload",
+                  "--mode",
+                  "service",
+                  "--identity",
+                  "c1789078447-r2-service",
+                  "--evidence",
+                  "/evidence/c1789078447-r2-service.jsonl",
+                  "--port",
+                  "18080",
+                  "--ready-delay-ms",
+                  "100"
+                ],
+                "env": {
+                  "LANG": "C"
+                },
+                "ports": [
+                  {
+                    "family": "ipv4",
+                    "name": "http",
+                    "network": "agent-container",
+                    "number": 18080,
+                    "protocol": "tcp"
+                  }
+                ],
+                "process": "main",
+                "readiness": {
+                  "intervalMillis": 1000,
+                  "kind": "tcp",
+                  "port": "http",
+                  "timeoutMillis": 500
+                },
+                "requiredCapabilities": [],
+                "resources": {
+                  "cpuMillis": 100,
+                  "memoryBytes": 16777216,
+                  "memoryEnforcement": "reservation"
+                },
+                "retry": {
+                  "maxRuns": 1
+                },
+                "runtime": "trusted-host-process",
+                "stop": {
+                  "graceMillis": 300
+                }
+              },
+              "command": "command-ed95c12f-8837-4c08-9997-63dec5686e8e",
+              "desiredRevision": "1",
+              "identity": {
+                "attempt": "attempt-92aff87e-a27c-4593-9595-188d3d12ea41",
+                "cluster": "lab",
+                "incarnation": "recovery-a",
+                "instance": "instance-0",
+                "jobKey": {
+                  "environment": "test",
+                  "name": "c1789078447-r2-service",
+                  "role": "fixtures"
+                },
+                "process": "main",
+                "run": "run-4d9f30ab-5115-437e-b2bf-a0ad891dbef0"
+              },
+              "kind": "Run",
+              "target": {
+                "boot": "boot-a",
+                "journal": "journal-a",
+                "node": "agent-a",
+                "runtime": "runtime-a"
+              },
+              "templateSha256": "57f15ac238d73abf82311af29bb43ce0abbf83144c77ae2f89489c6835d3fe88",
+              "version": "native-v1alpha1"
+            },
+            "sequence": "5",
+            "state": "stopped"
+          },
+          {
+            "cleanup": "complete",
+            "identity": {
+              "attempt": "attempt-3d662909-c276-4ac3-aa4c-b02293cf755c",
+              "cluster": "lab",
+              "incarnation": "recovery-a",
+              "instance": "instance-1",
+              "jobKey": {
+                "environment": "test",
+                "name": "c1789078447-r2-service",
+                "role": "fixtures"
+              },
+              "process": "main",
+              "run": "run-3e26c531-0b0d-4399-9a62-38434af3f871"
+            },
+            "node": "agent-b",
+            "ready": false,
+            "reserved": false,
+            "run": {
+              "assignment": {
+                "argv": [
+                  "/opt/aurora/bin/native-workload",
+                  "--mode",
+                  "service",
+                  "--identity",
+                  "c1789078447-r2-service",
+                  "--evidence",
+                  "/evidence/c1789078447-r2-service.jsonl",
+                  "--port",
+                  "18080",
+                  "--ready-delay-ms",
+                  "100"
+                ],
+                "env": {
+                  "LANG": "C"
+                },
+                "ports": [
+                  {
+                    "family": "ipv4",
+                    "name": "http",
+                    "network": "agent-container",
+                    "number": 18080,
+                    "protocol": "tcp"
+                  }
+                ],
+                "process": "main",
+                "readiness": {
+                  "intervalMillis": 1000,
+                  "kind": "tcp",
+                  "port": "http",
+                  "timeoutMillis": 500
+                },
+                "requiredCapabilities": [],
+                "resources": {
+                  "cpuMillis": 100,
+                  "memoryBytes": 16777216,
+                  "memoryEnforcement": "reservation"
+                },
+                "retry": {
+                  "maxRuns": 1
+                },
+                "runtime": "trusted-host-process",
+                "stop": {
+                  "graceMillis": 300
+                }
+              },
+              "command": "command-f900a3e4-7c64-4584-afb0-e982c8d07df6",
+              "desiredRevision": "1",
+              "identity": {
+                "attempt": "attempt-3d662909-c276-4ac3-aa4c-b02293cf755c",
+                "cluster": "lab",
+                "incarnation": "recovery-a",
+                "instance": "instance-1",
+                "jobKey": {
+                  "environment": "test",
+                  "name": "c1789078447-r2-service",
+                  "role": "fixtures"
+                },
+                "process": "main",
+                "run": "run-3e26c531-0b0d-4399-9a62-38434af3f871"
+              },
+              "kind": "Run",
+              "target": {
+                "boot": "boot-b",
+                "journal": "journal-b",
+                "node": "agent-b",
+                "runtime": "runtime-b"
+              },
+              "templateSha256": "57f15ac238d73abf82311af29bb43ce0abbf83144c77ae2f89489c6835d3fe88",
+              "version": "native-v1alpha1"
+            },
+            "sequence": "5",
+            "state": "stopped"
+          }
+        ],
+        "name": "c1789078447-r2-partition-stop-reconnect",
+        "ok": true
+      },
+      {
+        "at": 1789078505.658904,
+        "attempts": [
+          {
+            "cleanup": "complete",
+            "identity": {
+              "attempt": "attempt-175e8a71-498c-4cf8-b679-a9b656094403",
+              "cluster": "lab",
+              "incarnation": "recovery-a",
+              "instance": "instance-0",
+              "jobKey": {
+                "environment": "test",
+                "name": "c1789078447-r2-recovery",
+                "role": "fixtures"
+              },
+              "process": "main",
+              "run": "run-b7dfd731-e41e-40b7-9452-46ac958cf84b"
+            },
+            "node": "agent-a",
+            "ready": false,
+            "reserved": false,
+            "run": {
+              "assignment": {
+                "argv": [
+                  "/opt/aurora/bin/native-workload",
+                  "--mode",
+                  "service",
+                  "--identity",
+                  "c1789078447-r2-recovery",
+                  "--evidence",
+                  "/evidence/c1789078447-r2-recovery.jsonl",
+                  "--port",
+                  "18080",
+                  "--ready-delay-ms",
+                  "100",
+                  "--refuse-sigterm"
+                ],
+                "env": {
+                  "LANG": "C"
+                },
+                "ports": [
+                  {
+                    "family": "ipv4",
+                    "name": "http",
+                    "network": "agent-container",
+                    "number": 18080,
+                    "protocol": "tcp"
+                  }
+                ],
+                "process": "main",
+                "readiness": {
+                  "intervalMillis": 1000,
+                  "kind": "tcp",
+                  "port": "http",
+                  "timeoutMillis": 500
+                },
+                "requiredCapabilities": [],
+                "resources": {
+                  "cpuMillis": 100,
+                  "memoryBytes": 16777216,
+                  "memoryEnforcement": "reservation"
+                },
+                "retry": {
+                  "maxRuns": 1
+                },
+                "runtime": "trusted-host-process",
+                "stop": {
+                  "graceMillis": 300
+                }
+              },
+              "command": "command-1db69bac-6289-4d51-8d56-631c7eb898ce",
+              "desiredRevision": "1",
+              "identity": {
+                "attempt": "attempt-175e8a71-498c-4cf8-b679-a9b656094403",
+                "cluster": "lab",
+                "incarnation": "recovery-a",
+                "instance": "instance-0",
+                "jobKey": {
+                  "environment": "test",
+                  "name": "c1789078447-r2-recovery",
+                  "role": "fixtures"
+                },
+                "process": "main",
+                "run": "run-b7dfd731-e41e-40b7-9452-46ac958cf84b"
+              },
+              "kind": "Run",
+              "target": {
+                "boot": "boot-a",
+                "journal": "journal-a",
+                "node": "agent-a",
+                "runtime": "runtime-a"
+              },
+              "templateSha256": "e6486cf264eb7090c35f843d2c82e4e877327892a7c740c90621ca16e3e85eef",
+              "version": "native-v1alpha1"
+            },
+            "sequence": "4",
+            "state": "lost"
+          },
+          {
+            "cleanup": "complete",
+            "identity": {
+              "attempt": "attempt-d2df41e2-ccfa-44a4-b0cb-1ebe5c7a39e0",
+              "cluster": "lab",
+              "incarnation": "recovery-a",
+              "instance": "instance-1",
+              "jobKey": {
+                "environment": "test",
+                "name": "c1789078447-r2-recovery",
+                "role": "fixtures"
+              },
+              "process": "main",
+              "run": "run-f2d4f2d8-b22b-439b-b56c-455e99c8bb76"
+            },
+            "node": "agent-b",
+            "ready": false,
+            "reserved": false,
+            "run": {
+              "assignment": {
+                "argv": [
+                  "/opt/aurora/bin/native-workload",
+                  "--mode",
+                  "service",
+                  "--identity",
+                  "c1789078447-r2-recovery",
+                  "--evidence",
+                  "/evidence/c1789078447-r2-recovery.jsonl",
+                  "--port",
+                  "18080",
+                  "--ready-delay-ms",
+                  "100",
+                  "--refuse-sigterm"
+                ],
+                "env": {
+                  "LANG": "C"
+                },
+                "ports": [
+                  {
+                    "family": "ipv4",
+                    "name": "http",
+                    "network": "agent-container",
+                    "number": 18080,
+                    "protocol": "tcp"
+                  }
+                ],
+                "process": "main",
+                "readiness": {
+                  "intervalMillis": 1000,
+                  "kind": "tcp",
+                  "port": "http",
+                  "timeoutMillis": 500
+                },
+                "requiredCapabilities": [],
+                "resources": {
+                  "cpuMillis": 100,
+                  "memoryBytes": 16777216,
+                  "memoryEnforcement": "reservation"
+                },
+                "retry": {
+                  "maxRuns": 1
+                },
+                "runtime": "trusted-host-process",
+                "stop": {
+                  "graceMillis": 300
+                }
+              },
+              "command": "command-bb26f27c-c273-4771-8e8c-a333c78c0153",
+              "desiredRevision": "1",
+              "identity": {
+                "attempt": "attempt-d2df41e2-ccfa-44a4-b0cb-1ebe5c7a39e0",
+                "cluster": "lab",
+                "incarnation": "recovery-a",
+                "instance": "instance-1",
+                "jobKey": {
+                  "environment": "test",
+                  "name": "c1789078447-r2-recovery",
+                  "role": "fixtures"
+                },
+                "process": "main",
+                "run": "run-f2d4f2d8-b22b-439b-b56c-455e99c8bb76"
+              },
+              "kind": "Run",
+              "target": {
+                "boot": "boot-b",
+                "journal": "journal-b",
+                "node": "agent-b",
+                "runtime": "runtime-b"
+              },
+              "templateSha256": "e6486cf264eb7090c35f843d2c82e4e877327892a7c740c90621ca16e3e85eef",
+              "version": "native-v1alpha1"
+            },
+            "sequence": "5",
+            "state": "stopped"
+          },
+          {
+            "cleanup": "complete",
+            "identity": {
+              "attempt": "attempt-5e4d0600-8581-4b15-97a4-bc21e0b77980",
+              "cluster": "lab",
+              "incarnation": "recovery-a",
+              "instance": "instance-0",
+              "jobKey": {
+                "environment": "test",
+                "name": "c1789078447-r2-recovery",
+                "role": "fixtures"
+              },
+              "process": "main",
+              "run": "run-e38183ac-91b1-45cd-9c3b-1a355ea20cdc"
+            },
+            "node": "agent-a",
+            "ready": false,
+            "reserved": false,
+            "run": {
+              "assignment": {
+                "argv": [
+                  "/opt/aurora/bin/native-workload",
+                  "--mode",
+                  "service",
+                  "--identity",
+                  "c1789078447-r2-recovery",
+                  "--evidence",
+                  "/evidence/c1789078447-r2-recovery.jsonl",
+                  "--port",
+                  "18080",
+                  "--ready-delay-ms",
+                  "100",
+                  "--refuse-sigterm"
+                ],
+                "env": {
+                  "LANG": "C"
+                },
+                "ports": [
+                  {
+                    "family": "ipv4",
+                    "name": "http",
+                    "network": "agent-container",
+                    "number": 18080,
+                    "protocol": "tcp"
+                  }
+                ],
+                "process": "main",
+                "readiness": {
+                  "intervalMillis": 1000,
+                  "kind": "tcp",
+                  "port": "http",
+                  "timeoutMillis": 500
+                },
+                "requiredCapabilities": [],
+                "resources": {
+                  "cpuMillis": 100,
+                  "memoryBytes": 16777216,
+                  "memoryEnforcement": "reservation"
+                },
+                "retry": {
+                  "maxRuns": 1
+                },
+                "runtime": "trusted-host-process",
+                "stop": {
+                  "graceMillis": 300
+                }
+              },
+              "command": "command-9c30ae5f-7819-4cc5-ae6e-aacbeedc7309",
+              "desiredRevision": "1",
+              "identity": {
+                "attempt": "attempt-5e4d0600-8581-4b15-97a4-bc21e0b77980",
+                "cluster": "lab",
+                "incarnation": "recovery-a",
+                "instance": "instance-0",
+                "jobKey": {
+                  "environment": "test",
+                  "name": "c1789078447-r2-recovery",
+                  "role": "fixtures"
+                },
+                "process": "main",
+                "run": "run-e38183ac-91b1-45cd-9c3b-1a355ea20cdc"
+              },
+              "kind": "Run",
+              "target": {
+                "boot": "boot-a",
+                "journal": "journal-a",
+                "node": "agent-a",
+                "runtime": "runtime-a"
+              },
+              "templateSha256": "e6486cf264eb7090c35f843d2c82e4e877327892a7c740c90621ca16e3e85eef",
+              "version": "native-v1alpha1"
+            },
+            "sequence": "5",
+            "state": "stopped"
+          }
+        ],
+        "generation": 4,
+        "launches": 3,
+        "name": "c1789078447-r2-agent-crash-lost-replace-forced-stop",
+        "ok": true,
+        "waitResults": [
+          {
+            "execution": {
+              "cleanup": "complete",
+              "exitCode": null,
+              "outcome": "lost",
+              "phase": "terminal",
+              "pid": 284,
+              "ready": false,
+              "signal": 0,
+              "start": "58842574",
+              "stderrBytes": 0,
+              "stderrDropped": 0,
+              "stdoutBytes": 0,
+              "stdoutDropped": 0
+            },
+            "identity": {
+              "attempt": "attempt-175e8a71-498c-4cf8-b679-a9b656094403",
+              "cluster": "lab",
+              "incarnation": "recovery-a",
+              "instance": "instance-0",
+              "jobKey": {
+                "environment": "test",
+                "name": "c1789078447-r2-recovery",
+                "role": "fixtures"
+              },
+              "process": "main",
+              "run": "run-b7dfd731-e41e-40b7-9452-46ac958cf84b"
+            },
+            "node": "agent-a"
+          },
+          {
+            "execution": {
+              "cleanup": "complete",
+              "exitCode": -1,
+              "outcome": "stopped",
+              "phase": "terminal",
+              "pid": 175,
+              "ready": false,
+              "signal": 9,
+              "start": "58842574",
+              "stderrBytes": 0,
+              "stderrDropped": 0,
+              "stdoutBytes": 0,
+              "stdoutDropped": 0
+            },
+            "identity": {
+              "attempt": "attempt-d2df41e2-ccfa-44a4-b0cb-1ebe5c7a39e0",
+              "cluster": "lab",
+              "incarnation": "recovery-a",
+              "instance": "instance-1",
+              "jobKey": {
+                "environment": "test",
+                "name": "c1789078447-r2-recovery",
+                "role": "fixtures"
+              },
+              "process": "main",
+              "run": "run-f2d4f2d8-b22b-439b-b56c-455e99c8bb76"
+            },
+            "node": "agent-b"
+          },
+          {
+            "execution": {
+              "cleanup": "complete",
+              "exitCode": -1,
+              "outcome": "stopped",
+              "phase": "terminal",
+              "pid": 304,
+              "ready": false,
+              "signal": 9,
+              "start": "58842756",
+              "stderrBytes": 0,
+              "stderrDropped": 0,
+              "stdoutBytes": 0,
+              "stdoutDropped": 0
+            },
+            "identity": {
+              "attempt": "attempt-5e4d0600-8581-4b15-97a4-bc21e0b77980",
+              "cluster": "lab",
+              "incarnation": "recovery-a",
+              "instance": "instance-0",
+              "jobKey": {
+                "environment": "test",
+                "name": "c1789078447-r2-recovery",
+                "role": "fixtures"
+              },
+              "process": "main",
+              "run": "run-e38183ac-91b1-45cd-9c3b-1a355ea20cdc"
+            },
+            "node": "agent-a"
+          }
+        ]
+      },
+      {
+        "at": 1789078508.6547208,
+        "name": "c1789078447-r2-no-resurrection",
+        "ok": true
+      },
+      {
+        "at": 1789078512.5128841,
+        "attempts": 18,
+        "container": "a8101df342175fbc54d887085b241361d0d51a9ae89166c1657b181e9fa36af6",
+        "epoch": "8",
+        "jobs": 9,
+        "name": "isolated-live-scheduler-backup-restore-2",
+        "ok": true
+      },
+      {
+        "at": 1789079116.6697416,
+        "batches": 20,
+        "elapsedSeconds": 600.7241176549578,
+        "name": "bounded-mixed-workload",
+        "ok": true,
+        "replicas": 2
+      }
+    ],
+    "cleanup": {
+      "containers": {},
+      "networks": {},
+      "status": "stopped"
+    },
+    "evidence": ".pi-lab/cut01-qualification/evidence/c1789078447-result.json",
+    "evidenceSha256": "7c4d4c2cd289a9ab83409dacef9f42bd4272d05da467b5a46c7f607524fbdafa",
+    "executableBindMounts": false,
+    "path": ".pi-lab/cut01-qualification/qualification.json",
+    "repeats": 3,
+    "run": "288d89fdab40cdf1",
+    "sha256": "ba80b02dc27ff5a19b2fdbb94c22de13654478d2b6df69335b9eaee8b1ea380d"
+  },
+  "schema": 1,
+  "sourceCommit": "67cfb055fa7b51890ee0e1b4b7c4294ebafae55b",
+  "tests": {
+    "go": [
+      "agent",
+      "agent/cmd/aurora-agent",
+      "agent/protocol",
+      "cluster-helper",
+      "native-workload"
+    ],
+    "goVet": true,
+    "java": [
+      {
+        "reportSha256": "0e07d2ce41bd0b21220811d0d5b74f12ac0bda3241ea1b9c635cea82c772ef26",
+        "suite": "org.apache.aurora.nativeprotocol.ProtocolValidatorTest",
+        "tests": 7
+      },
+      {
+        "reportSha256": "b7fc5bec3f9e6165936aac12be0346758073fb6058ed5a26076048faaeadaa0f",
+        "suite": "org.apache.aurora.nativescheduler.NativeEngineTest",
+        "tests": 13
+      },
+      {
+        "reportSha256": "dc3e1ab84efdd97243313c7b515aaa72d7cf806cdc16d0ce2f49883e2e65be50",
+        "suite": "org.apache.aurora.scheduler.storage.sql.NativeSqlStoreTest",
+        "tests": 14
+      }
+    ],
+    "pythonLab": 68,
+    "pythonPackaging": 33
+  },
+  "verifiedAt": 1789079236.7481492
+}
