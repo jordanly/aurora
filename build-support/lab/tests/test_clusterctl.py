@@ -7,6 +7,7 @@
 """Daemon-free cluster ownership regressions; not physical Docker evidence."""
 import contextlib
 import copy
+import http.client
 import importlib.machinery
 import importlib.util
 import io
@@ -44,6 +45,91 @@ class ClusterCtlTest(unittest.TestCase):
         (self.root / "evidence").mkdir()
         self.lab.persist()
         self.addCleanup(self.lab.release)
+
+    def api_response(self, body, declared=None, status=200, chunked=False, close_delimited=False):
+        declared = len(body) if declared is None else declared
+        headers = f"HTTP/1.1 {status} OK\r\nConnection: close\r\n"
+        if chunked:
+            payload = f"{len(body):x}\r\n".encode() + body + b"\r\n0\r\n\r\n"
+            headers += "Transfer-Encoding: chunked\r\n"
+        elif not close_delimited:
+            headers += f"Content-Length: {declared}\r\n"
+            payload = body
+        else:
+            payload = body
+        raw = io.BytesIO((headers + "\r\n").encode() + payload)
+        sock = Mock()
+        sock.makefile.return_value = raw
+        response = http.client.HTTPResponse(sock)
+        response.begin()
+        return response, sock
+
+    def request_with_response(self, response):
+        connection = Mock()
+        connection.getresponse.return_value = response
+        context = Mock()
+        with patch.object(cluster.ssl, "create_default_context", return_value=context), \
+                patch.object(cluster, "LocalTLS", return_value=connection):
+            self.lab.data["containers"]["scheduler"] = {
+                "apiMode": "private", "port": 8443, "address": "172.22.0.2"}
+            try:
+                result = self.lab.request("GET", "/v1/state", identity=None)
+            finally:
+                response.close()
+                connection.close.assert_called_once_with()
+        return result
+
+    def test_request_detects_short_declared_body_and_closes_connection(self):
+        for body, declared in ((b"{}", 20), (b'{"state":', 20)):
+            with self.subTest(body=body):
+                response, _ = self.api_response(body, declared=declared)
+                with self.assertRaises(http.client.IncompleteRead) as error:
+                    self.request_with_response(response)
+                self.assertEqual(body, error.exception.partial)
+                self.assertEqual(declared - len(body), error.exception.expected)
+
+        response, _ = self.api_response(b"{}", chunked=True)
+        self.assertEqual({}, self.request_with_response(response))
+
+        response, _ = self.api_response(b"{}", close_delimited=True)
+        self.assertEqual({}, self.request_with_response(response))
+
+        response, _ = self.api_response(b"{}", chunked=True)
+        response.fp = io.BytesIO(b"2\r\n{}\r\n4\r\n")
+        with self.assertRaises(http.client.IncompleteRead):
+            self.request_with_response(response)
+
+    def test_request_accepts_complete_body_but_keeps_malformed_json_rejected(self):
+        response, _ = self.api_response(b'{"state":')
+        with self.assertRaises(json.JSONDecodeError):
+            self.request_with_response(response)
+
+        response, _ = self.api_response(b"{}", status=503)
+        with self.assertRaisesRegex(cluster.native.SmokeError, "Scheduler HTTP 503"):
+            self.request_with_response(response)
+
+        body = b"{}" + b" " * (1048576 - 2)
+        response, _ = self.api_response(body)
+        self.assertEqual({}, self.request_with_response(response))
+
+        response, _ = self.api_response(b"{}" + b" " * (1048576 + 255))
+        response.read = Mock(wraps=response.read)
+        with self.assertRaisesRegex(cluster.native.SmokeError, "Operator response limit"):
+            self.request_with_response(response)
+        response.read.assert_called_once_with(1048577)
+        self.assertEqual(256, response.length)
+
+    def test_await_state_retries_incomplete_read_but_not_malformed_json(self):
+        incomplete = http.client.IncompleteRead(b"partial", 3)
+        with patch.object(self.lab, "state", side_effect=[incomplete, {"ready": True}]), \
+                patch.object(cluster.time, "monotonic", side_effect=[0, 0, 0]), \
+                patch.object(cluster.time, "sleep"):
+            self.assertEqual({"ready": True}, self.lab.await_state(lambda state: state["ready"], timeout=1))
+
+        malformed = json.JSONDecodeError("bad", "{", 0)
+        with patch.object(self.lab, "state", side_effect=malformed):
+            with self.assertRaises(json.JSONDecodeError):
+                self.lab.await_state(lambda state: True, timeout=1)
 
     def container(self, role="agent-a", partial=False):
         networks = cluster.TOPOLOGY[role]

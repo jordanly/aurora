@@ -556,6 +556,8 @@ class Lab:
             data = response.read(1048577)
             require(len(data) <= 1048576, "Operator response limit")
             require(response.status in expected, "Scheduler HTTP " + str(response.status) + ": " + native.redact(data.decode(errors="replace"))[:300])
+            if response.length is not None and response.length > 0:
+                raise http.client.IncompleteRead(data, response.length)
             return json.loads(data)
         finally:
             connection.close()
