@@ -66,8 +66,9 @@ one-second wait, never additional finalizer execution time. primaryResult remain
 independent of finalizationResult (`succeeded`, `failed`, `skipped`, `timeout`).
 Finalizers are best effort and cannot be promised after runner/host death.
 
-The private state directory is used once. An exclusive new task.journal is
-created and its directory synced; the manifest digest, each consumed start
+The private state directory is used once. An exclusive durable `.task-owner`
+marker detects a missing execution journal and an interrupted initialization.
+An exclusive new task.journal is created and its directory synced; the manifest digest, each consumed start
 intent, child PID/start identity before gate release, exact exit/signal, and final
 results are appended and fsynced. Any existing journal, even empty or corrupt,
 refuses all replay/relaunch. Journal failure before gate release kills the helper;

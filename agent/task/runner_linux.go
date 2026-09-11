@@ -174,6 +174,25 @@ func Execute(ctx context.Context, m Manifest, o Options) (res Result, err error)
 	if fi.Mode().Perm()&0077 != 0 || fi.Sys().(*syscall.Stat_t).Uid != uint32(os.Geteuid()) {
 		return res, errors.New("task state directory must be private and owned")
 	}
+	// A separate durable marker detects deletion of the execution journal. The
+	// directory is consumed before any launch authority can exist, including an
+	// interruption between marker creation and the first journal record.
+	owner, e := os.OpenFile(filepath.Join(o.StateDir, ".task-owner"), os.O_CREATE|os.O_EXCL|os.O_WRONLY|unix.O_NOFOLLOW, 0600)
+	if e != nil {
+		return res, fmt.Errorf("task journal already exists or ownership marker prevents relaunch: %w", e)
+	}
+	e = errors.Join(owner.Sync(), owner.Close())
+	if e != nil {
+		return res, e
+	}
+	ownershipDir, e := os.Open(o.StateDir)
+	if e != nil {
+		return res, e
+	}
+	e = errors.Join(ownershipDir.Sync(), ownershipDir.Close())
+	if e != nil {
+		return res, e
+	}
 	f, e := os.OpenFile(filepath.Join(o.StateDir, "task.journal"), os.O_CREATE|os.O_EXCL|os.O_WRONLY|unix.O_NOFOLLOW, 0600)
 	if e != nil {
 		return res, fmt.Errorf("task journal already exists or unavailable; never relaunch: %w", e)

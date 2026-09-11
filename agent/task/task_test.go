@@ -237,6 +237,23 @@ func TestFinalizerAfterPrimaryFailure(t *testing.T) {
 		t.Fatal(e)
 	}
 }
+
+func TestMissingJournalStillRefusesConsumedDirectory(t *testing.T) {
+	m := manifest(proc("a", "printf x >> marker"))
+	_, dir, e := execute(t, m)
+	if e != nil {
+		t.Fatal(e)
+	}
+	if e = os.Remove(filepath.Join(dir, "task.journal")); e != nil {
+		t.Fatal(e)
+	}
+	if _, e = Execute(context.Background(), m, Options{StateDir: dir}); e == nil {
+		t.Fatal("deleted journal allowed a new execution")
+	}
+	if data, e := os.ReadFile(filepath.Join(dir, "marker")); e != nil || string(data) != "x" {
+		t.Fatal("consumed workload was relaunched", string(data), e)
+	}
+}
 func TestFinalizerSharedDeadline(t *testing.T) {
 	f := proc("final", "exec /bin/sleep 5")
 	f.Finalizer = true
