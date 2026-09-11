@@ -1,0 +1,312 @@
+#!/usr/bin/env python3
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+# Unless required by applicable law or agreed to in writing, software distributed
+# under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+# CONDITIONS OF ANY KIND, either express or implied. See the License for the
+# specific language governing permissions and limitations under the License.
+"""Measure a bounded two-agent workload in new, disposable image-backed labs."""
+import argparse
+import hashlib
+import http.client
+import importlib.machinery
+import importlib.util
+import json
+import math
+import os
+from pathlib import Path
+import platform
+import re
+import statistics
+import sys
+import time
+
+ROOT = Path(__file__).resolve().parents[2]
+DIAGNOSTICS = ["-XX:NativeMemoryTracking=summary", "-XX:+UnlockDiagnosticVMOptions",
+               "-XX:+PrintNMTStatistics",
+               "-Xlog:gc*:file=/state/benchmark-gc-%p.log:uptime,level,tags:filecount=1,filesize=4m"]
+
+
+def summary(values):
+    ordered = sorted(values)
+    if not ordered:
+        return {"count": 0}
+    return {"count": len(values), "min": ordered[0], "median": statistics.median(values),
+            "p95": ordered[math.ceil(len(ordered) * .95) - 1], "max": ordered[-1]}
+
+
+def load_source(path):
+    if not path.is_absolute() or ".." in path.parts or any(p.is_symlink() for p in (path, *path.parents)):
+        raise ValueError("Source tree must be an absolute non-symlink path")
+    loader = importlib.machinery.SourceFileLoader("benchmark_cluster", str(path / "build-support/lab/clusterctl"))
+    spec = importlib.util.spec_from_loader(loader.name, loader)
+    result = importlib.util.module_from_spec(spec)
+    loader.exec_module(result)
+    return result
+
+
+def host():
+    result = {"loadAverage": os.getloadavg(), "platform": platform.platform(),
+              "pageBytes": os.sysconf("SC_PAGE_SIZE")}
+    for name, path in (("temperatureMilliC", "/sys/class/thermal/thermal_zone0/temp"),
+                       ("cpu0FrequencyKHz", "/sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq")):
+        if Path(path).is_file():
+            result[name] = int(Path(path).read_text())
+    return result
+
+
+def attempts(state, name):
+    return [a for a in state["attempts"] if a["identity"]["jobKey"]["name"] == name]
+
+
+def ready(items):
+    return len(items) == 2 and len({a["node"] for a in items}) == 2 and all(
+        a["state"] == "running" and a["ready"] and a["reserved"] for a in items)
+
+
+def terminal(items):
+    return bool(items) and all(a["cleanup"] == "complete" and not a["reserved"]
+                               and a["state"] in ("succeeded", "stopped", "failed", "lost") for a in items)
+
+
+def wait(lab, predicate, timeout=45):
+    # Poll resolution is explicit in the result; this is observed API convergence.
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        try:
+            state = lab.state()
+            if predicate(state):
+                return state
+        except (OSError, http.client.HTTPException, lab.__class__.cluster.native.SmokeError):
+            pass
+        time.sleep(.05)
+    raise ValueError("Benchmark state convergence timed out")
+
+
+def measured(operation):
+    started = time.monotonic()
+    value = operation()
+    return value, (time.monotonic() - started) * 1000
+
+
+def resource_sample(cluster, lab):
+    item = lab.inspect_container("scheduler")
+    daemon = json.loads((lab.root / "scheduler/control/daemon.json").read_text())
+    pid = daemon["pid"]
+    cluster.require(type(pid) is int and pid > 0, "No running scheduler PID")
+    # Read only the keeper-recorded daemon in the ownership-verified container.
+    script = '''task_pid="$1"
+read task_comm < /proc/"$task_pid"/comm
+test "$task_comm" = java || exit 2
+task_fds=0
+for task_fd in /proc/"$task_pid"/fd/*; do
+  if test -L "$task_fd"; then task_fds=$((task_fds + 1)); fi
+done
+awk -v fds="$task_fds" '
+ /^VmRSS:/ {rss=$2} /^RssAnon:/ {anon=$2} /^Threads:/ {threads=$2}
+ END {printf "{\\"rssKiB\\":%d,\\"rssAnonKiB\\":%d,\\"threads\\":%d,\\"fds\\":%d}\\n",rss,anon,threads,fds}
+' /proc/"$task_pid"/status
+'''
+    # The fixed shell program receives the validated PID as an argv parameter.
+    value = json.loads(cluster.docker("exec", item["Id"], "/bin/sh", "-c", script,
+                                      "benchmark-proc", str(pid), timeout=10).stdout)
+    cluster.require(all(value[key] > 0 for key in ("rssKiB", "threads", "fds")), "Missing process metrics")
+    return dict(value, pid=pid, generation=daemon["generation"], at=time.time())
+
+
+def physical(cluster, lab, item, available=False):
+    container = lab.inspect_container(item["node"])
+    port = item["run"]["assignment"]["ports"][0]["number"]
+    data = json.loads(cluster.docker("exec", container["Id"], cluster.BIN + "/native-workload",
+        "--mode", "port-check" if available else "probe", "--port", str(port), timeout=5).stdout)
+    expected = {"available": True, "port": port} if available else {
+        "identity": item["identity"]["jobKey"]["name"], "ready": True}
+    cluster.require(data == expected, "Physical service/cleanup differs")
+
+
+def trial(cluster, bundle, root, number):
+    class BenchLab(cluster.Lab):
+        def scheduler_args(self):
+            args = super().scheduler_args()
+            index = args.index(cluster.JAVA) + 1
+            return args[:index] + DIAGNOSTICS + args[index:]
+    BenchLab.cluster = cluster
+    lab = None
+    result = {"ok": False, "trial": number, "startedAt": time.time(), "hostBefore": host()}
+    try:
+        lab = BenchLab(root, fresh=True)
+        lab.prepare(bundle)
+        _, result["clusterStartMs"] = measured(lab.start)
+        result.update(run=lab.data["run"], images=lab.data["bundle"]["images"],
+                      schedulerCommand=lab.scheduler_args())
+        result["containers"] = {role: {"id": lab.inspect_container(role)["Id"],
+            "nanoCpus": lab.inspect_container(role)["HostConfig"]["NanoCpus"],
+            "pidsLimit": lab.inspect_container(role)["HostConfig"]["PidsLimit"],
+            "memoryLimitBytes": lab.inspect_container(role)["HostConfig"]["Memory"]}
+            for role in ("scheduler", *cluster.NODES)}
+        for _ in range(8):
+            lab.state()
+        name = "benchmark-service"
+        started = time.monotonic()
+        _, service_ack = measured(lambda: lab.request("POST", "/v1/jobs", cluster.job(name, "service")))
+        state = wait(lab, lambda s: ready(attempts(s, name)))
+        result["serviceSubmitAckMs"] = service_ack
+        result["serviceSubmitToReadyMs"] = (time.monotonic() - started) * 1000
+        service_ids = {a["identity"]["attempt"] for a in attempts(state, name)}
+        for item in attempts(state, name):
+            physical(cluster, lab, item)
+        result["resources"] = [resource_sample(cluster, lab)]
+        reads, acknowledgements, completion = [], [], []
+        result.update(stateGetMs=reads, batchSubmitAckMs=acknowledgements, batchSubmitToCompleteMs=completion)
+        for index in range(6):
+            for _ in range(5):
+                _, duration = measured(lab.state)
+                reads.append(duration)
+            batch = "benchmark-batch-" + str(index)
+            started = time.monotonic()
+            _, duration = measured(lambda: lab.request("POST", "/v1/jobs", cluster.job(batch)))
+            acknowledgements.append(duration)
+            state = wait(lab, lambda s: len(attempts(s, batch)) == 1
+                and terminal(attempts(s, batch)) and attempts(s, batch)[0]["state"] == "succeeded")
+            completion.append((time.monotonic() - started) * 1000)
+            result["resources"].append(resource_sample(cluster, lab))
+        _, result["backupAckMs"] = measured(lambda: lab.request("POST", "/v1/backup", {"name": "benchmark-backup"}))
+        original_epoch = int(state["epoch"])
+        started = time.monotonic()
+        lab.fault("scheduler", "crash")
+        state = wait(lab, lambda s: int(s["epoch"]) > original_epoch and all(n["reachable"] for n in s["nodes"])
+                     and ready(attempts(s, name)))
+        result["schedulerCrashToRecoveredMs"] = (time.monotonic() - started) * 1000
+        cluster.require({a["identity"]["attempt"] for a in attempts(state, name)} == service_ids,
+                        "Recovery replaced a surviving service")
+        for _ in range(8):
+            lab.state()
+        result["resources"].append(resource_sample(cluster, lab))
+        started = time.monotonic()
+        lab.request("POST", "/v1/jobs/stop", {"role": "fixtures", "environment": "test", "name": name})
+        state = wait(lab, lambda s: terminal(attempts(s, name)))
+        result["serviceStopToCleanedMs"] = (time.monotonic() - started) * 1000
+        for item in attempts(state, name):
+            physical(cluster, lab, item, available=True)
+        cluster.require(len(state["attempts"]) == 8 and terminal(state["attempts"]), "Unexpected final workload state")
+        for job in state["jobs"]:
+            launches = []
+            for node in cluster.NODES:
+                path = lab.root / node / "evidence" / (job["jobKey"]["name"] + ".jsonl")
+                if path.exists():
+                    launches.extend(json.loads(line) for line in path.read_text().splitlines()
+                                    if json.loads(line).get("event") == "launch")
+            cluster.require(len(launches) == (2 if job["jobKey"]["name"] == name else 1), "Duplicate/missing launch")
+        result["finalAttempts"] = 8
+        result["allTerminalCleanedUnreserved"] = True
+        # A graceful restart prints HotSpot's NMT report from the measured daemon.
+        epoch = int(state["epoch"])
+        lab.fault("scheduler", "restart")
+        wait(lab, lambda s: int(s["epoch"]) > epoch and terminal(s["attempts"]))
+        logs = cluster.docker("logs", lab.data["containers"]["scheduler"]["id"], timeout=10)
+        log = logs.stdout + logs.stderr
+        log_path = lab.root / "evidence/benchmark-scheduler.log"
+        log_path.write_text(log)
+        result["nativeMemoryLog"] = {"path": str(log_path.relative_to(root)), "sha256": cluster.native.sha(log_path)}
+        total = re.findall(r"Total: reserved=(\d+), committed=(\d+)", log)
+        heap = re.findall(r"Java Heap \(reserved=(\d+), committed=(\d+)\)", log)
+        cluster.require(len(total) == len(heap) == 1, "Expected one completed NMT report")
+        result["nativeMemoryTracking"] = {"phase": "after recovery and cancellation",
+            "totalReservedBytes": int(total[0][0]),
+            "totalCommittedBytes": int(total[0][1]), "heapReservedBytes": int(heap[0][0]),
+            "heapCommittedBytes": int(heap[0][1]),
+            "trackedNonHeapCommittedBytes": int(total[0][1]) - int(heap[0][1])}
+        pauses, gc_logs = [], []
+        # Only the two measured, exited generations are included. The new daemon
+        # used to confirm graceful shutdown continues logging and is excluded.
+        measured_pids = {sample["pid"] for sample in result["resources"]}
+        cluster.require(len(measured_pids) == 2, "Expected initial and recovered measured JVMs")
+        for path in sorted((lab.root / "scheduler/state").glob("benchmark-gc-*.log*")):
+            match = re.fullmatch(r"benchmark-gc-(\d+)\.log(?:\.\d+)?", path.name)
+            cluster.require(match is not None, "Unexpected GC log name")
+            if int(match[1]) not in measured_pids:
+                continue
+            cluster.native.regular(path)
+            text = path.read_text()
+            pauses.extend(float(value) for value in re.findall(r"GC\(\d+\) Pause[^\n]* (\d+(?:\.\d+)?)ms", text))
+            gc_logs.append({"path": str(path.relative_to(root)), "sha256": cluster.native.sha(path)})
+        cluster.require(gc_logs, "GC logging did not produce evidence")
+        result["gcPauseMs"] = pauses
+        result["gcLogs"] = gc_logs
+        result["ok"] = True
+    except BaseException as error:
+        result["error"] = cluster.native.redact(str(error))
+    finally:
+        if lab is not None and lab.data is not None and lab.lock is not None:
+            try:
+                try:
+                    lab.collect()
+                finally:
+                    lab.down()
+                result["cleanup"] = {"status": lab.data["status"], "containers": lab.data["containers"],
+                                     "networks": lab.data["networks"]}
+            except BaseException as error:
+                result["ok"] = False
+                result["cleanupError"] = cluster.native.redact(str(error))
+            finally:
+                lab.release()
+        result.update(completedAt=time.time(), hostAfter=host())
+        for entry in result.get("gcLogs", []):
+            if cluster.native.sha(root / entry["path"]) != entry["sha256"]:
+                result.update(ok=False, error="Measured GC log changed during cleanup")
+        if root.is_dir():
+            cluster.save(root / "benchmark.json", result)
+    return result
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--bundle", type=Path, required=True)
+    parser.add_argument("--output", type=Path, required=True, help="New absolute private measurement directory")
+    parser.add_argument("--source-tree", type=Path, default=ROOT, help="Matching retained source checkout for an older bundle")
+    parser.add_argument("--trials", type=int, choices=(1, 3), default=3)
+    args = parser.parse_args()
+    cluster = load_source(args.source_tree)
+    cluster.native.safe_path(args.output)
+    cluster.native.safe_path(args.source_tree)
+    cluster.require(args.output.is_absolute() and not args.output.exists(), "Output must be a new absolute directory")
+    cluster.require(not args.output.is_relative_to(args.bundle), "Output must be outside bundle")
+    bundle, digest = cluster.load_bundle(args.bundle)
+    cluster.require(bundle.get("java", {}).get("versionMajor") in (25, 26), "Benchmark requires Java25/26")
+    args.output.mkdir(mode=0o700, parents=True)
+    result = {"schema": 1, "ok": False, "bundleSha256": digest, "sourceCommit": bundle["sourceCommit"],
+        "sourceTree": str(args.source_tree), "harnessSha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+        "java": bundle["java"], "trials": [], "pollSeconds": .05, "warmupStateReads": 8,
+        "diagnosticJvmArgs": DIAGNOSTICS,
+        "limits": ["Exploratory single-host measurements; no production SLO or statistical significance claim.",
+            "API timings include fresh mTLS connections; submit ACK includes durable commit, not isolated SQL time.",
+            "Convergence includes polling and controller delay. Cluster start includes Docker creation.",
+            "NMT adds diagnostic overhead and excludes allocations by some third-party native libraries.",
+            "RSS/threads/FDs are sampled, not lifetime peaks. No hard memory cgroup limit on this Pi."]}
+    for number in range(args.trials):
+        value = trial(cluster, args.bundle, args.output / ("trial-" + str(number)), number)
+        result["trials"].append(value)
+        cluster.save(args.output / "result.json", result)
+        print(json.dumps({"trial": number, "ok": value["ok"], "error": value.get("error")}), flush=True)
+        if not value["ok"]:
+            return 1
+    result["metrics"] = {}
+    for key in ("clusterStartMs", "stateGetMs", "batchSubmitAckMs", "batchSubmitToCompleteMs",
+                "serviceSubmitToReadyMs", "schedulerCrashToRecoveredMs", "serviceStopToCleanedMs", "backupAckMs", "gcPauseMs"):
+        values = [sample for value in result["trials"] for sample in
+                  (value[key] if isinstance(value[key], list) else [value[key]])]
+        result["metrics"][key] = summary(values)
+    for key in ("rssKiB", "rssAnonKiB", "threads", "fds"):
+        result["metrics"][key] = summary([sample[key] for value in result["trials"] for sample in value["resources"]])
+    _, after_digest = cluster.load_bundle(args.bundle)
+    cluster.require(after_digest == digest, "Benchmark bundle changed during measurements")
+    result["originalBundleUnchanged"] = True
+    result["ok"] = True
+    cluster.save(args.output / "result.json", result)
+    print(json.dumps({"ok": True, "evidence": str(args.output / "result.json"), "metrics": result["metrics"]}), flush=True)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -51,7 +51,9 @@ def archive_entries(path):
     return result
 
 
-def verify(archive, expected_path, base):
+def verify(archive, expected_path, base, java_profile='java25'):
+    if java_profile not in ('java25', 'java26-runtime', 'java26'):
+        raise ValueError('Unknown Java profile')
     expected = json.loads(Path(expected_path).read_text(), object_pairs_hook=unique)
     if not isinstance(expected, dict) or not expected:
         raise ValueError('Expected a nonempty payload manifest')
@@ -92,7 +94,7 @@ def verify(archive, expected_path, base):
             errors.append('Missing or changed payload file: ' + name)
     if errors:
         raise ValueError('; '.join(errors))
-    return {'ok': True, 'fileCount': len(files), 'files': files,
+    return {'ok': True, 'javaProfile': java_profile, 'fileCount': len(files), 'files': files,
             'baseEntriesChecked': sum(item['type'] != '5' for item in trusted.values()),
             'generatedExceptions': sorted(GENERATED)}
 
@@ -101,9 +103,10 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     for flag in ('archive', 'base', 'expected', 'report'):
         parser.add_argument('--' + flag, type=Path, required=True)
+    parser.add_argument('--java-profile', choices=('java25', 'java26-runtime', 'java26'), default='java25')
     args = parser.parse_args()
     try:
-        result = verify(args.archive, args.expected, args.base)
+        result = verify(args.archive, args.expected, args.base, args.java_profile)
     except (OSError, ValueError, tarfile.TarError) as error:
         result = {'ok': False, 'error': str(error)}
     args.report.write_text(json.dumps(result, indent=2, sort_keys=True) + '\n')

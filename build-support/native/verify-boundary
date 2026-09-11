@@ -77,6 +77,7 @@ def forbidden(value):
 def class_info(data):
     """Parse JVM constant pool rather than trusting a ZIP entry's filename."""
     require(len(data) >= 10 and data[:4] == b"\xca\xfe\xba\xbe", "invalid class magic")
+    require(struct.unpack_from(">H", data, 4)[0] == 0, "preview or legacy minor class version forbidden")
     major, count = struct.unpack_from(">HH", data, 6)
     offset, index = 10, 1
     pool, strings, references = {}, [], []
@@ -125,7 +126,9 @@ def class_info(data):
     return name, major, [pool[ref] for ref in references]
 
 
-def inspect_jar(path, own_kind=None):
+def inspect_jar(path, own_kind=None, java_profile="java25"):
+    require(java_profile in ("java25", "java26-runtime", "java26"), "Unknown Java profile")
+    expected_major = 70 if java_profile == "java26" else 69
     classes, reference_count, native_count = [], 0, 0
     try:
         with zipfile.ZipFile(path) as archive:
@@ -157,7 +160,7 @@ def inspect_jar(path, own_kind=None):
                     if own_kind:
                         allowed = NATIVE_CLASS if own_kind == "scheduler" else PROTOCOL_CLASS
                         require(allowed.fullmatch(identity) is not None, "unexpected own runtime class: " + identity)
-                        require(major == 69, "own runtime class must target exactly Java 25 (major 69)")
+                        require(major == expected_major, "own runtime class has wrong reviewed Java target")
                         # A native class may not reach other legacy Aurora packages
                         # through descriptors, literals, or CONSTANT_Class entries.
                         for ref in refs:
@@ -191,7 +194,8 @@ def inspect_jar(path, own_kind=None):
             **({"classes": sorted(classes)} if own_kind else {})}
 
 
-def verify(lib_dir, profile="scheduler"):
+def verify(lib_dir, profile="scheduler", java_profile="java25"):
+    require(java_profile in ("java25", "java26-runtime", "java26"), "Unknown Java profile")
     directory = Path(lib_dir)
     require(directory.is_absolute() and directory.is_dir() and directory.resolve() == directory,
             "lib-dir must be an absolute real directory")
@@ -209,7 +213,7 @@ def verify(lib_dir, profile="scheduler"):
         own["aurora-native-scheduler.jar"] = "scheduler"
     require(names == set(expected) | set(own), "missing or unexpected runtime JAR: "
             + ",".join(sorted(names ^ (set(expected) | set(own)))))
-    report = {"ok": True, "profile": profile, "javaTarget": 25, "jars": []}
+    report = {"ok": True, "profile": profile, "javaTarget": 26 if java_profile == "java26" else 25, "javaProfile": java_profile, "jars": []}
     for path in sorted(files):
         digest = hashlib.sha256(path.read_bytes()).hexdigest()
         if path.name in expected:
@@ -218,7 +222,7 @@ def verify(lib_dir, profile="scheduler"):
                 "kind": "own" if path.name in own else "external"}
         if path.name in expected:
             item["coordinate"] = COORDINATES[path.name]
-        item.update(inspect_jar(path, own.get(path.name)))
+        item.update(inspect_jar(path, own.get(path.name), java_profile))
         report["jars"].append(item)
     return report
 
@@ -247,9 +251,10 @@ def main():
     parser.add_argument("--lib-dir", required=True)
     parser.add_argument("--report", required=True)
     parser.add_argument("--profile", choices=("scheduler", "protocol"), default="scheduler")
+    parser.add_argument("--java-profile", choices=("java25", "java26-runtime", "java26"), default="java25")
     args = parser.parse_args()
     try:
-        report = verify(args.lib_dir, args.profile)
+        report = verify(args.lib_dir, args.profile, args.java_profile)
     except (BoundaryError, OSError, ValueError) as error:
         write_report(args.report, {"ok": False, "profile": args.profile, "error": str(error)})
         print("Native runtime boundary rejected: " + str(error), file=sys.stderr)

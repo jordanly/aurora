@@ -227,5 +227,27 @@ class ProbeTests(unittest.TestCase):
         self.assertEqual("prior ownership evidence", path.read_text())
 
 
+class JavaProfileTest(unittest.TestCase):
+    def test_reviewed_profiles_select_exact_compiler_runtime_and_target(self):
+        pins = json.loads((HERE / 'toolchains.json').read_text())
+        for profile, compiler, runtime, bytecode in (
+                ('java25', 25, 25, 69), ('java26-runtime', 25, 26, 69), ('java26', 26, 26, 70)):
+            selected = bootstrap.select_java_profile(pins, profile)
+            self.assertEqual(compiler, selected['java']['compilerVersionMajor'])
+            self.assertEqual(runtime, selected['java']['versionMajor'])
+            self.assertEqual(bytecode, selected['java']['bytecodeMajor'])
+            self.assertEqual({'go', 'gradle', 'java', 'runtime'}, set(selected['tools']))
+            self.assertIn('OpenJDK' + str(compiler) + 'U-jdk_', selected['tools']['java']['file'])
+            self.assertIn('OpenJDK' + str(runtime) + 'U-jre_', selected['tools']['runtime']['file'])
+            if runtime == 26:
+                self.assertEqual('deny', selected['java']['illegalFinalFieldMutation'])
+        self.assertEqual(25, bootstrap.select_java_profile(pins)['java']['versionMajor'])
+        self.assertEqual(25, pins['java']['versionMajor'])
+
+    def test_unreviewed_profile_cannot_select_arbitrary_java(self):
+        with self.assertRaises(bootstrap.BuildError):
+            bootstrap.select_java_profile({}, 'java27')
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -130,6 +130,24 @@ def bundle_path(root, relative):
     return path
 
 
+def java_profile(java):
+    """Accept historical bundles, or one explicit qualified compiler/runtime pair."""
+    require(isinstance(java, dict), "Invalid Java metadata")
+    if "profile" not in java:
+        require(java.get("versionMajor", 8) in (8, 25), "Unqualified legacy Java runtime")
+        return
+    profiles = {"java25": (25, 25, 69), "java26-runtime": (25, 26, 69),
+                "java26": (26, 26, 70)}
+    expected = profiles.get(java["profile"])
+    require(expected is not None and
+            (java.get("compilerVersionMajor"), java.get("versionMajor"), java.get("bytecodeMajor")) == expected,
+            "Java compiler/runtime/bytecode profile differs")
+    require(java.get("nativeAccess") == "ALL-UNNAMED" and java.get("illegalNativeAccess") == "deny",
+            "Java native access policy differs")
+    if java["versionMajor"] == 26:
+        require(java.get("illegalFinalFieldMutation") == "deny", "Java 26 mutation policy differs")
+
+
 def load_bundle(root):
     require(root.is_absolute(), "Bundle path must be absolute")
     native.safe_path(root)
@@ -144,6 +162,7 @@ def load_bundle(root):
         return result
     data = json.loads(manifest.read_text(), object_pairs_hook=unique)
     require(data["schema"] == 1 and data["architecture"] == "arm64", "Unsupported bundle profile")
+    java_profile(data.get("java", {}))
     require(data["sourceHashes"] == source_hashes(), "Bundle sources differ from this checkout")
     require(set(data["images"]) == {"scheduler", "agent", "scheduler-lab", "agent-lab", "tools"},
             "Missing or unexpected bundle images")
@@ -481,8 +500,12 @@ class Lab:
         return mounts
 
     def scheduler_args(self):
+        java = self.data.get("bundle", {}).get("java", {})
+        java_profile(java)
         flags = (["--enable-native-access=ALL-UNNAMED", "--illegal-native-access=deny"]
-                 if self.data.get("bundle", {}).get("java", {}).get("versionMajor", 0) >= 25 else [])
+                 if java.get("versionMajor", 0) >= 25 else [])
+        if java.get("versionMajor") == 26:
+            flags.append("--illegal-final-field-mutation=deny")
         return [BIN + "/cluster-helper", "keeper", "--", JAVA, *flags, "-Xms32m", "-Xmx192m",
                 "-XX:ActiveProcessorCount=2", "-Djava.io.tmpdir=/run/aurora-native", "-cp", "/opt/aurora/lib/*",
                 "org.apache.aurora.nativescheduler.NativeSchedulerMain", "--config", "/config/scheduler.json",

@@ -98,6 +98,9 @@ class CompatibilityIsolationTest(unittest.TestCase):
     def test_version_parsing_and_independent_native_access(self):
         self.assertEqual(8, compat.java_major('openjdk version "1.8.0_462"'))
         self.assertEqual(25, compat.java_major('openjdk version "25.0.4.1" 2026-08-18 LTS'))
+        self.assertEqual(26, compat.java_major('openjdk version "26.0.2.1" 2026-08-18'))
+        self.assertEqual(compat.native_flags(25) + ['--illegal-final-field-mutation=deny'],
+                         compat.native_flags(26))
         self.assertEqual([], compat.native_flags(8))
         self.assertEqual(['--enable-native-access=ALL-UNNAMED', '--illegal-native-access=deny'],
                          compat.native_flags(25))

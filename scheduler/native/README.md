@@ -11,7 +11,7 @@ build-support/native/native-build --output /absolute/new/bundle --cache /absolut
 
 The Java distribution is `BUNDLE/build/java/scheduler/install/aurora-native-scheduler`.
 The container runtime uses the separately pinned JRE at `BUNDLE/context/scheduler/jre`.
-All own classes target Java 25 (major 69). The build verifies the protocol runtime
+By default, own classes target Java 25 (major 69). The build verifies the protocol runtime
 dependency manifest and SQLite JDBC hash. Its launcher grants SQLite classpath
 JNI access with `--enable-native-access=ALL-UNNAMED` and denies other native access.
 
@@ -126,8 +126,14 @@ platform JNI libraries are explicitly permitted.
 Own JARs admit only the enumerated native scheduler, SQL core and native protocol
 classes, plus the protocol schema and JAR manifests. Qualification-only
 `NativeStoreTool` is compiled for existing SQL tests but excluded from production.
-Own classes must target Java 25 (class-file major 69). This is an artifact/content boundary check; it does
+Own classes must match the selected profile: Java 25 (major 69) by default, or
+Java 26 (major 70) for the explicit `java26` qualification profile. This boundary check does
 not replace behavioral tests or prove safety of arbitrary dynamically supplied code.
+
+The native builder also supports `--java-profile java26-runtime`, which keeps
+release-25 bytecode and runs tests/the packaged scheduler on Java 26. Both Java 26
+profiles use the pinned Temurin 26.0.2.1+1 runtime and strict final-field-mutation
+denial. See the build guide for the separate compiler/runtime matrix and evidence.
 
 JSON dependency reports are generated at:
 

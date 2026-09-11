@@ -14,19 +14,33 @@ plugins {
   id 'application'
 }
 
+def nativeJavaProfile = providers.gradleProperty('nativeJavaProfile').getOrElse('java25')
+if (!(nativeJavaProfile in ['java25', 'java26-runtime', 'java26'])) {
+  throw new GradleException('Unknown nativeJavaProfile')
+}
+def nativeCompileVersion = nativeJavaProfile == 'java26' ? 26 : 25
+def nativeRuntimeVersion = nativeJavaProfile == 'java25' ? 25 : 26
+def nativeRuntimeFlags = ['--enable-native-access=ALL-UNNAMED', '--illegal-native-access=deny']
+if (nativeRuntimeVersion == 26) {
+  nativeRuntimeFlags += '--illegal-final-field-mutation=deny'
+}
+
 // Toolchain provisioning is disabled by the portable builder. Only its verified
 // Temurin installation is eligible through the fixed Gradle installation path.
 java {
   toolchain {
-    languageVersion = JavaLanguageVersion.of(25)
+    languageVersion = JavaLanguageVersion.of(nativeCompileVersion)
     vendor = JvmVendorSpec.ADOPTIUM
   }
 }
 def nativeCompiler = javaToolchains.compilerFor(java.toolchain)
-def nativeLauncher = javaToolchains.launcherFor(java.toolchain)
+def nativeLauncher = javaToolchains.launcherFor {
+  languageVersion = JavaLanguageVersion.of(nativeRuntimeVersion)
+  vendor = JvmVendorSpec.ADOPTIUM
+}
 tasks.withType(JavaCompile).configureEach {
   javaCompiler = nativeCompiler
-  options.release = 25
+  options.release = nativeCompileVersion
   options.encoding = 'UTF-8'
 }
 tasks.withType(Test).configureEach {
@@ -35,11 +49,11 @@ tasks.withType(Test).configureEach {
   maxParallelForks = 1
   maxHeapSize = '192m'
   jvmArgs '-XX:ActiveProcessorCount=2'
-  jvmArgs '--enable-native-access=ALL-UNNAMED', '--illegal-native-access=deny'
+  jvmArgs nativeRuntimeFlags
 }
 tasks.withType(JavaExec).configureEach {
   javaLauncher = nativeLauncher
-  jvmArgs '--enable-native-access=ALL-UNNAMED', '--illegal-native-access=deny'
+  jvmArgs nativeRuntimeFlags
 }
 tasks.withType(AbstractArchiveTask).configureEach {
   preserveFileTimestamps = false
@@ -75,7 +89,7 @@ sourceSets.test.java {
 }
 application {
   mainClass = 'org.apache.aurora.nativescheduler.NativeSchedulerMain'
-  applicationDefaultJvmArgs = ['--enable-native-access=ALL-UNNAMED', '--illegal-native-access=deny']
+  applicationDefaultJvmArgs = nativeRuntimeFlags
 }
 tasks.named('test', Test) {
   systemProperty 'aurora.fixtures', file('../../protocol/native-v1alpha1/fixtures').absolutePath
@@ -115,7 +129,7 @@ def verifyNativeBoundary = tasks.register('verifyNativeBoundary', Exec) {
   inputs.file boundaryTool
   inputs.files runtimeJars, nativeJar.flatMap { it.archiveFile }
   commandLine 'python3', boundaryTool.asFile.absolutePath,
-      '--lib-dir', boundaryLib.get().asFile.absolutePath,
+      '--java-profile', nativeJavaProfile, '--lib-dir', boundaryLib.get().asFile.absolutePath,
       '--report', runtimeReport.get().asFile.absolutePath,
       '--profile', 'scheduler'
 }
@@ -125,7 +139,7 @@ def verifyInstalledNativeBoundary = tasks.register('verifyInstalledNativeBoundar
   onlyIf { install.get().state.failure == null }
   inputs.file boundaryTool
   commandLine 'python3', boundaryTool.asFile.absolutePath,
-      '--lib-dir', install.map { new File(it.destinationDir, 'lib') }.get().absolutePath,
+      '--java-profile', nativeJavaProfile, '--lib-dir', install.map { new File(it.destinationDir, 'lib') }.get().absolutePath,
       '--report', installedReport.get().asFile.absolutePath,
       '--profile', 'scheduler'
 }

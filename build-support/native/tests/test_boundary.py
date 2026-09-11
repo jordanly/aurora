@@ -85,6 +85,25 @@ class BoundaryTests(unittest.TestCase):
         jar(self.lib / "protocol.jar", {self.validator + ".class": class_file(self.validator),
                                         "schema.json": "{}"})
 
+    def test_profiles_enforce_exact_own_bytecode_and_reject_preview(self):
+        self.assertEqual(25, boundary.verify(self.lib, java_profile='java26-runtime')['javaTarget'])
+        with self.assertRaises(boundary.BoundaryError):
+            boundary.verify(self.lib, java_profile='java26')
+        jar(self.lib / 'aurora-native-scheduler.jar', {
+            self.main + '.class': class_file(self.main, major=70),
+            self.sql + '.class': class_file(self.sql, major=70)})
+        jar(self.lib / 'protocol.jar', {self.validator + '.class': class_file(self.validator, major=70),
+                                      'schema.json': '{}'})
+        self.assertEqual(26, boundary.verify(self.lib, java_profile='java26')['javaTarget'])
+        for profile in ('java25', 'java26-runtime', 'arbitrary'):
+            with self.assertRaises(boundary.BoundaryError):
+                boundary.verify(self.lib, java_profile=profile)
+        preview = bytearray(class_file(self.validator, major=70))
+        preview[4:6] = b'\xff\xff'
+        jar(self.lib / 'protocol.jar', {self.validator + '.class': preview, 'schema.json': '{}'})
+        with self.assertRaisesRegex(boundary.BoundaryError, 'preview'):
+            boundary.verify(self.lib, java_profile='java26')
+
     def test_exact_runtime_and_pinned_sqlite_jni_are_permitted(self):
         report = boundary.verify(self.lib)
         self.assertTrue(report["ok"])

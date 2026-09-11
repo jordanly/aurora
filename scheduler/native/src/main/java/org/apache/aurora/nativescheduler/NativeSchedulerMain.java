@@ -49,12 +49,7 @@ public final class NativeSchedulerMain {
       System.setProperty("sun.net.httpserver.maxRspTime","5");
       System.setProperty("sun.net.httpserver.maxReqHeaders","32");
       HttpsServer server=HttpsServer.create(new InetSocketAddress(listen[0],Integer.parseInt(listen[1])),16);
-      server.setHttpsConfigurator(new HttpsConfigurator(tls) {
-        @Override public void configure(HttpsParameters parameters) {
-          SSLParameters settings=tls.getDefaultSSLParameters(); settings.setNeedClientAuth(true);
-          parameters.setSSLParameters(settings);
-        }
-      });
+      configureTls(server,tls);
       ThreadPoolExecutor requests=new ThreadPoolExecutor(2,2,0,TimeUnit.MILLISECONDS,
           new ArrayBlockingQueue<Runnable>(16),new ThreadPoolExecutor.AbortPolicy());
       server.setExecutor(requests);
@@ -75,6 +70,14 @@ public final class NativeSchedulerMain {
       System.out.println("NATIVE_SCHEDULER_READY epoch="+engine.epoch);
       stopped.await();
     }
+  }
+  static void configureTls(HttpsServer server,SSLContext tls) {
+    server.setHttpsConfigurator(new HttpsConfigurator(tls) {
+      @Override public void configure(HttpsParameters parameters) {
+        SSLParameters settings=tls.getDefaultSSLParameters(); settings.setNeedClientAuth(true);
+        parameters.setSSLParameters(settings);
+      }
+    });
   }
   static String required(Map<String,String> options,String name) {
     String value=options.get(name); if(value==null) { throw new IllegalArgumentException("Missing "+name); } return value;
@@ -147,7 +150,7 @@ public final class NativeSchedulerMain {
     public HttpsTransport(SSLContext context) { sockets=context.getSocketFactory(); }
     @Override public JsonNode request(NativeConfig.Node node,String method,String path,JsonNode body,
         String epoch,String session) throws Exception {
-      HttpsURLConnection connection=(HttpsURLConnection)new URL(node.url+path).openConnection(Proxy.NO_PROXY);
+      HttpsURLConnection connection=(HttpsURLConnection)URI.create(node.url+path).toURL().openConnection(Proxy.NO_PROXY);
       connection.setSSLSocketFactory(sockets); // Platform hostname verification remains enabled.
       connection.setConnectTimeout(1000); connection.setReadTimeout(1500);
       connection.setInstanceFollowRedirects(false); connection.setRequestMethod(method);

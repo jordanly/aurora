@@ -354,6 +354,28 @@ class ClusterCtlTest(unittest.TestCase):
         self.assertIn("--enable-native-access=ALL-UNNAMED", self.lab.scheduler_args())
         self.assertIn("--illegal-native-access=deny", self.lab.scheduler_args())
 
+    def test_java26_profiles_reject_mixed_metadata_and_require_diagnostics(self):
+        for name, compiler, bytecode in (("java26-runtime", 25, 69), ("java26", 26, 70)):
+            java = {"profile": name, "compilerVersionMajor": compiler, "versionMajor": 26,
+                    "bytecodeMajor": bytecode, "nativeAccess": "ALL-UNNAMED",
+                    "illegalNativeAccess": "deny", "illegalFinalFieldMutation": "deny"}
+            self.lab.data["bundle"] = {"java": java}
+            self.assertIn("--illegal-final-field-mutation=deny", self.lab.scheduler_args())
+            for key, value in (("compilerVersionMajor", 8), ("bytecodeMajor", 52),
+                               ("illegalFinalFieldMutation", "warn"), ("profile", "arbitrary")):
+                self.lab.data["bundle"] = {"java": dict(java, **{key: value})}
+                with self.assertRaises(cluster.native.SmokeError): self.lab.scheduler_args()
+        self.lab.data["bundle"] = {"java": {"versionMajor": 26}}
+        with self.assertRaises(cluster.native.SmokeError): self.lab.scheduler_args()
+
+    def test_bad_java_profile_fails_bundle_load_before_docker_inspection(self):
+        directory, metadata = self.image_bundle()
+        metadata["java"] = {"versionMajor": 26}
+        (directory / "bundle.json").write_text(json.dumps(metadata))
+        with patch.object(cluster, "docker") as docker:
+            with self.assertRaises(cluster.native.SmokeError): cluster.load_bundle(directory)
+        docker.assert_not_called()
+
     def test_operation_lock_refreshes_manifest(self):
         stale = cluster.Lab(self.root)
         self.addCleanup(stale.release)

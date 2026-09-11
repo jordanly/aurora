@@ -52,6 +52,18 @@ class ImageVerifyTest(unittest.TestCase):
         report = self.verify(self.base + self.payload + [('etc/hostname', b'random-container')])
         self.assertTrue(report['ok'])
 
+    def test_java_profile_cannot_relax_payload_or_base_checks(self):
+        self.tar(self.root / 'image.tar', self.base + self.payload)
+        for profile in ('java25', 'java26-runtime', 'java26'):
+            result = image.verify(self.root / 'image.tar', self.expected, self.root / 'base.tar', profile)
+            self.assertEqual(profile, result['javaProfile'])
+        with self.assertRaisesRegex(ValueError, 'Unknown Java'):
+            image.verify(self.root / 'image.tar', self.expected, self.root / 'base.tar', 'java27')
+        self.tar(self.root / 'image.tar', self.base + [('opt/aurora/bin/agent', b'changed')])
+        for profile in ('java25', 'java26-runtime', 'java26'):
+            with self.assertRaises(ValueError):
+                image.verify(self.root / 'image.tar', self.expected, self.root / 'base.tar', profile)
+
     def test_missing_and_tampered_payload(self):
         for payload in ([], [('opt/aurora/bin/agent', b'tamper')]):
             with self.subTest(payload=payload), self.assertRaises(ValueError):

@@ -1,4 +1,4 @@
-# Native runtime packaging (Java 25)
+# Native runtime packaging (Java 25 default)
 
 This is the supported packaging and qualification lane for the native cluster MVP.
 It builds a Java scheduler with SQLite and a Go agent with bbolt. The profile
@@ -172,5 +172,73 @@ Actual TLS handshakes and workload execution are covered by `native-qualify`.
 The runtime remains seven external JARs: Jackson core/databind 2.22.2 and
 annotations 2.22, networknt 2.0.7, SLF4J API/NOP 2.0.19, SQLite JDBC 3.53.4.0.
 The Jackson BOM aligns its family; YAML, date-time and optional alternate regex
-engines remain outside this JSON-only profile. Broader launcher/HTTP qualification
-continues in JAVA-03; JMH, Thrift and legacy-root work are outside this profile.
+engines remain outside this JSON-only profile. JMH, Thrift and legacy-root work
+are outside this profile.
+
+## Java 26 qualification and installed launchers
+
+[JAVA-03](../../docs/reimagining/JAVA03_STATUS.md) tracks the HTTP/auth, launcher,
+modern-JVM and measurement gates. Java 25 remains the deployment default.
+The builder accepts only these three profiles:
+
+| `--java-profile` | Compiler / bytecode target | Test and packaged runtime |
+| --- | --- | --- |
+| `java25` (default) | Temurin 25 / release 25, major 69 | Temurin 25.0.4.1+1 |
+| `java26-runtime` | Temurin 25 / release 25, major 69 | Temurin 26.0.2.1+1 |
+| `java26` | Temurin 26 / release 26, major 70 | Temurin 26.0.2.1+1 |
+
+All JDK/JRE archives are pinned in `toolchains.json`; only the selected tools
+are downloaded. Explicit Gradle toolchains select the compiler and test JVM
+independently. No preview bytecode is accepted. Java 26 tests, JavaExec tasks,
+generated launchers, container entrypoints and lab schedulers also use
+`--illegal-final-field-mutation=deny`. Native access retains the existing explicit
+SQLite classpath permission and denial of other native access.
+
+Use distinct new bundle and lab paths for each profile:
+
+```sh
+build-support/native/native-build --java-profile java26-runtime \
+  --output /absolute/java26-runtime-bundle --cache /absolute/native-cache
+build-support/native/native-launcher-check \
+  --bundle /absolute/java26-runtime-bundle --output /absolute/launcher-evidence
+build-support/native/native-qualify \
+  --bundle /absolute/java26-runtime-bundle --run-root /absolute/java26-runtime-lab
+```
+
+`native-launcher-check` exercises the unmodified installed protocol and scheduler
+scripts with the bundle's JRE. It verifies the installed content against the
+reproducibility report, checks protocol fixtures, fresh/repeated SQLite inspection
+and invalid CLI arguments, and preserves its private evidence. Container-rooted
+production entrypoints are checked separately during `native-build`.
+
+## Bounded performance comparison
+
+```sh
+build-support/native/native-benchmark --bundle /absolute/native-bundle \
+  --output /absolute/benchmark-evidence
+```
+
+The default runs three fresh scheduler/two-agent trials, six completed batches
+and two HTTP replicas per trial, then scheduler crash recovery, cancellation and
+cleanup. It records raw startup, API, convergence and backup-ACK timings, sampled
+RSS/anonymous RSS/thread/FD counts, GC pause logs and a HotSpot native memory
+tracking summary after recovery/cancellation. All trials use the same one-CPU
+container limit, 32–192 MiB heap and two JVM active processors. This Pi has no
+hard memory cgroup limit. GC/NMT instrumentation is identical across compared
+profiles and appears in each recorded scheduler command.
+
+For an earlier bundle, pass `--source-tree /absolute/matching-source-checkout`.
+That checkout must match the old bundle's source hashes; the current benchmark
+script's own hash is recorded separately. Use the same benchmark script for
+both sides, run measurements sequentially without builds or other qualification
+labs, and keep the existing MVP unchanged. Output paths must be new and private;
+only each trial's recorded containers/networks are removed. Failures retain their
+state and evidence.
+
+These are exploratory Pi measurements, not a throughput or production-SLO gate.
+API timings include fresh mTLS connections. Submit/backup ACK time includes
+durable storage work but does not isolate SQL/fsync latency. Convergence includes
+the 50 ms polling interval and controller delay; physical HTTP probes follow
+reported readiness. NMT adds overhead and does not account for every third-party
+native allocation. Samples are not lifetime peaks; report per-trial variation
+and host temperature/load alongside comparisons before setting regression budgets.

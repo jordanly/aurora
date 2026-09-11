@@ -316,13 +316,20 @@ public class NativeSqlStoreTest {
     rejects(() -> open(real));
   }
   @Test public void killedProcessRecoversBeforeAndAfterCommit() throws Exception {
-    String java = System.getProperty("java.home") + "/bin/java";
+    String javaExecutable = System.getProperty("java.home") + "/bin/java";
     String classpath = System.getProperty("java.class.path");
     for (String mode : new String[] {"crash-before", "crash-after"}) {
       Path dir = temporary.newFolder().toPath();
-      Process child = new ProcessBuilder(java, "--enable-native-access=ALL-UNNAMED",
-          "--illegal-native-access=deny", "-cp", classpath,
-          NativeStoreTool.class.getName(), mode, dir.toString()).inheritIO().start();
+      java.util.List<String> command = new java.util.ArrayList<>();
+      command.add(javaExecutable);
+      command.add("--enable-native-access=ALL-UNNAMED");
+      command.add("--illegal-native-access=deny");
+      if (Integer.parseInt(System.getProperty("java.specification.version")) >= 26) {
+        command.add("--illegal-final-field-mutation=deny");
+      }
+      command.addAll(java.util.Arrays.asList("-cp", classpath,
+          NativeStoreTool.class.getName(), mode, dir.toString()));
+      Process child = new ProcessBuilder(command).inheritIO().start();
       assertTrue(child.waitFor(20, TimeUnit.SECONDS));
       assertEquals("crash-before".equals(mode) ? 71 : 72, child.exitValue());
       try (NativeSqlStore store = new NativeSqlStore(dir, "lab", "recovery-1")) {

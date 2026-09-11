@@ -1,0 +1,171 @@
+#!/usr/bin/env python3
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+# Unless required by applicable law or agreed to in writing, software distributed
+# under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+# CONDITIONS OF ANY KIND, either express or implied. See the License for the
+# specific language governing permissions and limitations under the License.
+"""Run original generated native launchers from verified installed distributions."""
+import argparse
+import hashlib
+import importlib.machinery
+import importlib.util
+import json
+from pathlib import Path
+import shlex
+import subprocess
+import sys
+
+HERE = Path(__file__).resolve().parent
+ROOT = HERE.parents[1]
+LIMIT = 1048576
+
+
+def need(ok, message):
+    if not ok:
+        raise ValueError(message)
+
+
+def helper():
+    loader = importlib.machinery.SourceFileLoader('launcher_compat', str(HERE / 'native-jvm-compat'))
+    spec = importlib.util.spec_from_loader(loader.name, loader)
+    module = importlib.util.module_from_spec(spec)
+    loader.exec_module(module)
+    return module
+
+
+def installed(compat, directory, expected, immutable):
+    compat.safe(directory)
+    need(directory.is_dir(), 'Missing installed distribution')
+    digest = hashlib.sha256()
+    for path in sorted(directory.rglob('*')):
+        compat.safe(path)
+        need(path.is_dir() or path.is_file(), 'Special file in installed distribution')
+        if path.is_file():
+            value = compat.sha(path)
+            immutable[str(path)] = value
+            digest.update(str(path.relative_to(directory)).encode() + b'\0' + bytes.fromhex(value))
+    need(digest.hexdigest() == expected, 'Installed distribution content differs')
+
+
+def execute(argv, output, env, report, name, expected=0):
+    record = {'argv': list(map(str, argv))}
+    report['commands'][name] = record
+    try:
+        result = subprocess.run(argv, cwd=output, env=env, capture_output=True, timeout=30)
+        need(len(result.stdout) <= LIMIT and len(result.stderr) <= LIMIT, 'Launcher output too large')
+        record.update(exitCode=result.returncode,
+            stdoutSha256=hashlib.sha256(result.stdout).hexdigest(),
+            stderrSha256=hashlib.sha256(result.stderr).hexdigest())
+        (output / (name + '.stdout')).write_bytes(result.stdout)
+        (output / (name + '.stderr')).write_bytes(result.stderr)
+        need(result.returncode == expected if expected is not None else result.returncode != 0,
+             name + ' returned unexpected exit code')
+        return result
+    except BaseException as error:
+        record['error'] = str(error)
+        raise
+
+
+def finish(compat, output, immutable, report):
+    try:
+        unchanged = all(compat.safe(Path(path)).is_file() and compat.sha(Path(path)) == value
+                        for path, value in immutable.items())
+    except (OSError, ValueError) as error:
+        unchanged = False
+        report['inputAuditError'] = str(error)
+    report['originalInputsUnchanged'] = unchanged
+    if not unchanged:
+        report.update(ok=False, error='Original launcher inputs changed or could not be verified')
+    (output / 'launcher-check.json').write_text(json.dumps(report, indent=2, sort_keys=True) + '\n')
+    need(unchanged, 'Original launcher inputs changed or could not be verified')
+
+
+def check(args):
+    compat = helper()
+    bundle, output = compat.safe(args.bundle), compat.safe(args.output)
+    need(not output.exists(), 'Output must be a new private directory')
+    need(not output.is_relative_to(bundle) and not bundle.is_relative_to(output), 'Output must be separate from bundle')
+    java, _libs, immutable = compat.bundle(bundle)
+    manifest = json.loads((bundle / 'bundle.json').read_text())
+    major = manifest['java']['versionMajor']
+    need(major in (25, 26), 'Launcher check requires a Java25/26 bundle')
+    repro = json.loads((bundle / 'reports/java-reproducibility.json').read_text())
+    need(repro['ok'] and repro['bytecodeMajor'] == manifest['java']['bytecodeMajor'], 'Wrong distribution profile')
+    directories = {'protocol': bundle / 'build/java/protocol/install/protocol',
+                   'scheduler': bundle / 'build/java/scheduler/install/aurora-native-scheduler'}
+    for role, directory in directories.items():
+        installed(compat, directory, repro['installedTrees'][role], immutable)
+    fixtures = ROOT / 'protocol/native-v1alpha1/fixtures'
+    for path in sorted(fixtures.rglob('*')):
+        compat.safe(path)
+        if path.is_file():
+            immutable[str(path)] = compat.sha(path)
+    golden = json.loads((fixtures / 'golden.json').read_text())
+    config = bundle / 'reports/entrypoint-config.json'
+    need(str(config) in immutable, 'Entrypoint config is not verified')
+    output.mkdir(mode=0o700, parents=True)
+    report = {'schema': 1, 'ok': False, 'bundleSha256': compat.sha(bundle / 'bundle.json'),
+              'sourceCommit': manifest['sourceCommit'], 'java': manifest['java'],
+              'installedTrees': repro['installedTrees'], 'commands': {}, 'inputHashes': immutable,
+              'scriptSha256': compat.sha(Path(__file__).resolve())}
+    try:
+        (output / 'tmp').mkdir(mode=0o700)
+        env = {'PATH': '/usr/bin:/bin', 'LANG': 'C.UTF-8', 'LC_ALL': 'C.UTF-8',
+               'JAVA_HOME': str(java.parent.parent)}
+        version = execute([str(java), '-version'], output, env, report, 'java-version')
+        text = (version.stdout + version.stderr).decode('utf-8')
+        need(compat.java_major(text) == major and manifest['java']['release'] in text, 'Actual Java release differs')
+        flags = ['-Xms32m', '-Xmx192m', '-XX:ActiveProcessorCount=2',
+                 '-Djava.io.tmpdir=' + str(output / 'tmp'), *compat.native_flags(major)]
+        # Gradle's generated shell launcher parses quoted JAVA_OPTS; no shell is used here.
+        env['JAVA_OPTS'] = shlex.join(flags)
+        report['jvmArgs'] = flags
+        protocol = directories['protocol'] / 'bin/protocol'
+        for group, count in (('valid', 13), ('invalid', 27), ('parser-invalid', 12)):
+            paths = sorted((fixtures / group).glob('*.json'))
+            need(len(paths) == count, 'Protocol fixture inventory differs')
+            for path in paths:
+                result = execute([str(protocol), str(path)], output, env, report,
+                                 'protocol-' + group + '-' + path.stem, 0 if group == 'valid' else 2)
+                if group == 'valid':
+                    expected = golden[path.stem]
+                    need(result.stdout == expected['canonical'].encode('ascii') + b'\n'
+                         and hashlib.sha256(result.stdout[:-1]).hexdigest() == expected['sha256'],
+                         'Protocol canonical/hash golden differs: ' + path.name)
+                    need(not result.stderr, 'Successful protocol launcher emitted stderr')
+        report['protocol'] = {'validAndHash': 13, 'invalid': 27, 'parserInvalid': 12}
+        scheduler = directories['scheduler'] / 'bin/aurora-native-scheduler'
+        command = [str(scheduler), '--inspect-only', '--config', str(config), '--state', str(output / 'state')]
+        first = execute(command, output, env, report, 'scheduler-first')
+        second = execute(command, output, env, report, 'scheduler-second')
+        state = json.loads(first.stdout)
+        need(state == json.loads(second.stdout) and state['jobs'] == state['attempts'] == state['commands'] == []
+             and state['epoch'] == '0', 'Inspection changed empty state or epoch')
+        need(not first.stderr and not second.stderr, 'Successful scheduler launcher emitted stderr')
+        for name, argv in (('unknown', command[:1] + ['--unknown']),
+                           ('missing-state', command[:-2]),
+                           ('missing-config', command[:2] + command[-2:]),
+                           ('relative-state', command[:-1] + ['relative-state'])):
+            execute(argv, output, env, report, 'scheduler-' + name, None)
+        need(not (output / 'relative-state').exists(), 'Rejected relative state path was created')
+        report['scheduler'] = {'emptyEpoch': '0', 'repeatedStateEqual': True, 'stderrEmpty': True, 'negativeCases': 4}
+        report['ok'] = True
+    except BaseException as error:
+        report.update(ok=False, error=str(error))
+        raise
+    finally:
+        finish(compat, output, immutable, report)
+    print(json.dumps({'ok': True, 'report': str(output / 'launcher-check.json'), 'commands': len(report['commands'])}))
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--bundle', type=Path, required=True)
+    parser.add_argument('--output', type=Path, required=True)
+    try:
+        check(parser.parse_args())
+    except (OSError, ValueError, KeyError, subprocess.SubprocessError) as error:
+        print('native-launcher-check: ' + str(error), file=sys.stderr)
+        sys.exit(2)

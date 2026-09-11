@@ -26,6 +26,18 @@
       "url": "https://github.com/adoptium/temurin25-binaries/releases/download/jdk-25.0.4.1%2B1/OpenJDK25U-jre_aarch64_linux_hotspot_25.0.4.1_1.tar.gz",
       "sha256": "34828cbb93ed31c281c84ecb31ddab655d11a802f263c1fc019d42e9e0230fed",
       "directory": "jdk-25.0.4.1+1-jre"
+    },
+    "java26": {
+      "file": "OpenJDK26U-jdk_aarch64_linux_hotspot_26.0.2.1_1.tar.gz",
+      "url": "https://github.com/adoptium/temurin26-binaries/releases/download/jdk-26.0.2.1%2B1/OpenJDK26U-jdk_aarch64_linux_hotspot_26.0.2.1_1.tar.gz",
+      "sha256": "9f6ad9856a7dd880061adaf88db3c4da0642113d59b7960a892f0e551c0c948c",
+      "directory": "jdk-26.0.2.1+1"
+    },
+    "runtime26": {
+      "file": "OpenJDK26U-jre_aarch64_linux_hotspot_26.0.2.1_1.tar.gz",
+      "url": "https://github.com/adoptium/temurin26-binaries/releases/download/jdk-26.0.2.1%2B1/OpenJDK26U-jre_aarch64_linux_hotspot_26.0.2.1_1.tar.gz",
+      "sha256": "9e1527681ae4a615044c88435d2c1a9faf1fd5c7baaf9514a4a4207608150087",
+      "directory": "jdk-26.0.2.1+1-jre"
     }
   },
   "agentRuntimeModules": {
@@ -41,5 +53,14 @@
     "bytecodeMajor": 69,
     "nativeAccess": "ALL-UNNAMED",
     "illegalNativeAccess": "deny"
+  },
+  "java26": {
+    "versionMajor": 26,
+    "release": "26.0.2.1+1",
+    "vendor": "Eclipse Adoptium",
+    "bytecodeMajor": 70,
+    "nativeAccess": "ALL-UNNAMED",
+    "illegalNativeAccess": "deny",
+    "illegalFinalFieldMutation": "deny"
   }
 }

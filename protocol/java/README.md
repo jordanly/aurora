@@ -60,7 +60,7 @@ Maven artifact set is checked against
 `runtime-dependencies.sha256` before tests or installation. networknt's 2.x line
 supports Java 8 and Jackson 2; YAML/date-time support is omitted because this
 contract uses JSON and no date-time formats. These artifacts were compiled and
-executed with the verified ARM64 Temurin 25 toolchain.
+executed with the verified ARM64 Temurin 25 toolchain by default.
 [Upstream compatibility and API documentation](https://github.com/networknt/json-schema-validator),
 [published dependency metadata](https://repo.maven.apache.org/maven2/com/networknt/json-schema-validator/2.0.7/json-schema-validator-2.0.7.pom)
 
@@ -69,7 +69,7 @@ executed with the verified ARM64 Temurin 25 toolchain.
 `-PnativeBuildRoot=/absolute/build` sets this project's build directory to
 `/absolute/build/protocol`, including when it is the native scheduler's subproject.
 Without the property, `.pi-tools/protocol-java-dist` remains the default. Relative
-roots reject. JAVA-01 uses Gradle 9.7.1, `--release 25`, and exact class-file
+roots reject. The default profile uses Gradle 9.7.1, `--release 25`, and exact class-file
 major version 69. The build JDK and separate runtime JRE are pinned Temurin
 25.0.4.1+1; the runtime retains the Java compiler API/JVM JIT while excluding
 `javac` and source compiler tools. The protocol’s six external JAR pins and native

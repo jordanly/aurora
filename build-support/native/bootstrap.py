@@ -7,6 +7,7 @@
 # specific language governing permissions and limitations under the License.
 """Checksum-pinned native build tools; no reliance on a previous checkout's tools."""
 import hashlib
+import json
 import os
 from pathlib import Path, PurePosixPath
 import shutil
@@ -108,6 +109,25 @@ def extract(archive, destination):
             else:
                 shutil.copyfile(source, target)
                 shutil.copymode(source, target)
+
+
+JAVA_PROFILES = ('java25', 'java26-runtime', 'java26')
+
+
+def select_java_profile(pins, profile='java25'):
+    """Select only reviewed compiler/runtime combinations, with Java 25 default."""
+    require(profile in JAVA_PROFILES, 'Unknown Java qualification profile')
+    selected = json.loads(json.dumps(pins))
+    modern_runtime = profile != 'java25'
+    modern_compiler = profile == 'java26'
+    selected['tools'] = {key: pins['tools'][key] for key in ('go', 'gradle')}
+    selected['tools']['java'] = pins['tools']['java26' if modern_compiler else 'java']
+    selected['tools']['runtime'] = pins['tools']['runtime26' if modern_runtime else 'runtime']
+    selected['java'] = dict(pins['java26' if modern_runtime else 'java'])
+    compiler = pins['java26' if modern_compiler else 'java']
+    selected['java'].update(profile=profile, compilerVersionMajor=compiler['versionMajor'],
+                            compilerRelease=compiler['release'], bytecodeMajor=70 if modern_compiler else 69)
+    return selected
 
 
 def get_tools(pins, cache, work, seed=None, offline=False):

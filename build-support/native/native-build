@@ -23,7 +23,7 @@ import subprocess
 import sys
 import time
 
-from bootstrap import BuildError, get_tools, real_path, require, sha
+from bootstrap import BuildError, get_tools, real_path, require, sha, select_java_profile, JAVA_PROFILES
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
@@ -166,6 +166,7 @@ def images(output, context, pins, reports, offline):
         reference = tag_prefix + role
         run(['docker', 'build', '--network', 'none', '--platform', pins['platform'], '--pull=false',
              '--label', 'com.aurora.native.role=' + role,
+             '--label', 'com.aurora.native.java-profile=' + pins['java']['profile'],
              '--label', 'com.aurora.native.source=' + sha(reports / 'sources.json'),
              '--build-arg', ('RUNTIME_IMAGE=' if role.endswith('-lab') else 'BASE_IMAGE=') + parent,
              '-f', context / dockerfile, '-t', reference, context], log=reports / (role + '-build.log'))
@@ -190,7 +191,7 @@ def images(output, context, pins, reports, offline):
         probe = Probe(item['Id'], reports, role)
         try:
             run(['docker', 'export', '--output', archive, probe.id])
-            run([sys.executable, HERE / 'verify-image', '--archive', archive, '--expected', expected,
+            run([sys.executable, HERE / 'verify-image', '--java-profile', pins['java']['profile'], '--archive', archive, '--expected', expected,
                  '--base', base_archive, '--report', reports / (role + '-boundary.json')])
         finally:
             probe.close()
@@ -295,7 +296,7 @@ def build(args):
         context.mkdir()
         work = output / 'build'
         work.mkdir()
-        pins = json.loads((HERE / 'toolchains.json').read_text())
+        pins = select_java_profile(json.loads((HERE / 'toolchains.json').read_text()), args.java_profile)
         sources = cluster.source_hashes()
         write(reports / 'sources.json', sources)
         write(reports / 'toolchains.json', pins)
@@ -314,7 +315,7 @@ def build(args):
         for role in ('java', 'runtime'):
             release = (tools[role] / 'release').read_text()
             match = re.search(r'^JAVA_VERSION="([^"]+)"$', release, re.MULTILINE)
-            require(match is not None and int(match[1].split('.')[0]) == pins['java']['versionMajor'],
+            require(match is not None and match[1] == pins['java']['compilerRelease' if role == 'java' else 'release'].split('+')[0],
                     'Java archive release differs from selected toolchain')
             versions[role] = {'version': match[1], 'releaseSha256': sha(tools[role] / 'release'),
                               'output': run([tools[role] / 'bin/java', '--version'], env=env)}
@@ -333,7 +334,8 @@ def build(args):
         gradle = [tools['gradle'] / 'bin/gradle', '--no-daemon', '--max-workers=2', '--warning-mode=fail',
                   '-Dorg.gradle.java.installations.auto-detect=false',
                   '-Dorg.gradle.java.installations.auto-download=false',
-                  '-Dorg.gradle.java.installations.paths=' + str(tools['java']),
+                  '-Dorg.gradle.java.installations.paths=' + str(tools['java']) + ',' + str(tools['runtime']),
+                  '-PnativeJavaProfile=' + args.java_profile,
                   '-Dorg.gradle.java.home=' + str(tools['java']),
                   '-Dorg.gradle.jvmargs=-Xmx256m -XX:MaxMetaspaceSize=192m -XX:ActiveProcessorCount=2 '
                   '-Dfile.encoding=UTF-8 --enable-native-access=ALL-UNNAMED']
@@ -354,10 +356,10 @@ def build(args):
         shutil.copytree(tools['runtime'], scheduler / 'jre')
         shutil.copytree(work / 'java/scheduler/install/aurora-native-scheduler/lib', scheduler / 'lib')
         (scheduler / 'bin').mkdir()
-        shutil.copy2(HERE / 'images/scheduler-entrypoint', scheduler / 'bin/aurora-scheduler')
+        shutil.copy2(HERE / ('images/scheduler-entrypoint-java26' if pins['java']['versionMajor'] == 26 else 'images/scheduler-entrypoint'), scheduler / 'bin/aurora-scheduler')
         (scheduler / 'bin/aurora-scheduler').chmod(0o555)
         run([sys.executable, HERE / 'verify-boundary', '--lib-dir', scheduler / 'lib',
-             '--report', reports / 'java-boundary.json'])
+             '--java-profile', args.java_profile, '--report', reports / 'java-boundary.json'])
         go = tools['go'] / 'bin/go'
         for name, relative, target in (
                 ('agent', 'agent', 'agent/aurora-agent'),
@@ -416,6 +418,7 @@ def main():
     parser.add_argument('--output', type=Path, required=True, help='New absolute bundle directory')
     parser.add_argument('--cache', type=Path, default=ROOT / '.cache/aurora-native')
     parser.add_argument('--seed-archives', type=Path, help='Optional checksum-verified archive download seed')
+    parser.add_argument('--java-profile', choices=JAVA_PROFILES, default='java25')
     parser.add_argument('--offline', action='store_true', help='Require cached archives, modules, jars and base image')
     args = parser.parse_args()
     try:
