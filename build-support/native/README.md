@@ -208,7 +208,9 @@ build-support/native/native-qualify \
 `native-launcher-check` exercises the unmodified installed protocol and scheduler
 scripts with the bundle's JRE. It verifies the installed content against the
 reproducibility report, checks protocol fixtures, fresh/repeated SQLite inspection
-and invalid CLI arguments, and preserves its private evidence. Container-rooted
+and invalid CLI arguments, and preserves its private evidence. Protocol checks
+also accept a valid document padded to exactly 1 MiB and reject 1 MiB + 1 byte
+with exit 2, empty stdout and the exact redacted error. Container-rooted
 production entrypoints are checked separately during `native-build`.
 
 ## Bounded performance comparison

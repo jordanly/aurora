@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -42,9 +43,9 @@ public final class ProtocolValidator {
   public static final int MAX_BYTES = 1024 * 1024;
   private static final BigInteger MAX_INTEGER = new BigInteger("9007199254740991");
   private static final BigInteger MAX_COUNTER = new BigInteger("18446744073709551615");
-  private static final Set<String> COUNTERS = new HashSet<>(Arrays.asList(
+  private static final Set<String> COUNTERS = Set.of(
       "revision", "desiredRevision", "schedulerEpoch", "sequence", "cursor",
-      "generation", "watermark", "committedCursor"));
+      "generation", "watermark", "committedCursor");
   private final ObjectMapper mapper;
   private final Schema schema;
 
@@ -267,11 +268,7 @@ public final class ProtocolValidator {
   private static String hash(byte[] bytes) {
     try {
       byte[] digest = MessageDigest.getInstance("SHA-256").digest(bytes);
-      StringBuilder result = new StringBuilder();
-      for (byte value : digest) {
-        result.append(String.format("%02x", value & 0xff));
-      }
-      return result.toString();
+      return HexFormat.of().formatHex(digest);
     } catch (NoSuchAlgorithmException impossible) {
       throw new AssertionError(impossible);
     }

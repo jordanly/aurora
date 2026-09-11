@@ -11,10 +11,9 @@
  */
 package org.apache.aurora.nativeprotocol;
 
-import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.nio.file.Path;
 
 /** Local protocol conformance CLI; canonical bytes on success, no payload in errors. */
 public final class ProtocolTool {
@@ -24,18 +23,14 @@ public final class ProtocolTool {
       if (args.length != 1) {
         throw new IllegalArgumentException("usage: protocol document.json");
       }
-      ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-      try (InputStream stream = Files.newInputStream(Paths.get(args[0]))) {
-        byte[] block = new byte[4096];
-        int count;
-        while ((count = stream.read(block)) != -1) {
-          if (bytes.size() + count > ProtocolValidator.MAX_BYTES) {
-            throw new IllegalArgumentException("document exceeds size limit");
-          }
-          bytes.write(block, 0, count);
+      byte[] data;
+      try (InputStream stream = Files.newInputStream(Path.of(args[0]))) {
+        data = stream.readNBytes(ProtocolValidator.MAX_BYTES + 1);
+        if (data.length > ProtocolValidator.MAX_BYTES) {
+          throw new IllegalArgumentException("document exceeds size limit");
         }
       }
-      ProtocolValidator.Message message = new ProtocolValidator().validate(bytes.toByteArray());
+      ProtocolValidator.Message message = new ProtocolValidator().validate(data);
       System.out.write(message.canonicalBytes());
       System.out.write('\n');
     } catch (Exception error) {

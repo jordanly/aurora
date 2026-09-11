@@ -34,15 +34,11 @@ final class Json {
     return parse(data.getBytes(StandardCharsets.UTF_8));
   }
   static byte[] read(InputStream input) throws IOException {
-    ByteArrayOutputStream out = new ByteArrayOutputStream();
-    byte[] buffer = new byte[8192];
-    for (int count; (count = input.read(buffer)) != -1;) {
-      if (out.size() + count > LIMIT) {
-        throw new IOException("Body too large");
-      }
-      out.write(buffer, 0, count);
+    byte[] data = input.readNBytes(LIMIT + 1);
+    if (data.length > LIMIT) {
+      throw new IOException("Body too large");
     }
-    return out.toByteArray();
+    return data;
   }
   static ObjectNode object() { return MAPPER.createObjectNode(); }
   static ArrayNode array() { return MAPPER.createArrayNode(); }
@@ -62,11 +58,7 @@ final class Json {
   static String canonical(JsonNode value) { return sorted(value).toString(); }
   static String sha(String value) throws Exception {
     byte[] digest = MessageDigest.getInstance("SHA-256").digest(value.getBytes(StandardCharsets.UTF_8));
-    StringBuilder result = new StringBuilder();
-    for (byte b : digest) {
-      result.append(String.format(Locale.ROOT, "%02x", b & 255));
-    }
-    return result.toString();
+    return HexFormat.of().formatHex(digest);
   }
   static String string(JsonNode node, String field) {
     if (!node.path(field).isTextual()) { throw new IllegalArgumentException("Missing string: " + field); }

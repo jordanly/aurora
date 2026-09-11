@@ -136,6 +136,25 @@ def check(args):
                          'Protocol canonical/hash golden differs: ' + path.name)
                     need(not result.stderr, 'Successful protocol launcher emitted stderr')
         report['protocol'] = {'validAndHash': 13, 'invalid': 27, 'parserInvalid': 12}
+        # Exercise the original packaged CLI with otherwise valid documents at
+        # both sides of its byte limit; padding must not change canonical output.
+        canonical = golden['ack']['canonical'].encode('ascii')
+        need(len(canonical) < LIMIT, 'Boundary fixture no longer fits')
+        report['protocolBounds'] = {}
+        for name, size in (('exact-limit', LIMIT), ('over-limit', LIMIT + 1)):
+            path = output / ('protocol-' + name + '.json')
+            path.write_bytes(canonical + b' ' * (size - len(canonical)))
+            immutable[str(path)] = compat.sha(path)
+            report['protocolBounds'][name] = {'bytes': size, 'sha256': immutable[str(path)]}
+            result = execute([str(protocol), str(path)], output, env, report,
+                             'protocol-' + name, 0 if size == LIMIT else 2)
+            if size == LIMIT:
+                need(result.stdout == canonical + b'\n' and not result.stderr,
+                     'Exact-limit document changed canonical output or emitted stderr')
+            else:
+                need(not result.stdout and result.stderr ==
+                     b'native protocol validation failed (IllegalArgumentException)\n',
+                     'Oversized document emitted partial output or changed redacted error')
         scheduler = directories['scheduler'] / 'bin/aurora-native-scheduler'
         command = [str(scheduler), '--inspect-only', '--config', str(config), '--state', str(output / 'state')]
         first = execute(command, output, env, report, 'scheduler-first')
