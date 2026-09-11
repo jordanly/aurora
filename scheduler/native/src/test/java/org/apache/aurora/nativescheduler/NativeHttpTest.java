@@ -144,6 +144,7 @@ public class NativeHttpTest {
         try(Socket probe=new Socket()) {
           probe.connect(new InetSocketAddress("127.0.0.1",port),100);
         } catch(ConnectException expected) { listenerClosed=true; }
+          catch(SocketException closingConnection) { /* A reset can precede listener refusal. */ }
         if(!listenerClosed) { Thread.sleep(5); }
       }
       assertTrue("Server stop did not close its listener",listenerClosed);
