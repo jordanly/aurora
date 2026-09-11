@@ -101,15 +101,15 @@ Failed/interrupted backups are not success artifacts and are never overwritten.
 A supplied absolute build root moves **both** isolated Java projects' outputs:
 
 ```sh
-gradle -p scheduler/native -PnativeBuildRoot=/absolute/build test installDist
+./gradlew -PnativeBuildRoot=/absolute/build check installDist
 ```
 
 The distribution is `/absolute/build/scheduler/install/aurora-native-scheduler`;
-protocol build output is `/absolute/build/protocol`. Relative roots reject. Without
-this property, the existing `.pi-tools/native-scheduler-dist` and
-`.pi-tools/protocol-java-dist` defaults remain. JAVA-01 uses Gradle 9.7.1 and
-Temurin 25.0.4.1+1. This project includes only `protocol/java`; it does not configure
-or invoke the legacy root build, Thrift generators, frontend, or Mesos tasks.
+protocol build output is `/absolute/build/protocol`. Relative roots reject. The
+root launcher defaults to `.cache/java11-root-build/build/{scheduler,protocol}`
+(or the corresponding directory under `AURORA_NATIVE_CACHE`). It pins Gradle 9.7.1
+and Temurin 25.0.4.1+1 by default. The root graph contains only the maintained
+scheduler and protocol projects. See the [root build guide](../../build-support/native/README.md).
 
 `test`, `check`, and `installDist` require the native runtime boundary gate.
 `installDist` also verifies the actual copied `lib` directory after installation.
