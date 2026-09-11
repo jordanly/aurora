@@ -17,9 +17,12 @@ content-verified dependency boundaries. Use the [native build and qualification
 commands](../../build-support/native/README.md) for a fresh checkout. Following
 that [qualified packaged baseline](CUT01_STATUS.md), [JAVA-01](JAVA01_STATUS.md)
 has passed the same full Pi gate on Java 25 and Gradle 9, including reproducible
-Java artifacts and Java 8/25 state/TLS compatibility. This completion covers the
-retained native scheduler/protocol profile; dependency upgrades (JAVA-02) and
-the broader release qualification matrix (JAVA-03) remain next.
+Java artifacts and Java 8/25 state/TLS compatibility. [JAVA-02](JAVA02_STATUS.md)
+has also passed the full gate with maintained Jackson, schema validator and
+logging dependencies, bidirectional state compatibility and an audit of the
+retained ARM64 SQLite library. These completions cover the native
+scheduler/protocol profile; the broader release qualification matrix (JAVA-03)
+is next.
 
 **Verified master and provenance**
 

@@ -1,0 +1,831 @@
+{
+  "bundle": {
+    "artifactHashesVerified": 280,
+    "buildProbesRemoved": 8,
+    "externalJars": {
+      "jackson-annotations-2.22.jar": "21ddb598807d3a51a876704eb979d9296e1c6a6f47ab1826ff88c6d6a127a2d0",
+      "jackson-core-2.22.2.jar": "ff167a6317be15895706c26668f45b898efe40ab8780970658210fe1393d52a6",
+      "jackson-databind-2.22.2.jar": "d0da14c12b16b5d54719aa172d83b542ff4abeb8b0fb7db476fde8ceece760ca",
+      "json-schema-validator-2.0.7.jar": "7d01cefd6f0d656666b94778c7a13ada2941aace48e76830809c0dbf61ad5be2",
+      "slf4j-api-2.0.19.jar": "e91ff6d720609e7a194ffe758c3ed5c84e798617ae07b0a0f6a4fe229741b4bb",
+      "slf4j-nop-2.0.19.jar": "d0226062f9b3a2793f62002f892a8e624eb07f396130fc949e01b1d5f4888cba",
+      "sqlite-jdbc-3.53.4.0.jar": "bcb1f51e36f940867e83342f9efbf5968ac44a6bef4d397bb4af7b17b45cd2fb"
+    },
+    "images": {
+      "agent": {
+        "boundary": {
+          "baseEntriesChecked": 3772,
+          "path": ".cache/java02-fresh-bundle/reports/agent-boundary.json",
+          "payloadFiles": 1,
+          "sha256": "dd7c645160345bea3dccebaad86b669068759fad2e17dbd56817bbf2ae77b95d"
+        },
+        "id": "sha256:a2ad5150f126e802772926f968b60a7efdbbc3a1053a5ca68d017b4f10d7ab3f",
+        "reference": "aurora-native-local:b6827722d90217b9-agent"
+      },
+      "agent-lab": {
+        "boundary": {
+          "baseEntriesChecked": 3772,
+          "path": ".cache/java02-fresh-bundle/reports/agent-lab-boundary.json",
+          "payloadFiles": 3,
+          "sha256": "11043a44bfb439f9ad018207d8a515e8f957231fd6115cb82f944b54cf326f44"
+        },
+        "id": "sha256:388d7c81f9616275c6d32081e9d4672878534a02064cd35bb05c38543f31acb4",
+        "reference": "aurora-native-local:b6827722d90217b9-agent-lab"
+      },
+      "scheduler": {
+        "boundary": {
+          "baseEntriesChecked": 3772,
+          "path": ".cache/java02-fresh-bundle/reports/scheduler-boundary.json",
+          "payloadFiles": 273,
+          "sha256": "96b1fb34758664afeb125013e54c5f2faba879efc7e6d9e16a9e0812fba8f125"
+        },
+        "id": "sha256:a456de1b1d91dc5718fea064a2dbd10546c036174895f509011dfba782278b5d",
+        "reference": "aurora-native-local:b6827722d90217b9-scheduler"
+      },
+      "scheduler-lab": {
+        "boundary": {
+          "baseEntriesChecked": 3772,
+          "path": ".cache/java02-fresh-bundle/reports/scheduler-lab-boundary.json",
+          "payloadFiles": 275,
+          "sha256": "ca1b39845cc06e1aef39d39c6858ec249ac806cc8ad571297b6a2187d2f88645"
+        },
+        "id": "sha256:871c4d810068c893aef2c80fdb77f02ab9288ccc00d15bc5962a5d533cd8f6fe",
+        "reference": "aurora-native-local:b6827722d90217b9-scheduler-lab"
+      },
+      "tools": {
+        "boundary": {
+          "baseEntriesChecked": 3772,
+          "path": ".cache/java02-fresh-bundle/reports/tools-boundary.json",
+          "payloadFiles": 1,
+          "sha256": "3d69de63995d8bb1f945fbabddac76c83e43d57f415363c5272b5ca4e6208a0c"
+        },
+        "id": "sha256:a5527b53f7bbbae7114ca7b200b9d994b5bac1bb24055699f82272f3769fac4d",
+        "reference": "aurora-native-local:b6827722d90217b9-tools"
+      }
+    },
+    "javaReproducibility": {
+      "archives": {
+        "protocol/distributions/protocol.tar": "8de831d2769d83832916bc88b014ae3a76f29863686d52c8865e0fb6e562c5a7",
+        "protocol/distributions/protocol.zip": "4a74830bc48f6e3899f85d0569a45bb5246f22b8213737e6249969f670ea18a1",
+        "protocol/libs/protocol.jar": "142f8d0933fdaf850e985d420f2673f60b1655c84abdf56bbef254e778ec8efb",
+        "scheduler/distributions/aurora-native-scheduler.tar": "9e31373115a6ebdaa246e9628562c9a21df8b032b09a2f0e26b29fc1d268d853",
+        "scheduler/distributions/aurora-native-scheduler.zip": "9738daf0f49877929bdff3a40a304121e9b8654d57318aff1a3f2bf0b215f571",
+        "scheduler/libs/aurora-native-scheduler.jar": "f4fdb9f72069ddd147c8645d511012030f7f873b1fbdbdb78e841d1cd150b424"
+      },
+      "bytecodeMajor": 69,
+      "compiledClasses": {
+        "protocol/main": 3,
+        "protocol/test": 1,
+        "scheduler/main": 18,
+        "scheduler/test": 4
+      },
+      "installedTrees": {
+        "protocol": "9019cb4847cd612766b5ee5ca2f4317542502ec83c2116b1951ffa70b06803bd",
+        "scheduler": "60a8ddd2ba91281ac62be72a42c677c856989520958a281231716e69204bff41"
+      },
+      "ok": true
+    },
+    "javaVersions": {
+      "compiler": "javac 25.0.4.1",
+      "java": {
+        "output": "openjdk 25.0.4.1 2026-08-18 LTS\nOpenJDK Runtime Environment Temurin-25.0.4.1+1 (build 25.0.4.1+1-LTS)\nOpenJDK 64-Bit Server VM Temurin-25.0.4.1+1 (build 25.0.4.1+1-LTS, mixed mode, sharing)",
+        "releaseSha256": "5d5e02af20088898661ea03a17304b2e10c028cb0471820f344c4576c1c59424",
+        "version": "25.0.4.1"
+      },
+      "runtime": {
+        "output": "openjdk 25.0.4.1 2026-08-18 LTS\nOpenJDK Runtime Environment Temurin-25.0.4.1+1 (build 25.0.4.1+1-LTS)\nOpenJDK 64-Bit Server VM Temurin-25.0.4.1+1 (build 25.0.4.1+1-LTS, mixed mode, sharing)",
+        "releaseSha256": "49b92224df8518fa6ad1361ebabb742859996f50b958cdff2ebec00ca4230b8b",
+        "version": "25.0.4.1"
+      },
+      "runtimeModules": [
+        "java.base",
+        "java.compiler",
+        "java.datatransfer",
+        "java.desktop",
+        "java.instrument",
+        "java.logging",
+        "java.management",
+        "java.management.rmi",
+        "java.naming",
+        "java.net.http",
+        "java.prefs",
+        "java.rmi",
+        "java.scripting",
+        "java.se",
+        "java.security.jgss",
+        "java.security.sasl",
+        "java.smartcardio",
+        "java.sql",
+        "java.sql.rowset",
+        "java.transaction.xa",
+        "java.xml",
+        "java.xml.crypto",
+        "jdk.accessibility",
+        "jdk.charsets",
+        "jdk.crypto.cryptoki",
+        "jdk.dynalink",
+        "jdk.graal.compiler",
+        "jdk.graal.compiler.management",
+        "jdk.httpserver",
+        "jdk.incubator.vector",
+        "jdk.internal.vm.ci",
+        "jdk.jdwp.agent",
+        "jdk.jfr",
+        "jdk.jsobject",
+        "jdk.localedata",
+        "jdk.management",
+        "jdk.management.agent",
+        "jdk.management.jfr",
+        "jdk.naming.dns",
+        "jdk.naming.rmi",
+        "jdk.net",
+        "jdk.nio.mapmode",
+        "jdk.sctp",
+        "jdk.security.auth",
+        "jdk.security.jgss",
+        "jdk.unsupported",
+        "jdk.xml.dom",
+        "jdk.zipfs"
+      ]
+    },
+    "path": ".cache/java02-fresh-bundle/bundle.json",
+    "previousBundle": {
+      "path": ".cache/java01-fresh-bundle/bundle.json",
+      "sha256": "d2c9caebf6a6e1ec25287b30460a3c6669458c9b9efea240696f978bbe7c36de"
+    },
+    "previousExternalJars": {
+      "jackson-annotations-2.18.4.jar": "2166156094cd146397eb4814bd117cabe3353390dfa894bcc06ce46b15bd428e",
+      "jackson-core-2.18.4.jar": "2f35b7abbf829c30d1143b58879ec30ad37d6c1fde22469aba14429fb2606b48",
+      "jackson-databind-2.18.4.jar": "452dcfd2cf381390090b7e14479d294d134320c55c3b744405c2270827a83c03",
+      "json-schema-validator-2.0.4.jar": "4856729c8f38ffba02380b0895b7e98a511f6e68a1fb6424782f3e6549dbba07",
+      "slf4j-api-2.0.17.jar": "7b751d952061954d5abfed7181c1f645d336091b679891591d63329c622eb832",
+      "slf4j-nop-2.0.17.jar": "3716f83649ec66161a2edefd4f49df34d1dd1c51cdcf941996c6987260f0a829",
+      "sqlite-jdbc-3.53.4.0.jar": "bcb1f51e36f940867e83342f9efbf5968ac44a6bef4d397bb4af7b17b45cd2fb"
+    },
+    "reportHashesVerified": 62,
+    "sha256": "e22ff2dc06f95f9f1d0cb89b4f3f9e561868f62cb56aae8749616ab60ed42ef9",
+    "toolchains": {
+      "agentRuntimeModules": {
+        "github.com/santhosh-tekuri/jsonschema/v6": "v6.0.3",
+        "go.etcd.io/bbolt": "v1.5.0",
+        "golang.org/x/sys": "v0.45.0",
+        "golang.org/x/text": "v0.14.0"
+      },
+      "baseImage": "debian:bookworm-slim@sha256:6bd27d44e6c32a66bbd72d7cb2b76a8ae3497ec2e5274a81abd1b37f6013fa1f",
+      "java": {
+        "bytecodeMajor": 69,
+        "illegalNativeAccess": "deny",
+        "nativeAccess": "ALL-UNNAMED",
+        "release": "25.0.4.1+1",
+        "vendor": "Eclipse Adoptium",
+        "versionMajor": 25
+      },
+      "platform": "linux/arm64",
+      "schema": 1,
+      "tools": {
+        "go": {
+          "directory": "go",
+          "file": "go1.27.1.linux-arm64.tar.gz",
+          "sha256": "3450b45a3f9ee8568792736a5c5e70a1f2e9b36c35a8f74958c03e51d7d92bec",
+          "url": "https://go.dev/dl/go1.27.1.linux-arm64.tar.gz"
+        },
+        "gradle": {
+          "directory": "gradle-9.7.1",
+          "file": "gradle-9.7.1-bin.zip",
+          "sha256": "acd53f1edaf02f1a8ff99879f8a34b302661a057d9b063ae9e35b552f804d20a",
+          "url": "https://services.gradle.org/distributions/gradle-9.7.1-bin.zip"
+        },
+        "java": {
+          "directory": "jdk-25.0.4.1+1",
+          "file": "OpenJDK25U-jdk_aarch64_linux_hotspot_25.0.4.1_1.tar.gz",
+          "sha256": "69df11a02cfa3ef7d7ca645e03edce6778ec090e100f6ae2b42097865730ac52",
+          "url": "https://github.com/adoptium/temurin25-binaries/releases/download/jdk-25.0.4.1%2B1/OpenJDK25U-jdk_aarch64_linux_hotspot_25.0.4.1_1.tar.gz"
+        },
+        "runtime": {
+          "directory": "jdk-25.0.4.1+1-jre",
+          "file": "OpenJDK25U-jre_aarch64_linux_hotspot_25.0.4.1_1.tar.gz",
+          "sha256": "34828cbb93ed31c281c84ecb31ddab655d11a802f263c1fc019d42e9e0230fed",
+          "url": "https://github.com/adoptium/temurin25-binaries/releases/download/jdk-25.0.4.1%2B1/OpenJDK25U-jre_aarch64_linux_hotspot_25.0.4.1_1.tar.gz"
+        }
+      }
+    },
+    "unchangedGoExecutables": {
+      "context/agent/aurora-agent": "e9587ab073587c849a2e38d7f454f6dae0bb9adb616edc94809f4c032cbebb84",
+      "context/fixtures/cluster-helper": "764690ac37298fb508b4d3c2a3f683e785b1df4a784971a26c18b46f3fb0da08",
+      "context/fixtures/native-workload": "2f06dd1a7112e47534ba89b4d50d5741b57c893c6aa5c5c1fc258f0e18c7db7e"
+    },
+    "unchangedJreFiles": 263,
+    "unchangedToolchains": true
+  },
+  "cleanCheckout": {
+    "path": ".cache/java02-fresh-source",
+    "preexistingPiTools": false,
+    "sourceStatus": ""
+  },
+  "compatibility": {
+    "CUT01_to_JAVA02": {
+      "executionStderrEmpty": true,
+      "newJavaMajor": 25,
+      "ok": true,
+      "oldBundle": {
+        "path": ".cache/cut01-fresh-bundle-2/bundle.json",
+        "sha256": "fd14356ef3e4ced0ecd7ec6744e1ece827a866c27f5310900197b0ae26123863"
+      },
+      "oldJavaMajor": 8,
+      "oldPkcs12LoadedOnBoth": true,
+      "originalInputHashesVerified": 536,
+      "originalInputsUnchanged": true,
+      "path": ".cache/java02-java8-compat/result.json",
+      "scope": "Complete state/epoch equality and bidirectional canonical Job/Run/Stop writes, replay and rollback on private copies. New-stack snapshots reopen on both stacks; reverse old-stack writes reopen on the new stack without a further snapshot. PKCS12 load/key-manager initialization only; no key-store rewrite, TLS handshake or live workload migration in this harness.",
+      "scriptSha256": "ba50b696eba9d22f96f101c9072dfed6fa9c19644af3225244cec0ffc26e4c50",
+      "sha256": "91cb43b8fa146798afa03864825102bc8ad2f91d4c20112a08afb0184d8cf1c1",
+      "stateExecutionsVerified": 13,
+      "states": {
+        "advancedState": {
+          "attempts": 18,
+          "canonicalJsonSha256": "f45cd84b618b06f1e7db6010e9ee28dc5a55761b883f47a96d7bf2f1f7e453ee",
+          "commands": 30,
+          "epoch": "8",
+          "jobs": 9
+        },
+        "newWrittenState": {
+          "attempts": 19,
+          "canonicalJsonSha256": "d28ba58269feb58d66fbd1a385640703b56b3d87185ebbc06f3ef8e21dc57cf5",
+          "commands": 32,
+          "epoch": "8",
+          "jobs": 10
+        },
+        "oldState": {
+          "attempts": 18,
+          "canonicalJsonSha256": "a07bfbb3a792d1a1f8619cdc83abbb316ddb59a09c4f65697265e83555d76541",
+          "commands": 30,
+          "epoch": "7",
+          "jobs": 9
+        },
+        "reverseWrittenState": {
+          "attempts": 20,
+          "canonicalJsonSha256": "dd3fd2ed7f4758aa8addf9a4a51bc20769335b38033ac81c2259feabda9a3c2a",
+          "commands": 34,
+          "epoch": "8",
+          "jobs": 11
+        }
+      }
+    },
+    "JAVA01_to_JAVA02": {
+      "executionStderrEmpty": true,
+      "newJavaMajor": 25,
+      "ok": true,
+      "oldBundle": {
+        "path": ".cache/java01-fresh-bundle/bundle.json",
+        "sha256": "d2c9caebf6a6e1ec25287b30460a3c6669458c9b9efea240696f978bbe7c36de"
+      },
+      "oldJavaMajor": 25,
+      "oldPkcs12LoadedOnBoth": true,
+      "originalInputHashesVerified": 691,
+      "originalInputsUnchanged": true,
+      "path": ".cache/java02-dependency-compat/result.json",
+      "scope": "Complete state/epoch equality and bidirectional canonical Job/Run/Stop writes, replay and rollback on private copies. New-stack snapshots reopen on both stacks; reverse old-stack writes reopen on the new stack without a further snapshot. PKCS12 load/key-manager initialization only; no key-store rewrite, TLS handshake or live workload migration in this harness.",
+      "scriptSha256": "ba50b696eba9d22f96f101c9072dfed6fa9c19644af3225244cec0ffc26e4c50",
+      "sha256": "0d76b0557fc595b4eb40e55cb9d5086b5fb44d2d5bd6e26fe9056599680eba9d",
+      "stateExecutionsVerified": 13,
+      "states": {
+        "advancedState": {
+          "attempts": 18,
+          "canonicalJsonSha256": "db188f1912334015c3a438d04a1057587029ad41594853208ab5eb037179592c",
+          "commands": 30,
+          "epoch": "8",
+          "jobs": 9
+        },
+        "newWrittenState": {
+          "attempts": 19,
+          "canonicalJsonSha256": "341911380fba5a66c6e2132eb98de1a3c2c250d11ca3251cef3f7c5f523da8f9",
+          "commands": 32,
+          "epoch": "8",
+          "jobs": 10
+        },
+        "oldState": {
+          "attempts": 18,
+          "canonicalJsonSha256": "723adc7d2d02bf0b366968794d3cf318e3a481b2a3a1650a481228125a633915",
+          "commands": 30,
+          "epoch": "7",
+          "jobs": 9
+        },
+        "reverseWrittenState": {
+          "attempts": 20,
+          "canonicalJsonSha256": "2ec404d283e41a19bcec262af1ec75b3e885df4ff475315b2b5271ae51494cd5",
+          "commands": 34,
+          "epoch": "8",
+          "jobs": 11
+        }
+      }
+    }
+  },
+  "dependencySelection": {
+    "jacksonBom": {
+      "path": ".cache/java02-audit/jackson-bom-2.22.2.pom",
+      "sha256": "a93ad5b8462f8d5920b128647a9b9f236342b4fd4e71287da9f7187fd8642f02"
+    },
+    "provenanceLimit": "Published Maven binaries verified by SHA-256; networknt GitHub 2.0.7 tag currently exposes a Jackson 3 POM, so no tag-to-binary source equivalence is claimed.",
+    "resolvedRuntimeGraphs": {
+      "path": ".cache/java02-fresh-bundle/reports/java-dependencies.log",
+      "sha256": "6816b0badb5ac1793a85cce4ba4078bbc880ea2aa858dfa5d736af2fcfd4810d"
+    },
+    "selectedArtifacts": {
+      "artifacts": [
+        {
+          "bytes": 84211,
+          "coordinate": "com.fasterxml.jackson.core:jackson-annotations:2.22",
+          "file": "jackson-annotations-2.22.jar",
+          "sha256": "21ddb598807d3a51a876704eb979d9296e1c6a6f47ab1826ff88c6d6a127a2d0",
+          "url": "https://repo.maven.apache.org/maven2/com/fasterxml/jackson/core/jackson-annotations/2.22/jackson-annotations-2.22.jar"
+        },
+        {
+          "bytes": 594200,
+          "coordinate": "com.fasterxml.jackson.core:jackson-core:2.22.2",
+          "file": "jackson-core-2.22.2.jar",
+          "sha256": "ff167a6317be15895706c26668f45b898efe40ab8780970658210fe1393d52a6",
+          "url": "https://repo.maven.apache.org/maven2/com/fasterxml/jackson/core/jackson-core/2.22.2/jackson-core-2.22.2.jar"
+        },
+        {
+          "bytes": 1708473,
+          "coordinate": "com.fasterxml.jackson.core:jackson-databind:2.22.2",
+          "file": "jackson-databind-2.22.2.jar",
+          "sha256": "d0da14c12b16b5d54719aa172d83b542ff4abeb8b0fb7db476fde8ceece760ca",
+          "url": "https://repo.maven.apache.org/maven2/com/fasterxml/jackson/core/jackson-databind/2.22.2/jackson-databind-2.22.2.jar"
+        },
+        {
+          "bytes": 580450,
+          "coordinate": "com.networknt:json-schema-validator:2.0.7",
+          "file": "json-schema-validator-2.0.7.jar",
+          "sha256": "7d01cefd6f0d656666b94778c7a13ada2941aace48e76830809c0dbf61ad5be2",
+          "url": "https://repo.maven.apache.org/maven2/com/networknt/json-schema-validator/2.0.7/json-schema-validator-2.0.7.jar"
+        },
+        {
+          "bytes": 70246,
+          "coordinate": "org.slf4j:slf4j-api:2.0.19",
+          "file": "slf4j-api-2.0.19.jar",
+          "sha256": "e91ff6d720609e7a194ffe758c3ed5c84e798617ae07b0a0f6a4fe229741b4bb",
+          "url": "https://repo.maven.apache.org/maven2/org/slf4j/slf4j-api/2.0.19/slf4j-api-2.0.19.jar"
+        },
+        {
+          "bytes": 4969,
+          "coordinate": "org.slf4j:slf4j-nop:2.0.19",
+          "file": "slf4j-nop-2.0.19.jar",
+          "sha256": "d0226062f9b3a2793f62002f892a8e624eb07f396130fc949e01b1d5f4888cba",
+          "url": "https://repo.maven.apache.org/maven2/org/slf4j/slf4j-nop/2.0.19/slf4j-nop-2.0.19.jar"
+        }
+      ],
+      "path": ".cache/java02-audit/selected-artifacts.json",
+      "sha256": "213a54f57f1639428f6ffdddfb75201cfe15d043fdeb91872df904a9065d9952"
+    },
+    "validatorReleasedPom": {
+      "path": ".cache/java02-audit/networknt-2.0.7.pom",
+      "sha256": "e0286a6ed4c21958edc64545666385e60501ad2c5aa75164211edb8e397f8bbd"
+    }
+  },
+  "existingMvp": {
+    "path": ".pi-lab/cluster-mvp/evidence/java02-post-verification.json",
+    "sha256": "5bb9e439563b5586e3b51009dabeb53fdf767e9dec47cd762b0633529c91a879",
+    "verification": {
+      "attemptCount": 3,
+      "checkedAt": 1789086737.631723,
+      "containers": {
+        "agent-a": {
+          "id": "b0e739a798276ff15f9b105c9c86cc1e56b7c84539572cb5d7f814400b897c90",
+          "restartCount": 0,
+          "startedAt": "2026-09-10T15:36:01.048274149Z"
+        },
+        "agent-b": {
+          "id": "543555720a7b354708fdb117bd40eaa13c4b2d867b2a7f473d722711138d1b30",
+          "restartCount": 0,
+          "startedAt": "2026-09-10T15:36:02.348578322Z"
+        },
+        "proxy-a": {
+          "id": "066cffcf94cb40166e421a633e6dbd53855148942d050dd8d9b64a7cd9072bd7",
+          "restartCount": 0,
+          "startedAt": "2026-09-10T15:36:01.720463583Z"
+        },
+        "proxy-b": {
+          "id": "e2d504a39df1ad95cce15f87cd438209affa93c7a567ca6e84459dccc0eab118",
+          "restartCount": 0,
+          "startedAt": "2026-09-10T15:36:03.008681489Z"
+        },
+        "scheduler": {
+          "id": "225b832671a14b0f7a66988d6755d4887d6c7595e9184e9d7e13ab4dc92768be",
+          "restartCount": 0,
+          "startedAt": "2026-09-10T15:36:03.73285183Z"
+        }
+      },
+      "mvpRun": "108ede8a5cb16d26",
+      "nodes": [
+        {
+          "cursor": "6",
+          "lastError": null,
+          "node": "agent-a",
+          "reachable": true
+        },
+        {
+          "cursor": "3",
+          "lastError": null,
+          "node": "agent-b",
+          "reachable": true
+        }
+      ],
+      "ok": true,
+      "packagingProbeContainersRemaining": 0,
+      "physical": [
+        {
+          "attempt": "attempt-153e6adb-033d-4d7a-835e-c1236d66397a",
+          "http": {
+            "identity": "mvp-service",
+            "ready": true
+          },
+          "node": "agent-a"
+        },
+        {
+          "attempt": "attempt-7ed6388a-fa0c-426e-a6c0-a4e78a20dd08",
+          "http": {
+            "identity": "mvp-service",
+            "ready": true
+          },
+          "node": "agent-b"
+        }
+      ],
+      "qualificationDockerResourcesRemaining": 0,
+      "qualificationRun": "80206aa359fd5388",
+      "unrelatedContainers": [
+        {
+          "health": "healthy",
+          "id": "372a008a8ffa8b89a6c060c709ee98b4f0896b181701605687b04e867f6b25f1",
+          "name": "homeassistant",
+          "running": true,
+          "startedAt": "2026-09-06T13:54:15.633076093Z"
+        }
+      ]
+    }
+  },
+  "jdkDiagnostics": {
+    "jdkInternalApiEdges": 0,
+    "logs": [
+      {
+        "path": ".cache/java02-audit/java02-jdk-internals.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": ".cache/java02-audit/java02-missing-deps.log",
+        "sha256": "8960df3b18cbaefb5fa42c4558b646fa15f6776a639fda94f06dd27cca7fa4b7"
+      },
+      {
+        "path": ".cache/java02-audit/java02-jdeprscan.log",
+        "sha256": "6bf2c81198024b4d20716627e40cdabf12858886ef05ad22ed50e1772c097f98"
+      }
+    ],
+    "optionalMissingEdges": 35,
+    "ownJdkDeprecations": [
+      "class org/apache/aurora/nativescheduler/NativeSchedulerMain$HttpsTransport uses deprecated method java/net/URL::<init>(Ljava/lang/String;)V "
+    ],
+    "path": ".cache/java02-audit/java02-jdk-diagnostics.json",
+    "scope": "Static analysis of all nine shipped JARs. Missing edges belong to excluded optional validator features and SQLite Graal native-image support. Analysis module-path use does not change runtime launch flags; reflection is not exhaustively analyzed.",
+    "sha256": "eae0e3fd3056eb28147067cf4998a2344ab5c3ba25b67b4ede61496a77aad5d9"
+  },
+  "limits": [
+    "Native scheduler/protocol profile only; retired root build/buildSrc/Thrift/JMH not modernized.",
+    "Java artifacts and installed content reproduce; Docker image ID reproducibility is not claimed.",
+    "Gradle deprecations fail; supported deprecated URL constructor remains in native HTTP client.",
+    "Java26, broader HTTP/auth/launcher and measured performance matrix remain JAVA-03.",
+    "Jackson 3 is a separate migration, not required for this Java25 native profile."
+  ],
+  "masterCommit": "11ebaeeb071cb182c388a40755e84f60dda32260",
+  "ok": true,
+  "platform": {
+    "kernel": "6.18.39+rpt-rpi-2712",
+    "machine": "aarch64",
+    "pageBytes": 16384,
+    "system": "Linux"
+  },
+  "qualification": {
+    "allFinalAttemptsTerminalCleanedUnreserved": true,
+    "cases": [
+      {
+        "at": 1789085994.703955,
+        "name": "operator-mtls-and-role-rejection",
+        "ok": true
+      },
+      {
+        "at": 1789085995.5984511,
+        "attemptCount": 1,
+        "launches": 1,
+        "name": "c1789085994-r0-batch-submit-replay",
+        "ok": true
+      },
+      {
+        "at": 1789085997.3551214,
+        "attemptCount": 2,
+        "name": "c1789085994-r0-two-agent-service-ready",
+        "ok": true
+      },
+      {
+        "at": 1789086000.9217412,
+        "epoch": "2",
+        "generation": 2,
+        "name": "c1789085994-r0-scheduler-crash-recovery",
+        "ok": true
+      },
+      {
+        "at": 1789086003.1507072,
+        "attemptCount": 2,
+        "name": "c1789085994-r0-partition-stop-reconnect",
+        "ok": true
+      },
+      {
+        "at": 1789086010.3153903,
+        "attemptCount": 3,
+        "generation": 2,
+        "launches": 3,
+        "name": "c1789085994-r0-agent-crash-lost-replace-forced-stop",
+        "ok": true
+      },
+      {
+        "at": 1789086014.7456284,
+        "name": "c1789085994-r0-no-resurrection",
+        "ok": true
+      },
+      {
+        "at": 1789086020.5420735,
+        "attemptCount": 6,
+        "container": "5fb79b98766e7dbdbf4f4523ea87722f058479c938e9dc6cf3ba1a53f7a4099b",
+        "epoch": "4",
+        "jobs": 3,
+        "name": "isolated-live-scheduler-backup-restore-0",
+        "ok": true
+      },
+      {
+        "at": 1789086022.3261297,
+        "attemptCount": 1,
+        "launches": 1,
+        "name": "c1789085994-r1-batch-submit-replay",
+        "ok": true
+      },
+      {
+        "at": 1789086024.553504,
+        "attemptCount": 2,
+        "name": "c1789085994-r1-two-agent-service-ready",
+        "ok": true
+      },
+      {
+        "at": 1789086029.103938,
+        "epoch": "4",
+        "generation": 4,
+        "name": "c1789085994-r1-scheduler-crash-recovery",
+        "ok": true
+      },
+      {
+        "at": 1789086032.2905953,
+        "attemptCount": 2,
+        "name": "c1789085994-r1-partition-stop-reconnect",
+        "ok": true
+      },
+      {
+        "at": 1789086037.7034357,
+        "attemptCount": 3,
+        "generation": 3,
+        "launches": 3,
+        "name": "c1789085994-r1-agent-crash-lost-replace-forced-stop",
+        "ok": true
+      },
+      {
+        "at": 1789086041.8624766,
+        "name": "c1789085994-r1-no-resurrection",
+        "ok": true
+      },
+      {
+        "at": 1789086048.536641,
+        "attemptCount": 12,
+        "container": "3f0ecb90d236682bb6ae00086f16636a20f980930d2549b29163a027efc1baa0",
+        "epoch": "6",
+        "jobs": 6,
+        "name": "isolated-live-scheduler-backup-restore-1",
+        "ok": true
+      },
+      {
+        "at": 1789086050.7995183,
+        "attemptCount": 1,
+        "launches": 1,
+        "name": "c1789085994-r2-batch-submit-replay",
+        "ok": true
+      },
+      {
+        "at": 1789086053.646182,
+        "attemptCount": 2,
+        "name": "c1789085994-r2-two-agent-service-ready",
+        "ok": true
+      },
+      {
+        "at": 1789086058.7436588,
+        "epoch": "6",
+        "generation": 6,
+        "name": "c1789085994-r2-scheduler-crash-recovery",
+        "ok": true
+      },
+      {
+        "at": 1789086062.6466072,
+        "attemptCount": 2,
+        "name": "c1789085994-r2-partition-stop-reconnect",
+        "ok": true
+      },
+      {
+        "at": 1789086069.6121676,
+        "attemptCount": 3,
+        "generation": 4,
+        "launches": 3,
+        "name": "c1789085994-r2-agent-crash-lost-replace-forced-stop",
+        "ok": true
+      },
+      {
+        "at": 1789086074.3455186,
+        "name": "c1789085994-r2-no-resurrection",
+        "ok": true
+      },
+      {
+        "at": 1789086081.604396,
+        "attemptCount": 18,
+        "container": "8fd4e346fab890c6ce94f6323424a91032e5b462e99e0a2fba58313489d6832d",
+        "epoch": "8",
+        "jobs": 9,
+        "name": "isolated-live-scheduler-backup-restore-2",
+        "ok": true
+      },
+      {
+        "at": 1789086685.5586967,
+        "batches": 20,
+        "elapsedSeconds": 600.7784317780752,
+        "name": "bounded-mixed-workload",
+        "ok": true,
+        "replicas": 2
+      }
+    ],
+    "cleanup": {
+      "containers": {},
+      "networks": {},
+      "status": "stopped"
+    },
+    "executableBindMounts": false,
+    "finalAttempts": 40,
+    "finalJobs": 30,
+    "mixed": {
+      "at": 1789086685.5586967,
+      "batches": 20,
+      "elapsedSeconds": 600.7784317780752,
+      "name": "bounded-mixed-workload",
+      "ok": true,
+      "replicas": 2
+    },
+    "mixedSeconds": 600,
+    "path": ".pi-lab/java02-qualification/evidence/c1789085994-result.json",
+    "receipt": {
+      "path": ".pi-lab/java02-qualification/qualification.json",
+      "sha256": "dd8ab6466229dee94f629739b72aabf528858f788dbda66c2fb0478564b26d0d"
+    },
+    "repeats": 3,
+    "run": "80206aa359fd5388",
+    "runtimeAudit": {
+      "path": ".cache/java02-runtime-audit.json",
+      "sha256": "94b25217a2af08df41efd86e2182368034f659e682427f6876b6cedc1abc359d"
+    },
+    "sha256": "9e49df1a9d780836baed0e624853bf314bdb536701201ba292f2a06ced5b8656"
+  },
+  "schema": 1,
+  "slice": "JAVA-02",
+  "sourceCommit": "7bfb6b8ce4fb152c5bc003c0224778bd608b4a25",
+  "sqliteArm64": {
+    "path": ".cache/java02-audit/sqlite-arm64-elf.json",
+    "sha256": "236ff7ff1ec9af753717cba53db3d56538aaa3fa3a2718eb01532de5a9629efd",
+    "verification": {
+      "elfMachine": 183,
+      "entry": "org/sqlite/native/Linux/aarch64/libsqlitejdbc.so",
+      "jar": "sqlite-jdbc-3.53.4.0.jar",
+      "jarSha256": "bcb1f51e36f940867e83342f9efbf5968ac44a6bef4d397bb4af7b17b45cd2fb",
+      "segments": [
+        {
+          "alignment": 65536,
+          "congruent16KiB": true,
+          "offset": 0,
+          "virtualAddress": 0
+        },
+        {
+          "alignment": 65536,
+          "congruent16KiB": true,
+          "offset": 1081728,
+          "virtualAddress": 1147264
+        }
+      ],
+      "sha256": "4e253e3f886f8da539e6d8fbd92c3a281f50e395bcba568ced953865e8bea5be"
+    }
+  },
+  "tests": {
+    "go": {
+      "agent": {
+        "modules": {
+          "path": ".cache/java02-fresh-bundle/reports/agent-modules.log",
+          "sha256": "b4537ed75f533f993f371954de47e42a793b8e5b0587577de7e27fb3e50696bd"
+        },
+        "test": {
+          "path": ".cache/java02-fresh-bundle/reports/agent-test.log",
+          "sha256": "89f50eeec20c75bf6e67a95ad7343b38421da146437bba673f48b3ad1e95d806"
+        },
+        "vet": {
+          "path": ".cache/java02-fresh-bundle/reports/agent-vet.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cluster-helper": {
+        "modules": {
+          "path": ".cache/java02-fresh-bundle/reports/cluster-helper-modules.log",
+          "sha256": "b4537ed75f533f993f371954de47e42a793b8e5b0587577de7e27fb3e50696bd"
+        },
+        "test": {
+          "path": ".cache/java02-fresh-bundle/reports/cluster-helper-test.log",
+          "sha256": "3cdaceab2753b5555e4f2abb05ad6498d111dd6156c243afc454e618b3f9588e"
+        },
+        "vet": {
+          "path": ".cache/java02-fresh-bundle/reports/cluster-helper-vet.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "native-workload": {
+        "modules": {
+          "path": ".cache/java02-fresh-bundle/reports/native-workload-modules.log",
+          "sha256": "b4537ed75f533f993f371954de47e42a793b8e5b0587577de7e27fb3e50696bd"
+        },
+        "test": {
+          "path": ".cache/java02-fresh-bundle/reports/native-workload-test.log",
+          "sha256": "44f052d72fdc0b6ad9788491427bcf84241501ba2dc63ec89c422972a70fc374"
+        },
+        "vet": {
+          "path": ".cache/java02-fresh-bundle/reports/native-workload-vet.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    },
+    "java": [
+      {
+        "errors": 0,
+        "failures": 0,
+        "path": ".cache/java02-fresh-bundle/build/java/protocol/test-results/test/TEST-org.apache.aurora.nativeprotocol.ProtocolValidatorTest.xml",
+        "sha256": "0d6c6b989c1a8fad059f6ae81cbb9c1d821c5228316f3b794bcca075cd23d0b1",
+        "skipped": 0,
+        "suite": "org.apache.aurora.nativeprotocol.ProtocolValidatorTest",
+        "tests": 7
+      },
+      {
+        "errors": 0,
+        "failures": 0,
+        "path": ".cache/java02-fresh-bundle/build/java/scheduler/test-results/test/TEST-org.apache.aurora.nativescheduler.NativeEngineTest.xml",
+        "sha256": "0c5e59727c064a34c7283ca872f1bffdc1b352b1622c9257d8c657417539df1e",
+        "skipped": 0,
+        "suite": "org.apache.aurora.nativescheduler.NativeEngineTest",
+        "tests": 13
+      },
+      {
+        "errors": 0,
+        "failures": 0,
+        "path": ".cache/java02-fresh-bundle/build/java/scheduler/test-results/test/TEST-org.apache.aurora.scheduler.storage.sql.NativeSqlStoreTest.xml",
+        "sha256": "90de91370fa0105deae2b0b170e4873e6682ce4e91821832a1229e9185bc6c2e",
+        "skipped": 0,
+        "suite": "org.apache.aurora.scheduler.storage.sql.NativeSqlStoreTest",
+        "tests": 14
+      }
+    ],
+    "protocolCli": {
+      "parserRejections": 12,
+      "path": ".cache/java02-protocol-cli.log",
+      "sha256": "397f13b6f8e230a5ea66870b10a5e697300d34c860a6937ad7db588f368cf644",
+      "structuralRejections": 27,
+      "validAndHashVectors": 13,
+      "validators": [
+        "Java25 generated launcher",
+        "packaged Go agent"
+      ]
+    },
+    "python": {
+      "lab": {
+        "path": ".cache/java02-fresh-bundle/reports/lab-tests.log",
+        "sha256": "aa7014c4964aca68b7b132bbedf1c888099d632fca0624c9878e74a8d22b8df0",
+        "tests": 70
+      },
+      "packaging": {
+        "path": ".cache/java02-fresh-bundle/reports/packaging-tests.log",
+        "sha256": "4df0cfe25b8d8250dfaf7ab771a4da3b4d61d7d7be7c8ae4fe4910abcadac882",
+        "tests": 41
+      }
+    },
+    "schedulerGeneratedLauncher": {
+      "ok": true,
+      "path": ".cache/java02-scheduler-launcher/result.json",
+      "sha256": "1322141b03426bac2d93f8fdee15c9c156bb78684c5aa1ed904c06d8a0f5926f",
+      "sqliteOpened": true,
+      "stderrEmpty": true
+    }
+  },
+  "verifiedAt": 1789086744.5481198
+}
