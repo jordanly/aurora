@@ -36,9 +36,14 @@ has qualified private socket/poll-result records and explicit controller phases:
 twelve trials against JAVA-05. [JAVA-07 and LAB-03](JAVA07_STATUS.md) have now
 qualified grouped token validation and complete-response checks in the lab client:
 50 Java tests, 64 launcher commands and 23 physical cases per profile, plus three
-compiled Java 26 recovery trials. JAVA-08 resource/lifecycle hardening is next.
-SQL model and concurrency changes remain conditional on compatibility and
-lifecycle decisions; supervision planning can proceed alongside.
+compiled Java 26 recovery trials. [JAVA-08](JAVA08_STATUS.md) has now qualified
+store-resource and daemon lifecycle hardening: 62 Java tests, 64 launcher checks
+and 23 physical cases per profile, plus four bidirectional compatibility pairs.
+[JAVA-09](JAVA09_SQL_RECORD_DECISION.md) retains the public SQL classes.
+[JAVA-10](JAVA10_CONCURRENCY_DECISION.md) completes the measured design decision:
+six normal and six paused-agent/load trials, with no concurrency or transport
+prototype adopted. All six Java audit follow-ups are complete. SUPERVISE-01
+remains the next execution-capability slice.
 
 **First work and independent tracks**
 
@@ -71,9 +76,9 @@ Start with PLAN-01, BUILD-01 and CONTRACT-01. Go reducers/protocol fixtures can 
 | P5 follow-up / JAVA-05 | Complete: [qualified JDK helpers and bounded input](JAVA05_STATUS.md). | JAVA-04 | All three profiles: 46 Java tests, 61 launcher commands and 23 physical cases; exact hashes/errors, 1 MiB bounds and HTTP deadlines retained; twelve workload/resource trials. |
 | P5 follow-up / JAVA-06 | Complete: [qualified private records and committed results](JAVA06_STATUS.md). | JAVA-05 | Each profile: 50 Java tests, 64 launcher commands and 23 physical cases; duplicate socket fixtures, targeted rollback/publication/ACK probes, twelve workload/resource trials. |
 | P5 follow-up / JAVA-07 | Complete: [grouped token validation](JAVA07_STATUS.md). | JAVA-06 | All 57 fixtures unchanged; each profile passed 50 Java tests, 64 byte-exact launcher comparisons and 23 physical cases. |
-| P5 follow-up / JAVA-08 | Queued next: store-resource and daemon lifecycle failure handling; [task details](JAVA25_REFACTOR_TASKS.md). | JAVA-06 | Failure injection, primary/suppressed errors, partial startup, bounded shutdown and physical recovery evidence. |
-| P5 follow-up / JAVA-09 | Conditional: public SQL records and compatibility-adapter decision; [task details](JAVA25_REFACTOR_TASKS.md). | JAVA-06, supported adapter decision | Explicit Java 8 helper/source contracts, public API and nullable/redacted-value policy; keep-as-class decision allowed. |
-| P5 follow-up / JAVA-10 | Conditional: bounded I/O concurrency and HTTP transport study; [task details](JAVA25_REFACTOR_TASKS.md). | JAVA-08, measured need | Admission/order/transaction ownership and recovery preserved; comparable measurements justify any adoption. |
+| P5 follow-up / JAVA-08 | Complete: [store-resource and daemon lifecycle hardening](JAVA08_STATUS.md). | JAVA-06 | Each profile: 62 Java tests, 64 launchers and 23 physical cases. Four compatibility pairs in total, dual Java 8 source compilation, failure injection and descriptor probe. |
+| P5 follow-up / JAVA-09 | Decision complete: [retain public SQL classes](JAVA09_SQL_RECORD_DECISION.md). | JAVA-06, supported adapter decision | Consumer inventory and construction/fields/nullability/equality/diagnostics/helper policy documented; persisted contracts and historical helpers preserved. |
+| P5 follow-up / JAVA-10 | Study/decision complete: [retain serialized controller and transport](JAVA10_CONCURRENCY_DECISION.md). | JAVA-08, measured need | Six normal and six paused-agent/load trials; successful latency and failures separated; bounded candidate/HTTP requirements and reopening criteria documented. No prototype adopted. |
 | P6 / SUPERVISE-01 | Same-binary surviving attempt supervisors, local protocol/versioning and daemon reattachment. | AGENT-02, SLICE-01; integrate on modern native baseline | Kill only daemon while children exit/log; preserve exact outcomes and execution; supervisor loss differs from container loss. |
 | P6 / THERMOS-01 | Selected DAG/retry/daemon/ephemeral/finalizer behavior and trusted offline manifest conversion. | SUPERVISE-01, behavior corpus | Retained legacy cases match; intentional changes/rejections explicit; no live Python-checkpoint adoption. |
 | P6 / POLICY-01 | Broader constraints/quotas, updates/rollback, preemption and workload evacuation/SLA drain, with real stores/controllers. | JAVA-03, required agent capabilities | Restart mid-update and drain; revalidate victims; release capacity only on cleanup. Enable features individually. |

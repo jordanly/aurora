@@ -1,15 +1,18 @@
 # Java 25 refactoring tasks after JAVA-04
 
 These repository tasks implement the [source audit](JAVA25_IDIOM_AUDIT.md).
-[JAVA-07 is complete](JAVA07_STATUS.md), with all three Java profiles qualified.
-JAVA-08 resource and lifecycle hardening is the recommended next slice and
-comes before any concurrency experiment. Public SQL records and concurrency
-remain conditional on their design decisions. These are repository tasks, not
-externally created issues.
+All six follow-ups are complete: JAVA-05 through
+[JAVA-08](JAVA08_STATUS.md) are implemented and qualified;
+[JAVA-09](JAVA09_SQL_RECORD_DECISION.md) retains the public SQL classes, and
+[JAVA-10](JAVA10_CONCURRENCY_DECISION.md) completes the measured design decision
+without adopting a concurrency or transport prototype. The latter decisions do
+not claim a record conversion or a concurrent implementation. These are
+repository tasks, not externally created issues.
 
 Effort estimates describe scope: **S** is one focused PR; **M** spans a few
-components or two separately reviewable changes; **L** requires a design,
-prototype and failure/measurement matrix. Qualification time is additional.
+components or two separately reviewable changes; **L** includes a design and
+failure/measurement matrix, with a prototype if the decision warrants one.
+Qualification time is additional.
 Dependencies below order semantic changes, not formatting-only commits.
 
 | Task | Status | Depends on | Size | Outcome |
@@ -17,9 +20,9 @@ Dependencies below order semantic changes, not formatting-only commits.
 | JAVA-05 | [Complete and qualified](JAVA05_STATUS.md) | JAVA-04 | S | Precise JDK helpers and bounded input with existing output/error contracts. |
 | JAVA-06 | [Complete and qualified](JAVA06_STATUS.md) | JAVA-05 | M | Named private socket and committed-poll result values; clearer controller code. |
 | JAVA-07 | [Complete and qualified](JAVA07_STATUS.md) | JAVA-06 | S | Grouped validation branches and readable fixtures without changing lexical acceptance. |
-| JAVA-08 | Queued hardening; recommended next | JAVA-06 | M | Explicit store-resource and daemon lifecycle failure handling. |
-| JAVA-09 | Conditional design | JAVA-06; supported adapter decision | M | Decide whether public SQL snapshot records justify their compatibility cost. |
-| JAVA-10 | Conditional study | JAVA-08; measured need | L | Decide whether bounded I/O concurrency or JDK HTTP transport improves the real workload. |
+| JAVA-08 | [Complete and qualified](JAVA08_STATUS.md) | JAVA-06 | M | Explicit store-resource cleanup, partial startup and bounded worker shutdown with store-last closure. |
+| JAVA-09 | [Decision complete: retain classes](JAVA09_SQL_RECORD_DECISION.md) | JAVA-06; supported adapter decision | M | Preserve public fields, private constructors, Java 8 source/helper and persisted contracts. |
+| JAVA-10 | [Study/decision complete: retain current runtime](JAVA10_CONCURRENCY_DECISION.md) | JAVA-08; measured need | L | Six normal and six paused-agent/load trials; document bottleneck, limits and conditions for a bounded prototype. |
 
 **JAVA-05 — JDK helpers and bounded input**
 

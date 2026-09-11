@@ -77,9 +77,13 @@ adapter or versioned source boundary.
 
 The original Java 8 conformance adapter
 [`Canonical.java`](../../protocol/native-v1alpha1/conformance/Canonical.java)
-is independent and has no record consumer. Any old/new qualification after a
-future JAVA-08 SQL change remains pending; this decision does not claim a new
-SQL compatibility qualification or change persisted schemas.
+is independent and has no record consumer. [JAVA-08 qualification](JAVA08_STATUS.md)
+has now checked four historical/current compatibility pairs with 13 state
+operations each, including Java 8/25 and all three current profiles. The shared
+SQL sources also compiled with the actual Java 8 compiler and Java 25
+`--release 8`. Those checks qualify lifecycle hardening while the public row,
+`JobKey`, schema and helper contracts remain unchanged; this decision introduces
+no record conversion or persisted-schema change.
 
 Keeping the classes preserves the established public-field, private-constructor,
 nullable-row, identity-equality, diagnostic, `reserved()`, JSON-projection,

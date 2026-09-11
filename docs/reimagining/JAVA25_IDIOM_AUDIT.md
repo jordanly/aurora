@@ -355,4 +355,7 @@ Validation for this audit consists of source/provenance, feature documentation,
 reference and consistency checks. Implementation examples are illustrative and
 were not compiled as patches. No build, cluster fault gate or performance trial
 was rerun for unchanged application code. JAVA-04 completion means the audit and
-ordered tasks are delivered; JAVA-05 through JAVA-10 remain unimplemented.
+ordered tasks were delivered; JAVA-05 through JAVA-10 were unimplemented at
+that audit checkpoint. Their subsequent implementation and conditional design
+decisions are now complete; see the [current task status](JAVA25_REFACTOR_TASKS.md)
+and [JAVA-08 qualification](JAVA08_STATUS.md).

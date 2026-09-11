@@ -33,7 +33,7 @@ slice is SUPERVISE-01: surviving attempt supervisors and daemon reattachment.
 [JAVA-04](JAVA25_IDIOM_AUDIT.md) has completed the source-level Java 25 review:
 647 tracked Java files inventoried, active standalone code examined, and
 representative legacy findings checked independently. Its
-[six ordered tasks](JAVA25_REFACTOR_TASKS.md) have begun: [JAVA-05](JAVA05_STATUS.md)
+[six ordered tasks](JAVA25_REFACTOR_TASKS.md) are complete: [JAVA-05](JAVA05_STATUS.md)
 has qualified JDK helper and bounded-input changes across all three profiles,
 with 46 Java tests, 61 launcher commands and 23 physical cases per profile,
 plus twelve workload/resource trials against JAVA-03. [JAVA-06](JAVA06_STATUS.md)
@@ -41,13 +41,19 @@ has now qualified private records and committed polling results: 50 Java tests,
 64 launcher commands and 23 physical cases per profile, plus twelve trials
 against JAVA-05. [JAVA-07 and LAB-03](JAVA07_STATUS.md) have now qualified
 grouped validation and lab HTTP response completeness across the three profiles,
-including three compiled Java 26 recovery trials. JAVA-08 lifecycle hardening
-is next and precedes concurrency experiments; public SQL records require an
-explicit compatibility decision. These follow-ups can run alongside supervision planning.
+including three compiled Java 26 recovery trials. [JAVA-08](JAVA08_STATUS.md)
+has qualified store-resource and daemon lifecycle hardening across all three
+profiles: 62 Java tests, 64 launcher checks and 23 physical cases each, plus four
+bidirectional compatibility pairs. [JAVA-09](JAVA09_SQL_RECORD_DECISION.md)
+retains the public SQL classes and Java 8 helper/source contracts.
+[JAVA-10](JAVA10_CONCURRENCY_DECISION.md) completes the concurrency/HTTP design
+study with six normal and six paused-agent/load trials. It retains the existing
+runtime and records conditions for revisiting a bounded prototype. These Java
+completions leave the broader supervision and execution-capability roadmap intact.
 
 **Verified master and provenance**
 
-Both remote master refs were refreshed on 2026-09-10. At the user's request, the fork's `origin/master` was fast-forwarded by 55 commits from `d46a8d91aa69ab9cf1ebc2b13552f8093d366fe9` to Apache's current `upstream/master`, `11ebaeeb071cb182c388a40755e84f60dda32260`; the remote result was verified. Local `master` was also fast-forwarded. Implementation is isolated on `codex/standalone-foundations`, based on that upstream commit. No implementation changes were pushed to `master`.
+Both remote master refs were refreshed on 2026-09-10. At the user's request, the fork's `origin/master` was fast-forwarded by 55 commits from `d46a8d91aa69ab9cf1ebc2b13552f8093d366fe9` to Apache's current `upstream/master`, `11ebaeeb071cb182c388a40755e84f60dda32260`; the remote result was verified. Local `master` was also fast-forwarded. Implementation is isolated on `codex/standalone-foundations`, based on that upstream commit. No implementation changes were pushed to `master`. [JAVA-08 verification](java08-evidence.json) rechecked the two remote refs and local master refs on 2026-09-11; all still identify that upstream commit.
 
 The six reports used `e3350f63d446cca17e8f1763ce30cc94346e64cf`. Its only difference from current upstream master is [AURORA_CONTEXT.md](../../AURORA_CONTEXT.md); their application-source findings apply to this baseline. All six reports and that context were copied unchanged into this branch. [Provenance and hashes](research-provenance.json) distinguish historical research from this new plan.
 

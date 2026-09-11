@@ -1,0 +1,3278 @@
+{
+  "abortedBuildAttempt": {
+    "accepted": false,
+    "correctedFocusedCommand": {
+      "path": ".cache/java08-preflight26/command.json",
+      "sha256": "c76490bc2f55c3ec7e5036230c066e93c9a499c4f2d9f6101682e426da79e175"
+    },
+    "correctedFocusedTestClass": {
+      "path": ".cache/java08-preflight26/build/scheduler/classes/java/test/org/apache/aurora/nativescheduler/NativeHttpTest.class",
+      "sha256": "68ee90c759465e4a52eb880ef4822cbb8065f5c83073357378c4d4185e346201"
+    },
+    "correctedSourceCommit": "e446dda4284ef5b99bf4f5843bfcfc269634b81f",
+    "interpretation": "First Java25 build succeeded; Java26 runtime build failed a listener-probe test on transient TCP reset. Only that test changed; all final profiles rebuilt from corrected source.",
+    "path": ".cache/java08-build-attempt1.json",
+    "retainedEvidence": {
+      "completedJava25Bundle": {
+        "path": ".cache/java08-attempt1-java25-bundle/bundle.json",
+        "sha256": "2e6a6719035136638d0d84b9fd2cde37d7b82980d42dc94d529fed1d77377bd1"
+      },
+      "correctedFocusedHttpXml": {
+        "path": ".cache/java08-preflight26/build/scheduler/test-results/test/TEST-org.apache.aurora.nativescheduler.NativeHttpTest.xml",
+        "sha256": "4b91d102a1fea33256c11c595c33a94a1f04c9de1ab15f3c3181a4f65818d521"
+      },
+      "correctedFocusedLog": {
+        "path": ".cache/java08-preflight26/gradle.log",
+        "sha256": "113560ecde9df1ad71c6091be81201afff7b29529715df246b5909c2023ee68a"
+      },
+      "failedHttpXml": {
+        "path": ".cache/java08-attempt1-java26-runtime-bundle/build/java/scheduler/test-results/test/TEST-org.apache.aurora.nativescheduler.NativeHttpTest.xml",
+        "sha256": "85f15cf26cda9b90d73c8e5c820116faa91e00cc24864ebec538098db12a7e32"
+      },
+      "failedJava26RuntimeLog": {
+        "path": ".cache/java08-attempt1-java26-runtime-build.log",
+        "sha256": "43458aa428db546a869c1525e3fefb754d0517fdd04936dc2d6282e2b61c8a83"
+      }
+    },
+    "sha256": "d8d8492ed7059ef35d515b1947cb4852e2d127e7c8a7691f1980d29f53ee9d8a",
+    "sourceCommit": "af82e54209beea8a48ad233d73867f7af695d281"
+  },
+  "abortedRuns": [],
+  "benchmarks": {
+    "java07": {
+      "metrics": {
+        "backupAckMs": {
+          "count": 3,
+          "max": 45.033132075332105,
+          "median": 44.32134889066219,
+          "min": 43.72269695159048,
+          "p95": 45.033132075332105
+        },
+        "batchSubmitAckMs": {
+          "count": 18,
+          "max": 117.45319596957415,
+          "median": 73.15390097210184,
+          "min": 36.32961702533066,
+          "p95": 117.45319596957415
+        },
+        "batchSubmitToCompleteMs": {
+          "count": 18,
+          "max": 809.4571749679744,
+          "median": 690.4424930689856,
+          "min": 511.2534340005368,
+          "p95": 809.4571749679744
+        },
+        "clusterStartMs": {
+          "count": 3,
+          "max": 8106.324767926708,
+          "median": 7078.3670850796625,
+          "min": 6775.811992003582,
+          "p95": 8106.324767926708
+        },
+        "fds": {
+          "count": 24,
+          "max": 26,
+          "median": 23.0,
+          "min": 23,
+          "p95": 24
+        },
+        "gcPauseMs": {
+          "count": 43,
+          "max": 55.409,
+          "median": 3.392,
+          "min": 2.139,
+          "p95": 7.629
+        },
+        "rssAnonKiB": {
+          "count": 24,
+          "max": 103760,
+          "median": 100928.0,
+          "min": 91232,
+          "p95": 103360
+        },
+        "rssKiB": {
+          "count": 24,
+          "max": 128448,
+          "median": 125568.0,
+          "min": 115920,
+          "p95": 128048
+        },
+        "schedulerCrashToRecoveredMs": {
+          "count": 3,
+          "max": 3563.7136010918766,
+          "median": 3529.8411389812827,
+          "min": 3477.03916602768,
+          "p95": 3563.7136010918766
+        },
+        "serviceStopToCleanedMs": {
+          "count": 3,
+          "max": 768.4261640533805,
+          "median": 734.2528679873794,
+          "min": 580.1735119894147,
+          "p95": 768.4261640533805
+        },
+        "serviceSubmitToReadyMs": {
+          "count": 3,
+          "max": 1877.1320000523701,
+          "median": 1863.1917770253494,
+          "min": 1688.6554199736565,
+          "p95": 1877.1320000523701
+        },
+        "stateGetMs": {
+          "count": 90,
+          "max": 164.87530909944326,
+          "median": 25.746490980964154,
+          "min": 22.331480984576046,
+          "p95": 98.4081489732489
+        },
+        "threads": {
+          "count": 24,
+          "max": 27,
+          "median": 27.0,
+          "min": 27,
+          "p95": 27
+        }
+      },
+      "path": ".pi-lab/java08-benchmark-java07/result.json",
+      "sha256": "4b4b0d3b55b7347ef6db655115736361b330a8b801ac47e294392cb298c25ec4",
+      "trials": [
+        {
+          "diagnostics": [
+            {
+              "path": ".pi-lab/java08-benchmark-java07/trial-0/scheduler/state/benchmark-gc-14.log",
+              "sha256": "9ee5dbfb7eacb53df01e1e2902d32fd75bcf3354952c5657f9564d71bae01060"
+            },
+            {
+              "path": ".pi-lab/java08-benchmark-java07/trial-0/scheduler/state/benchmark-gc-96.log",
+              "sha256": "9568dbb9e262b21444f5dc03971ed8b1acd1977f99f447c325515e533c6e625d"
+            },
+            {
+              "path": ".pi-lab/java08-benchmark-java07/trial-0/evidence/benchmark-scheduler.log",
+              "sha256": "b8df6bef209c36a95f2acc0b44cff4d4fcf8e546354040ad6fc307f0313d7e29"
+            }
+          ],
+          "path": ".pi-lab/java08-benchmark-java07/trial-0/benchmark.json",
+          "run": "86c61036aaefe034",
+          "sha256": "83c01a033bd9a32e9725cdcd9d757cd089d56b8090412e5629ca6f9ed877e0fd"
+        },
+        {
+          "diagnostics": [
+            {
+              "path": ".pi-lab/java08-benchmark-java07/trial-1/scheduler/state/benchmark-gc-14.log",
+              "sha256": "85302a8815c65e97158dbfd1477344d93937deeaa7502b5a481bb9f4fdd58e5e"
+            },
+            {
+              "path": ".pi-lab/java08-benchmark-java07/trial-1/scheduler/state/benchmark-gc-95.log",
+              "sha256": "b23523f7ef9939122595ee2ce5da84bf1fcb2f21574a4801dc2859a24e3661f7"
+            },
+            {
+              "path": ".pi-lab/java08-benchmark-java07/trial-1/evidence/benchmark-scheduler.log",
+              "sha256": "864feb9fc01a75672c5bfdbdc0ad149aec950891c63b924dd841850c1be9c8c4"
+            }
+          ],
+          "path": ".pi-lab/java08-benchmark-java07/trial-1/benchmark.json",
+          "run": "644f7c63157fdb8c",
+          "sha256": "63ca89b2edfacce54782b7549ad779476df0e11cbbcd4974e9894e80aae6c8a6"
+        },
+        {
+          "diagnostics": [
+            {
+              "path": ".pi-lab/java08-benchmark-java07/trial-2/scheduler/state/benchmark-gc-14.log",
+              "sha256": "1d412efce5702874064f732f7177954deddc0639ec6ae5b334ce32aff24fa5a3"
+            },
+            {
+              "path": ".pi-lab/java08-benchmark-java07/trial-2/scheduler/state/benchmark-gc-98.log",
+              "sha256": "1d570657350ff477418483d8fddeb60848ad569ebf2fee1dbb0c459512550856"
+            },
+            {
+              "path": ".pi-lab/java08-benchmark-java07/trial-2/evidence/benchmark-scheduler.log",
+              "sha256": "d2297b8181b605b8877199f5950640a5184e1e1b8ee58557da62977de04264cc"
+            }
+          ],
+          "path": ".pi-lab/java08-benchmark-java07/trial-2/benchmark.json",
+          "run": "ed70d9a7c9cc50f4",
+          "sha256": "7da505e1447d6fb09a9c56d32cc3ff3586b4ba52be5bf38ae2100c648618f836"
+        }
+      ]
+    },
+    "java08": {
+      "metrics": {
+        "backupAckMs": {
+          "count": 3,
+          "max": 64.83421800658107,
+          "median": 47.617095056921244,
+          "min": 45.912989997304976,
+          "p95": 64.83421800658107
+        },
+        "batchSubmitAckMs": {
+          "count": 18,
+          "max": 121.81355699431151,
+          "median": 75.51165955374017,
+          "min": 38.95289509091526,
+          "p95": 121.81355699431151
+        },
+        "batchSubmitToCompleteMs": {
+          "count": 18,
+          "max": 879.5520819257945,
+          "median": 698.6510200076737,
+          "min": 487.2971250442788,
+          "p95": 879.5520819257945
+        },
+        "clusterStartMs": {
+          "count": 3,
+          "max": 7184.960530954413,
+          "median": 7125.538300955668,
+          "min": 6891.046358970925,
+          "p95": 7184.960530954413
+        },
+        "fds": {
+          "count": 24,
+          "max": 26,
+          "median": 23.0,
+          "min": 23,
+          "p95": 26
+        },
+        "gcPauseMs": {
+          "count": 42,
+          "max": 77.006,
+          "median": 3.5519999999999996,
+          "min": 2.229,
+          "p95": 65.669
+        },
+        "rssAnonKiB": {
+          "count": 24,
+          "max": 102208,
+          "median": 97648.0,
+          "min": 83424,
+          "p95": 101648
+        },
+        "rssKiB": {
+          "count": 24,
+          "max": 126976,
+          "median": 122408.0,
+          "min": 108208,
+          "p95": 126416
+        },
+        "schedulerCrashToRecoveredMs": {
+          "count": 3,
+          "max": 3629.840914043598,
+          "median": 3536.576989921741,
+          "min": 3301.53335200157,
+          "p95": 3629.840914043598
+        },
+        "serviceStopToCleanedMs": {
+          "count": 3,
+          "max": 883.3982159849256,
+          "median": 783.5306780179963,
+          "min": 773.6499750753865,
+          "p95": 883.3982159849256
+        },
+        "serviceSubmitToReadyMs": {
+          "count": 3,
+          "max": 1798.1286239810288,
+          "median": 1777.3104009684175,
+          "min": 719.1565420944244,
+          "p95": 1798.1286239810288
+        },
+        "stateGetMs": {
+          "count": 90,
+          "max": 156.88210993539542,
+          "median": 26.7883405322209,
+          "min": 22.707130992785096,
+          "p95": 104.65780494268984
+        },
+        "threads": {
+          "count": 24,
+          "max": 27,
+          "median": 27.0,
+          "min": 27,
+          "p95": 27
+        }
+      },
+      "path": ".pi-lab/java08-benchmark-java08/result.json",
+      "sha256": "d2544cf210f90ce3de80f44325ed1e8812ea5de391d648d3e3e490ad7fd5ab91",
+      "trials": [
+        {
+          "diagnostics": [
+            {
+              "path": ".pi-lab/java08-benchmark-java08/trial-0/scheduler/state/benchmark-gc-14.log",
+              "sha256": "d8216aff55dddc119e7d549b7adce3c89f8231ff581b7cc699cf12af1a566433"
+            },
+            {
+              "path": ".pi-lab/java08-benchmark-java08/trial-0/scheduler/state/benchmark-gc-96.log",
+              "sha256": "41965d9e951fbcde45fa3f48a19b1d2138d37416cf2675985f23926260b468f1"
+            },
+            {
+              "path": ".pi-lab/java08-benchmark-java08/trial-0/evidence/benchmark-scheduler.log",
+              "sha256": "5378449e1e520135546f83b2503f25b7e028ca55bc9f106e263eae2f05574c0f"
+            }
+          ],
+          "path": ".pi-lab/java08-benchmark-java08/trial-0/benchmark.json",
+          "run": "9144a65a982e46d0",
+          "sha256": "bbdb22a14ed32783a2071bc782bdc4876eec7104a7033f6d5256c9d248eb442b"
+        },
+        {
+          "diagnostics": [
+            {
+              "path": ".pi-lab/java08-benchmark-java08/trial-1/scheduler/state/benchmark-gc-14.log",
+              "sha256": "ad1078323eab6e08781c5fe14d8f81187eb7b8e97594a3dbca0e032dbb02d18e"
+            },
+            {
+              "path": ".pi-lab/java08-benchmark-java08/trial-1/scheduler/state/benchmark-gc-96.log",
+              "sha256": "2af920fd8e1c57d645e4d57c0dd4e52756b5a97f74d5dbda31f0086c252f171d"
+            },
+            {
+              "path": ".pi-lab/java08-benchmark-java08/trial-1/evidence/benchmark-scheduler.log",
+              "sha256": "a041dcdcece7d63ac1b455bc81410304315097264430f7bbbbbe5a9ed0dd2286"
+            }
+          ],
+          "path": ".pi-lab/java08-benchmark-java08/trial-1/benchmark.json",
+          "run": "9bb76d41170864ec",
+          "sha256": "548b347f293ff2a014fd330797540d2efc11d0716ad4f56bb3dd04959a523b0e"
+        },
+        {
+          "diagnostics": [
+            {
+              "path": ".pi-lab/java08-benchmark-java08/trial-2/scheduler/state/benchmark-gc-14.log",
+              "sha256": "d303fbb611f203cf29cfcaafd74f858bd2598563d011fbcd9089ab35fee28f38"
+            },
+            {
+              "path": ".pi-lab/java08-benchmark-java08/trial-2/scheduler/state/benchmark-gc-96.log",
+              "sha256": "b836beacb4441fb15494f68562aa7c7c43134b810cac35d39d346fba2d71b8e2"
+            },
+            {
+              "path": ".pi-lab/java08-benchmark-java08/trial-2/evidence/benchmark-scheduler.log",
+              "sha256": "172f4d15eafb8376131234d8aedb6d02d53736854f6a2514a8c6af5d60a747e3"
+            }
+          ],
+          "path": ".pi-lab/java08-benchmark-java08/trial-2/benchmark.json",
+          "run": "eefeedf22f6aa2a4",
+          "sha256": "34df03ffc6ea6e525ae188957c957e87d851dfff880935805fa5e7caab0eb1d8"
+        }
+      ]
+    }
+  },
+  "changedFiles": [
+    "build-support/native/native-load-study",
+    "build-support/native/tests/test_boundary.py",
+    "build-support/native/tests/test_load_study.py",
+    "build-support/native/verify-boundary",
+    "docs/reimagining/JAVA09_SQL_RECORD_DECISION.md",
+    "scheduler/native/src/main/java/org/apache/aurora/nativescheduler/NativeDaemon.java",
+    "scheduler/native/src/main/java/org/apache/aurora/nativescheduler/NativeSchedulerMain.java",
+    "scheduler/native/src/test/java/org/apache/aurora/nativescheduler/NativeDaemonTest.java",
+    "scheduler/native/src/test/java/org/apache/aurora/nativescheduler/NativeHttpTest.java",
+    "src/main/java/org/apache/aurora/scheduler/storage/sql/NativeSqlStore.java",
+    "src/test/java/org/apache/aurora/scheduler/storage/sql/NativeSqlStoreTest.java"
+  ],
+  "compatibility": {
+    "java25": {
+      "newBundle": {
+        "path": ".cache/java08-java25-bundle/bundle.json",
+        "sha256": "34eca4c44714b9790356bd4dc123bbaf8c015609d4726fbc1e18675543e37c82"
+      },
+      "oldBundle": {
+        "path": ".cache/java07-java25-bundle/bundle.json",
+        "sha256": "c72b3782a8ff5285aba131eb8ebba956300be7dea54d44bc2508a4c29b94b62b"
+      },
+      "originalInputsUnchanged": true,
+      "outputs": [
+        {
+          "path": ".cache/java08-java25-compat/old-inspect.stdout",
+          "sha256": "94a9b087ee837c881cfe5ba48e7e23b7b79245cdaae7037bf70bbacb77c94d01"
+        },
+        {
+          "path": ".cache/java08-java25-compat/old-inspect.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": ".cache/java08-java25-compat/new-inspect.stdout",
+          "sha256": "94a9b087ee837c881cfe5ba48e7e23b7b79245cdaae7037bf70bbacb77c94d01"
+        },
+        {
+          "path": ".cache/java08-java25-compat/new-inspect.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": ".cache/java08-java25-compat/new-advance-backup.stdout",
+          "sha256": "ea81f67fb579db3f90f5d66410a2ee6a6f9646885e692a836de86e0695a34acc"
+        },
+        {
+          "path": ".cache/java08-java25-compat/new-advance-backup.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": ".cache/java08-java25-compat/old-reopen.stdout",
+          "sha256": "ea81f67fb579db3f90f5d66410a2ee6a6f9646885e692a836de86e0695a34acc"
+        },
+        {
+          "path": ".cache/java08-java25-compat/old-reopen.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": ".cache/java08-java25-compat/new-backup-reopen.stdout",
+          "sha256": "ea81f67fb579db3f90f5d66410a2ee6a6f9646885e692a836de86e0695a34acc"
+        },
+        {
+          "path": ".cache/java08-java25-compat/new-backup-reopen.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": ".cache/java08-java25-compat/old-backup-reopen.stdout",
+          "sha256": "ea81f67fb579db3f90f5d66410a2ee6a6f9646885e692a836de86e0695a34acc"
+        },
+        {
+          "path": ".cache/java08-java25-compat/old-backup-reopen.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": ".cache/java08-java25-compat/new-dependency-write.stdout",
+          "sha256": "d750d3ecd32c75f944dc281b4abc206f88771bb74d235431cc0c97f6381d3ecb"
+        },
+        {
+          "path": ".cache/java08-java25-compat/new-dependency-write.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": ".cache/java08-java25-compat/new-dependency-backup.stdout",
+          "sha256": "d750d3ecd32c75f944dc281b4abc206f88771bb74d235431cc0c97f6381d3ecb"
+        },
+        {
+          "path": ".cache/java08-java25-compat/new-dependency-backup.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": ".cache/java08-java25-compat/old-dependency-replay.stdout",
+          "sha256": "d750d3ecd32c75f944dc281b4abc206f88771bb74d235431cc0c97f6381d3ecb"
+        },
+        {
+          "path": ".cache/java08-java25-compat/old-dependency-replay.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": ".cache/java08-java25-compat/old-dependency-backup.stdout",
+          "sha256": "d750d3ecd32c75f944dc281b4abc206f88771bb74d235431cc0c97f6381d3ecb"
+        },
+        {
+          "path": ".cache/java08-java25-compat/old-dependency-backup.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": ".cache/java08-java25-compat/new-dependency-backup-reopen.stdout",
+          "sha256": "d750d3ecd32c75f944dc281b4abc206f88771bb74d235431cc0c97f6381d3ecb"
+        },
+        {
+          "path": ".cache/java08-java25-compat/new-dependency-backup-reopen.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": ".cache/java08-java25-compat/old-dependency-write.stdout",
+          "sha256": "63eae2e85b02786f42bb28e27fb114d4553e70552cc188e5fe3ee3d938bf17f1"
+        },
+        {
+          "path": ".cache/java08-java25-compat/old-dependency-write.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": ".cache/java08-java25-compat/new-dependency-replay.stdout",
+          "sha256": "63eae2e85b02786f42bb28e27fb114d4553e70552cc188e5fe3ee3d938bf17f1"
+        },
+        {
+          "path": ".cache/java08-java25-compat/new-dependency-replay.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "path": ".cache/java08-java25-compat/result.json",
+      "sha256": "3dea1be5757888929e7a515c7c74aabc928d226388bccd6e4ea063ee28524a7e",
+      "stateCounts": {
+        "advanced": {
+          "attempts": 18,
+          "commands": 30,
+          "jobs": 9
+        },
+        "new": {
+          "attempts": 19,
+          "commands": 32,
+          "jobs": 10
+        },
+        "old": {
+          "attempts": 18,
+          "commands": 30,
+          "jobs": 9
+        },
+        "reverse": {
+          "attempts": 20,
+          "commands": 34,
+          "jobs": 11
+        }
+      },
+      "stateExecutions": 13
+    },
+    "java26": {
+      "newBundle": {
+        "path": ".cache/java08-java26-bundle/bundle.json",
+        "sha256": "2ce6a632058b9be870f94e41ee5b10fd266e66bd1fae143e5fb4c8cdd7db1ba4"
+      },
+      "oldBundle": {
+        "path": ".cache/java07-java25-bundle/bundle.json",
+        "sha256": "c72b3782a8ff5285aba131eb8ebba956300be7dea54d44bc2508a4c29b94b62b"
+      },
+      "originalInputsUnchanged": true,
+      "outputs": [
+        {
+          "path": ".cache/java08-java26-compat/old-inspect.stdout",
+          "sha256": "94a9b087ee837c881cfe5ba48e7e23b7b79245cdaae7037bf70bbacb77c94d01"
+        },
+        {
+          "path": ".cache/java08-java26-compat/old-inspect.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": ".cache/java08-java26-compat/new-inspect.stdout",
+          "sha256": "94a9b087ee837c881cfe5ba48e7e23b7b79245cdaae7037bf70bbacb77c94d01"
+        },
+        {
+          "path": ".cache/java08-java26-compat/new-inspect.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": ".cache/java08-java26-compat/new-advance-backup.stdout",
+          "sha256": "ea81f67fb579db3f90f5d66410a2ee6a6f9646885e692a836de86e0695a34acc"
+        },
+        {
+          "path": ".cache/java08-java26-compat/new-advance-backup.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": ".cache/java08-java26-compat/old-reopen.stdout",
+          "sha256": "ea81f67fb579db3f90f5d66410a2ee6a6f9646885e692a836de86e0695a34acc"
+        },
+        {
+          "path": ".cache/java08-java26-compat/old-reopen.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": ".cache/java08-java26-compat/new-backup-reopen.stdout",
+          "sha256": "ea81f67fb579db3f90f5d66410a2ee6a6f9646885e692a836de86e0695a34acc"
+        },
+        {
+          "path": ".cache/java08-java26-compat/new-backup-reopen.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": ".cache/java08-java26-compat/old-backup-reopen.stdout",
+          "sha256": "ea81f67fb579db3f90f5d66410a2ee6a6f9646885e692a836de86e0695a34acc"
+        },
+        {
+          "path": ".cache/java08-java26-compat/old-backup-reopen.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": ".cache/java08-java26-compat/new-dependency-write.stdout",
+          "sha256": "d750d3ecd32c75f944dc281b4abc206f88771bb74d235431cc0c97f6381d3ecb"
+        },
+        {
+          "path": ".cache/java08-java26-compat/new-dependency-write.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": ".cache/java08-java26-compat/new-dependency-backup.stdout",
+          "sha256": "d750d3ecd32c75f944dc281b4abc206f88771bb74d235431cc0c97f6381d3ecb"
+        },
+        {
+          "path": ".cache/java08-java26-compat/new-dependency-backup.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": ".cache/java08-java26-compat/old-dependency-replay.stdout",
+          "sha256": "d750d3ecd32c75f944dc281b4abc206f88771bb74d235431cc0c97f6381d3ecb"
+        },
+        {
+          "path": ".cache/java08-java26-compat/old-dependency-replay.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": ".cache/java08-java26-compat/old-dependency-backup.stdout",
+          "sha256": "d750d3ecd32c75f944dc281b4abc206f88771bb74d235431cc0c97f6381d3ecb"
+        },
+        {
+          "path": ".cache/java08-java26-compat/old-dependency-backup.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": ".cache/java08-java26-compat/new-dependency-backup-reopen.stdout",
+          "sha256": "d750d3ecd32c75f944dc281b4abc206f88771bb74d235431cc0c97f6381d3ecb"
+        },
+        {
+          "path": ".cache/java08-java26-compat/new-dependency-backup-reopen.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": ".cache/java08-java26-compat/old-dependency-write.stdout",
+          "sha256": "63eae2e85b02786f42bb28e27fb114d4553e70552cc188e5fe3ee3d938bf17f1"
+        },
+        {
+          "path": ".cache/java08-java26-compat/old-dependency-write.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": ".cache/java08-java26-compat/new-dependency-replay.stdout",
+          "sha256": "63eae2e85b02786f42bb28e27fb114d4553e70552cc188e5fe3ee3d938bf17f1"
+        },
+        {
+          "path": ".cache/java08-java26-compat/new-dependency-replay.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "path": ".cache/java08-java26-compat/result.json",
+      "sha256": "abf725462f9e87eaa2e3b167efb0c1e6708402e892286c14946932cbb19190aa",
+      "stateCounts": {
+        "advanced": {
+          "attempts": 18,
+          "commands": 30,
+          "jobs": 9
+        },
+        "new": {
+          "attempts": 19,
+          "commands": 32,
+          "jobs": 10
+        },
+        "old": {
+          "attempts": 18,
+          "commands": 30,
+          "jobs": 9
+        },
+        "reverse": {
+          "attempts": 20,
+          "commands": 34,
+          "jobs": 11
+        }
+      },
+      "stateExecutions": 13
+    },
+    "java26-runtime": {
+      "newBundle": {
+        "path": ".cache/java08-java26-runtime-bundle/bundle.json",
+        "sha256": "d909bf2c8f8041c96073b84aacc77c8bee1618a796ed4e57a2edee89f4da67ce"
+      },
+      "oldBundle": {
+        "path": ".cache/java07-java25-bundle/bundle.json",
+        "sha256": "c72b3782a8ff5285aba131eb8ebba956300be7dea54d44bc2508a4c29b94b62b"
+      },
+      "originalInputsUnchanged": true,
+      "outputs": [
+        {
+          "path": ".cache/java08-java26-runtime-compat/old-inspect.stdout",
+          "sha256": "94a9b087ee837c881cfe5ba48e7e23b7b79245cdaae7037bf70bbacb77c94d01"
+        },
+        {
+          "path": ".cache/java08-java26-runtime-compat/old-inspect.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": ".cache/java08-java26-runtime-compat/new-inspect.stdout",
+          "sha256": "94a9b087ee837c881cfe5ba48e7e23b7b79245cdaae7037bf70bbacb77c94d01"
+        },
+        {
+          "path": ".cache/java08-java26-runtime-compat/new-inspect.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": ".cache/java08-java26-runtime-compat/new-advance-backup.stdout",
+          "sha256": "ea81f67fb579db3f90f5d66410a2ee6a6f9646885e692a836de86e0695a34acc"
+        },
+        {
+          "path": ".cache/java08-java26-runtime-compat/new-advance-backup.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": ".cache/java08-java26-runtime-compat/old-reopen.stdout",
+          "sha256": "ea81f67fb579db3f90f5d66410a2ee6a6f9646885e692a836de86e0695a34acc"
+        },
+        {
+          "path": ".cache/java08-java26-runtime-compat/old-reopen.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": ".cache/java08-java26-runtime-compat/new-backup-reopen.stdout",
+          "sha256": "ea81f67fb579db3f90f5d66410a2ee6a6f9646885e692a836de86e0695a34acc"
+        },
+        {
+          "path": ".cache/java08-java26-runtime-compat/new-backup-reopen.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": ".cache/java08-java26-runtime-compat/old-backup-reopen.stdout",
+          "sha256": "ea81f67fb579db3f90f5d66410a2ee6a6f9646885e692a836de86e0695a34acc"
+        },
+        {
+          "path": ".cache/java08-java26-runtime-compat/old-backup-reopen.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": ".cache/java08-java26-runtime-compat/new-dependency-write.stdout",
+          "sha256": "d750d3ecd32c75f944dc281b4abc206f88771bb74d235431cc0c97f6381d3ecb"
+        },
+        {
+          "path": ".cache/java08-java26-runtime-compat/new-dependency-write.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": ".cache/java08-java26-runtime-compat/new-dependency-backup.stdout",
+          "sha256": "d750d3ecd32c75f944dc281b4abc206f88771bb74d235431cc0c97f6381d3ecb"
+        },
+        {
+          "path": ".cache/java08-java26-runtime-compat/new-dependency-backup.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": ".cache/java08-java26-runtime-compat/old-dependency-replay.stdout",
+          "sha256": "d750d3ecd32c75f944dc281b4abc206f88771bb74d235431cc0c97f6381d3ecb"
+        },
+        {
+          "path": ".cache/java08-java26-runtime-compat/old-dependency-replay.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": ".cache/java08-java26-runtime-compat/old-dependency-backup.stdout",
+          "sha256": "d750d3ecd32c75f944dc281b4abc206f88771bb74d235431cc0c97f6381d3ecb"
+        },
+        {
+          "path": ".cache/java08-java26-runtime-compat/old-dependency-backup.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": ".cache/java08-java26-runtime-compat/new-dependency-backup-reopen.stdout",
+          "sha256": "d750d3ecd32c75f944dc281b4abc206f88771bb74d235431cc0c97f6381d3ecb"
+        },
+        {
+          "path": ".cache/java08-java26-runtime-compat/new-dependency-backup-reopen.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": ".cache/java08-java26-runtime-compat/old-dependency-write.stdout",
+          "sha256": "63eae2e85b02786f42bb28e27fb114d4553e70552cc188e5fe3ee3d938bf17f1"
+        },
+        {
+          "path": ".cache/java08-java26-runtime-compat/old-dependency-write.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": ".cache/java08-java26-runtime-compat/new-dependency-replay.stdout",
+          "sha256": "63eae2e85b02786f42bb28e27fb114d4553e70552cc188e5fe3ee3d938bf17f1"
+        },
+        {
+          "path": ".cache/java08-java26-runtime-compat/new-dependency-replay.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "path": ".cache/java08-java26-runtime-compat/result.json",
+      "sha256": "584828aec974c224e33ea9af44e851fbef02e2a70f41c4281300101788ce3534",
+      "stateCounts": {
+        "advanced": {
+          "attempts": 18,
+          "commands": 30,
+          "jobs": 9
+        },
+        "new": {
+          "attempts": 19,
+          "commands": 32,
+          "jobs": 10
+        },
+        "old": {
+          "attempts": 18,
+          "commands": 30,
+          "jobs": 9
+        },
+        "reverse": {
+          "attempts": 20,
+          "commands": 34,
+          "jobs": 11
+        }
+      },
+      "stateExecutions": 13
+    },
+    "java8": {
+      "newBundle": {
+        "path": ".cache/java08-java25-bundle/bundle.json",
+        "sha256": "34eca4c44714b9790356bd4dc123bbaf8c015609d4726fbc1e18675543e37c82"
+      },
+      "oldBundle": {
+        "path": ".cache/cut01-fresh-bundle-2/bundle.json",
+        "sha256": "fd14356ef3e4ced0ecd7ec6744e1ece827a866c27f5310900197b0ae26123863"
+      },
+      "originalInputsUnchanged": true,
+      "outputs": [
+        {
+          "path": ".cache/java08-java8-compat/old-inspect.stdout",
+          "sha256": "2764aaa3e4f5860a4800ae829fdcbf6a5bc445c77903252387cbba6372c3377a"
+        },
+        {
+          "path": ".cache/java08-java8-compat/old-inspect.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": ".cache/java08-java8-compat/new-inspect.stdout",
+          "sha256": "2764aaa3e4f5860a4800ae829fdcbf6a5bc445c77903252387cbba6372c3377a"
+        },
+        {
+          "path": ".cache/java08-java8-compat/new-inspect.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": ".cache/java08-java8-compat/new-advance-backup.stdout",
+          "sha256": "f0dd42c90813902d4f6a7820bbbcd3180695df9165855927674d6102d5094cb0"
+        },
+        {
+          "path": ".cache/java08-java8-compat/new-advance-backup.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": ".cache/java08-java8-compat/old-reopen.stdout",
+          "sha256": "f0dd42c90813902d4f6a7820bbbcd3180695df9165855927674d6102d5094cb0"
+        },
+        {
+          "path": ".cache/java08-java8-compat/old-reopen.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": ".cache/java08-java8-compat/new-backup-reopen.stdout",
+          "sha256": "f0dd42c90813902d4f6a7820bbbcd3180695df9165855927674d6102d5094cb0"
+        },
+        {
+          "path": ".cache/java08-java8-compat/new-backup-reopen.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": ".cache/java08-java8-compat/old-backup-reopen.stdout",
+          "sha256": "f0dd42c90813902d4f6a7820bbbcd3180695df9165855927674d6102d5094cb0"
+        },
+        {
+          "path": ".cache/java08-java8-compat/old-backup-reopen.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": ".cache/java08-java8-compat/new-dependency-write.stdout",
+          "sha256": "351dc2c6f690463fddf1a08f461e9d7f8bc3c0947bf3953766d5ce56ac4b0878"
+        },
+        {
+          "path": ".cache/java08-java8-compat/new-dependency-write.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": ".cache/java08-java8-compat/new-dependency-backup.stdout",
+          "sha256": "351dc2c6f690463fddf1a08f461e9d7f8bc3c0947bf3953766d5ce56ac4b0878"
+        },
+        {
+          "path": ".cache/java08-java8-compat/new-dependency-backup.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": ".cache/java08-java8-compat/old-dependency-replay.stdout",
+          "sha256": "351dc2c6f690463fddf1a08f461e9d7f8bc3c0947bf3953766d5ce56ac4b0878"
+        },
+        {
+          "path": ".cache/java08-java8-compat/old-dependency-replay.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": ".cache/java08-java8-compat/old-dependency-backup.stdout",
+          "sha256": "351dc2c6f690463fddf1a08f461e9d7f8bc3c0947bf3953766d5ce56ac4b0878"
+        },
+        {
+          "path": ".cache/java08-java8-compat/old-dependency-backup.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": ".cache/java08-java8-compat/new-dependency-backup-reopen.stdout",
+          "sha256": "351dc2c6f690463fddf1a08f461e9d7f8bc3c0947bf3953766d5ce56ac4b0878"
+        },
+        {
+          "path": ".cache/java08-java8-compat/new-dependency-backup-reopen.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": ".cache/java08-java8-compat/old-dependency-write.stdout",
+          "sha256": "8dbb52c558691c89e3d3a7c42d57fc4f5a90ce38646b45de1b549d0000aed785"
+        },
+        {
+          "path": ".cache/java08-java8-compat/old-dependency-write.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": ".cache/java08-java8-compat/new-dependency-replay.stdout",
+          "sha256": "8dbb52c558691c89e3d3a7c42d57fc4f5a90ce38646b45de1b549d0000aed785"
+        },
+        {
+          "path": ".cache/java08-java8-compat/new-dependency-replay.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "path": ".cache/java08-java8-compat/result.json",
+      "sha256": "42398ae57553763ea59bbe7a7f3696d0576cb1ee1de22096fc7afc99ecfb852c",
+      "stateCounts": {
+        "advanced": {
+          "attempts": 18,
+          "commands": 30,
+          "jobs": 9
+        },
+        "new": {
+          "attempts": 19,
+          "commands": 32,
+          "jobs": 10
+        },
+        "old": {
+          "attempts": 18,
+          "commands": 30,
+          "jobs": 9
+        },
+        "reverse": {
+          "attempts": 20,
+          "commands": 34,
+          "jobs": 11
+        }
+      },
+      "stateExecutions": 13
+    }
+  },
+  "focusedValidation": {
+    "compileLog": {
+      "path": ".cache/java08-store-java8/compile.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "daemonSource": {
+      "path": ".cache/java08-fresh-source/scheduler/native/src/main/java/org/apache/aurora/nativescheduler/NativeDaemon.java",
+      "sha256": "413c5901dab41f5e920dfe514a243723758d0ee010ed5ea8d51629ea9f0d6fdd"
+    },
+    "fdProbe": {
+      "path": ".cache/java08-preflight/fd-probe.json",
+      "sha256": "2070d70b602790467f216240aef34e66f95612fa9105c81adbb1c49312010a99"
+    },
+    "fdProbeSource": {
+      "path": ".cache/java08-preflight/DaemonFdProbe.java",
+      "sha256": "591a5caf230f329aa358581ee0db3c22b746590d15105af8c4ffcf39fe1a159f"
+    },
+    "finalHttpTestCorrection": "Transient SocketException resets keep probing; only ConnectException observes listener refusal. Final suite results are supplied by all three fresh bundles.",
+    "preflightEquivalentSourceCommit": "af82e54209beea8a48ad233d73867f7af695d281",
+    "preflightLog": {
+      "path": ".cache/java08-preflight/gradle.log",
+      "sha256": "0349b87b3aa8412923da4b25f9f93a679ddea927cbef4bc92d0fa0085acc1995"
+    },
+    "preflightProvenance": "Development preflight preceded the frozen commit; all scheduler class names and bytes are checked against the fresh final build, with only the documented HTTP-test correction differing.",
+    "preflightTests": [
+      {
+        "path": ".cache/java08-preflight/build/protocol/test-results/test/TEST-org.apache.aurora.nativeprotocol.ProtocolValidatorTest.xml",
+        "sha256": "1bf8530d51febae33f53023f2e880e460d1c1de1edd1071ff63a847dc1cff67c"
+      },
+      {
+        "path": ".cache/java08-preflight/build/scheduler/test-results/test/TEST-org.apache.aurora.nativescheduler.JsonTest.xml",
+        "sha256": "6cd9d3a0edec3e10f35039679e76dc69353e3af7c7996f818a18049bf5cc2167"
+      },
+      {
+        "path": ".cache/java08-preflight/build/scheduler/test-results/test/TEST-org.apache.aurora.nativescheduler.NativeDaemonTest.xml",
+        "sha256": "2c0c9d1bc9cdb37ab0fb02e0af3391010b62f50dbe0542e52ba59c5904dfe006"
+      },
+      {
+        "path": ".cache/java08-preflight/build/scheduler/test-results/test/TEST-org.apache.aurora.nativescheduler.NativeEngineTest.xml",
+        "sha256": "f248439b5562d6a66f0578d298be8015f6bf2dbe7b709191a64bb1646c37e992"
+      },
+      {
+        "path": ".cache/java08-preflight/build/scheduler/test-results/test/TEST-org.apache.aurora.nativescheduler.NativeHttpTest.xml",
+        "sha256": "718cb4b92b078565ff9629c6ee525c3a70f2b0cf2b68c545afa4d4ef6a8bdfc9"
+      },
+      {
+        "path": ".cache/java08-preflight/build/scheduler/test-results/test/TEST-org.apache.aurora.scheduler.storage.sql.NativeSqlStoreTest.xml",
+        "sha256": "0fc2c840c3b313dbf7e71328dfd0566eea814dbd69633ec15f2932ae9afd2aad"
+      }
+    ],
+    "sourceVerification": {
+      "path": ".cache/java08-java8-source-verification.json",
+      "sha256": "b65dcf2e1792e28e5c145a028f77f3af739c828844b10de4cd989529a2a9c06f"
+    },
+    "testLog": {
+      "path": ".cache/java08-store-java8/test.log",
+      "sha256": "ba114f7507a8fad36ddbeb94b2f1eef8889357714a09ebcb47bc66e8463049aa"
+    }
+  },
+  "implementationCommits": [
+    "59acf7674",
+    "bb3b73de4",
+    "e422ee156"
+  ],
+  "independentBundleAudit": {
+    "path": ".cache/java08-bundle-audit.json",
+    "sha256": "cdf847a99dc120eff283d07c423fb0d7feaac8077b88123364ec59ea297d5a28"
+  },
+  "launcherStackLineDifferences": [
+    {
+      "command": "scheduler-missing-config",
+      "new": "Exception in thread \"main\" java.lang.IllegalArgumentException: Missing --config\n\tat org.apache.aurora.nativescheduler.NativeSchedulerMain.required(NativeSchedulerMain.java:66)\n\tat org.apache.aurora.nativescheduler.NativeSchedulerMain.main(NativeSchedulerMain.java:36)\n",
+      "old": "Exception in thread \"main\" java.lang.IllegalArgumentException: Missing --config\n\tat org.apache.aurora.nativescheduler.NativeSchedulerMain.required(NativeSchedulerMain.java:83)\n\tat org.apache.aurora.nativescheduler.NativeSchedulerMain.main(NativeSchedulerMain.java:37)\n",
+      "profile": "java25"
+    },
+    {
+      "command": "scheduler-missing-state",
+      "new": "Exception in thread \"main\" java.lang.IllegalArgumentException: Missing --state\n\tat org.apache.aurora.nativescheduler.NativeSchedulerMain.required(NativeSchedulerMain.java:66)\n\tat org.apache.aurora.nativescheduler.NativeSchedulerMain.main(NativeSchedulerMain.java:37)\n",
+      "old": "Exception in thread \"main\" java.lang.IllegalArgumentException: Missing --state\n\tat org.apache.aurora.nativescheduler.NativeSchedulerMain.required(NativeSchedulerMain.java:83)\n\tat org.apache.aurora.nativescheduler.NativeSchedulerMain.main(NativeSchedulerMain.java:38)\n",
+      "profile": "java25"
+    },
+    {
+      "command": "scheduler-relative-state",
+      "new": "Exception in thread \"main\" java.lang.IllegalArgumentException: Absolute state directory required\n\tat org.apache.aurora.nativescheduler.NativeSchedulerMain.main(NativeSchedulerMain.java:38)\n",
+      "old": "Exception in thread \"main\" java.lang.IllegalArgumentException: Absolute state directory required\n\tat org.apache.aurora.nativescheduler.NativeSchedulerMain.main(NativeSchedulerMain.java:39)\n",
+      "profile": "java25"
+    },
+    {
+      "command": "scheduler-unknown",
+      "new": "Exception in thread \"main\" java.lang.IllegalArgumentException: Invalid CLI arguments\n\tat org.apache.aurora.nativescheduler.NativeSchedulerMain.main(NativeSchedulerMain.java:34)\n",
+      "old": "Exception in thread \"main\" java.lang.IllegalArgumentException: Invalid CLI arguments\n\tat org.apache.aurora.nativescheduler.NativeSchedulerMain.main(NativeSchedulerMain.java:35)\n",
+      "profile": "java25"
+    },
+    {
+      "command": "scheduler-missing-config",
+      "new": "Exception in thread \"main\" java.lang.IllegalArgumentException: Missing --config\n\tat org.apache.aurora.nativescheduler.NativeSchedulerMain.required(NativeSchedulerMain.java:66)\n\tat org.apache.aurora.nativescheduler.NativeSchedulerMain.main(NativeSchedulerMain.java:36)\n",
+      "old": "Exception in thread \"main\" java.lang.IllegalArgumentException: Missing --config\n\tat org.apache.aurora.nativescheduler.NativeSchedulerMain.required(NativeSchedulerMain.java:83)\n\tat org.apache.aurora.nativescheduler.NativeSchedulerMain.main(NativeSchedulerMain.java:37)\n",
+      "profile": "java26-runtime"
+    },
+    {
+      "command": "scheduler-missing-state",
+      "new": "Exception in thread \"main\" java.lang.IllegalArgumentException: Missing --state\n\tat org.apache.aurora.nativescheduler.NativeSchedulerMain.required(NativeSchedulerMain.java:66)\n\tat org.apache.aurora.nativescheduler.NativeSchedulerMain.main(NativeSchedulerMain.java:37)\n",
+      "old": "Exception in thread \"main\" java.lang.IllegalArgumentException: Missing --state\n\tat org.apache.aurora.nativescheduler.NativeSchedulerMain.required(NativeSchedulerMain.java:83)\n\tat org.apache.aurora.nativescheduler.NativeSchedulerMain.main(NativeSchedulerMain.java:38)\n",
+      "profile": "java26-runtime"
+    },
+    {
+      "command": "scheduler-relative-state",
+      "new": "Exception in thread \"main\" java.lang.IllegalArgumentException: Absolute state directory required\n\tat org.apache.aurora.nativescheduler.NativeSchedulerMain.main(NativeSchedulerMain.java:38)\n",
+      "old": "Exception in thread \"main\" java.lang.IllegalArgumentException: Absolute state directory required\n\tat org.apache.aurora.nativescheduler.NativeSchedulerMain.main(NativeSchedulerMain.java:39)\n",
+      "profile": "java26-runtime"
+    },
+    {
+      "command": "scheduler-unknown",
+      "new": "Exception in thread \"main\" java.lang.IllegalArgumentException: Invalid CLI arguments\n\tat org.apache.aurora.nativescheduler.NativeSchedulerMain.main(NativeSchedulerMain.java:34)\n",
+      "old": "Exception in thread \"main\" java.lang.IllegalArgumentException: Invalid CLI arguments\n\tat org.apache.aurora.nativescheduler.NativeSchedulerMain.main(NativeSchedulerMain.java:35)\n",
+      "profile": "java26-runtime"
+    },
+    {
+      "command": "scheduler-missing-config",
+      "new": "Exception in thread \"main\" java.lang.IllegalArgumentException: Missing --config\n\tat org.apache.aurora.nativescheduler.NativeSchedulerMain.required(NativeSchedulerMain.java:66)\n\tat org.apache.aurora.nativescheduler.NativeSchedulerMain.main(NativeSchedulerMain.java:36)\n",
+      "old": "Exception in thread \"main\" java.lang.IllegalArgumentException: Missing --config\n\tat org.apache.aurora.nativescheduler.NativeSchedulerMain.required(NativeSchedulerMain.java:83)\n\tat org.apache.aurora.nativescheduler.NativeSchedulerMain.main(NativeSchedulerMain.java:37)\n",
+      "profile": "java26"
+    },
+    {
+      "command": "scheduler-missing-state",
+      "new": "Exception in thread \"main\" java.lang.IllegalArgumentException: Missing --state\n\tat org.apache.aurora.nativescheduler.NativeSchedulerMain.required(NativeSchedulerMain.java:66)\n\tat org.apache.aurora.nativescheduler.NativeSchedulerMain.main(NativeSchedulerMain.java:37)\n",
+      "old": "Exception in thread \"main\" java.lang.IllegalArgumentException: Missing --state\n\tat org.apache.aurora.nativescheduler.NativeSchedulerMain.required(NativeSchedulerMain.java:83)\n\tat org.apache.aurora.nativescheduler.NativeSchedulerMain.main(NativeSchedulerMain.java:38)\n",
+      "profile": "java26"
+    },
+    {
+      "command": "scheduler-relative-state",
+      "new": "Exception in thread \"main\" java.lang.IllegalArgumentException: Absolute state directory required\n\tat org.apache.aurora.nativescheduler.NativeSchedulerMain.main(NativeSchedulerMain.java:38)\n",
+      "old": "Exception in thread \"main\" java.lang.IllegalArgumentException: Absolute state directory required\n\tat org.apache.aurora.nativescheduler.NativeSchedulerMain.main(NativeSchedulerMain.java:39)\n",
+      "profile": "java26"
+    },
+    {
+      "command": "scheduler-unknown",
+      "new": "Exception in thread \"main\" java.lang.IllegalArgumentException: Invalid CLI arguments\n\tat org.apache.aurora.nativescheduler.NativeSchedulerMain.main(NativeSchedulerMain.java:34)\n",
+      "old": "Exception in thread \"main\" java.lang.IllegalArgumentException: Invalid CLI arguments\n\tat org.apache.aurora.nativescheduler.NativeSchedulerMain.main(NativeSchedulerMain.java:35)\n",
+      "profile": "java26"
+    }
+  ],
+  "limits": [
+    "Measurements are exploratory single-host samples, not an SLO or statistical significance claim.",
+    "Load freeze pauses the whole owned agent container and its workloads. The burst deadline bounds collection, not Python executor shutdown.",
+    "No concurrency or transport prototype was adopted. Java 25 remains default.",
+    "Private compatibility copies exercise 13 state operations per pair; original state is unchanged. PKCS12 initialization is not a TLS handshake test.",
+    "VM failure to create the shutdown helper or cleanup dispatcher is reported while retaining ownership; it is not claimed to be recoverable."
+  ],
+  "loadStudies": {
+    "java07": {
+      "limitations": [
+        "Pause freezes every process in agent-a's container; no adjustable delays or inside-tick measurements.",
+        "Burst has 24 workers and a 10-second collection deadline, not a hard wall-clock shutdown bound.",
+        "No concurrency prototype, performance assertion, SLO, or automatic retry.",
+        "Resource values are labelled samples, not peaks; request timings include mTLS."
+      ],
+      "path": ".pi-lab/java10-load-java07/result.json",
+      "sha256": "63540199b41ef81e4f945282f83a766a563b7566159d317dad764e9675e4478d",
+      "trials": [
+        {
+          "path": ".pi-lab/java10-load-java07/trial-0/load-study.json",
+          "run": "edd977812816f73b",
+          "sha256": "a921a393a1f17d2d555ac8d1082a6f3c170c120ca32cb2d1a0368dfc56677939"
+        },
+        {
+          "path": ".pi-lab/java10-load-java07/trial-1/load-study.json",
+          "run": "68740b20caacbf4f",
+          "sha256": "45ab55f3abd163062f815a6c8f1e2f2cd58bdce68679d434fb5af2385b3a2aa9"
+        },
+        {
+          "path": ".pi-lab/java10-load-java07/trial-2/load-study.json",
+          "run": "79d24bd3e0f8e5a1",
+          "sha256": "50c1aba12a18800fc843a904b54812b7d7b5b0d9e9a96fec6f3d12325a02bdd7"
+        }
+      ]
+    },
+    "java08": {
+      "limitations": [
+        "Pause freezes every process in agent-a's container; no adjustable delays or inside-tick measurements.",
+        "Burst has 24 workers and a 10-second collection deadline, not a hard wall-clock shutdown bound.",
+        "No concurrency prototype, performance assertion, SLO, or automatic retry.",
+        "Resource values are labelled samples, not peaks; request timings include mTLS."
+      ],
+      "path": ".pi-lab/java10-load-java08/result.json",
+      "sha256": "32ce4b9b11115d9c132cd7fdb48cc8a1ac64f0b3ef34416d0996e997dedd8fa9",
+      "trials": [
+        {
+          "path": ".pi-lab/java10-load-java08/trial-0/load-study.json",
+          "run": "d5bf89b9415788dc",
+          "sha256": "ae662497ea6bc0c8a851800d232404530611ecdb1fa82f0ea0d3deafeb441c0e"
+        },
+        {
+          "path": ".pi-lab/java10-load-java08/trial-1/load-study.json",
+          "run": "4543de1f624daba6",
+          "sha256": "31ae6fc1b8df81dc841f51379298ca1b3959e62e1c22f6d73c9ac70336d0c847"
+        },
+        {
+          "path": ".pi-lab/java10-load-java08/trial-2/load-study.json",
+          "run": "c01c2f0604cbd57b",
+          "sha256": "585be3fb80d571ceeaa75d0b54717615a31571097091058d5208e8f1ebdb6e66"
+        }
+      ]
+    }
+  },
+  "masterVerification": {
+    "path": ".cache/java08-master-verification.json",
+    "sha256": "beaa21d85ffa52915dd6e0ab4939236cac4d6f66ebee43d421175f25fdd63b14",
+    "verification": {
+      "checkedAt": 1789129494.6269011,
+      "implementationBasedOnUpstream": true,
+      "ok": true,
+      "refs": {
+        "master": "11ebaeeb071cb182c388a40755e84f60dda32260",
+        "origin": "11ebaeeb071cb182c388a40755e84f60dda32260",
+        "origin/master": "11ebaeeb071cb182c388a40755e84f60dda32260",
+        "upstream": "11ebaeeb071cb182c388a40755e84f60dda32260",
+        "upstream/master": "11ebaeeb071cb182c388a40755e84f60dda32260"
+      }
+    }
+  },
+  "measurementAnalysis": {
+    "analyzerSha256": "654c63c93d53a453e8d7f54c77bd39c208457dc353b6903925b349a5ef9a1b1f",
+    "loadSummaries": {
+      "java07": {
+        "collectionTimeouts": [
+          false,
+          false,
+          false
+        ],
+        "ok": true,
+        "phases": {
+          "burst": {
+            "pooled": {
+              "allOutcomeLatencyMs": {
+                "count": 72,
+                "max": 3636.6550230886787,
+                "median": 262.0687009766698,
+                "min": 14.650582917965949,
+                "p95": 3622.891240986064
+              },
+              "failureCategories": {
+                "builtins.ConnectionResetError": 16
+              },
+              "failureCount": 16,
+              "failureLatencyMs": {
+                "count": 16,
+                "max": 94.06632499303669,
+                "median": 23.520127520896494,
+                "min": 14.650582917965949,
+                "p95": 94.06632499303669
+              },
+              "fullCount": 72,
+              "missingTimingCount": 0,
+              "startOffsetMs": {
+                "count": 72,
+                "max": 7.216113968752325,
+                "median": 2.0270535023882985,
+                "min": 0.15394494403153658,
+                "p95": 5.981086054816842
+              },
+              "successCount": 56,
+              "successLatencyMs": {
+                "count": 56,
+                "max": 3636.6550230886787,
+                "median": 1843.3577829855494,
+                "min": 39.15550699457526,
+                "p95": 3626.6550780273974
+              }
+            },
+            "trials": [
+              {
+                "allOutcomeLatencyMs": {
+                  "count": 24,
+                  "max": 3622.891240986064,
+                  "median": 212.0070624514483,
+                  "min": 14.650582917965949,
+                  "p95": 3616.466650972143
+                },
+                "failureCategories": {
+                  "builtins.ConnectionResetError": 6
+                },
+                "failureCount": 6,
+                "failureLatencyMs": {
+                  "count": 6,
+                  "max": 19.925959990359843,
+                  "median": 17.16218696674332,
+                  "min": 14.650582917965949,
+                  "p95": 19.925959990359843
+                },
+                "fullCount": 24,
+                "missingTimingCount": 0,
+                "startOffsetMs": {
+                  "count": 24,
+                  "max": 7.216113968752325,
+                  "median": 3.7100579938851297,
+                  "min": 0.15394494403153658,
+                  "p95": 6.76494394429028
+                },
+                "successCount": 18,
+                "successLatencyMs": {
+                  "count": 18,
+                  "max": 3622.891240986064,
+                  "median": 1830.8224655338563,
+                  "min": 39.15550699457526,
+                  "p95": 3622.891240986064
+                },
+                "trial": 0
+              },
+              {
+                "allOutcomeLatencyMs": {
+                  "count": 24,
+                  "max": 3636.6550230886787,
+                  "median": 1014.9141495348886,
+                  "min": 21.413046051748097,
+                  "p95": 3619.2082880297676
+                },
+                "failureCategories": {
+                  "builtins.ConnectionResetError": 6
+                },
+                "failureCount": 6,
+                "failureLatencyMs": {
+                  "count": 6,
+                  "max": 25.833915104158223,
+                  "median": 23.899445484858006,
+                  "min": 21.413046051748097,
+                  "p95": 25.833915104158223
+                },
+                "fullCount": 24,
+                "missingTimingCount": 0,
+                "startOffsetMs": {
+                  "count": 24,
+                  "max": 2.6205029571428895,
+                  "median": 1.1993710068054497,
+                  "min": 0.16553804744035006,
+                  "p95": 2.569854026660323
+                },
+                "successCount": 18,
+                "successLatencyMs": {
+                  "count": 18,
+                  "max": 3636.6550230886787,
+                  "median": 1873.1398124364205,
+                  "min": 43.61148690804839,
+                  "p95": 3636.6550230886787
+                },
+                "trial": 1
+              },
+              {
+                "allOutcomeLatencyMs": {
+                  "count": 24,
+                  "max": 3632.24004895892,
+                  "median": 1063.3489295141771,
+                  "min": 41.55257996171713,
+                  "p95": 3626.6550780273974
+                },
+                "failureCategories": {
+                  "builtins.ConnectionResetError": 4
+                },
+                "failureCount": 4,
+                "failureLatencyMs": {
+                  "count": 4,
+                  "max": 94.06632499303669,
+                  "median": 75.45440300600603,
+                  "min": 41.55257996171713,
+                  "p95": 94.06632499303669
+                },
+                "fullCount": 24,
+                "missingTimingCount": 0,
+                "startOffsetMs": {
+                  "count": 24,
+                  "max": 5.361118004657328,
+                  "median": 2.546419040299952,
+                  "min": 0.16533408779650927,
+                  "p95": 4.992967005819082
+                },
+                "successCount": 20,
+                "successLatencyMs": {
+                  "count": 20,
+                  "max": 3632.24004895892,
+                  "median": 1839.434465917293,
+                  "min": 53.16461902111769,
+                  "p95": 3626.6550780273974
+                },
+                "trial": 2
+              }
+            ]
+          },
+          "paused": {
+            "pooled": {
+              "allOutcomeLatencyMs": {
+                "count": 24,
+                "max": 1542.2884650761262,
+                "median": 28.156526444945484,
+                "min": 23.103356012143195,
+                "p95": 1536.2162600504234
+              },
+              "failureCategories": {},
+              "failureCount": 0,
+              "failureLatencyMs": {
+                "count": 0
+              },
+              "fullCount": 24,
+              "missingTimingCount": 0,
+              "startOffsetMs": {
+                "count": 0
+              },
+              "successCount": 24,
+              "successLatencyMs": {
+                "count": 24,
+                "max": 1542.2884650761262,
+                "median": 28.156526444945484,
+                "min": 23.103356012143195,
+                "p95": 1536.2162600504234
+              }
+            },
+            "trials": [
+              {
+                "allOutcomeLatencyMs": {
+                  "count": 8,
+                  "max": 1542.2884650761262,
+                  "median": 41.24539450276643,
+                  "min": 23.103356012143195,
+                  "p95": 1542.2884650761262
+                },
+                "failureCategories": {},
+                "failureCount": 0,
+                "failureLatencyMs": {
+                  "count": 0
+                },
+                "fullCount": 8,
+                "missingTimingCount": 0,
+                "startOffsetMs": {
+                  "count": 0
+                },
+                "successCount": 8,
+                "successLatencyMs": {
+                  "count": 8,
+                  "max": 1542.2884650761262,
+                  "median": 41.24539450276643,
+                  "min": 23.103356012143195,
+                  "p95": 1542.2884650761262
+                },
+                "trial": 0
+              },
+              {
+                "allOutcomeLatencyMs": {
+                  "count": 8,
+                  "max": 1156.9412879180163,
+                  "median": 26.49830951122567,
+                  "min": 23.81395490374416,
+                  "p95": 1156.9412879180163
+                },
+                "failureCategories": {},
+                "failureCount": 0,
+                "failureLatencyMs": {
+                  "count": 0
+                },
+                "fullCount": 8,
+                "missingTimingCount": 0,
+                "startOffsetMs": {
+                  "count": 0
+                },
+                "successCount": 8,
+                "successLatencyMs": {
+                  "count": 8,
+                  "max": 1156.9412879180163,
+                  "median": 26.49830951122567,
+                  "min": 23.81395490374416,
+                  "p95": 1156.9412879180163
+                },
+                "trial": 1
+              },
+              {
+                "allOutcomeLatencyMs": {
+                  "count": 8,
+                  "max": 1536.2162600504234,
+                  "median": 45.06164602935314,
+                  "min": 23.53337698150426,
+                  "p95": 1536.2162600504234
+                },
+                "failureCategories": {},
+                "failureCount": 0,
+                "failureLatencyMs": {
+                  "count": 0
+                },
+                "fullCount": 8,
+                "missingTimingCount": 0,
+                "startOffsetMs": {
+                  "count": 0
+                },
+                "successCount": 8,
+                "successLatencyMs": {
+                  "count": 8,
+                  "max": 1536.2162600504234,
+                  "median": 45.06164602935314,
+                  "min": 23.53337698150426,
+                  "p95": 1536.2162600504234
+                },
+                "trial": 2
+              }
+            ]
+          },
+          "quiet": {
+            "pooled": {
+              "allOutcomeLatencyMs": {
+                "count": 24,
+                "max": 149.00214900262654,
+                "median": 26.93494298728183,
+                "min": 24.03219696134329,
+                "p95": 79.87918995786458
+              },
+              "failureCategories": {},
+              "failureCount": 0,
+              "failureLatencyMs": {
+                "count": 0
+              },
+              "fullCount": 24,
+              "missingTimingCount": 0,
+              "startOffsetMs": {
+                "count": 0
+              },
+              "successCount": 24,
+              "successLatencyMs": {
+                "count": 24,
+                "max": 149.00214900262654,
+                "median": 26.93494298728183,
+                "min": 24.03219696134329,
+                "p95": 79.87918995786458
+              }
+            },
+            "trials": [
+              {
+                "allOutcomeLatencyMs": {
+                  "count": 8,
+                  "max": 149.00214900262654,
+                  "median": 25.366782443597913,
+                  "min": 24.03219696134329,
+                  "p95": 149.00214900262654
+                },
+                "failureCategories": {},
+                "failureCount": 0,
+                "failureLatencyMs": {
+                  "count": 0
+                },
+                "fullCount": 8,
+                "missingTimingCount": 0,
+                "startOffsetMs": {
+                  "count": 0
+                },
+                "successCount": 8,
+                "successLatencyMs": {
+                  "count": 8,
+                  "max": 149.00214900262654,
+                  "median": 25.366782443597913,
+                  "min": 24.03219696134329,
+                  "p95": 149.00214900262654
+                },
+                "trial": 0
+              },
+              {
+                "allOutcomeLatencyMs": {
+                  "count": 8,
+                  "max": 78.81703390739858,
+                  "median": 27.03278645640239,
+                  "min": 25.10750200599432,
+                  "p95": 78.81703390739858
+                },
+                "failureCategories": {},
+                "failureCount": 0,
+                "failureLatencyMs": {
+                  "count": 0
+                },
+                "fullCount": 8,
+                "missingTimingCount": 0,
+                "startOffsetMs": {
+                  "count": 0
+                },
+                "successCount": 8,
+                "successLatencyMs": {
+                  "count": 8,
+                  "max": 78.81703390739858,
+                  "median": 27.03278645640239,
+                  "min": 25.10750200599432,
+                  "p95": 78.81703390739858
+                },
+                "trial": 1
+              },
+              {
+                "allOutcomeLatencyMs": {
+                  "count": 8,
+                  "max": 79.87918995786458,
+                  "median": 28.85535650420934,
+                  "min": 24.806610075756907,
+                  "p95": 79.87918995786458
+                },
+                "failureCategories": {},
+                "failureCount": 0,
+                "failureLatencyMs": {
+                  "count": 0
+                },
+                "fullCount": 8,
+                "missingTimingCount": 0,
+                "startOffsetMs": {
+                  "count": 0
+                },
+                "successCount": 8,
+                "successLatencyMs": {
+                  "count": 8,
+                  "max": 79.87918995786458,
+                  "median": 28.85535650420934,
+                  "min": 24.806610075756907,
+                  "p95": 79.87918995786458
+                },
+                "trial": 2
+              }
+            ]
+          }
+        },
+        "resourceMetrics": {
+          "pooled": {
+            "fds": {
+              "count": 12,
+              "max": 25.0,
+              "median": 22.0,
+              "min": 21.0,
+              "p95": 25.0
+            },
+            "rssAnonKiB": {
+              "count": 12,
+              "max": 99680.0,
+              "median": 94480.0,
+              "min": 91488.0,
+              "p95": 99680.0
+            },
+            "rssKiB": {
+              "count": 12,
+              "max": 124400.0,
+              "median": 119168.0,
+              "min": 116176.0,
+              "p95": 124400.0
+            },
+            "threads": {
+              "count": 12,
+              "max": 27.0,
+              "median": 27.0,
+              "min": 27.0,
+              "p95": 27.0
+            }
+          },
+          "trials": [
+            {
+              "samples": [
+                {
+                  "at": 1789132050.6760871,
+                  "fds": 22,
+                  "generation": 1,
+                  "label": "before-pause",
+                  "pid": 14,
+                  "rssAnonKiB": 91488,
+                  "rssKiB": 116176,
+                  "threads": 27
+                },
+                {
+                  "at": 1789132053.320815,
+                  "fds": 22,
+                  "generation": 1,
+                  "label": "after-pause",
+                  "pid": 14,
+                  "rssAnonKiB": 92048,
+                  "rssKiB": 116736,
+                  "threads": 27
+                },
+                {
+                  "at": 1789132063.6939535,
+                  "fds": 21,
+                  "generation": 1,
+                  "label": "while-paused-after-burst",
+                  "pid": 14,
+                  "rssAnonKiB": 93920,
+                  "rssKiB": 118608,
+                  "threads": 27
+                },
+                {
+                  "at": 1789132063.9801903,
+                  "fds": 22,
+                  "generation": 1,
+                  "label": "after-resume",
+                  "pid": 14,
+                  "rssAnonKiB": 94128,
+                  "rssKiB": 118816,
+                  "threads": 27
+                }
+              ],
+              "summary": {
+                "fds": {
+                  "count": 4,
+                  "max": 22.0,
+                  "median": 22.0,
+                  "min": 21.0,
+                  "p95": 22.0
+                },
+                "rssAnonKiB": {
+                  "count": 4,
+                  "max": 94128.0,
+                  "median": 92984.0,
+                  "min": 91488.0,
+                  "p95": 94128.0
+                },
+                "rssKiB": {
+                  "count": 4,
+                  "max": 118816.0,
+                  "median": 117672.0,
+                  "min": 116176.0,
+                  "p95": 118816.0
+                },
+                "threads": {
+                  "count": 4,
+                  "max": 27.0,
+                  "median": 27.0,
+                  "min": 27.0,
+                  "p95": 27.0
+                }
+              },
+              "trial": 0
+            },
+            {
+              "samples": [
+                {
+                  "at": 1789132081.280297,
+                  "fds": 22,
+                  "generation": 1,
+                  "label": "before-pause",
+                  "pid": 14,
+                  "rssAnonKiB": 91760,
+                  "rssKiB": 116448,
+                  "threads": 27
+                },
+                {
+                  "at": 1789132083.8838978,
+                  "fds": 22,
+                  "generation": 1,
+                  "label": "after-pause",
+                  "pid": 14,
+                  "rssAnonKiB": 92304,
+                  "rssKiB": 116992,
+                  "threads": 27
+                },
+                {
+                  "at": 1789132094.177374,
+                  "fds": 21,
+                  "generation": 1,
+                  "label": "while-paused-after-burst",
+                  "pid": 14,
+                  "rssAnonKiB": 94832,
+                  "rssKiB": 119520,
+                  "threads": 27
+                },
+                {
+                  "at": 1789132094.4718747,
+                  "fds": 22,
+                  "generation": 1,
+                  "label": "after-resume",
+                  "pid": 14,
+                  "rssAnonKiB": 95040,
+                  "rssKiB": 119728,
+                  "threads": 27
+                }
+              ],
+              "summary": {
+                "fds": {
+                  "count": 4,
+                  "max": 22.0,
+                  "median": 22.0,
+                  "min": 21.0,
+                  "p95": 22.0
+                },
+                "rssAnonKiB": {
+                  "count": 4,
+                  "max": 95040.0,
+                  "median": 93568.0,
+                  "min": 91760.0,
+                  "p95": 95040.0
+                },
+                "rssKiB": {
+                  "count": 4,
+                  "max": 119728.0,
+                  "median": 118256.0,
+                  "min": 116448.0,
+                  "p95": 119728.0
+                },
+                "threads": {
+                  "count": 4,
+                  "max": 27.0,
+                  "median": 27.0,
+                  "min": 27.0,
+                  "p95": 27.0
+                }
+              },
+              "trial": 1
+            },
+            {
+              "samples": [
+                {
+                  "at": 1789132111.059029,
+                  "fds": 22,
+                  "generation": 1,
+                  "label": "before-pause",
+                  "pid": 14,
+                  "rssAnonKiB": 97040,
+                  "rssKiB": 121728,
+                  "threads": 27
+                },
+                {
+                  "at": 1789132113.7127385,
+                  "fds": 22,
+                  "generation": 1,
+                  "label": "after-pause",
+                  "pid": 14,
+                  "rssAnonKiB": 97552,
+                  "rssKiB": 122240,
+                  "threads": 27
+                },
+                {
+                  "at": 1789132124.0588322,
+                  "fds": 21,
+                  "generation": 1,
+                  "label": "while-paused-after-burst",
+                  "pid": 14,
+                  "rssAnonKiB": 99488,
+                  "rssKiB": 124176,
+                  "threads": 27
+                },
+                {
+                  "at": 1789132124.5676854,
+                  "fds": 25,
+                  "generation": 1,
+                  "label": "after-resume",
+                  "pid": 14,
+                  "rssAnonKiB": 99680,
+                  "rssKiB": 124400,
+                  "threads": 27
+                }
+              ],
+              "summary": {
+                "fds": {
+                  "count": 4,
+                  "max": 25.0,
+                  "median": 22.0,
+                  "min": 21.0,
+                  "p95": 25.0
+                },
+                "rssAnonKiB": {
+                  "count": 4,
+                  "max": 99680.0,
+                  "median": 98520.0,
+                  "min": 97040.0,
+                  "p95": 99680.0
+                },
+                "rssKiB": {
+                  "count": 4,
+                  "max": 124400.0,
+                  "median": 123208.0,
+                  "min": 121728.0,
+                  "p95": 124400.0
+                },
+                "threads": {
+                  "count": 4,
+                  "max": 27.0,
+                  "median": 27.0,
+                  "min": 27.0,
+                  "p95": 27.0
+                }
+              },
+              "trial": 2
+            }
+          ]
+        },
+        "resources": [
+          {
+            "fds": 22,
+            "label": "before-pause",
+            "rssAnonKiB": 91488,
+            "rssKiB": 116176,
+            "threads": 27
+          },
+          {
+            "fds": 22,
+            "label": "after-pause",
+            "rssAnonKiB": 92048,
+            "rssKiB": 116736,
+            "threads": 27
+          },
+          {
+            "fds": 21,
+            "label": "while-paused-after-burst",
+            "rssAnonKiB": 93920,
+            "rssKiB": 118608,
+            "threads": 27
+          },
+          {
+            "fds": 22,
+            "label": "after-resume",
+            "rssAnonKiB": 94128,
+            "rssKiB": 118816,
+            "threads": 27
+          },
+          {
+            "fds": 22,
+            "label": "before-pause",
+            "rssAnonKiB": 91760,
+            "rssKiB": 116448,
+            "threads": 27
+          },
+          {
+            "fds": 22,
+            "label": "after-pause",
+            "rssAnonKiB": 92304,
+            "rssKiB": 116992,
+            "threads": 27
+          },
+          {
+            "fds": 21,
+            "label": "while-paused-after-burst",
+            "rssAnonKiB": 94832,
+            "rssKiB": 119520,
+            "threads": 27
+          },
+          {
+            "fds": 22,
+            "label": "after-resume",
+            "rssAnonKiB": 95040,
+            "rssKiB": 119728,
+            "threads": 27
+          },
+          {
+            "fds": 22,
+            "label": "before-pause",
+            "rssAnonKiB": 97040,
+            "rssKiB": 121728,
+            "threads": 27
+          },
+          {
+            "fds": 22,
+            "label": "after-pause",
+            "rssAnonKiB": 97552,
+            "rssKiB": 122240,
+            "threads": 27
+          },
+          {
+            "fds": 21,
+            "label": "while-paused-after-burst",
+            "rssAnonKiB": 99488,
+            "rssKiB": 124176,
+            "threads": 27
+          },
+          {
+            "fds": 25,
+            "label": "after-resume",
+            "rssAnonKiB": 99680,
+            "rssKiB": 124400,
+            "threads": 27
+          }
+        ],
+        "runIDs": [
+          "edd977812816f73b",
+          "68740b20caacbf4f",
+          "79d24bd3e0f8e5a1"
+        ],
+        "status": "available",
+        "trialCount": 3,
+        "trialIDs": [
+          0,
+          1,
+          2
+        ]
+      },
+      "java08": {
+        "collectionTimeouts": [
+          false,
+          false,
+          false
+        ],
+        "ok": true,
+        "phases": {
+          "burst": {
+            "pooled": {
+              "allOutcomeLatencyMs": {
+                "count": 72,
+                "max": 3624.129305011593,
+                "median": 226.97058354970068,
+                "min": 20.59187099803239,
+                "p95": 3596.3640169939026
+              },
+              "failureCategories": {
+                "builtins.ConnectionResetError": 18
+              },
+              "failureCount": 18,
+              "failureLatencyMs": {
+                "count": 18,
+                "max": 43.5628539416939,
+                "median": 26.98446047725156,
+                "min": 20.59187099803239,
+                "p95": 43.5628539416939
+              },
+              "fullCount": 72,
+              "missingTimingCount": 0,
+              "startOffsetMs": {
+                "count": 72,
+                "max": 17.962478916160762,
+                "median": 2.2544159437529743,
+                "min": 0.13564899563789368,
+                "p95": 8.225696976296604
+              },
+              "successCount": 54,
+              "successLatencyMs": {
+                "count": 54,
+                "max": 3624.129305011593,
+                "median": 1848.4804684412666,
+                "min": 39.27874693181366,
+                "p95": 3599.53750600107
+              }
+            },
+            "trials": [
+              {
+                "allOutcomeLatencyMs": {
+                  "count": 24,
+                  "max": 3624.129305011593,
+                  "median": 226.97058354970068,
+                  "min": 20.59187099803239,
+                  "p95": 3620.244865072891
+                },
+                "failureCategories": {
+                  "builtins.ConnectionResetError": 6
+                },
+                "failureCount": 6,
+                "failureLatencyMs": {
+                  "count": 6,
+                  "max": 28.540787985548377,
+                  "median": 24.822878011036664,
+                  "min": 20.59187099803239,
+                  "p95": 28.540787985548377
+                },
+                "fullCount": 24,
+                "missingTimingCount": 0,
+                "startOffsetMs": {
+                  "count": 24,
+                  "max": 3.062803065404296,
+                  "median": 1.4703819761052728,
+                  "min": 0.13564899563789368,
+                  "p95": 2.82398599665612
+                },
+                "successCount": 18,
+                "successLatencyMs": {
+                  "count": 18,
+                  "max": 3624.129305011593,
+                  "median": 1848.4804684412666,
+                  "min": 39.27874693181366,
+                  "p95": 3624.129305011593
+                },
+                "trial": 0
+              },
+              {
+                "allOutcomeLatencyMs": {
+                  "count": 24,
+                  "max": 3599.53750600107,
+                  "median": 1000.2838050131686,
+                  "min": 23.72702700085938,
+                  "p95": 3596.3640169939026
+                },
+                "failureCategories": {
+                  "builtins.ConnectionResetError": 6
+                },
+                "failureCount": 6,
+                "failureLatencyMs": {
+                  "count": 6,
+                  "max": 27.108923997730017,
+                  "median": 26.593475544359535,
+                  "min": 23.72702700085938,
+                  "p95": 27.108923997730017
+                },
+                "fullCount": 24,
+                "missingTimingCount": 0,
+                "startOffsetMs": {
+                  "count": 24,
+                  "max": 10.949737043119967,
+                  "median": 2.558446489274502,
+                  "min": 0.16140902880579233,
+                  "p95": 7.558858022093773
+                },
+                "successCount": 18,
+                "successLatencyMs": {
+                  "count": 18,
+                  "max": 3599.53750600107,
+                  "median": 1823.5874194651842,
+                  "min": 47.88031603675336,
+                  "p95": 3599.53750600107
+                },
+                "trial": 1
+              },
+              {
+                "allOutcomeLatencyMs": {
+                  "count": 24,
+                  "max": 3589.5653320476413,
+                  "median": 974.8082819860429,
+                  "min": 28.234730008989573,
+                  "p95": 3584.4863450620323
+                },
+                "failureCategories": {
+                  "builtins.ConnectionResetError": 6
+                },
+                "failureCount": 6,
+                "failureLatencyMs": {
+                  "count": 6,
+                  "max": 43.5628539416939,
+                  "median": 40.23619752842933,
+                  "min": 28.234730008989573,
+                  "p95": 43.5628539416939
+                },
+                "fullCount": 24,
+                "missingTimingCount": 0,
+                "startOffsetMs": {
+                  "count": 24,
+                  "max": 17.962478916160762,
+                  "median": 3.25006345519796,
+                  "min": 0.21313095930963755,
+                  "p95": 10.050766984932125
+                },
+                "successCount": 18,
+                "successLatencyMs": {
+                  "count": 18,
+                  "max": 3589.5653320476413,
+                  "median": 1856.2368885031901,
+                  "min": 55.24287500884384,
+                  "p95": 3589.5653320476413
+                },
+                "trial": 2
+              }
+            ]
+          },
+          "paused": {
+            "pooled": {
+              "allOutcomeLatencyMs": {
+                "count": 24,
+                "max": 1606.5517580136657,
+                "median": 26.41904802294448,
+                "min": 23.490265011787415,
+                "p95": 1225.0615429366007
+              },
+              "failureCategories": {},
+              "failureCount": 0,
+              "failureLatencyMs": {
+                "count": 0
+              },
+              "fullCount": 24,
+              "missingTimingCount": 0,
+              "startOffsetMs": {
+                "count": 0
+              },
+              "successCount": 24,
+              "successLatencyMs": {
+                "count": 24,
+                "max": 1606.5517580136657,
+                "median": 26.41904802294448,
+                "min": 23.490265011787415,
+                "p95": 1225.0615429366007
+              }
+            },
+            "trials": [
+              {
+                "allOutcomeLatencyMs": {
+                  "count": 8,
+                  "max": 1606.5517580136657,
+                  "median": 37.7805310417898,
+                  "min": 24.211753043346107,
+                  "p95": 1606.5517580136657
+                },
+                "failureCategories": {},
+                "failureCount": 0,
+                "failureLatencyMs": {
+                  "count": 0
+                },
+                "fullCount": 8,
+                "missingTimingCount": 0,
+                "startOffsetMs": {
+                  "count": 0
+                },
+                "successCount": 8,
+                "successLatencyMs": {
+                  "count": 8,
+                  "max": 1606.5517580136657,
+                  "median": 37.7805310417898,
+                  "min": 24.211753043346107,
+                  "p95": 1606.5517580136657
+                },
+                "trial": 0
+              },
+              {
+                "allOutcomeLatencyMs": {
+                  "count": 8,
+                  "max": 1150.051205069758,
+                  "median": 25.259724003262818,
+                  "min": 23.579618078656495,
+                  "p95": 1150.051205069758
+                },
+                "failureCategories": {},
+                "failureCount": 0,
+                "failureLatencyMs": {
+                  "count": 0
+                },
+                "fullCount": 8,
+                "missingTimingCount": 0,
+                "startOffsetMs": {
+                  "count": 0
+                },
+                "successCount": 8,
+                "successLatencyMs": {
+                  "count": 8,
+                  "max": 1150.051205069758,
+                  "median": 25.259724003262818,
+                  "min": 23.579618078656495,
+                  "p95": 1150.051205069758
+                },
+                "trial": 1
+              },
+              {
+                "allOutcomeLatencyMs": {
+                  "count": 8,
+                  "max": 1225.0615429366007,
+                  "median": 26.32901951437816,
+                  "min": 23.490265011787415,
+                  "p95": 1225.0615429366007
+                },
+                "failureCategories": {},
+                "failureCount": 0,
+                "failureLatencyMs": {
+                  "count": 0
+                },
+                "fullCount": 8,
+                "missingTimingCount": 0,
+                "startOffsetMs": {
+                  "count": 0
+                },
+                "successCount": 8,
+                "successLatencyMs": {
+                  "count": 8,
+                  "max": 1225.0615429366007,
+                  "median": 26.32901951437816,
+                  "min": 23.490265011787415,
+                  "p95": 1225.0615429366007
+                },
+                "trial": 2
+              }
+            ]
+          },
+          "quiet": {
+            "pooled": {
+              "allOutcomeLatencyMs": {
+                "count": 24,
+                "max": 171.9746240414679,
+                "median": 27.46415854198858,
+                "min": 24.393477011471987,
+                "p95": 94.98638403601944
+              },
+              "failureCategories": {},
+              "failureCount": 0,
+              "failureLatencyMs": {
+                "count": 0
+              },
+              "fullCount": 24,
+              "missingTimingCount": 0,
+              "startOffsetMs": {
+                "count": 0
+              },
+              "successCount": 24,
+              "successLatencyMs": {
+                "count": 24,
+                "max": 171.9746240414679,
+                "median": 27.46415854198858,
+                "min": 24.393477011471987,
+                "p95": 94.98638403601944
+              }
+            },
+            "trials": [
+              {
+                "allOutcomeLatencyMs": {
+                  "count": 8,
+                  "max": 85.56188293732703,
+                  "median": 47.52724897116423,
+                  "min": 24.393477011471987,
+                  "p95": 85.56188293732703
+                },
+                "failureCategories": {},
+                "failureCount": 0,
+                "failureLatencyMs": {
+                  "count": 0
+                },
+                "fullCount": 8,
+                "missingTimingCount": 0,
+                "startOffsetMs": {
+                  "count": 0
+                },
+                "successCount": 8,
+                "successLatencyMs": {
+                  "count": 8,
+                  "max": 85.56188293732703,
+                  "median": 47.52724897116423,
+                  "min": 24.393477011471987,
+                  "p95": 85.56188293732703
+                },
+                "trial": 0
+              },
+              {
+                "allOutcomeLatencyMs": {
+                  "count": 8,
+                  "max": 171.9746240414679,
+                  "median": 27.46415854198858,
+                  "min": 25.424540042877197,
+                  "p95": 171.9746240414679
+                },
+                "failureCategories": {},
+                "failureCount": 0,
+                "failureLatencyMs": {
+                  "count": 0
+                },
+                "fullCount": 8,
+                "missingTimingCount": 0,
+                "startOffsetMs": {
+                  "count": 0
+                },
+                "successCount": 8,
+                "successLatencyMs": {
+                  "count": 8,
+                  "max": 171.9746240414679,
+                  "median": 27.46415854198858,
+                  "min": 25.424540042877197,
+                  "p95": 171.9746240414679
+                },
+                "trial": 1
+              },
+              {
+                "allOutcomeLatencyMs": {
+                  "count": 8,
+                  "max": 94.98638403601944,
+                  "median": 26.7511805286631,
+                  "min": 25.277817039750516,
+                  "p95": 94.98638403601944
+                },
+                "failureCategories": {},
+                "failureCount": 0,
+                "failureLatencyMs": {
+                  "count": 0
+                },
+                "fullCount": 8,
+                "missingTimingCount": 0,
+                "startOffsetMs": {
+                  "count": 0
+                },
+                "successCount": 8,
+                "successLatencyMs": {
+                  "count": 8,
+                  "max": 94.98638403601944,
+                  "median": 26.7511805286631,
+                  "min": 25.277817039750516,
+                  "p95": 94.98638403601944
+                },
+                "trial": 2
+              }
+            ]
+          }
+        },
+        "resourceMetrics": {
+          "pooled": {
+            "fds": {
+              "count": 12,
+              "max": 25.0,
+              "median": 22.0,
+              "min": 21.0,
+              "p95": 25.0
+            },
+            "rssAnonKiB": {
+              "count": 12,
+              "max": 98848.0,
+              "median": 96424.0,
+              "min": 92608.0,
+              "p95": 98848.0
+            },
+            "rssKiB": {
+              "count": 12,
+              "max": 123600.0,
+              "median": 121184.0,
+              "min": 117376.0,
+              "p95": 123600.0
+            },
+            "threads": {
+              "count": 12,
+              "max": 27.0,
+              "median": 27.0,
+              "min": 27.0,
+              "p95": 27.0
+            }
+          },
+          "trials": [
+            {
+              "samples": [
+                {
+                  "at": 1789132142.8445086,
+                  "fds": 22,
+                  "generation": 1,
+                  "label": "before-pause",
+                  "pid": 14,
+                  "rssAnonKiB": 96240,
+                  "rssKiB": 120992,
+                  "threads": 27
+                },
+                {
+                  "at": 1789132145.54086,
+                  "fds": 22,
+                  "generation": 1,
+                  "label": "after-pause",
+                  "pid": 14,
+                  "rssAnonKiB": 96848,
+                  "rssKiB": 121600,
+                  "threads": 27
+                },
+                {
+                  "at": 1789132155.9445155,
+                  "fds": 21,
+                  "generation": 1,
+                  "label": "while-paused-after-burst",
+                  "pid": 14,
+                  "rssAnonKiB": 98656,
+                  "rssKiB": 123408,
+                  "threads": 27
+                },
+                {
+                  "at": 1789132156.2254279,
+                  "fds": 22,
+                  "generation": 1,
+                  "label": "after-resume",
+                  "pid": 14,
+                  "rssAnonKiB": 98848,
+                  "rssKiB": 123600,
+                  "threads": 27
+                }
+              ],
+              "summary": {
+                "fds": {
+                  "count": 4,
+                  "max": 22.0,
+                  "median": 22.0,
+                  "min": 21.0,
+                  "p95": 22.0
+                },
+                "rssAnonKiB": {
+                  "count": 4,
+                  "max": 98848.0,
+                  "median": 97752.0,
+                  "min": 96240.0,
+                  "p95": 98848.0
+                },
+                "rssKiB": {
+                  "count": 4,
+                  "max": 123600.0,
+                  "median": 122504.0,
+                  "min": 120992.0,
+                  "p95": 123600.0
+                },
+                "threads": {
+                  "count": 4,
+                  "max": 27.0,
+                  "median": 27.0,
+                  "min": 27.0,
+                  "p95": 27.0
+                }
+              },
+              "trial": 0
+            },
+            {
+              "samples": [
+                {
+                  "at": 1789132172.668214,
+                  "fds": 22,
+                  "generation": 1,
+                  "label": "before-pause",
+                  "pid": 14,
+                  "rssAnonKiB": 92608,
+                  "rssKiB": 117376,
+                  "threads": 27
+                },
+                {
+                  "at": 1789132175.3647325,
+                  "fds": 22,
+                  "generation": 1,
+                  "label": "after-pause",
+                  "pid": 14,
+                  "rssAnonKiB": 93264,
+                  "rssKiB": 118032,
+                  "threads": 27
+                },
+                {
+                  "at": 1789132185.6630929,
+                  "fds": 21,
+                  "generation": 1,
+                  "label": "while-paused-after-burst",
+                  "pid": 14,
+                  "rssAnonKiB": 95136,
+                  "rssKiB": 119904,
+                  "threads": 27
+                },
+                {
+                  "at": 1789132186.1655064,
+                  "fds": 25,
+                  "generation": 1,
+                  "label": "after-resume",
+                  "pid": 14,
+                  "rssAnonKiB": 95392,
+                  "rssKiB": 120192,
+                  "threads": 27
+                }
+              ],
+              "summary": {
+                "fds": {
+                  "count": 4,
+                  "max": 25.0,
+                  "median": 22.0,
+                  "min": 21.0,
+                  "p95": 25.0
+                },
+                "rssAnonKiB": {
+                  "count": 4,
+                  "max": 95392.0,
+                  "median": 94200.0,
+                  "min": 92608.0,
+                  "p95": 95392.0
+                },
+                "rssKiB": {
+                  "count": 4,
+                  "max": 120192.0,
+                  "median": 118968.0,
+                  "min": 117376.0,
+                  "p95": 120192.0
+                },
+                "threads": {
+                  "count": 4,
+                  "max": 27.0,
+                  "median": 27.0,
+                  "min": 27.0,
+                  "p95": 27.0
+                }
+              },
+              "trial": 1
+            },
+            {
+              "samples": [
+                {
+                  "at": 1789132202.588236,
+                  "fds": 22,
+                  "generation": 1,
+                  "label": "before-pause",
+                  "pid": 14,
+                  "rssAnonKiB": 95968,
+                  "rssKiB": 120736,
+                  "threads": 27
+                },
+                {
+                  "at": 1789132205.190809,
+                  "fds": 22,
+                  "generation": 1,
+                  "label": "after-pause",
+                  "pid": 14,
+                  "rssAnonKiB": 96608,
+                  "rssKiB": 121376,
+                  "threads": 27
+                },
+                {
+                  "at": 1789132213.768117,
+                  "fds": 21,
+                  "generation": 1,
+                  "label": "while-paused-after-burst",
+                  "pid": 14,
+                  "rssAnonKiB": 98576,
+                  "rssKiB": 123344,
+                  "threads": 27
+                },
+                {
+                  "at": 1789132214.0453513,
+                  "fds": 22,
+                  "generation": 1,
+                  "label": "after-resume",
+                  "pid": 14,
+                  "rssAnonKiB": 98768,
+                  "rssKiB": 123536,
+                  "threads": 27
+                }
+              ],
+              "summary": {
+                "fds": {
+                  "count": 4,
+                  "max": 22.0,
+                  "median": 22.0,
+                  "min": 21.0,
+                  "p95": 22.0
+                },
+                "rssAnonKiB": {
+                  "count": 4,
+                  "max": 98768.0,
+                  "median": 97592.0,
+                  "min": 95968.0,
+                  "p95": 98768.0
+                },
+                "rssKiB": {
+                  "count": 4,
+                  "max": 123536.0,
+                  "median": 122360.0,
+                  "min": 120736.0,
+                  "p95": 123536.0
+                },
+                "threads": {
+                  "count": 4,
+                  "max": 27.0,
+                  "median": 27.0,
+                  "min": 27.0,
+                  "p95": 27.0
+                }
+              },
+              "trial": 2
+            }
+          ]
+        },
+        "resources": [
+          {
+            "fds": 22,
+            "label": "before-pause",
+            "rssAnonKiB": 96240,
+            "rssKiB": 120992,
+            "threads": 27
+          },
+          {
+            "fds": 22,
+            "label": "after-pause",
+            "rssAnonKiB": 96848,
+            "rssKiB": 121600,
+            "threads": 27
+          },
+          {
+            "fds": 21,
+            "label": "while-paused-after-burst",
+            "rssAnonKiB": 98656,
+            "rssKiB": 123408,
+            "threads": 27
+          },
+          {
+            "fds": 22,
+            "label": "after-resume",
+            "rssAnonKiB": 98848,
+            "rssKiB": 123600,
+            "threads": 27
+          },
+          {
+            "fds": 22,
+            "label": "before-pause",
+            "rssAnonKiB": 92608,
+            "rssKiB": 117376,
+            "threads": 27
+          },
+          {
+            "fds": 22,
+            "label": "after-pause",
+            "rssAnonKiB": 93264,
+            "rssKiB": 118032,
+            "threads": 27
+          },
+          {
+            "fds": 21,
+            "label": "while-paused-after-burst",
+            "rssAnonKiB": 95136,
+            "rssKiB": 119904,
+            "threads": 27
+          },
+          {
+            "fds": 25,
+            "label": "after-resume",
+            "rssAnonKiB": 95392,
+            "rssKiB": 120192,
+            "threads": 27
+          },
+          {
+            "fds": 22,
+            "label": "before-pause",
+            "rssAnonKiB": 95968,
+            "rssKiB": 120736,
+            "threads": 27
+          },
+          {
+            "fds": 22,
+            "label": "after-pause",
+            "rssAnonKiB": 96608,
+            "rssKiB": 121376,
+            "threads": 27
+          },
+          {
+            "fds": 21,
+            "label": "while-paused-after-burst",
+            "rssAnonKiB": 98576,
+            "rssKiB": 123344,
+            "threads": 27
+          },
+          {
+            "fds": 22,
+            "label": "after-resume",
+            "rssAnonKiB": 98768,
+            "rssKiB": 123536,
+            "threads": 27
+          }
+        ],
+        "runIDs": [
+          "d5bf89b9415788dc",
+          "4543de1f624daba6",
+          "c01c2f0604cbd57b"
+        ],
+        "status": "available",
+        "trialCount": 3,
+        "trialIDs": [
+          0,
+          1,
+          2
+        ]
+      }
+    },
+    "path": ".cache/java10-analysis.json",
+    "sha256": "ab6513f35f762b07b35dd1d0f97b03a6b453c9830642dee4cd9cdbe63f2ce4d1"
+  },
+  "ok": true,
+  "originalMvp": {
+    "baseline": {
+      "path": ".pi-lab/cluster-mvp/evidence/java07-post-verification.json",
+      "sha256": "f0c13d566211f6edc441d8d26bfaa7e9783f499866adb284e3fa15e06cb84e88"
+    },
+    "path": ".pi-lab/cluster-mvp/evidence/java08-post-verification.json",
+    "script": {
+      "path": "/tmp/java08-final-host-check.py",
+      "sha256": "f46525f88af35ae0f03669ae8f00a5f0ab5540ee50c5b374e86091d84912ffdb"
+    },
+    "sha256": "46e14eb7902ec63786a60434da134b09992abd832a0b00f525063cfd0c516428",
+    "verification": {
+      "abortedRuns": [],
+      "attemptCount": 3,
+      "benchmarkRuns": [
+        "86c61036aaefe034",
+        "644f7c63157fdb8c",
+        "ed70d9a7c9cc50f4",
+        "9144a65a982e46d0",
+        "9bb76d41170864ec",
+        "eefeedf22f6aa2a4"
+      ],
+      "checkedAt": 1789132244.2115529,
+      "containers": {
+        "agent-a": {
+          "id": "b0e739a798276ff15f9b105c9c86cc1e56b7c84539572cb5d7f814400b897c90",
+          "restartCount": 0,
+          "startedAt": "2026-09-10T15:36:01.048274149Z"
+        },
+        "agent-b": {
+          "id": "543555720a7b354708fdb117bd40eaa13c4b2d867b2a7f473d722711138d1b30",
+          "restartCount": 0,
+          "startedAt": "2026-09-10T15:36:02.348578322Z"
+        },
+        "proxy-a": {
+          "id": "066cffcf94cb40166e421a633e6dbd53855148942d050dd8d9b64a7cd9072bd7",
+          "restartCount": 0,
+          "startedAt": "2026-09-10T15:36:01.720463583Z"
+        },
+        "proxy-b": {
+          "id": "e2d504a39df1ad95cce15f87cd438209affa93c7a567ca6e84459dccc0eab118",
+          "restartCount": 0,
+          "startedAt": "2026-09-10T15:36:03.008681489Z"
+        },
+        "scheduler": {
+          "id": "225b832671a14b0f7a66988d6755d4887d6c7595e9184e9d7e13ab4dc92768be",
+          "restartCount": 0,
+          "startedAt": "2026-09-10T15:36:03.73285183Z"
+        }
+      },
+      "loadStudyRuns": [
+        "edd977812816f73b",
+        "68740b20caacbf4f",
+        "79d24bd3e0f8e5a1",
+        "d5bf89b9415788dc",
+        "4543de1f624daba6",
+        "c01c2f0604cbd57b"
+      ],
+      "mvpRun": "108ede8a5cb16d26",
+      "nodes": [
+        {
+          "cursor": "6",
+          "lastError": null,
+          "node": "agent-a",
+          "reachable": true
+        },
+        {
+          "cursor": "3",
+          "lastError": null,
+          "node": "agent-b",
+          "reachable": true
+        }
+      ],
+      "ok": true,
+      "packagingProbeContainersRemaining": 0,
+      "physical": [
+        {
+          "attempt": "attempt-153e6adb-033d-4d7a-835e-c1236d66397a",
+          "http": {
+            "identity": "mvp-service",
+            "ready": true
+          },
+          "node": "agent-a"
+        },
+        {
+          "attempt": "attempt-7ed6388a-fa0c-426e-a6c0-a4e78a20dd08",
+          "http": {
+            "identity": "mvp-service",
+            "ready": true
+          },
+          "node": "agent-b"
+        }
+      ],
+      "qualificationDockerResourcesRemaining": 0,
+      "qualificationRuns": {
+        "java25": "9db47876ec37d1df",
+        "java26": "d514a2f5bc8144c8",
+        "java26-runtime": "b011bc0551b22739"
+      },
+      "unrelatedContainers": [
+        {
+          "health": "healthy",
+          "id": "372a008a8ffa8b89a6c060c709ee98b4f0896b181701605687b04e867f6b25f1",
+          "name": "homeassistant",
+          "running": true,
+          "startedAt": "2026-09-06T13:54:15.633076093Z"
+        }
+      ]
+    }
+  },
+  "profiles": {
+    "java25": {
+      "baselineBundle": {
+        "path": ".cache/java07-java25-bundle/bundle.json",
+        "sha256": "c72b3782a8ff5285aba131eb8ebba956300be7dea54d44bc2508a4c29b94b62b"
+      },
+      "bundle": {
+        "path": ".cache/java08-java25-bundle/bundle.json",
+        "sha256": "34eca4c44714b9790356bd4dc123bbaf8c015609d4726fbc1e18675543e37c82"
+      },
+      "compiledClasses": 40,
+      "externalJarsUnchanged": 7,
+      "fixtureFilesUnchanged": 57,
+      "goExecutablesUnchanged": 3,
+      "java": {
+        "bytecodeMajor": 69,
+        "compilerRelease": "25.0.4.1+1",
+        "compilerVersionMajor": 25,
+        "illegalNativeAccess": "deny",
+        "nativeAccess": "ALL-UNNAMED",
+        "profile": "java25",
+        "release": "25.0.4.1+1",
+        "vendor": "Eclipse Adoptium",
+        "versionMajor": 25
+      },
+      "launchers": {
+        "baseline": {
+          "path": ".cache/java07-java25-launchers-run/launcher-check.json",
+          "sha256": "a168fb90357b14f8c9846d7eee723421653516ab9cb22c617db97f119b74d70b"
+        },
+        "commands": 64,
+        "exitAndOutputUnchangedExceptRecordedStackLineNumbers": true,
+        "path": ".cache/java08-java25-launchers-run/launcher-check.json",
+        "sha256": "b819e3399c808aa9ec689f4acfa2f6e2ea96f257928d6319f7af1ac8f74216e0"
+      },
+      "protocolJarUnchanged": true,
+      "qualification": {
+        "allTerminalCleanedUnreserved": true,
+        "cases": 23,
+        "cleanup": {
+          "containers": {},
+          "networks": {},
+          "status": "stopped"
+        },
+        "finalAttempts": 40,
+        "mixed": {
+          "at": 1789131830.1790872,
+          "batches": 20,
+          "elapsedSeconds": 600.7874678559601,
+          "name": "bounded-mixed-workload",
+          "ok": true,
+          "replicas": 2
+        },
+        "path": ".pi-lab/java08-java25-qualification/evidence/c1789131134-result.json",
+        "receipt": {
+          "path": ".pi-lab/java08-java25-qualification/qualification.json",
+          "sha256": "21d5291dae89aeab3ba50c7411fef27b0b04f086d8d643c9ac44582e8f8cfb62"
+        },
+        "run": "9db47876ec37d1df",
+        "runtimeAudit": {
+          "path": ".cache/java08-java25-runtime-audit.json",
+          "sha256": "55803a3836ce998a015a9705a777a61da33678d3ae81800c37592976654d7651"
+        },
+        "sha256": "7f12b3ce7c0552094a034a0a3169738216fb5eb7713c53575e111fe503590da3"
+      },
+      "reproducibility": {
+        "path": ".cache/java08-java25-bundle/reports/java-reproducibility.json",
+        "sha256": "75af4b5b79b4b75e461ae0a1d764d741c99d773040e8f970060e03bafdad057f"
+      },
+      "schedulerApplicationJarUnchanged": false,
+      "testReports": [
+        {
+          "path": ".cache/java08-java25-bundle/build/java/protocol/test-results/test/TEST-org.apache.aurora.nativeprotocol.ProtocolValidatorTest.xml",
+          "sha256": "3df4bb94713963a3bec73f9d23cc3c2c44efb858a70bd3a5a2dc1f8aaed0774a"
+        },
+        {
+          "path": ".cache/java08-java25-bundle/build/java/scheduler/test-results/test/TEST-org.apache.aurora.nativescheduler.JsonTest.xml",
+          "sha256": "959e363ebfe0f7b1b584ef90ca0cbdf0d724736c5e459e613cdd7e6a509897ae"
+        },
+        {
+          "path": ".cache/java08-java25-bundle/build/java/scheduler/test-results/test/TEST-org.apache.aurora.nativescheduler.NativeDaemonTest.xml",
+          "sha256": "5a56dd60e3e9b57f6c15415d5fe751d73af81f748480ae3c6a16aaae7fbc9d8a"
+        },
+        {
+          "path": ".cache/java08-java25-bundle/build/java/scheduler/test-results/test/TEST-org.apache.aurora.nativescheduler.NativeEngineTest.xml",
+          "sha256": "98a615e3f7be38c04810be796e83ee851615e0a48db21de3331ba2cb5468792b"
+        },
+        {
+          "path": ".cache/java08-java25-bundle/build/java/scheduler/test-results/test/TEST-org.apache.aurora.nativescheduler.NativeHttpTest.xml",
+          "sha256": "a6c2da92ca0230cc8203ccb39dd34272003d7c60d86160365042fdf5481ac8c8"
+        },
+        {
+          "path": ".cache/java08-java25-bundle/build/java/scheduler/test-results/test/TEST-org.apache.aurora.scheduler.storage.sql.NativeSqlStoreTest.xml",
+          "sha256": "53d589a0af7a85a58b4fd691f7831823a152032fa05c7814d41c046415951779"
+        },
+        {
+          "path": ".cache/java08-java25-bundle/reports/lab-tests.log",
+          "sha256": "44890791e9cad0b8724dc3be0a9f57d3ab304a527828841de5b3b292d44d313f"
+        },
+        {
+          "path": ".cache/java08-java25-bundle/reports/packaging-tests.log",
+          "sha256": "e684254e83ad884da4e98e95bca2d6fcd5e26192fbe6bce0afcd1e074763a630"
+        },
+        {
+          "path": ".cache/java08-java25-bundle/reports/agent-test.log",
+          "sha256": "fe6494e4064a831504c4c38416c356d35c01b2f7f25af4d47083977ff5b3fee3"
+        },
+        {
+          "path": ".cache/java08-java25-bundle/reports/agent-vet.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": ".cache/java08-java25-bundle/reports/agent-modules.log",
+          "sha256": "b4537ed75f533f993f371954de47e42a793b8e5b0587577de7e27fb3e50696bd"
+        },
+        {
+          "path": ".cache/java08-java25-bundle/reports/cluster-helper-test.log",
+          "sha256": "2d35f92a5f7c369e15b6762a3b4e135f1cd089345e1d7be9796f0aaa571a7020"
+        },
+        {
+          "path": ".cache/java08-java25-bundle/reports/cluster-helper-vet.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": ".cache/java08-java25-bundle/reports/cluster-helper-modules.log",
+          "sha256": "b4537ed75f533f993f371954de47e42a793b8e5b0587577de7e27fb3e50696bd"
+        },
+        {
+          "path": ".cache/java08-java25-bundle/reports/native-workload-test.log",
+          "sha256": "a42eef8c8a92c42a51b54cb9b4cc317d20f0c7df0477ed15309b1e0de0709f94"
+        },
+        {
+          "path": ".cache/java08-java25-bundle/reports/native-workload-vet.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": ".cache/java08-java25-bundle/reports/native-workload-modules.log",
+          "sha256": "b4537ed75f533f993f371954de47e42a793b8e5b0587577de7e27fb3e50696bd"
+        }
+      ],
+      "tests": {
+        "goModules": [
+          "agent",
+          "cluster-helper",
+          "native-workload"
+        ],
+        "javaSuites": {
+          "JsonTest": 5,
+          "NativeDaemonTest": 6,
+          "NativeEngineTest": 16,
+          "NativeHttpTest": 8,
+          "NativeSqlStoreTest": 19,
+          "ProtocolValidatorTest": 8
+        },
+        "javaTotal": 62,
+        "python": {
+          "lab": 75,
+          "packaging": 56
+        }
+      }
+    },
+    "java26": {
+      "baselineBundle": {
+        "path": ".cache/java07-java26-bundle/bundle.json",
+        "sha256": "e8312b9177a725422aa18a0bd3f0b0934a73aed0a0683e14262ff957da47e9d8"
+      },
+      "bundle": {
+        "path": ".cache/java08-java26-bundle/bundle.json",
+        "sha256": "2ce6a632058b9be870f94e41ee5b10fd266e66bd1fae143e5fb4c8cdd7db1ba4"
+      },
+      "compiledClasses": 40,
+      "externalJarsUnchanged": 7,
+      "fixtureFilesUnchanged": 57,
+      "goExecutablesUnchanged": 3,
+      "java": {
+        "bytecodeMajor": 70,
+        "compilerRelease": "26.0.2.1+1",
+        "compilerVersionMajor": 26,
+        "illegalFinalFieldMutation": "deny",
+        "illegalNativeAccess": "deny",
+        "nativeAccess": "ALL-UNNAMED",
+        "profile": "java26",
+        "release": "26.0.2.1+1",
+        "vendor": "Eclipse Adoptium",
+        "versionMajor": 26
+      },
+      "launchers": {
+        "baseline": {
+          "path": ".cache/java07-java26-launchers-run/launcher-check.json",
+          "sha256": "189d05a0754103dcd9311eccbc0ebf2a70843b34c83c8265f3fea54299d5c9ad"
+        },
+        "commands": 64,
+        "exitAndOutputUnchangedExceptRecordedStackLineNumbers": true,
+        "path": ".cache/java08-java26-launchers-run/launcher-check.json",
+        "sha256": "03efd2156e8c25792bd36cdae34bcc8bf5e763f4c9345d15e31e300e3255f8db"
+      },
+      "protocolJarUnchanged": true,
+      "qualification": {
+        "allTerminalCleanedUnreserved": true,
+        "cases": 23,
+        "cleanup": {
+          "containers": {},
+          "networks": {},
+          "status": "stopped"
+        },
+        "finalAttempts": 40,
+        "mixed": {
+          "at": 1789131836.5238278,
+          "batches": 20,
+          "elapsedSeconds": 600.7979839510517,
+          "name": "bounded-mixed-workload",
+          "ok": true,
+          "replicas": 2
+        },
+        "path": ".pi-lab/java08-java26-qualification/evidence/c1789131135-result.json",
+        "receipt": {
+          "path": ".pi-lab/java08-java26-qualification/qualification.json",
+          "sha256": "e1c32b6ba4f914377b9e2bdd9cc033bb0a50a88bddd6b4cd6b74cc6226d9c3ca"
+        },
+        "run": "d514a2f5bc8144c8",
+        "runtimeAudit": {
+          "path": ".cache/java08-java26-runtime-audit.json",
+          "sha256": "9aca277a0afe0f9320c51af0ba9355e452be3b942704fc7a2c7102379b909781"
+        },
+        "sha256": "de1da0d2dbd602895b8ddd9ba51ada4fd14daed905b1385fee1ee12dba2db239"
+      },
+      "reproducibility": {
+        "path": ".cache/java08-java26-bundle/reports/java-reproducibility.json",
+        "sha256": "c054a1b0ad672becc382278811479a87967cdb06047e8ea272a96c71c0afe4ba"
+      },
+      "schedulerApplicationJarUnchanged": false,
+      "testReports": [
+        {
+          "path": ".cache/java08-java26-bundle/build/java/protocol/test-results/test/TEST-org.apache.aurora.nativeprotocol.ProtocolValidatorTest.xml",
+          "sha256": "5ed1d28bb749ce48319d76632578d36862d855d4f296a17ca762df1ffec6a1b9"
+        },
+        {
+          "path": ".cache/java08-java26-bundle/build/java/scheduler/test-results/test/TEST-org.apache.aurora.nativescheduler.JsonTest.xml",
+          "sha256": "e188108a0711f7d1a4860c4dac7ceaa888e89bdd74754f862dfe1916b0454040"
+        },
+        {
+          "path": ".cache/java08-java26-bundle/build/java/scheduler/test-results/test/TEST-org.apache.aurora.nativescheduler.NativeDaemonTest.xml",
+          "sha256": "828ab8b9699ba4c0c533009f818ab36dbb15ad2dd2ca69d6d2d4566878d56387"
+        },
+        {
+          "path": ".cache/java08-java26-bundle/build/java/scheduler/test-results/test/TEST-org.apache.aurora.nativescheduler.NativeEngineTest.xml",
+          "sha256": "245404f00bbb413ff0632b691d14a861ee78404daeafa2c3908914a2dbd72fd7"
+        },
+        {
+          "path": ".cache/java08-java26-bundle/build/java/scheduler/test-results/test/TEST-org.apache.aurora.nativescheduler.NativeHttpTest.xml",
+          "sha256": "b23f936bb16a3edc59d608a57b7c06b60c666c0d6161d950d59ba8271da6fe66"
+        },
+        {
+          "path": ".cache/java08-java26-bundle/build/java/scheduler/test-results/test/TEST-org.apache.aurora.scheduler.storage.sql.NativeSqlStoreTest.xml",
+          "sha256": "13e419f7373cb6144763b26b9a05e664c774530550fa4d0459e3c07b6baee798"
+        },
+        {
+          "path": ".cache/java08-java26-bundle/reports/lab-tests.log",
+          "sha256": "74db0493d8fa30ddf6be7f1bd95d18e5c0148878ddde216dd10b4616660e23a0"
+        },
+        {
+          "path": ".cache/java08-java26-bundle/reports/packaging-tests.log",
+          "sha256": "e684254e83ad884da4e98e95bca2d6fcd5e26192fbe6bce0afcd1e074763a630"
+        },
+        {
+          "path": ".cache/java08-java26-bundle/reports/agent-test.log",
+          "sha256": "2125572dce510d3844183517cdddd13e34897c65f473ecb6e91db16b79cf78dd"
+        },
+        {
+          "path": ".cache/java08-java26-bundle/reports/agent-vet.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": ".cache/java08-java26-bundle/reports/agent-modules.log",
+          "sha256": "b4537ed75f533f993f371954de47e42a793b8e5b0587577de7e27fb3e50696bd"
+        },
+        {
+          "path": ".cache/java08-java26-bundle/reports/cluster-helper-test.log",
+          "sha256": "e8efebbbbaf461ea5689a4fe96f945c4c46d202b04a9d3b66667052aa0687a8e"
+        },
+        {
+          "path": ".cache/java08-java26-bundle/reports/cluster-helper-vet.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": ".cache/java08-java26-bundle/reports/cluster-helper-modules.log",
+          "sha256": "b4537ed75f533f993f371954de47e42a793b8e5b0587577de7e27fb3e50696bd"
+        },
+        {
+          "path": ".cache/java08-java26-bundle/reports/native-workload-test.log",
+          "sha256": "44f052d72fdc0b6ad9788491427bcf84241501ba2dc63ec89c422972a70fc374"
+        },
+        {
+          "path": ".cache/java08-java26-bundle/reports/native-workload-vet.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": ".cache/java08-java26-bundle/reports/native-workload-modules.log",
+          "sha256": "b4537ed75f533f993f371954de47e42a793b8e5b0587577de7e27fb3e50696bd"
+        }
+      ],
+      "tests": {
+        "goModules": [
+          "agent",
+          "cluster-helper",
+          "native-workload"
+        ],
+        "javaSuites": {
+          "JsonTest": 5,
+          "NativeDaemonTest": 6,
+          "NativeEngineTest": 16,
+          "NativeHttpTest": 8,
+          "NativeSqlStoreTest": 19,
+          "ProtocolValidatorTest": 8
+        },
+        "javaTotal": 62,
+        "python": {
+          "lab": 75,
+          "packaging": 56
+        }
+      }
+    },
+    "java26-runtime": {
+      "baselineBundle": {
+        "path": ".cache/java07-java26-runtime-bundle/bundle.json",
+        "sha256": "0420d70a2b1af56e8a321d2941ead54a003449d64ddf2bab332c4016528de008"
+      },
+      "bundle": {
+        "path": ".cache/java08-java26-runtime-bundle/bundle.json",
+        "sha256": "d909bf2c8f8041c96073b84aacc77c8bee1618a796ed4e57a2edee89f4da67ce"
+      },
+      "compiledClasses": 40,
+      "externalJarsUnchanged": 7,
+      "fixtureFilesUnchanged": 57,
+      "goExecutablesUnchanged": 3,
+      "java": {
+        "bytecodeMajor": 69,
+        "compilerRelease": "25.0.4.1+1",
+        "compilerVersionMajor": 25,
+        "illegalFinalFieldMutation": "deny",
+        "illegalNativeAccess": "deny",
+        "nativeAccess": "ALL-UNNAMED",
+        "profile": "java26-runtime",
+        "release": "26.0.2.1+1",
+        "vendor": "Eclipse Adoptium",
+        "versionMajor": 26
+      },
+      "launchers": {
+        "baseline": {
+          "path": ".cache/java07-java26-runtime-launchers-run/launcher-check.json",
+          "sha256": "a49b9622202d8ef3d7e9ebb89fe4acb97cc9b7382422e3c6b6cba117ed772340"
+        },
+        "commands": 64,
+        "exitAndOutputUnchangedExceptRecordedStackLineNumbers": true,
+        "path": ".cache/java08-java26-runtime-launchers-run/launcher-check.json",
+        "sha256": "04cecc476c6487ac3722ef3b93eb9130827291bf1f607fce76377dea4c0a1955"
+      },
+      "protocolJarUnchanged": true,
+      "qualification": {
+        "allTerminalCleanedUnreserved": true,
+        "cases": 23,
+        "cleanup": {
+          "containers": {},
+          "networks": {},
+          "status": "stopped"
+        },
+        "finalAttempts": 40,
+        "mixed": {
+          "at": 1789131836.68971,
+          "batches": 20,
+          "elapsedSeconds": 600.8204504019814,
+          "name": "bounded-mixed-workload",
+          "ok": true,
+          "replicas": 2
+        },
+        "path": ".pi-lab/java08-java26-runtime-qualification/evidence/c1789131135-result.json",
+        "receipt": {
+          "path": ".pi-lab/java08-java26-runtime-qualification/qualification.json",
+          "sha256": "51a87b63ad3fce6e92b45578b2c869718f003e3a98a6877afde238823a3d84df"
+        },
+        "run": "b011bc0551b22739",
+        "runtimeAudit": {
+          "path": ".cache/java08-java26-runtime-runtime-audit.json",
+          "sha256": "ccfb9e8d192762142b3c7fd5e4a9c9035ffed25050e78e0f1ae2f4d2bd833853"
+        },
+        "sha256": "e6a6d290b1675cde299cb3d87f84fbc4c712ae375116843de13ba14bb3d13454"
+      },
+      "reproducibility": {
+        "path": ".cache/java08-java26-runtime-bundle/reports/java-reproducibility.json",
+        "sha256": "ab04995360b42b79666e54de97e18f9472c1f14abd5331ab187e81075979e7d0"
+      },
+      "schedulerApplicationJarUnchanged": false,
+      "testReports": [
+        {
+          "path": ".cache/java08-java26-runtime-bundle/build/java/protocol/test-results/test/TEST-org.apache.aurora.nativeprotocol.ProtocolValidatorTest.xml",
+          "sha256": "05db82ce944d29d34567c01d1e171c96f97af253729b22a741f549519c689fb6"
+        },
+        {
+          "path": ".cache/java08-java26-runtime-bundle/build/java/scheduler/test-results/test/TEST-org.apache.aurora.nativescheduler.JsonTest.xml",
+          "sha256": "8cc00315eeb72781c3d6a795bf6644f827277516f3e18148568ca71a88917d5a"
+        },
+        {
+          "path": ".cache/java08-java26-runtime-bundle/build/java/scheduler/test-results/test/TEST-org.apache.aurora.nativescheduler.NativeDaemonTest.xml",
+          "sha256": "2defa646ff6f5c77fbca5eade1330dda8ab3458d81876a8cfab65825b2375404"
+        },
+        {
+          "path": ".cache/java08-java26-runtime-bundle/build/java/scheduler/test-results/test/TEST-org.apache.aurora.nativescheduler.NativeEngineTest.xml",
+          "sha256": "c45bbb584838503609b8c86058231a6aef64937bbd5107b83c7a4d931d6d145f"
+        },
+        {
+          "path": ".cache/java08-java26-runtime-bundle/build/java/scheduler/test-results/test/TEST-org.apache.aurora.nativescheduler.NativeHttpTest.xml",
+          "sha256": "6c20a39d3cffc6f083c4eee4ca8991daf90a7ad35f1a2f8536674d7807b3a741"
+        },
+        {
+          "path": ".cache/java08-java26-runtime-bundle/build/java/scheduler/test-results/test/TEST-org.apache.aurora.scheduler.storage.sql.NativeSqlStoreTest.xml",
+          "sha256": "8a31826b4739c6ad67776a5f95c3969af75a6ac98996f9fad4571812158d2f6c"
+        },
+        {
+          "path": ".cache/java08-java26-runtime-bundle/reports/lab-tests.log",
+          "sha256": "f433312a997c97fc8630f5b5d6b55091941d3c80caf1676921535b9d7af8549a"
+        },
+        {
+          "path": ".cache/java08-java26-runtime-bundle/reports/packaging-tests.log",
+          "sha256": "f8af1cbee1eb7ab6d8eb09fec0f0e8a90ff78c604e55950f346b22c8b5e0f4cb"
+        },
+        {
+          "path": ".cache/java08-java26-runtime-bundle/reports/agent-test.log",
+          "sha256": "a3081089bc9c476f2e59b2f5772fddd0db41316c3bae0526c01b07c7e6564e6d"
+        },
+        {
+          "path": ".cache/java08-java26-runtime-bundle/reports/agent-vet.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": ".cache/java08-java26-runtime-bundle/reports/agent-modules.log",
+          "sha256": "b4537ed75f533f993f371954de47e42a793b8e5b0587577de7e27fb3e50696bd"
+        },
+        {
+          "path": ".cache/java08-java26-runtime-bundle/reports/cluster-helper-test.log",
+          "sha256": "54b77bf0da9b83dbf2397d6587b1e4b632c2fa1062c06691b73c905a2849d975"
+        },
+        {
+          "path": ".cache/java08-java26-runtime-bundle/reports/cluster-helper-vet.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": ".cache/java08-java26-runtime-bundle/reports/cluster-helper-modules.log",
+          "sha256": "b4537ed75f533f993f371954de47e42a793b8e5b0587577de7e27fb3e50696bd"
+        },
+        {
+          "path": ".cache/java08-java26-runtime-bundle/reports/native-workload-test.log",
+          "sha256": "9417ec5406da7b6e696586f43a361e167a40f1c816c2e2b4154e14b4173800be"
+        },
+        {
+          "path": ".cache/java08-java26-runtime-bundle/reports/native-workload-vet.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": ".cache/java08-java26-runtime-bundle/reports/native-workload-modules.log",
+          "sha256": "b4537ed75f533f993f371954de47e42a793b8e5b0587577de7e27fb3e50696bd"
+        }
+      ],
+      "tests": {
+        "goModules": [
+          "agent",
+          "cluster-helper",
+          "native-workload"
+        ],
+        "javaSuites": {
+          "JsonTest": 5,
+          "NativeDaemonTest": 6,
+          "NativeEngineTest": 16,
+          "NativeHttpTest": 8,
+          "NativeSqlStoreTest": 19,
+          "ProtocolValidatorTest": 8
+        },
+        "javaTotal": 62,
+        "python": {
+          "lab": 75,
+          "packaging": 56
+        }
+      }
+    }
+  },
+  "schema": 1,
+  "slice": "JAVA-08 / JAVA-09 / JAVA-10",
+  "sourceCommit": "e446dda4284ef5b99bf4f5843bfcfc269634b81f",
+  "stableSqlBodies": {
+    "private void schedulerSchema(": "384c75e367c5d02908e85eaeaa2d006da844b2e3662ca8087f2bc89ff37056ac",
+    "private void schema(": "e518b7214db5e18ef59c9f1d8b4c6307707bafee47b410295cb4609f7d849163",
+    "private void verifySchema(": "4d6570a242e1cd90322713eb7b33c6ab7eff02cfc5f7bcc8dd288c0e67ebda00",
+    "public static final class AttemptRecord": "85d0ff4324f5a26147f3465e0b7118a335c52954b7ebe3b64dd589d18f15d3fa",
+    "public static final class CommandRecord": "35aa06cacc3a75fdafcfbdc7168aa717758159a21c374a8fa94de4012c7eaebd",
+    "public static final class JobKey": "783901606e1355a0a268f95517d1da6ea7e042ad3ae2865d73b5005e361c45ad",
+    "public static final class Journal": "d34bf6324f80501ca9ce3cbe705ea683310aa828a073cc9fe1b5ae172237b970"
+  },
+  "verifiedAt": 1789132272.1300657
+}
