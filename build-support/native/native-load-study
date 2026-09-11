@@ -1,0 +1,331 @@
+#!/usr/bin/env python3
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+"""Bounded physical load study for the existing serialized native runtime.
+
+Run with --label java07 or --label java08, using the matching bundle and source
+tree.  Each invocation performs three sequential, freshly owned trials.
+Measurements are exploratory. Docker pause freezes the owned agent-a container
+and its workloads; it is not a daemon-only stall. Runtime code is unchanged.
+"""
+import argparse
+from concurrent.futures import ThreadPoolExecutor, as_completed
+import hashlib
+import importlib.machinery
+import importlib.util
+import json
+from pathlib import Path
+import sys
+import threading
+import time
+
+ROOT = Path(__file__).resolve().parents[2]
+BENCHMARK = ROOT / "build-support/native/native-benchmark"
+
+
+def load_benchmark():
+    loader = importlib.machinery.SourceFileLoader("load_study_benchmark", str(BENCHMARK))
+    spec = importlib.util.spec_from_loader(loader.name, loader)
+    module = importlib.util.module_from_spec(spec)
+    loader.exec_module(module)
+    return module
+
+
+def category(error):
+    return error.__class__.__module__ + "." + error.__class__.__name__
+
+
+def save_receipt(cluster, path, value):
+    try:
+        cluster.save(path, value)
+        return True
+    except Exception as error:
+        value["ok"] = False
+        value.setdefault("receiptErrors", []).append({"path": str(path),
+            "category": category(error), "error": cluster.native.redact(str(error))[:300]})
+        print("receipt-save-failed " + category(error) + ": " +
+              cluster.native.redact(str(error))[:300], file=sys.stderr, flush=True)
+        return False
+
+
+def timed(call, cluster):
+    started = time.monotonic()
+    try:
+        call()
+        return {"elapsedMs": (time.monotonic() - started) * 1000, "status": 200}
+    except Exception as error:
+        return {"elapsedMs": (time.monotonic() - started) * 1000,
+                "status": None, "errorCategory": category(error),
+                "error": cluster.native.redact(str(error))[:300]}
+
+
+def require_limits(cluster, lab):
+    result = {}
+    for role in ("scheduler", *cluster.NODES):
+        container = lab.inspect_container(role)
+        host = container["HostConfig"]
+        limits = {"nanoCpus": host["NanoCpus"], "pidsLimit": host["PidsLimit"],
+                  "memoryLimitBytes": host["Memory"]}
+        cluster.require(limits == {"nanoCpus": 1_000_000_000, "pidsLimit": 128,
+                                   "memoryLimitBytes": 0}, "Unexpected native benchmark limits")
+        result[role] = {"id": container["Id"], **limits}
+    return result
+
+
+def freeze_agent(cluster, lab, freeze, expected=None, receipt=None):
+    before = lab.inspect_container("agent-a")
+    record = lab.data["containers"]["agent-a"]
+    ident = before["Id"]
+    cluster.require(ident == record["id"], "Agent container identity changed")
+    started = before["State"]["StartedAt"]
+    if expected is not None:
+        cluster.require(ident == expected["id"] and started == expected["startedAt"],
+                        "Agent container ownership changed before unfreeze")
+    cluster.require(bool(before["State"].get("Paused")) != freeze,
+                    "Agent container pause state differs")
+    if receipt is not None:
+        receipt.update(id=ident, startedAt=started,
+                       beforePaused=bool(before["State"].get("Paused")), paused=freeze)
+    cluster.docker("pause" if freeze else "unpause", ident, timeout=10)
+    after = lab.inspect_container("agent-a")
+    cluster.require(after["Id"] == ident and after["State"]["StartedAt"] == started,
+                    "Agent container changed during freeze transition")
+    cluster.require(bool(after["State"].get("Paused")) == freeze,
+                    "Agent container pause state was not applied")
+    value = {"id": ident, "startedAt": started, "paused": freeze,
+             "beforePaused": bool(before["State"].get("Paused")),
+             "afterPaused": bool(after["State"].get("Paused"))}
+    if receipt is not None:
+        receipt.update(value)
+    return value
+
+
+def run_burst(call, cluster):
+    barrier = threading.Barrier(25)
+    release = [None]
+
+    def one(index):
+        try:
+            barrier.wait(timeout=10)
+        except threading.BrokenBarrierError as error:
+            return {"index": index, "status": None, "errorCategory": category(error),
+                    "error": cluster.native.redact(str(error))}
+        started = time.monotonic()
+        value = timed(call, cluster)
+        value["index"] = index
+        value["startOffsetMs"] = (started - release[0]) * 1000
+        return value
+
+    pool = ThreadPoolExecutor(max_workers=24, thread_name_prefix="load-study")
+    timed_out = False
+    try:
+        futures = [pool.submit(one, index) for index in range(24)]
+        try:
+            release[0] = time.monotonic()
+            barrier.wait(timeout=10)
+        except threading.BrokenBarrierError:
+            barrier.abort()
+            raise
+        deadline = time.monotonic() + 10
+        result = []
+        completed = set()
+        try:
+            for future in as_completed(futures, timeout=10):
+                completed.add(future)
+                result.append(future.result(timeout=max(0, deadline - time.monotonic())))
+        except TimeoutError:
+            timed_out = True
+            for future in futures:
+                if future.done() and not future.cancelled() and future not in completed:
+                    result.append(future.result())
+            for future in futures:
+                future.cancel()
+    finally:
+        # The ten-second bound applies to outcome collection; socket timeouts
+        # and executor shutdown remain governed by the existing transport.
+        pool.shutdown(wait=True, cancel_futures=True)
+    return {"outcomes": result, "collectionTimedOut": timed_out}
+
+
+def finish_trial(cluster, lab, result):
+    errors = []
+    if lab is None or lab.data is None or lab.lock is None:
+        return
+    try:
+        try:
+            lab.collect()
+        except BaseException as error:
+            errors.append({"phase": "collect", "category": category(error),
+                           "error": cluster.native.redact(str(error))[:300]})
+        try:
+            lab.down()
+            result["cleanup"] = {"status": lab.data["status"], "containers": lab.data["containers"],
+                                 "networks": lab.data["networks"]}
+        except BaseException as error:
+            errors.append({"phase": "down", "category": category(error),
+                           "error": cluster.native.redact(str(error))[:300]})
+    finally:
+        try:
+            lab.release()
+        except BaseException as error:
+            errors.append({"phase": "release", "category": category(error),
+                           "error": cluster.native.redact(str(error))[:300]})
+    if errors:
+        result["ok"] = False
+        result["cleanupErrors"] = errors
+
+
+def trial(benchmark, cluster, bundle, root, number):
+    lab = None
+    paused = False
+    result = {"trial": number, "ok": False, "startedAt": time.time(),
+              "hostBefore": benchmark.host()}
+    try:
+        lab = cluster.Lab(root, fresh=True)
+        lab.prepare(bundle)
+        lab.start()
+        result.update(run=lab.data["run"], images=lab.data["bundle"]["images"],
+                      schedulerCommand=lab.scheduler_args())
+        result["limits"] = require_limits(cluster, lab)
+
+        service = "load-study-service"
+        batch = "load-study-batch"
+        _, result["serviceSubmitAckMs"] = benchmark.measured(
+            lambda: lab.request("POST", "/v1/jobs", cluster.job(service, "service")))
+        state = lab.await_state(lambda s: benchmark.ready(benchmark.attempts(s, service)))
+        service_attempts = benchmark.attempts(state, service)
+        service_ids = {item["identity"]["attempt"] for item in service_attempts}
+        cluster.require(len(service_ids) == 2, "Expected two service attempts")
+        result["serviceAttemptIDs"] = sorted(service_ids)
+        for item in service_attempts:
+            benchmark.physical(cluster, lab, item)
+        # Unmeasured reads warm the same ready workload used by the quiet sample.
+        for _ in range(8):
+            lab.state()
+        result["resources"] = [{"label": "before-pause", **benchmark.resource_sample(cluster, lab)}]
+        result["quietStateGets"] = [timed(lab.state, cluster) for _ in range(8)]
+        cluster.require(all(item["status"] == 200 for item in result["quietStateGets"]),
+                        "Quiet state sample did not complete")
+
+        paused = True
+        result["freeze"] = {}
+        freeze_agent(cluster, lab, True, receipt=result["freeze"])
+        time.sleep(2.1)
+        result["resources"].append({"label": "after-pause", **benchmark.resource_sample(cluster, lab)})
+        result["pausedStateGets"] = [timed(lab.state, cluster) for _ in range(8)]
+        cluster.require(any(item["status"] == 200 for item in result["pausedStateGets"]),
+                        "Paused state sample had no successful request")
+        _, result["batchSubmitAckMs"] = benchmark.measured(
+            lambda: lab.request("POST", "/v1/jobs", cluster.job(batch)))
+        state = lab.await_state(lambda s: len(benchmark.attempts(s, batch)) == 1
+            and benchmark.attempts(s, batch)[0]["node"] == "agent-b"
+            and benchmark.attempts(s, batch)[0]["state"] == "succeeded")
+        cluster.require({item["identity"]["attempt"] for item in benchmark.attempts(state, service)} == service_ids,
+                        "Healthy agent replaced a service attempt")
+        result["batchSucceededOn"] = benchmark.attempts(state, batch)[0]["node"]
+
+        burst = run_burst(lab.state, cluster)
+        result["operatorBurst"] = burst["outcomes"]
+        result["operatorBurstCollectionTimedOut"] = burst["collectionTimedOut"]
+        cluster.require(not burst["collectionTimedOut"] and len(result["operatorBurst"]) == 24,
+                        "Burst collection incomplete; partial outcomes retained")
+        cluster.require(any(item["status"] == 200 for item in result["operatorBurst"]),
+                        "Operator burst had no successful request")
+        result["resources"].append({"label": "while-paused-after-burst",
+                                     **benchmark.resource_sample(cluster, lab)})
+        result["unfreeze"] = freeze_agent(cluster, lab, False, result["freeze"])
+        paused = False
+        state = lab.await_state(lambda s: all(node["reachable"] for node in s["nodes"])
+            and benchmark.ready(benchmark.attempts(s, service)))
+        cluster.require({item["identity"]["attempt"] for item in benchmark.attempts(state, service)} == service_ids,
+                        "Recovery replaced a service attempt")
+        result["resources"].append({"label": "after-resume", **benchmark.resource_sample(cluster, lab)})
+        for item in benchmark.attempts(state, service):
+            benchmark.physical(cluster, lab, item)
+        lab.request("POST", "/v1/jobs/stop", {"role": "fixtures", "environment": "test", "name": service})
+        state = lab.await_state(lambda s: benchmark.terminal(benchmark.attempts(s, service)))
+        for item in benchmark.attempts(state, service):
+            benchmark.physical(cluster, lab, item, available=True)
+        cluster.require(len(state["attempts"]) == 3 and benchmark.terminal(state["attempts"]),
+                        "Expected two service and one batch terminal attempts")
+        result["finalAttempts"] = 3
+        result["finalState"] = state
+        result["allTerminalCleanedUnreserved"] = True
+        result["ok"] = True
+    except BaseException as error:
+        result["error"] = cluster.native.redact(str(error))
+    finally:
+        if paused and lab is not None and result.get("freeze", {}).get("id"):
+            try:
+                result["unfreezeInFinally"] = freeze_agent(cluster, lab, False, result["freeze"])
+                result["resumedInFinally"] = True
+            except BaseException as error:
+                result["ok"] = False
+                result["resumeError"] = cluster.native.redact(str(error))
+        finish_trial(cluster, lab, result)
+        result["completedAt"] = time.time()
+        try:
+            result["hostAfter"] = benchmark.host()
+        except Exception as error:
+            result["ok"] = False
+            result["hostAfterError"] = cluster.native.redact(str(error))[:300]
+        if root.is_dir():
+            save_receipt(cluster, root / "load-study.json", result)
+    return result
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--label", required=True, help="Comparison label, e.g. java07 or java08")
+    parser.add_argument("--bundle", type=Path, required=True)
+    parser.add_argument("--source-tree", type=Path, required=True,
+                        help="Absolute matching retained source checkout")
+    parser.add_argument("--output", type=Path, required=True,
+                        help="New absolute private output directory")
+    args = parser.parse_args()
+    benchmark = load_benchmark()
+    cluster = benchmark.load_source(args.source_tree)
+    cluster.native.safe_path(args.bundle)
+    cluster.native.safe_path(args.source_tree)
+    cluster.native.safe_path(args.output)
+    cluster.require(args.output.is_absolute() and not args.output.exists(), "Output must be new and absolute")
+    cluster.require(not args.output.is_relative_to(args.bundle), "Output must be outside bundle")
+    bundle, digest = cluster.load_bundle(args.bundle)
+    cluster.require(bundle.get("java", {}).get("versionMajor") in (25, 26), "Requires Java25/26 bundle")
+    args.output.mkdir(mode=0o700, parents=True)
+    result = {"schema": 1, "ok": False, "label": args.label, "bundleSha256": digest,
+              "sourceCommit": bundle["sourceCommit"], "sourceTree": str(args.source_tree),
+              "harnessSha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+              "benchmarkHarnessSha256": hashlib.sha256(BENCHMARK.read_bytes()).hexdigest(),
+              "java": bundle["java"], "trials": [],
+              "limitations": ["Pause freezes every process in agent-a's container; no adjustable delays or inside-tick measurements.",
+                              "Burst has 24 workers and a 10-second collection deadline, not a hard wall-clock shutdown bound.",
+                              "No concurrency prototype, performance assertion, SLO, or automatic retry.",
+                              "Resource values are labelled samples, not peaks; request timings include mTLS."]}
+    for number in range(3):
+        value = trial(benchmark, cluster, args.bundle, args.output / ("trial-" + str(number)), number)
+        result["trials"].append(value)
+        saved = save_receipt(cluster, args.output / "result.json", result)
+        print(json.dumps({"trial": number, "ok": value["ok"], "error": value.get("error")}), flush=True)
+        if not saved or not value["ok"]:
+            return 1
+    _, after_digest = cluster.load_bundle(args.bundle)
+    cluster.require(after_digest == digest, "Bundle changed during study")
+    result["ok"] = True
+    if not save_receipt(cluster, args.output / "result.json", result):
+        return 1
+    print(json.dumps({"ok": True, "evidence": str(args.output / "result.json")}), flush=True)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
