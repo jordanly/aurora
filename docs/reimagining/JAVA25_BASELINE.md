@@ -26,16 +26,12 @@ do not hold current source at Java 8 for a historical adapter.
 
 ## Current implementation status
 
-JAVA-11 step 2 is implemented. The root `./gradlew` entry point now uses the
-maintained Java 25+/Gradle 9 graph for `:aurora-native-scheduler` and
-`:protocol`; the obsolete Java 8 bootstrap, old smoke-build route, `buildSrc`
-and Gradle 4 wrapper are removed from the active build. Retained lab utilities
-were carried forward for `clusterctl`. See the [step 2 status receipt](JAVA11_BUILD_STATUS.md).
-
-The root and retained unit checks pass: 73 Java tests, 65 lab Python tests and
-62 native packaging Python tests. Fresh source packaging and physical cluster
-qualification are still pending, so step 2 has implementation evidence but no
-fresh packaging or physical qualification claim yet.
+JAVA-11 steps 1 and 2 are complete. The root `./gradlew` entry point uses the
+maintained Java 25+/Gradle 9 graph for `:aurora-native-scheduler` and `:protocol`.
+The obsolete Java 8 bootstrap, smoke-build route, `buildSrc` and Gradle 4 wrapper
+are retired; shared lab utilities remain available. Fresh root and packaged
+builds, supported JVM comparisons and all three physical qualification profiles
+passed. See the [step 2 status and evidence](JAVA11_BUILD_STATUS.md).
 
 ## What still needs to converge
 
@@ -46,9 +42,9 @@ repository-wide objective.
 
 | Remaining path | Required disposition |
 | --- | --- |
-| Root `build.gradle`, `settings.gradle`, Gradle 4 wrapper, `buildSrc`, old subprojects | **Step 2 implemented.** The maintained Java 25 graph is the normal root entry point and the obsolete active graph is removed. Fresh source packaging remains pending; historical reconstruction is preserved through Git history. |
-| `build-support/java` Java 8/Gradle 4 bootstrap and launcher | **Step 2 implemented.** The obsolete bootstrap and launcher are removed; maintained callers use the pinned root/native launcher. |
-| `build-support/lab/native-smoke` current-SQL Java 8 compilation | **Step 2 implemented.** The old current-source smoke-build route is removed while shared lab utilities remain available to `clusterctl`; fresh packaging and physical qualification remain pending. |
+| Root `build.gradle`, `settings.gradle`, Gradle 4 wrapper, `buildSrc`, old subprojects | **Step 2 complete.** The maintained Java 25 graph is the normal root entry point and the obsolete active graph is removed. Fresh source packaging passed; historical reconstruction is preserved through Git history. |
+| `build-support/java` Java 8/Gradle 4 bootstrap and launcher | **Step 2 complete.** The obsolete bootstrap and launcher are removed; maintained callers use the pinned root/native launcher. |
+| `build-support/lab/native-smoke` current-SQL Java 8 compilation | **Step 2 complete.** The old current-source smoke-build route is removed while shared lab utilities remain available to `clusterctl`; fresh packaging and physical qualification passed. |
 | Legacy scheduler, Mesos adapters, Python workers and old UI | Inventory any needed migration readers/fixtures, then remove unused runtime code and dependencies. Any retained Java implementation joins the Java 25 build. |
 | Shared SQL classes and historical comparison helper | Revisit records and other useful Java 25 simplifications without a Java 8 constraint. Decide construction, nullability, equality and safe diagnostics explicitly. |
 | Historical lab operations | Preserve access needed to inspect and clean the existing lab without making its old JVM a supported development target. Replace the running MVP only through a separately verified upgrade. |
@@ -60,9 +56,8 @@ Repository convergence takes priority over adding cron capabilities:
 1. Remove the Java 8 support requirement and retarget the active compatibility
    helper. **Complete.** Keep prior qualification receipts unchanged.
 2. Replace the root development/build entry points with the maintained Java 25
-   graph. **Implemented; fresh source packaging and physical qualification are
-   pending.** The obsolete bootstrap and current-source smoke-build route were
-   removed, with only lab utilities still used by the maintained harness carried
+   graph. **Complete and qualified.** The obsolete bootstrap and current-source
+   smoke-build route were removed, with only lab utilities still used by the maintained harness carried
    over.
 3. Inventory and retire unused legacy code, build plugins and dependencies. Move
    any required migration readers or fixtures into explicit maintained boundaries.
@@ -91,9 +86,13 @@ original bundle, snapshot, config and TLS inputs were unchanged.
 Application Java/Go source and stored formats did not change in this step;
 whole-repository convergence remains the outstanding JAVA-11 work above.
 
-## Validation of step 2 implementation
+## Validation of step 2
 
-The maintained root graph and retained harness checks pass: 73 Java unit tests,
-65 lab Python tests and 62 native packaging Python tests. Fresh source packaging
-and physical qualification have not yet run for this implementation; those
-results remain pending and are not inferred from the historical receipts above.
+The fresh root launcher passed 73 Java tests. Each of the three supported packaged
+profiles passed 73 Java tests, 65 lab Python tests, 62 packaging Python tests,
+Go tests/vet, 64 installed launcher checks and 23 physical recovery cases.
+Java artifacts reproduced across separate output roots and match the previous
+qualified profile. Supported JVM comparisons, new-lab TLS and cleanup checks
+passed. [The receipt](java11-build-evidence.json) identifies the accepted source
+and retained failed pre-fix packaging attempt. Legacy source retirement and SQL
+idiom work remain steps 3 and 4.

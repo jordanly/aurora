@@ -1,0 +1,404 @@
+{
+  "artifactComparison": {
+    "path": ".cache/java11-qualified-artifact-comparison.json",
+    "sha256": "6be90d51ffd02a14b437fa85c23d5ad6303f67c18b763e1cbf68e4fd5fe8011c"
+  },
+  "codeDelta": {
+    "base": "61ee74f30",
+    "commit": "2a8e19310ce67ecde738edad3d518217f21d624c",
+    "numstat": {
+      "deletions": 2168,
+      "insertions": 584,
+      "net": -1584,
+      "textFiles": 39,
+      "totalFiles": 40
+    },
+    "productionJavaChangeIsCommentOnly": true,
+    "productionUnchangedExcept": [
+      "protocol/native-v1alpha1/conformance/Canonical.java"
+    ]
+  },
+  "conformanceLog": {
+    "path": ".cache/java11-conformance/check.log",
+    "sha256": "e4fb712446584abec2c4294f57152a63b68b68412c70331320b261869719527d"
+  },
+  "counts": {
+    "java": 73,
+    "labPython": 65,
+    "nativePackagingPython": 62
+  },
+  "excluded": [
+    "fresh execution runs",
+    "fresh policy runs",
+    "Java 8 compatibility requirements"
+  ],
+  "failedBuild": {
+    "accepted": false,
+    "reason": "missing protocol archives",
+    "ref": {
+      "path": ".cache/java11-build-java25-build.log",
+      "sha256": "2b8171721b5187c975de90623dba9d14d96ac74f20ed0c45103ab7a79c928f4f"
+    }
+  },
+  "freshPhysicalQualification": {
+    "casesPerProfile": 23,
+    "mixedSeconds": 600,
+    "profiles": [
+      "java25",
+      "java26-runtime",
+      "java26"
+    ],
+    "repeats": 3
+  },
+  "hostCheck": {
+    "path": ".cache/java11-qualified-host-check.json",
+    "sha256": "26fed0091f3d831781878370dbbe532a479049944cc8052d78d238c0a9fc4757"
+  },
+  "masterVerification": {
+    "path": ".cache/java11-build-master-verification.json",
+    "sha256": "dc05db88c42808f4be666f1bea446fcb325bc2eefd5058b3383b3ad2ab2fe297"
+  },
+  "ok": true,
+  "profiles": {
+    "java25": {
+      "bundle": {
+        "path": ".cache/java11-qualified-java25-bundle/bundle.json",
+        "sha256": "4dbfb72f0c235b5839ca301fcae0eb61235bd0022b33900f3e1e29fe167804bc"
+      },
+      "compatibility": {
+        "helper": {
+          "path": ".cache/java11-qualified-java25-compat/classes/org/apache/aurora/nativescheduler/JvmCompatibility.class",
+          "sha256": "05721b581ac99a030ce86dfb84aafd14213f1ec5c66d836805fc53db69bf78c7"
+        },
+        "helperBytecodeMajor": 69,
+        "newJavaMajor": 25,
+        "oldJavaMajor": 25,
+        "oldPkcs12LoadedOnBoth": true,
+        "ref": {
+          "path": ".cache/java11-qualified-java25-compat/result.json",
+          "sha256": "0e3ed9949c8e1ff8bbd842a590ea6971934f01ace36578136c8f1fb0c66d1674"
+        }
+      },
+      "launcher": {
+        "commands": 64,
+        "ref": {
+          "path": ".cache/java11-qualified-java25-launchers-run/launcher-check.json",
+          "sha256": "93727bb2f58e785b40d254168742fb1de310ff43d54c0d7eba6cf25c113c367b"
+        }
+      },
+      "qualification": {
+        "cases": 23,
+        "evidence": {
+          "path": ".pi-lab/java11-qualified-java25-qualification/evidence/c1789148235-result.json",
+          "sha256": "09a324c10c04cbdf44650f18402d75a1145a3f3d8bdbcb73187bbac0738aa4ec"
+        },
+        "marker": {
+          "path": ".pi-lab/java11-qualified-java25-qualification/.aurora-cluster-lab.json",
+          "sha256": "8a7a5760ff3a00e0a8e4532dafb65657337becc4a788321d8728b341f1aa6141"
+        },
+        "mixedSeconds": 600,
+        "receipt": {
+          "path": ".pi-lab/java11-qualified-java25-qualification/qualification.json",
+          "sha256": "ec224e00edbc22bc0213eace0d3c1bf470fa36994832a957dcddb66c04d34214"
+        },
+        "repeats": 3,
+        "run": "64079d894d32521d"
+      },
+      "runtimeAudit": {
+        "path": ".cache/java11-qualified-java25-runtime-audit.json",
+        "sha256": "53c322742138f6b3ebd88c2adfbc47c5dcddf29cc348aecd68f956eb3482dfd5"
+      },
+      "tests": {
+        "java": {
+          "suites": {
+            "org.apache.aurora.nativeprotocol.ProtocolValidatorTest": 8,
+            "org.apache.aurora.nativescheduler.JsonTest": 5,
+            "org.apache.aurora.nativescheduler.NativeDaemonTest": 6,
+            "org.apache.aurora.nativescheduler.NativeEngineTest": 16,
+            "org.apache.aurora.nativescheduler.NativeHttpTest": 8,
+            "org.apache.aurora.nativescheduler.NativePolicyTest": 9,
+            "org.apache.aurora.scheduler.storage.sql.NativeSqlStoreTest": 21
+          },
+          "total": 73
+        },
+        "python": {
+          "lab-tests.log": {
+            "ref": {
+              "path": ".cache/java11-qualified-java25-bundle/reports/lab-tests.log",
+              "sha256": "9ba232976c4c1c171444113272613ea8aabcfd6935d0bd8d5b66895907045ad0"
+            },
+            "tests": 65
+          },
+          "packaging-tests.log": {
+            "ref": {
+              "path": ".cache/java11-qualified-java25-bundle/reports/packaging-tests.log",
+              "sha256": "aed05cd5d47c0460cce999a3a7c551148ce7e5d80348d16427e280091f53ece9"
+            },
+            "tests": 62
+          }
+        },
+        "xmlReports": [
+          {
+            "path": ".cache/java11-qualified-java25-bundle/build/java/protocol/test-results/test/TEST-org.apache.aurora.nativeprotocol.ProtocolValidatorTest.xml",
+            "sha256": "e97070f34f6913615ea217285fceb29484bb1002ece8b2bb9b3d3ca7cca5244a"
+          },
+          {
+            "path": ".cache/java11-qualified-java25-bundle/build/java/scheduler/test-results/test/TEST-org.apache.aurora.nativescheduler.JsonTest.xml",
+            "sha256": "59d05efe55bfdc9770e4ddba68600c7afd44b4878f10a09d23780db11f8ba0ae"
+          },
+          {
+            "path": ".cache/java11-qualified-java25-bundle/build/java/scheduler/test-results/test/TEST-org.apache.aurora.nativescheduler.NativeDaemonTest.xml",
+            "sha256": "07975f1ab16735f344be24c070b2fa10bd16b77e2379440457815157a31aa547"
+          },
+          {
+            "path": ".cache/java11-qualified-java25-bundle/build/java/scheduler/test-results/test/TEST-org.apache.aurora.nativescheduler.NativeEngineTest.xml",
+            "sha256": "a852ddbb3fe32bc0f097ff64abaa7a72cfdda786c245d0a6695833b48d32514b"
+          },
+          {
+            "path": ".cache/java11-qualified-java25-bundle/build/java/scheduler/test-results/test/TEST-org.apache.aurora.nativescheduler.NativeHttpTest.xml",
+            "sha256": "35fb9b7a05d1155dc81567820f94a5b0b6a06f183be472c7d9179c55ea53f76c"
+          },
+          {
+            "path": ".cache/java11-qualified-java25-bundle/build/java/scheduler/test-results/test/TEST-org.apache.aurora.nativescheduler.NativePolicyTest.xml",
+            "sha256": "0c3449f6e48050759098650ea64ea1c9e76cc0a5c6e45774c196fd7f4a4257a2"
+          },
+          {
+            "path": ".cache/java11-qualified-java25-bundle/build/java/scheduler/test-results/test/TEST-org.apache.aurora.scheduler.storage.sql.NativeSqlStoreTest.xml",
+            "sha256": "1214f695a91edbb714b08f043aecfc425984a77df151eeefc05c5b6c7a923106"
+          }
+        ]
+      }
+    },
+    "java26": {
+      "bundle": {
+        "path": ".cache/java11-qualified-java26-bundle/bundle.json",
+        "sha256": "b09931cdbfdeae6a502ffefa3a58f583d0cd3f9c21bbc7bd4988e1ca38efa495"
+      },
+      "compatibility": {
+        "helper": {
+          "path": ".cache/java11-qualified-java26-compat/classes/org/apache/aurora/nativescheduler/JvmCompatibility.class",
+          "sha256": "05721b581ac99a030ce86dfb84aafd14213f1ec5c66d836805fc53db69bf78c7"
+        },
+        "helperBytecodeMajor": 69,
+        "newJavaMajor": 26,
+        "oldJavaMajor": 25,
+        "oldPkcs12LoadedOnBoth": true,
+        "ref": {
+          "path": ".cache/java11-qualified-java26-compat/result.json",
+          "sha256": "209629c67e4c4fbb06dc3278c6a9e59e7c834853e45f6c89d75c164a8c1e2b50"
+        }
+      },
+      "launcher": {
+        "commands": 64,
+        "ref": {
+          "path": ".cache/java11-qualified-java26-launchers-run/launcher-check.json",
+          "sha256": "ed188f9bc0a1456e675f4844e1d69e7d26a299187ef84c62906f97ecfe75f206"
+        }
+      },
+      "qualification": {
+        "cases": 23,
+        "evidence": {
+          "path": ".pi-lab/java11-qualified-java26-qualification/evidence/c1789149628-result.json",
+          "sha256": "6c51e9e3ebfc7df437170986de88f43f9a47c08f4b993d527041d54d9a464b92"
+        },
+        "marker": {
+          "path": ".pi-lab/java11-qualified-java26-qualification/.aurora-cluster-lab.json",
+          "sha256": "8fa67014c3d5dea3948ff2331b5edb7ef473a90a4fd1740bc6134d5e3e5882fa"
+        },
+        "mixedSeconds": 600,
+        "receipt": {
+          "path": ".pi-lab/java11-qualified-java26-qualification/qualification.json",
+          "sha256": "c64a8d32a2ce25e09ee8b6c8f38dc60d4ed76591bf3856927a832f67187b6880"
+        },
+        "repeats": 3,
+        "run": "faa482a200e78a3b"
+      },
+      "runtimeAudit": {
+        "path": ".cache/java11-qualified-java26-runtime-audit.json",
+        "sha256": "38f45c70c373bfe9019caa2b08006b82af9bd791135336154f316e76d2f68994"
+      },
+      "tests": {
+        "java": {
+          "suites": {
+            "org.apache.aurora.nativeprotocol.ProtocolValidatorTest": 8,
+            "org.apache.aurora.nativescheduler.JsonTest": 5,
+            "org.apache.aurora.nativescheduler.NativeDaemonTest": 6,
+            "org.apache.aurora.nativescheduler.NativeEngineTest": 16,
+            "org.apache.aurora.nativescheduler.NativeHttpTest": 8,
+            "org.apache.aurora.nativescheduler.NativePolicyTest": 9,
+            "org.apache.aurora.scheduler.storage.sql.NativeSqlStoreTest": 21
+          },
+          "total": 73
+        },
+        "python": {
+          "lab-tests.log": {
+            "ref": {
+              "path": ".cache/java11-qualified-java26-bundle/reports/lab-tests.log",
+              "sha256": "bba26c72110a636328ea5c46452e14c7f88413d64b0c58f4e3a5133c4f21a34c"
+            },
+            "tests": 65
+          },
+          "packaging-tests.log": {
+            "ref": {
+              "path": ".cache/java11-qualified-java26-bundle/reports/packaging-tests.log",
+              "sha256": "b3d2db3ba0f5113e625264fc5d7f762a2e400d47e5b3040a8a3f332ae2c034e7"
+            },
+            "tests": 62
+          }
+        },
+        "xmlReports": [
+          {
+            "path": ".cache/java11-qualified-java26-bundle/build/java/protocol/test-results/test/TEST-org.apache.aurora.nativeprotocol.ProtocolValidatorTest.xml",
+            "sha256": "81505745832426fcb0e6bf95b731a62879ad2696554ed470be6f6f75d881e80f"
+          },
+          {
+            "path": ".cache/java11-qualified-java26-bundle/build/java/scheduler/test-results/test/TEST-org.apache.aurora.nativescheduler.JsonTest.xml",
+            "sha256": "03f143f27d854bdc2ddd13cd1dded2ef9024cf4534533ddb83b9851e821628c3"
+          },
+          {
+            "path": ".cache/java11-qualified-java26-bundle/build/java/scheduler/test-results/test/TEST-org.apache.aurora.nativescheduler.NativeDaemonTest.xml",
+            "sha256": "7c40c46ed272b89bf7c7c4b4725781020f046904e9df34a43ba589ef3adcbc8e"
+          },
+          {
+            "path": ".cache/java11-qualified-java26-bundle/build/java/scheduler/test-results/test/TEST-org.apache.aurora.nativescheduler.NativeEngineTest.xml",
+            "sha256": "22ca3707a543088468aabe97a116072c6a9943bf3080c8f8e502b6470eb9f6cb"
+          },
+          {
+            "path": ".cache/java11-qualified-java26-bundle/build/java/scheduler/test-results/test/TEST-org.apache.aurora.nativescheduler.NativeHttpTest.xml",
+            "sha256": "0cbb980ec90f5bc87e2c0de0f17cbe0521048a8b48d984718f46a3efc5623a33"
+          },
+          {
+            "path": ".cache/java11-qualified-java26-bundle/build/java/scheduler/test-results/test/TEST-org.apache.aurora.nativescheduler.NativePolicyTest.xml",
+            "sha256": "57e8ec69243258cdb287da3dab49d7f1ce37b6304e9f1e6c6e2defa486f767b8"
+          },
+          {
+            "path": ".cache/java11-qualified-java26-bundle/build/java/scheduler/test-results/test/TEST-org.apache.aurora.scheduler.storage.sql.NativeSqlStoreTest.xml",
+            "sha256": "040013dd9added01d0e8df4ca9713c977d82db5f457daa3c06827e8cb9f1f9eb"
+          }
+        ]
+      }
+    },
+    "java26-runtime": {
+      "bundle": {
+        "path": ".cache/java11-qualified-java26-runtime-bundle/bundle.json",
+        "sha256": "74830f6f2df566e3ef42f8e31d28148c4120810e0306bbb4a24cecb2930b06d9"
+      },
+      "compatibility": {
+        "helper": {
+          "path": ".cache/java11-qualified-java26-runtime-compat/classes/org/apache/aurora/nativescheduler/JvmCompatibility.class",
+          "sha256": "05721b581ac99a030ce86dfb84aafd14213f1ec5c66d836805fc53db69bf78c7"
+        },
+        "helperBytecodeMajor": 69,
+        "newJavaMajor": 26,
+        "oldJavaMajor": 25,
+        "oldPkcs12LoadedOnBoth": true,
+        "ref": {
+          "path": ".cache/java11-qualified-java26-runtime-compat/result.json",
+          "sha256": "df8465e3be219b6485402d2ea5d2e315770e2e7ed25d781bf792ca9ace317754"
+        }
+      },
+      "launcher": {
+        "commands": 64,
+        "ref": {
+          "path": ".cache/java11-qualified-java26-runtime-launchers-run/launcher-check.json",
+          "sha256": "b4cbf9dfe422770dac7edd83bb87ce919c607b021910e59d7c8542ca53be0f8a"
+        }
+      },
+      "qualification": {
+        "cases": 23,
+        "evidence": {
+          "path": ".pi-lab/java11-qualified-java26-runtime-qualification/evidence/c1789148931-result.json",
+          "sha256": "2e20fc3814884908d5c398271aa598c6bc44986a9f461ebc187bf31b7eaf3558"
+        },
+        "marker": {
+          "path": ".pi-lab/java11-qualified-java26-runtime-qualification/.aurora-cluster-lab.json",
+          "sha256": "ccaa875dfdb98ce8698a41040c7ecece28f52a49e488116858594e5341efdb42"
+        },
+        "mixedSeconds": 600,
+        "receipt": {
+          "path": ".pi-lab/java11-qualified-java26-runtime-qualification/qualification.json",
+          "sha256": "6fb7ad3e5a9ce331bca3c711d778c5377c3ccdc0bc385359ada3c10e364cadc1"
+        },
+        "repeats": 3,
+        "run": "eb6634ae2703a811"
+      },
+      "runtimeAudit": {
+        "path": ".cache/java11-qualified-java26-runtime-runtime-audit.json",
+        "sha256": "8908cec249837c1da4ae9dcd46360ffced7dd2d036bc3ed7d4cded31ee8ada09"
+      },
+      "tests": {
+        "java": {
+          "suites": {
+            "org.apache.aurora.nativeprotocol.ProtocolValidatorTest": 8,
+            "org.apache.aurora.nativescheduler.JsonTest": 5,
+            "org.apache.aurora.nativescheduler.NativeDaemonTest": 6,
+            "org.apache.aurora.nativescheduler.NativeEngineTest": 16,
+            "org.apache.aurora.nativescheduler.NativeHttpTest": 8,
+            "org.apache.aurora.nativescheduler.NativePolicyTest": 9,
+            "org.apache.aurora.scheduler.storage.sql.NativeSqlStoreTest": 21
+          },
+          "total": 73
+        },
+        "python": {
+          "lab-tests.log": {
+            "ref": {
+              "path": ".cache/java11-qualified-java26-runtime-bundle/reports/lab-tests.log",
+              "sha256": "7c000b63b6ea68c5409d4011e6e412a100a0c802283e97297b65b93ee091ab83"
+            },
+            "tests": 65
+          },
+          "packaging-tests.log": {
+            "ref": {
+              "path": ".cache/java11-qualified-java26-runtime-bundle/reports/packaging-tests.log",
+              "sha256": "0878d94b054d07449147b7110dda5deba3c408d9f5852244dec11823c21011b0"
+            },
+            "tests": 62
+          }
+        },
+        "xmlReports": [
+          {
+            "path": ".cache/java11-qualified-java26-runtime-bundle/build/java/protocol/test-results/test/TEST-org.apache.aurora.nativeprotocol.ProtocolValidatorTest.xml",
+            "sha256": "a34e2e5688da7f1d28e3556450627fd7e14ac53059eb97e9cc349ba1d4af5709"
+          },
+          {
+            "path": ".cache/java11-qualified-java26-runtime-bundle/build/java/scheduler/test-results/test/TEST-org.apache.aurora.nativescheduler.JsonTest.xml",
+            "sha256": "ea4a6809369e2a3cbb04b65bbaef6f286b61fe5366995398a7c79429e320fdbf"
+          },
+          {
+            "path": ".cache/java11-qualified-java26-runtime-bundle/build/java/scheduler/test-results/test/TEST-org.apache.aurora.nativescheduler.NativeDaemonTest.xml",
+            "sha256": "247f9f27fd5872541be6cf61161914f0c018f2d0f782d0b44b83031c90db92ab"
+          },
+          {
+            "path": ".cache/java11-qualified-java26-runtime-bundle/build/java/scheduler/test-results/test/TEST-org.apache.aurora.nativescheduler.NativeEngineTest.xml",
+            "sha256": "f51cf6a195baf4c60694d9d99f17e0f16e604dc8fec92e2ed1a796cfcb40891a"
+          },
+          {
+            "path": ".cache/java11-qualified-java26-runtime-bundle/build/java/scheduler/test-results/test/TEST-org.apache.aurora.nativescheduler.NativeHttpTest.xml",
+            "sha256": "b5f474a0b91e8ef011e115832f5e3a07923bfa7cca90b66e0c5ff56718c46304"
+          },
+          {
+            "path": ".cache/java11-qualified-java26-runtime-bundle/build/java/scheduler/test-results/test/TEST-org.apache.aurora.nativescheduler.NativePolicyTest.xml",
+            "sha256": "3a6e4e8895b367f158127d76fe8b827e84edc3a0b896323d0830e2f83df44739"
+          },
+          {
+            "path": ".cache/java11-qualified-java26-runtime-bundle/build/java/scheduler/test-results/test/TEST-org.apache.aurora.scheduler.storage.sql.NativeSqlStoreTest.xml",
+            "sha256": "4d37207d595427445c7d9a329bf1c2ec4996720fb01ca3b648ab74a72e3a05f8"
+          }
+        ]
+      }
+    }
+  },
+  "rootFreshLauncher": {
+    "path": ".cache/java11-build-root-fresh.json",
+    "sha256": "2faac471e08ecfd705275af1a2b252f86e31361d275019d9d72ff0b26f77d187"
+  },
+  "rootFreshLauncherLog": {
+    "path": ".cache/java11-build-root-fresh.log",
+    "sha256": "97c453afb9fd211fa630d6aa56d9822d38cecbc48fc19d18779a105d993fdfc5"
+  },
+  "scope": "JAVA-11 step 2 maintained Java 25 root build entry point",
+  "source": {
+    "commit": "2a8e19310ce67ecde738edad3d518217f21d624c",
+    "freshSource": ".cache/java11-qualified-fresh-source"
+  }
+}
