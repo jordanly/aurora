@@ -185,7 +185,12 @@ class Check:
         self.case(label + "-batch-submit-replay", attempts=attempts(state, batch), launches=1)
 
         service = label + "-service"
-        self.submit(cluster.job(service, "service"))
+        service_job = cluster.job(service, "service")
+        # These cases require a userspace TERM receipt. Leave room for durable
+        # admission and handler scheduling on the Pi; expired deadlines may
+        # correctly skip TERM and escalate directly to KILL.
+        service_job["template"]["stop"]["graceMillis"] = 3000
+        self.submit(service_job)
         state = self.wait(service, ready)
         live = attempts(state, service)
         for item in live:
@@ -229,7 +234,9 @@ class Check:
         self.case(label + "-partition-stop-reconnect", attempts=attempts(state, service))
 
         recovery = label + "-recovery"
-        self.submit(cluster.job(recovery, "service", refuse=True))
+        recovery_job = cluster.job(recovery, "service", refuse=True)
+        recovery_job["template"]["stop"]["graceMillis"] = 3000
+        self.submit(recovery_job)
         state = self.wait(recovery, ready)
         prior = next(a for a in attempts(state, recovery) if a["node"] == "agent-a")
         generation = self.crash("agent-a")

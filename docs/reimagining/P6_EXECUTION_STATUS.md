@@ -42,7 +42,10 @@ The [task contract](../../agent/task/README.md) specifies success dependencies,
 deterministic ordering, concurrency, finite total runs, failed-run budgets,
 daemon/ephemeral behavior and finalizers. `native-v1` requires every required
 process to succeed. The selected `thermos-v1` planner retains explicitly tested
-legacy cases, with documented changes for finite runs and uncertain execution.
+legacy cases, including immediate positive task-failure thresholds, with documented
+changes for finite aggregate runs, successful-only ephemeral dependencies,
+immediate primary cleanup and uncertain execution. JSON field names are exact:
+case aliases cannot override explicit limits.
 Finalizers share the remaining cleanup budget and remain best effort under the
 outer Stop deadline. A used, missing or corrupt task execution journal is never a
 source of authority to relaunch an old attempt.
@@ -112,3 +115,10 @@ the default runtime. Focused Go subprocess and Java store/controller tests cover
 failure boundaries that the physical checks cannot schedule deterministically.
 ThreadSanitizer cannot execute on this Pi's 47-bit VMA layout; race results are
 unavailable, not passing. Ordinary unit tests and physical tests remain required.
+
+The existing gate's two fixtures that require an observed TERM now allow a
+three-second grace period. A superseded run with the former 300 ms fixture
+deadline recorded SIGKILL without a TERM receipt and failed that assertion.
+The fixture change gives durable admission and the signal handler time to run on
+the Pi. Runtime deadline behavior is unchanged; forced-stop checks still require
+actual SIGKILL, cleanup and exact port reuse.

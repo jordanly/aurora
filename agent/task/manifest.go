@@ -27,6 +27,7 @@ import (
 	"fmt"
 	"io"
 	"path/filepath"
+	"reflect"
 	"regexp"
 	"sort"
 	"strings"
@@ -71,6 +72,9 @@ func Decode(data []byte) (Manifest, []byte, error) {
 	if _, e := d.Token(); e != io.EOF {
 		return m, nil, errors.New("trailing JSON")
 	}
+	if e := exactFields(data, reflect.TypeOf(m), false, "$"); e != nil {
+		return m, nil, e
+	}
 	d = json.NewDecoder(bytes.NewReader(data))
 	d.DisallowUnknownFields()
 	if e := d.Decode(&m); e != nil {
@@ -82,6 +86,51 @@ func Decode(data []byte) (Manifest, []byte, error) {
 	b, e := json.Marshal(m)
 	return m, b, e
 }
+
+// encoding/json accepts case-insensitive struct field aliases even with
+// DisallowUnknownFields. Validate exact JSON tags first, without restricting
+// arbitrary, case-sensitive keys in environment and provenance maps.
+func exactFields(data json.RawMessage, typ reflect.Type, required bool, path string) error {
+	switch typ.Kind() {
+	case reflect.Struct:
+		var object map[string]json.RawMessage
+		if e := json.Unmarshal(data, &object); e != nil {
+			return e
+		}
+		fields := map[string]reflect.Type{}
+		for i := 0; i < typ.NumField(); i++ {
+			field := typ.Field(i)
+			name := strings.Split(field.Tag.Get("json"), ",")[0]
+			if name != "" && name != "-" {
+				fields[name] = field.Type
+				if _, ok := object[name]; required && !ok {
+					return fmt.Errorf("resolved export missing explicit field %s.%s", path, name)
+				}
+			}
+		}
+		for name, value := range object {
+			field, ok := fields[name]
+			if !ok {
+				return fmt.Errorf("unknown field %s.%s", path, name)
+			}
+			if e := exactFields(value, field, required, path+"."+name); e != nil {
+				return e
+			}
+		}
+	case reflect.Slice:
+		var values []json.RawMessage
+		if e := json.Unmarshal(data, &values); e != nil {
+			return e
+		}
+		for i, value := range values {
+			if e := exactFields(value, typ.Elem(), required, fmt.Sprintf("%s[%d]", path, i)); e != nil {
+				return e
+			}
+		}
+	}
+	return nil
+}
+
 func unique(d *json.Decoder) error {
 	t, e := d.Token()
 	if e != nil {

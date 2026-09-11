@@ -239,6 +239,7 @@ func Execute(ctx context.Context, m Manifest, o Options) (res Result, err error)
 	}()
 	final := false
 	hasFinalizers, ranFinalizers := false, false
+	finalizerOrphans := false
 	for _, q := range m.Processes {
 		if q.Finalizer {
 			hasFinalizers = true
@@ -321,6 +322,12 @@ func Execute(ctx context.Context, m Manifest, o Options) (res Result, err error)
 			}
 		}
 		if orphans {
+			if final && ranFinalizers && !finalizerOrphans {
+				finalizerOrphans = true
+				if e = j.append(Event{Kind: "finalizer-orphan-cleaning", Result: &res}); e != nil {
+					return res, e
+				}
+			}
 			if final && now.After(deadline.Add(time.Second)) {
 				return res, errors.New("orphan cleanup unconfirmed")
 			}
@@ -340,6 +347,9 @@ func Execute(ctx context.Context, m Manifest, o Options) (res Result, err error)
 				break
 			}
 			if r := p.Result(true); r != "" {
+				if r == "succeeded" && finalizerOrphans {
+					r = "failed"
+				}
 				res.FinalizationResult = r
 				break
 			}
@@ -368,6 +378,9 @@ func Execute(ctx context.Context, m Manifest, o Options) (res Result, err error)
 					}
 				}
 			}
+		}
+		if !final && p.Result(false) != "" {
+			continue
 		}
 		if !cleaning {
 			for _, n := range p.Runnable(now, final) {

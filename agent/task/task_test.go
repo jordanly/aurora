@@ -191,6 +191,32 @@ func TestConcurrencyNameOrder(t *testing.T) {
 		t.Fatal(got)
 	}
 }
+
+func TestThermosTaskFailureLimitStopsRunningSibling(t *testing.T) {
+	a, daemon := proc("a", "exit 7"), proc("daemon", "exec /bin/sleep 20")
+	daemon.Daemon = true
+	m := manifest(a, daemon)
+	m.Semantics = "thermos-v1"
+	m.TaskMaxFailures = 1
+	m.MaxConcurrency = 2
+	r, dir, e := execute(t, m)
+	if e != nil || r.PrimaryResult != "failed" || r.Cleanup != "complete" {
+		t.Fatal("task failure threshold did not stop running sibling", r, e)
+	}
+	data, e := os.ReadFile(filepath.Join(dir, "task.journal"))
+	if e != nil || !strings.Contains(string(data), `"signal":9`) {
+		t.Fatal("running sibling cleanup missing", string(data), e)
+	}
+}
+
+func TestFinalizerOrphanFailsOnlyFinalization(t *testing.T) {
+	f := proc("final", "/bin/sleep 20 & exit 0")
+	f.Finalizer = true
+	r, _, e := execute(t, manifest(proc("a", "exit 0"), f))
+	if e != nil || r.PrimaryResult != "succeeded" || r.FinalizationResult != "failed" || r.Cleanup != "complete" {
+		t.Fatal("finalizer orphan was reported successful or rewrote primary", r, e)
+	}
+}
 func execute(t *testing.T, m Manifest) (Result, string, error) {
 	t.Helper()
 	dir := t.TempDir()

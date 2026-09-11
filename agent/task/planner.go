@@ -143,6 +143,11 @@ func (p *Planner) Result(final bool) string {
 			}
 		}
 	}
+	// Legacy task failure tolerance is a live health threshold, not merely a
+	// completion check. An exhausted process must stop a running daemon sibling.
+	if !final && p.Manifest.Semantics == "thermos-v1" && p.Manifest.TaskMaxFailures > 0 && failed >= p.Manifest.TaskMaxFailures {
+		return "failed"
+	}
 	if running {
 		return ""
 	}

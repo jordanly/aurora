@@ -27,6 +27,7 @@ import (
 	"fmt"
 	"io"
 	"math"
+	"reflect"
 )
 
 type Finding struct {
@@ -78,12 +79,12 @@ func ConvertResolvedJSON(data []byte, maxRuns int) (m Manifest, findings []Findi
 		return reject(errors.New("trailing JSON"))
 	}
 	var x resolvedExport
+	if e := exactFields(data, reflect.TypeOf(x), true, "$"); e != nil {
+		return reject(e)
+	}
 	d = json.NewDecoder(bytes.NewReader(data))
 	d.DisallowUnknownFields()
 	if e := d.Decode(&x); e != nil {
-		return reject(e)
-	}
-	if e := resolvedFields(data); e != nil {
 		return reject(e)
 	}
 	if x.Version != "thermos-resolved-v1" || !x.TrustedOfflineExport || !x.DefaultsApplied || len(x.SourceDigests) == 0 || x.Bindings == nil {
@@ -106,7 +107,12 @@ func ConvertResolvedJSON(data []byte, maxRuns int) (m Manifest, findings []Findi
 		return reject(e)
 	}
 	m = Manifest{Version: "task-v1alpha1", Semantics: "thermos-v1", MaxConcurrency: x.Task.MaxConcurrency, MaxRuns: maxRuns, TaskMaxFailures: x.Task.MaxFailures, FinalizationWaitMillis: wait, LogBytes: 65536}
-	findings = append(findings, Finding{"task.max_failures", "retained", "task failed-process tolerance is separate from process failed-run limits"}, Finding{"task.maxRuns", "changed", "finite operator-selected guard replaces architecture-dependent total-run bound"}, Finding{"bindings", "retained", "provenance only; all commands and environment must already be resolved"})
+	findings = append(findings,
+		Finding{"task.max_failures", "retained", "task failed-process tolerance is separate from process failed-run limits"},
+		Finding{"task.maxRuns", "changed", "finite operator-selected aggregate guard includes ordinary and finalizer launches; legacy total-run limit was per process"},
+		Finding{"task.finalization_wait", "changed", "cleanup immediately SIGKILLs remaining primary processes; legacy sent SIGTERM and waited within the shared finalization budget"},
+		Finding{"task.processes.after_success", "changed", "dependencies require successful completion; unlike legacy, exhausted ephemeral predecessors do not release ephemeral successors"},
+		Finding{"bindings", "retained", "provenance only; all commands and environment must already be resolved"})
 	for i, p := range x.Task.Processes {
 		delay, e := millis(p.MinDuration)
 		if e != nil {
@@ -123,39 +129,4 @@ func ConvertResolvedJSON(data []byte, maxRuns int) (m Manifest, findings []Findi
 		return reject(e)
 	}
 	return m, findings, nil
-}
-
-// Resolved exports must carry the actual defaults. In particular, an omitted
-// max_failures must never silently become zero (unlimited) through Go decoding.
-func resolvedFields(data []byte) error {
-	fields := func(raw json.RawMessage, names ...string) (map[string]json.RawMessage, error) {
-		var object map[string]json.RawMessage
-		if e := json.Unmarshal(raw, &object); e != nil {
-			return nil, e
-		}
-		for _, name := range names {
-			if _, ok := object[name]; !ok {
-				return nil, fmt.Errorf("resolved export missing explicit field %s", name)
-			}
-		}
-		return object, nil
-	}
-	root, e := fields(data, "version", "trustedOfflineExport", "sourceDigests", "defaultsApplied", "bindings", "task")
-	if e != nil {
-		return e
-	}
-	task, e := fields(root["task"], "max_concurrency", "max_failures", "finalization_wait", "processes")
-	if e != nil {
-		return e
-	}
-	var processes []json.RawMessage
-	if e = json.Unmarshal(task["processes"], &processes); e != nil {
-		return e
-	}
-	for _, process := range processes {
-		if _, e = fields(process, "name", "cmdline", "env", "after_success", "daemon", "ephemeral", "finalizer", "max_failures", "min_duration"); e != nil {
-			return e
-		}
-	}
-	return nil
 }

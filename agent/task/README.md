@@ -39,12 +39,15 @@ to drain; retention is at most `2 * maxRuns * logBytes` plus journal overhead.
 processes do not hold completion open. The default failed-run budget is one;
 `unlimitedFailures:true` explicitly requests retry until maxRuns. `thermos-v1`
 retains independent process failed-run budgets (zero unlimited) and task failed-
-process tolerance (zero unlimited). Failed predecessors never release successors,
+process tolerance (zero unlimited); a positive threshold fails the task even
+while another process is running. Failed predecessors never release successors,
 and a blocked required DAG fails even under unlimited task tolerance. Dependency
 cycles, dependencies on daemons, ordinary dependencies on ephemeral processes,
 and cross-finalizer dependencies are rejected. Daemon success restarts; ephemeral
 failure exhaustion is `finished`, not successful. A pure ephemeral task is
 already complete and need not launch any process. Delay is measured after exit.
+Unlike legacy Thermos, an exhausted ephemeral predecessor does not release its
+ephemeral successors: `afterSuccess` always requires successful execution.
 Lost outcomes count toward maxRuns, not the failed-run budget in the pure planner;
 the actual runner fails closed on uncertain outcomes and never resumes them.
 
@@ -54,7 +57,8 @@ no_new_privs and PDEATHSIG. A locked launch OS thread stays alive through the
 single exact exec.Cmd.Wait. Children inherit the outer group/session. The task
 runner is a Linux child subreaper; descendants left by an exiting process are
 pidfd-signaled and reaped before further starts. Such descendants conservatively
-fail the primary result and prevent retry overlap. There is no hostile tenant
+fail the primary result and prevent retry overlap. Descendants left by finalizers
+fail finalization while preserving the already-recorded primary result. There is no hostile tenant
 isolation or cgroup enforcement in this package. The outer supervisor independently
 checks containment/cleanup before releasing the aggregate reservation.
 
