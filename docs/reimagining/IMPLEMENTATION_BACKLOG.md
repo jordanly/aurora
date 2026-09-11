@@ -30,9 +30,12 @@ The [six follow-up tasks](JAVA25_REFACTOR_TASKS.md) prioritize small JDK API
 cleanups, private records and clearer validation. [JAVA-05](JAVA05_STATUS.md)
 has completed the JDK helper and bounded-input changes: each Java profile passed
 46 Java tests, 61 launcher commands and the full 23-case physical gate, with
-twelve workload/resource trials against JAVA-03. JAVA-06 is the next Java
-refactoring slice. SQL model and concurrency changes remain conditional on
-compatibility and lifecycle decisions; supervision planning can proceed alongside.
+twelve workload/resource trials against JAVA-03. [JAVA-06](JAVA06_STATUS.md)
+has qualified private socket/poll-result records and explicit controller phases:
+50 Java tests, 64 launcher commands and 23 physical cases per profile, plus
+twelve trials against JAVA-05. JAVA-07 is the next Java refactoring slice.
+SQL model and concurrency changes remain conditional on compatibility and
+lifecycle decisions; supervision planning can proceed alongside.
 
 **First work and independent tracks**
 
@@ -52,6 +55,7 @@ Start with PLAN-01, BUILD-01 and CONTRACT-01. Go reducers/protocol fixtures can 
 | P2 / STORE-01 | Native SQL transaction boundary and every store needed by enabled paths; durable jobs/revisions/instances, tasks and nodes. | CORE-01, BUILD-02 | Atomic multi-store writes and rollback-only nesting; consistent reads; no committed cache leak. No silent no-op/volatile stores. |
 | P2 / STORE-02 | Durable allocations, commands, operations, observation dedupe/cursors, initialization/recovery and backup hooks. | STORE-01, CONTRACT-01 | Crash before/after commit and uncertain commit tests; contiguous ACK cannot cross an uncommitted gap; pending effects survive restart. |
 | P2 / LAB-02 | Scheduler/agent/proxy/test images, keeper/probes, generated certificates/config and native fixture programs. | LAB-01, ACCESS-01, AGENT-02; scheduler build for real scheduler image | Services and bound state persist/recreate as designed; networks prevent bypass; keeper exposes verified daemon-only fault control. |
+| Follow-up / LAB-03 | Queued: classify incomplete declared-length operator HTTP responses before JSON parsing; [observed benchmark failure](JAVA06_STATUS.md). | LAB-02 | Deterministic partial-body failure injection; bounded reads and exact-limit handling retained; existing recovery polling retries IncompleteRead, while complete malformed JSON still rejects. |
 | P3 / INTAKE-01 | Minimal native submit/read/stop/restart; idempotent operations; durable desired membership; one replacement owner. | STORE-02, CONTRACT-01, ACCESS-01 | Zero-active service still has desired state; completed batch stays completed; duplicate submit is harmless; cancel cannot resurrect service. |
 | P3 / CORE-02 | Native recovered-state startup, inventory/placement, minimal one-instance-per-agent rule and admission-disable/cordon. | CORE-01, STORE-02 | Two fixture instances spread; unavailable agents receive no placement; unknown allocations retained; no Mesos registration/ZooKeeper needed. |
 | P3 / EXEC-01 | Committed launch/stop dispatch and observation reduction; reconnect snapshots/watermarks; fresh authority on stable command replay. | CORE-02, AGENT-02, STORE-02 | Actual effects follow commit; duplicates/reorders/old commands cannot regress state; failed writes produce no observation ACK. |
@@ -62,8 +66,8 @@ Start with PLAN-01, BUILD-01 and CONTRACT-01. Go reducers/protocol fixtures can 
 | P5 / JAVA-03 | Complete for the retained native profile: HTTP/auth behavior, original launchers, Java 25 default plus runtime-only and compiled Java 26 profiles. | JAVA-02 | Each profile passed 41 Java tests, 59 launcher commands and 23 physical cases; twelve sequential trials document resource/latency measurements without a production performance SLO. [Recorded evidence](java03-evidence.json). |
 | P5 follow-up / JAVA-04 | Complete: [Java 25 idiomatic-code audit](JAVA25_IDIOM_AUDIT.md), active code review and representative legacy findings. | JAVA-03 | All 647 tracked Java files inventoried; examples, risks, official feature checks, independent review and six ordered tasks delivered. No application refactors included. |
 | P5 follow-up / JAVA-05 | Complete: [qualified JDK helpers and bounded input](JAVA05_STATUS.md). | JAVA-04 | All three profiles: 46 Java tests, 61 launcher commands and 23 physical cases; exact hashes/errors, 1 MiB bounds and HTTP deadlines retained; twelve workload/resource trials. |
-| P5 follow-up / JAVA-06 | Queued next: private socket/poll-result records and clearer controller phases; [task details](JAVA25_REFACTOR_TASKS.md). | JAVA-05 | Duplicate socket coverage, one reduction transaction, post-commit publication and ACK order; no public or wire model change. |
-| P5 follow-up / JAVA-07 | Queued: grouped validation branches and focused fixture readability; [task details](JAVA25_REFACTOR_TASKS.md). | JAVA-06 | Existing lexical/schema acceptance, canonical bytes and error behavior retained. |
+| P5 follow-up / JAVA-06 | Complete: [qualified private records and committed results](JAVA06_STATUS.md). | JAVA-05 | Each profile: 50 Java tests, 64 launcher commands and 23 physical cases; duplicate socket fixtures, targeted rollback/publication/ACK probes, twelve workload/resource trials. |
+| P5 follow-up / JAVA-07 | Queued next: grouped validation branches and focused fixture readability; [task details](JAVA25_REFACTOR_TASKS.md). | JAVA-06 | Existing lexical/schema acceptance, canonical bytes and error behavior retained. |
 | P5 follow-up / JAVA-08 | Queued hardening: store-resource and daemon lifecycle failure handling; [task details](JAVA25_REFACTOR_TASKS.md). | JAVA-06 | Failure injection, primary/suppressed errors, partial startup, bounded shutdown and physical recovery evidence. |
 | P5 follow-up / JAVA-09 | Conditional: public SQL records and compatibility-adapter decision; [task details](JAVA25_REFACTOR_TASKS.md). | JAVA-06, supported adapter decision | Explicit Java 8 helper/source contracts, public API and nullable/redacted-value policy; keep-as-class decision allowed. |
 | P5 follow-up / JAVA-10 | Conditional: bounded I/O concurrency and HTTP transport study; [task details](JAVA25_REFACTOR_TASKS.md). | JAVA-08, measured need | Admission/order/transaction ownership and recovery preserved; comparable measurements justify any adoption. |

@@ -36,8 +36,10 @@ representative legacy findings checked independently. Its
 [six ordered tasks](JAVA25_REFACTOR_TASKS.md) have begun: [JAVA-05](JAVA05_STATUS.md)
 has qualified JDK helper and bounded-input changes across all three profiles,
 with 46 Java tests, 61 launcher commands and 23 physical cases per profile,
-plus twelve workload/resource trials against JAVA-03. JAVA-06 private records
-and committed results are next, followed by clearer validation. Lifecycle
+plus twelve workload/resource trials against JAVA-03. [JAVA-06](JAVA06_STATUS.md)
+has now qualified private records and committed polling results: 50 Java tests,
+64 launcher commands and 23 physical cases per profile, plus twelve trials
+against JAVA-05. JAVA-07 validation control flow is next. Lifecycle
 hardening precedes concurrency experiments; public SQL records require an
 explicit compatibility decision. These follow-ups can run alongside supervision planning.
 
