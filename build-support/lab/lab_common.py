@@ -93,5 +93,3 @@ def write_json(path: Path, value: dict) -> None:
         output.write("\n")
         output.flush()
         os.fsync(output.fileno())
-
-
