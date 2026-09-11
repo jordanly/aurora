@@ -6,11 +6,12 @@
 # under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
 # CONDITIONS OF ANY KIND, either express or implied. See the License for the
 # specific language governing permissions and limitations under the License.
-"""Compare Java 8/25 state and old PKCS12 compatibility using private snapshot copies."""
+"""Compare native bundle state and old PKCS12 compatibility using private snapshot copies."""
 import argparse
 import hashlib
 import json
 import os
+import re
 from pathlib import Path
 import shutil
 import subprocess
@@ -22,6 +23,114 @@ import java.nio.file.*;
 import java.util.*;
 import org.apache.aurora.scheduler.storage.sql.NativeSqlStore;
 public final class JvmCompatibility {
+  private static void demand(boolean ok, String message) {
+    if (!ok) { throw new IllegalStateException(message); }
+  }
+  private static String canonical(com.fasterxml.jackson.databind.JsonNode node) throws Exception {
+    return new String(new org.apache.aurora.nativeprotocol.ProtocolValidator()
+        .validate(Json.canonical(node).getBytes(java.nio.charset.StandardCharsets.UTF_8)).canonicalBytes(),
+        java.nio.charset.StandardCharsets.UTF_8);
+  }
+  private static void replay(NativeSqlStore store, NativeEngine engine, String name) throws Exception {
+    com.fasterxml.jackson.databind.JsonNode before = engine.state();
+    boolean found = false;
+    for (com.fasterxml.jackson.databind.JsonNode entry : before.get("jobs")) {
+      if (!name.equals(entry.path("jobKey").path("name").asText())) { continue; }
+      found = true;
+      String body = canonical(entry.get("body"));
+      demand(!engine.submit(body.getBytes(java.nio.charset.StandardCharsets.UTF_8)), "Submit replay duplicated job");
+      NativeSqlStore.JobKey key = new NativeSqlStore.JobKey(entry.path("jobKey").path("role").asText(),
+          entry.path("jobKey").path("environment").asText(), name);
+      demand(body.equals(store.read(tx -> tx.jobBody(key))), "Persisted job canonical bytes changed");
+    }
+    demand(found, "Missing compatibility job");
+    int commands = 0;
+    for (NativeSqlStore.CommandRecord record : store.read(tx -> tx.commands())) {
+      com.fasterxml.jackson.databind.JsonNode body = Json.parse(record.body);
+      if (!name.equals(body.path("identity").path("jobKey").path("name").asText())) { continue; }
+      commands++;
+      demand(record.body.equals(canonical(body)), "Persisted command canonical bytes changed");
+      store.write(tx -> { tx.command(record.command, record.attempt, record.body); return null; });
+    }
+    demand(commands == 2, "Expected exactly Run and Stop commands");
+    demand(before.equals(engine.state()), "Replay changed complete state");
+  }
+  private static void writes(NativeSqlStore store, NativeEngine engine, String name) throws Exception {
+    com.fasterxml.jackson.databind.JsonNode original = engine.state();
+    demand(original.get("jobs").size() > 0 && original.get("attempts").size() > 0,
+        "Dependency writes require populated history");
+    demand(original.get("jobs").size() < 63 && original.get("attempts").size() < 47,
+        "Insufficient bounded history capacity for compatibility fixture");
+    com.fasterxml.jackson.databind.node.ObjectNode job = original.get("jobs").get(0).get("body").deepCopy();
+    com.fasterxml.jackson.databind.JsonNode historical = null;
+    for (com.fasterxml.jackson.databind.JsonNode attempt : original.get("attempts")) {
+      if (attempt.path("identity").path("jobKey").equals(job.get("jobKey"))) { historical = attempt; break; }
+    }
+    demand(historical != null, "Selected job has no matching historical attempt");
+    ((com.fasterxml.jackson.databind.node.ObjectNode)job.get("jobKey")).put("name", name);
+    job.put("revision", "18446744073709551615").put("instances", 1);
+    ((com.fasterxml.jackson.databind.node.ObjectNode)job.get("template").get("env"))
+        .put("COMPAT_ESCAPED", "\"quoted\"\\path");
+    String jobBody = canonical(job);
+    demand(engine.submit(jobBody.getBytes(java.nio.charset.StandardCharsets.UTF_8)), "Fixture job already exists");
+    demand(!engine.submit(jobBody.getBytes(java.nio.charset.StandardCharsets.UTF_8)), "Duplicate submit accepted");
+    com.fasterxml.jackson.databind.JsonNode submitted = engine.state();
+    com.fasterxml.jackson.databind.node.ObjectNode conflict = job.deepCopy();
+    ((com.fasterxml.jackson.databind.node.ObjectNode)conflict.get("template").get("env")).put("COMPAT_ESCAPED", "conflict");
+    boolean rejected = false;
+    try { engine.submit(canonical(conflict).getBytes(java.nio.charset.StandardCharsets.UTF_8)); }
+    catch (NativeEngine.Conflict expected) { rejected = true; }
+    demand(rejected && submitted.equals(engine.state()), "Conflicting submit changed state");
+    NativeSqlStore.JobKey key = new NativeSqlStore.JobKey(job.path("jobKey").path("role").asText(),
+        job.path("jobKey").path("environment").asText(), name);
+    demand(store.read(tx -> tx.desiredInstances(key)).equals(Collections.singletonList("instance-0")),
+        "Desired membership was not committed");
+    NativeSqlStore.JobKey rollbackKey = new NativeSqlStore.JobKey("compat", "test", name + "-rollback");
+    try {
+      store.write(tx -> { tx.createJob(rollbackKey, "1", "batch", jobBody);
+        tx.addInstance(rollbackKey, "instance-0"); throw new IllegalStateException("expected-rollback"); });
+      throw new IllegalStateException("Rollback did not fail");
+    } catch (IllegalStateException expected) {
+      demand("expected-rollback".equals(expected.getMessage()), "Unexpected rollback failure");
+    }
+    demand(store.read(tx -> tx.jobBody(rollbackKey)) == null && submitted.equals(engine.state()),
+        "Failed transaction persisted data");
+    com.fasterxml.jackson.databind.node.ObjectNode run = historical.get("run").deepCopy();
+    com.fasterxml.jackson.databind.node.ObjectNode identity = (com.fasterxml.jackson.databind.node.ObjectNode)run.get("identity");
+    identity.set("jobKey", job.get("jobKey").deepCopy());
+    identity.put("instance", "instance-0").put("attempt", name + "-attempt").put("run", name + "-run");
+    run.put("command", name + "-run-command").put("desiredRevision", "18446744073709551615");
+    ((com.fasterxml.jackson.databind.node.ObjectNode)run.get("assignment").get("env"))
+        .put("COMPAT_ESCAPED", "\"quoted\"\\path");
+    run.put("templateSha256", Json.sha(Json.canonical(job.get("template"))));
+    String runBody = canonical(run);
+    org.apache.aurora.nativeprotocol.ProtocolValidator validator = new org.apache.aurora.nativeprotocol.ProtocolValidator();
+    org.apache.aurora.nativeprotocol.ProtocolValidator.requireResolution(
+        validator.validate(jobBody.getBytes(java.nio.charset.StandardCharsets.UTF_8)),
+        validator.validate(runBody.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+    com.fasterxml.jackson.databind.node.ObjectNode stop = NativeEngine.base("Stop")
+        .put("command", name + "-stop-command").put("desiredRevision", "18446744073709551615")
+        .put("graceMillis", 300).put("reason", "cancel");
+    stop.set("identity", identity.deepCopy()); stop.set("target", run.get("target").deepCopy());
+    String stopBody = canonical(stop);
+    store.write(tx -> { tx.createAttempt(name + "-attempt", key, "instance-0");
+      tx.allocate(name + "-attempt", run.path("target").path("node").asText(), runBody);
+      tx.command(name + "-run-command", name + "-attempt", runBody);
+      tx.command(name + "-stop-command", name + "-attempt", stopBody); return null; });
+    com.fasterxml.jackson.databind.JsonNode allocated = engine.state();
+    rejected = false;
+    try { store.write(tx -> { tx.addInstance(key, "rollback-instance");
+        tx.command(name + "-run-command", name + "-attempt", stopBody); return null; }); }
+    catch (java.sql.SQLException expected) { rejected = true; }
+    demand(rejected && allocated.equals(engine.state()), "Command conflict was not atomic");
+    engine.stop(job.get("jobKey"));
+    demand(store.read(tx -> tx.desiredInstances(key)).isEmpty(), "Stop retained desired membership");
+    com.fasterxml.jackson.databind.JsonNode stopped = engine.state();
+    engine.stop(job.get("jobKey"));
+    demand(stopped.equals(engine.state()), "Repeated Stop changed desired membership or command history");
+    replay(store, engine, name);
+  }
+
   public static void main(String[] args) throws Exception {
     NativeConfig config = new NativeConfig(Files.readAllBytes(Paths.get(args[0])));
     Map<String,String> tls = new HashMap<>();
@@ -31,6 +140,8 @@ public final class JvmCompatibility {
     NativeSchedulerMain.tls(tls);
     try (NativeSqlStore store = new NativeSqlStore(Paths.get(args[1]), config.cluster, config.incarnation)) {
       NativeEngine engine = new NativeEngine(store, config, null, !"advance".equals(args[2]));
+      if (args[2].startsWith("write-")) { writes(store, engine, "jvm-compat-" + args[2].substring(6)); }
+      if (args[2].startsWith("replay-")) { replay(store, engine, "jvm-compat-" + args[2].substring(7)); }
       if (args.length == 5) { store.snapshot(Paths.get(args[4])); }
       System.out.println(engine.state());
     }
@@ -86,6 +197,12 @@ def bundle(directory):
     require(digest.hexdigest() == data['hostTools']['jreSha256'], 'Bundle JRE checksum mismatch')
     libs = directory / 'context/scheduler/lib'
     require(libs.is_dir(), 'Bundle scheduler libraries missing')
+    expected_libs = {Path(relative).name for relative in data['artifacts']
+                     if Path(relative).parent == Path('context/scheduler/lib')}
+    actual_libs = list(libs.iterdir())
+    require(expected_libs and {path.name for path in actual_libs} == expected_libs
+            and all(path.is_file() and not path.is_symlink() and path.suffix == '.jar'
+                    for path in actual_libs), 'Bundle classpath differs from declared artifacts')
     return java, libs, hashes
 
 
@@ -97,6 +214,48 @@ def run(command, output, name):
     require(result.returncode == 0, name + ' failed; see its stderr file')
     (output / (name + '.stdout')).write_bytes(result.stdout)
     return result.stdout
+
+
+def java_major(text):
+    match = re.search(r'(?:openjdk|java) version "(1\.)?(\d+)(?:[._"+-])', text)
+    require(match is not None, 'Unrecognized Java version output')
+    return int(match.group(2))
+
+
+def native_flags(major):
+    return ['--enable-native-access=ALL-UNNAMED', '--illegal-native-access=deny'] if major >= 25 else []
+
+
+def dependency_delta(before, after, name):
+    """Reject changes to old history and check the exact added fixture record shapes."""
+    def is_fixture(item, section):
+        identity = item.get('identity', item.get('body', {}).get('identity', {}))
+        key = item.get('jobKey', identity.get('jobKey', {}))
+        return key.get('name') == name
+    for section, count in (('jobs', 1), ('attempts', 1), ('commands', 2)):
+        added = [item for item in after[section] if is_fixture(item, section)]
+        retained = [item for item in after[section] if not is_fixture(item, section)]
+        require(retained == before[section] and len(added) == count, 'Dependency write changed existing ' + section)
+    require({k:v for k,v in before.items() if k not in ('jobs','attempts','commands')} ==
+            {k:v for k,v in after.items() if k not in ('jobs','attempts','commands')},
+            'Dependency write changed unrelated state')
+    job = next(j for j in after['jobs'] if j['jobKey']['name'] == name)
+    require(job['body']['revision'] == '18446744073709551615' and not job['desiredInstances']
+            and job['body']['template']['env']['COMPAT_ESCAPED'] == '\"quoted\"\\path',
+            'Dependency job revision/escaping/cancellation differs')
+    commands = [c for c in after['commands'] if c['body']['identity']['jobKey']['name'] == name]
+    require({c['body']['kind'] for c in commands} == {'Run', 'Stop'}
+            and all(c['pending'] == (c['body']['kind'] == 'Stop') for c in commands),
+            'Durable command cancellation/replay facts differ')
+    attempt = next(a for a in after['attempts'] if a['identity']['jobKey']['name'] == name)
+    run = next(c['body'] for c in commands if c['body']['kind'] == 'Run')
+    require(attempt['run'] == run and attempt['identity'] == run['identity']
+            and attempt['state'] == 'pending' and attempt['cleanup'] == 'unknown'
+            and attempt['reserved'] and not attempt['ready'] and attempt['sequence'] == '0',
+            'Synthetic allocation execution facts differ')
+    require(all(c['attempt'] == name + '-attempt' and c['body']['identity'] == attempt['identity']
+                and c['body']['desiredRevision'] == '18446744073709551615' for c in commands),
+            'New command identity/revision differs')
 
 
 def check(args):
@@ -130,34 +289,55 @@ def check(args):
         run([args.javac, '--release', '8', '-cp', str(new_libs / '*'), '-d', classes, source], args.output, 'compile')
         run([old_java, '-version'], args.output, 'old-version')
         run([new_java, '-version'], args.output, 'new-version')
-        require('version "1.8.' in (args.output / 'old-version.stderr').read_text(), 'Old bundle is not Java 8')
-        require('version "25.' in (args.output / 'new-version.stderr').read_text(), 'New bundle is not Java 25')
+        old_major = java_major((args.output / 'old-version.stderr').read_text())
+        new_major = java_major((args.output / 'new-version.stderr').read_text())
+        require(old_major == args.old_java_major and new_major == args.new_java_major,
+                'Actual Java versions differ from requested old/new majors')
         state = args.output / 'state'
         shutil.copytree(args.snapshot, state)
         state.chmod(0o700)
         backup = args.output / 'java25-backup'
-        def invoke(name, modern, directory, advance=False, snapshot=None):
+        def invoke(name, modern, directory, advance=False, snapshot=None, mode=None):
             temp = args.output / (name + '-tmp')
             temp.mkdir(mode=0o700)
             java, libs = (new_java, new_libs) if modern else (old_java, old_libs)
-            flags = ['--enable-native-access=ALL-UNNAMED', '--illegal-native-access=deny'] if modern else []
+            flags = native_flags(new_major if modern else old_major)
             command = [java, *flags, '-Xmx192m', '-XX:ActiveProcessorCount=2', '-Djava.io.tmpdir=' + str(temp),
                        '-cp', str(classes) + os.pathsep + str(libs / '*'),
                        'org.apache.aurora.nativescheduler.JvmCompatibility', args.config, directory,
-                       'advance' if advance else 'inspect', tls]
+                       mode or ('advance' if advance else 'inspect'), tls]
             if snapshot is not None:
                 command.append(snapshot)
             return json.loads(run(command, args.output, name))
         old = invoke('old-inspect', False, state)
         modern = invoke('new-inspect', True, state)
-        require(old == modern, 'Java 25 inspection changed complete durable state')
+        require(old == modern, 'New stack inspection changed complete durable state')
         advanced = invoke('new-advance-backup', True, state, True, backup)
         expected = dict(old, epoch=str(int(old['epoch']) + 1))
         require(advanced == expected, 'Epoch advancement changed other durable state')
-        require(invoke('old-reopen', False, state) == advanced, 'Java 8 cannot reopen Java 25 state')
-        require(invoke('new-backup-reopen', True, backup) == advanced, 'Java 25 snapshot differs')
-        require(invoke('old-backup-reopen', False, backup) == advanced, 'Java 8 cannot reopen Java 25 snapshot')
+        require(invoke('old-reopen', False, state) == advanced, 'Old stack cannot reopen new state')
+        require(invoke('new-backup-reopen', True, backup) == advanced, 'New stack snapshot differs')
+        require(invoke('old-backup-reopen', False, backup) == advanced, 'Old stack cannot reopen new snapshot')
+        if args.dependency_writes:
+            written = invoke('new-dependency-write', True, state, mode='write-new')
+            dependency_delta(advanced, written, 'jvm-compat-new')
+            dependency_backup = args.output / 'dependency-backup'
+            require(invoke('new-dependency-backup', True, state, snapshot=dependency_backup) == written,
+                    'Backup creation changed state')
+            require(invoke('old-dependency-replay', False, state, mode='replay-new') == written,
+                    'Old dependency stack cannot replay new durable data')
+            require(invoke('old-dependency-backup', False, dependency_backup, mode='replay-new') == written,
+                    'Old dependency stack cannot read new snapshot')
+            require(invoke('new-dependency-backup-reopen', True, dependency_backup) == written,
+                    'New dependency snapshot differs')
+            reverse = invoke('old-dependency-write', False, state, mode='write-old')
+            dependency_delta(written, reverse, 'jvm-compat-old')
+            require(invoke('new-dependency-replay', True, state, mode='replay-old') == reverse,
+                    'New dependency stack cannot replay rollback-stack writes')
+            result['dependencyWrites'] = {'ok': True, 'newWrittenState': written, 'reverseWrittenState': reverse,
+                'scope': 'Private synthetic Job/Run/Stop store records; no dispatch or process execution'}
         result.update(ok=True, oldState=old, advancedState=advanced, oldPkcs12LoadedOnBoth=True,
+                      oldJavaMajor=old_major, newJavaMajor=new_major,
                       nativeAccessPolicy='enable ALL-UNNAMED; deny other native access',
                       scriptSha256=sha(Path(__file__).resolve()))
     except BaseException as error:
@@ -178,6 +358,9 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ('old-bundle', 'new-bundle', 'snapshot', 'config', 'output', 'javac'):
         parser.add_argument('--' + name, type=Path, required=True)
+    parser.add_argument('--old-java-major', type=int, choices=(8, 25), default=8)
+    parser.add_argument('--new-java-major', type=int, choices=(8, 25), default=25)
+    parser.add_argument('--dependency-writes', action='store_true')
     args = parser.parse_args()
     try:
         result = check(args)

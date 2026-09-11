@@ -57,8 +57,9 @@ if (providers.gradleProperty('nativeBuildRoot').isPresent()) {
 }
 repositories { mavenCentral() }
 dependencies {
+  implementation platform('com.fasterxml.jackson:jackson-bom:2.22.2')
   implementation project(':protocol')
-  implementation 'com.fasterxml.jackson.core:jackson-databind:2.18.4'
+  implementation 'com.fasterxml.jackson.core:jackson-databind'
   implementation 'org.xerial:sqlite-jdbc:3.53.4.0'
   testImplementation 'junit:junit:4.13.2'
 }

@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -107,9 +106,7 @@ public final class ProtocolValidator {
 
   private static void localReferencesOnly(JsonNode value) {
     if (value.isObject()) {
-      Iterator<Map.Entry<String, JsonNode>> fields = value.fields();
-      while (fields.hasNext()) {
-        Map.Entry<String, JsonNode> field = fields.next();
+      for (Map.Entry<String, JsonNode> field : value.properties()) {
         if (field.getKey().equals("$ref")) {
           require(field.getValue().asText().startsWith("#/"), "external schema reference");
         }
@@ -122,9 +119,7 @@ public final class ProtocolValidator {
 
   private static void counters(JsonNode value) {
     if (value.isObject()) {
-      Iterator<Map.Entry<String, JsonNode>> fields = value.fields();
-      while (fields.hasNext()) {
-        Map.Entry<String, JsonNode> field = fields.next();
+      for (Map.Entry<String, JsonNode> field : value.properties()) {
         if (COUNTERS.contains(field.getKey())) {
           require(new BigInteger(field.getValue().asText()).compareTo(MAX_COUNTER) <= 0,
               "counter overflow");

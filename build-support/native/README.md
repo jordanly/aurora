@@ -1,10 +1,11 @@
 # Native runtime packaging (Java 25)
 
 This is the supported packaging and qualification lane for the native cluster MVP.
-It builds a Java scheduler with SQLite and a Go agent with bbolt. The JAVA-01
-profile uses Temurin 25.0.4.1+1, separately pinned JDK/JRE artifacts, and
-Gradle 9.7.1. The [JAVA-01 status](../../docs/reimagining/JAVA01_STATUS.md) records
-qualification evidence; the historical CUT-01 report preserves the Java 8 baseline.
+It builds a Java scheduler with SQLite and a Go agent with bbolt. The profile
+uses Temurin 25.0.4.1+1, separately pinned JDK/JRE artifacts, and Gradle 9.7.1.
+[JAVA-02](../../docs/reimagining/JAVA02_STATUS.md) records the current dependency
+update and its qualification status. [JAVA-01](../../docs/reimagining/JAVA01_STATUS.md)
+preserves the preceding Java 25 baseline; CUT-01 preserves the Java 8 baseline.
 
 The current pinned profile is **Linux ARM64**, including this Pi's 16 KiB page
 kernel. The host needs Python 3.9+ (the Pi uses 3.13), OpenSSL, Git, Docker with
@@ -48,7 +49,9 @@ legacy Aurora/Mesos/ZooKeeper/worker classes and resources, and excludes the SQL
 qualification CLI from production. SQLite's bundled JNI is explicitly allowed.
 
 The builder runs Java tests, Go tests/vet/module verification, Python harness and
-packaging regressions, and checks the installed runtime. Five local images result:
+packaging regressions, and checks the installed runtime. It records both Gradle
+runtime dependency graphs in `reports/java-dependencies.log`; the separate exact
+JAR hashes remain the acceptance gate. Five local images result:
 
 | Bundle role | Contents / use |
 | --- | --- |
@@ -144,10 +147,30 @@ tools. SQLite JNI uses `--enable-native-access=ALL-UNNAMED`,
 
 Fresh labs require `clusterctl up --bundle`; existing no-bundle lab operations
 remain supported unchanged. New native builds do not use the legacy `build-support/java/gradle-local` wrapper.
-The standalone `native-jvm-compat` operation takes `--old-bundle`, `--new-bundle`,
-`--snapshot`, `--config`, `--output`, and a verified modern `--javac` path, and
-checks private copies through Java 8 → 25 → 8. Supply a standalone backup
-directory containing only `scheduler.db` and its original lab config; the
-original database and TLS files are verified unchanged.
-Language/source cleanup and broad dependency upgrades are deferred to JAVA-02/03;
-JMH, Thrift, and legacy-root work are outside this profile.
+The standalone `native-jvm-compat` operation checks private copies through
+Java 8 → 25 → 8 by default. For dependency changes on Java 25, pass both major
+versions explicitly and enable bidirectional fixture writes:
+
+```sh
+build-support/native/native-jvm-compat \
+  --old-bundle /absolute/path/previous-bundle \
+  --new-bundle /absolute/path/native-bundle \
+  --old-java-major 25 --new-java-major 25 --dependency-writes \
+  --snapshot /absolute/path/previous-lab/scheduler/state/backups/SNAPSHOT \
+  --config /absolute/path/previous-lab/config/scheduler.json \
+  --output /absolute/path/new-compatibility-result \
+  --javac /absolute/path/native-bundle/build/tools/java/jdk-25.0.4.1+1/bin/javac
+```
+
+Supply a standalone populated backup directory containing only `scheduler.db`
+and its original lab config. The original database, config, TLS files and bundle
+artifacts are verified unchanged. The optional write scenario exercises private
+synthetic Job/Run/Stop records, replay, conflicts, transaction rollback, snapshot
+reopen and old/new dependency writes; it never dispatches or launches workloads.
+Actual TLS handshakes and workload execution are covered by `native-qualify`.
+
+The runtime remains seven external JARs: Jackson core/databind 2.22.2 and
+annotations 2.22, networknt 2.0.7, SLF4J API/NOP 2.0.19, SQLite JDBC 3.53.4.0.
+The Jackson BOM aligns its family; YAML, date-time and optional alternate regex
+engines remain outside this JSON-only profile. Broader launcher/HTTP qualification
+continues in JAVA-03; JMH, Thrift and legacy-root work are outside this profile.

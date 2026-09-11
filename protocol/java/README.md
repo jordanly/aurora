@@ -53,14 +53,16 @@ The shared files currently contain 13 valid, 27 invalid and 12 parser-negative
 documents. They remain expected-value fixtures, not automatically regenerated
 test outputs.
 
-Pinned runtime: networknt JSON Schema Validator 2.0.4, Jackson 2.18.4 and SLF4J
-2.0.17. The resolved Maven artifact set is checked against
+Pinned runtime: networknt JSON Schema Validator 2.0.7, Jackson core/databind
+2.22.2, Jackson annotations 2.22 and SLF4J 2.0.19. These pins follow the
+verified Jackson BOM family while retaining the Jackson 2 API. The resolved
+Maven artifact set is checked against
 `runtime-dependencies.sha256` before tests or installation. networknt's 2.x line
 supports Java 8 and Jackson 2; YAML/date-time support is omitted because this
 contract uses JSON and no date-time formats. These artifacts were compiled and
 executed with the verified ARM64 Temurin 25 toolchain.
 [Upstream compatibility and API documentation](https://github.com/networknt/json-schema-validator),
-[published dependency metadata](https://repo.maven.apache.org/maven2/com/networknt/json-schema-validator/2.0.4/json-schema-validator-2.0.4.pom)
+[published dependency metadata](https://repo.maven.apache.org/maven2/com/networknt/json-schema-validator/2.0.7/json-schema-validator-2.0.7.pom)
 
 ## Portable output and packaged boundary
 

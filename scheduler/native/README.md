@@ -114,9 +114,11 @@ or invoke the legacy root build, Thrift generators, frontend, or Mesos tasks.
 `test`, `check`, and `installDist` require the native runtime boundary gate.
 `installDist` also verifies the actual copied `lib` directory after installation.
 The gate admits exactly seven external runtime artifacts, identified by both name
-and complete SHA-256 in `build-support/native/verify-boundary`: Jackson annotations,
-core and databind 2.18.4; networknt JSON Schema validator 2.0.4; SLF4J API and nop
-2.0.17; and SQLite JDBC 3.53.4.0. It scans every JAR entry and every class constant
+and complete SHA-256 in `build-support/native/verify-boundary`: Jackson core and
+databind 2.22.2, annotations 2.22; networknt JSON Schema validator
+2.0.7; SLF4J API and nop 2.0.19; and SQLite JDBC 3.53.4.0. The Jackson versions
+follow the verified BOM family while retaining the Jackson 2 API. It scans every
+JAR entry and every class constant
 pool. Renaming a foreign JAR, repackaging Mesos/ZooKeeper/Curator/executor references,
 or including Python workers cannot satisfy the gate. The pinned SQLite JAR's
 platform JNI libraries are explicitly permitted.

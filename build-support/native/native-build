@@ -342,6 +342,10 @@ def build(args):
         run([*gradle, '-p', ROOT / 'scheduler/native', '-PnativeBuildRoot=' + str(work / 'java'),
              'test', ':protocol:test', 'installDist', 'distTar', 'distZip'],
             env=env, log=reports / 'java-build.log')
+        run([*gradle, '-p', ROOT / 'scheduler/native', '-PnativeBuildRoot=' + str(work / 'java'),
+             ':dependencies', '--configuration', 'runtimeClasspath',
+             ':protocol:dependencies', '--configuration', 'runtimeClasspath'],
+            env=env, log=reports / 'java-dependencies.log')
         run([*gradle, '-p', ROOT / 'scheduler/native', '-PnativeBuildRoot=' + str(work / 'java-repro'),
              'installDist', 'distTar', 'distZip'], env=env, log=reports / 'java-repro-build.log')
         verify_java_build(work / 'java', work / 'java-repro', reports, pins['java']['bytecodeMajor'])
