@@ -341,15 +341,17 @@ def build(args):
                   '-Dfile.encoding=UTF-8 --enable-native-access=ALL-UNNAMED']
         if args.offline:
             gradle.append('--offline')
-        run([*gradle, '-p', ROOT / 'scheduler/native', '-PnativeBuildRoot=' + str(work / 'java'),
-             'test', ':protocol:test', 'installDist', 'distTar', 'distZip'],
+        run([*gradle, '-p', ROOT, '-PnativeBuildRoot=' + str(work / 'java'),
+             ':aurora-native-scheduler:test', ':protocol:test', ':aurora-native-scheduler:installDist',
+             ':aurora-native-scheduler:distTar', ':aurora-native-scheduler:distZip'],
             env=env, log=reports / 'java-build.log')
-        run([*gradle, '-p', ROOT / 'scheduler/native', '-PnativeBuildRoot=' + str(work / 'java'),
-             ':dependencies', '--configuration', 'runtimeClasspath',
+        run([*gradle, '-p', ROOT, '-PnativeBuildRoot=' + str(work / 'java'),
+             ':aurora-native-scheduler:dependencies', '--configuration', 'runtimeClasspath',
              ':protocol:dependencies', '--configuration', 'runtimeClasspath'],
             env=env, log=reports / 'java-dependencies.log')
-        run([*gradle, '-p', ROOT / 'scheduler/native', '-PnativeBuildRoot=' + str(work / 'java-repro'),
-             'installDist', 'distTar', 'distZip'], env=env, log=reports / 'java-repro-build.log')
+        run([*gradle, '-p', ROOT, '-PnativeBuildRoot=' + str(work / 'java-repro'),
+             ':aurora-native-scheduler:installDist', ':aurora-native-scheduler:distTar',
+             ':aurora-native-scheduler:distZip'], env=env, log=reports / 'java-repro-build.log')
         verify_java_build(work / 'java', work / 'java-repro', reports, pins['java']['bytecodeMajor'])
         scheduler = context / 'scheduler'
         scheduler.mkdir()

@@ -406,9 +406,17 @@ class ClusterCtlTest(unittest.TestCase):
         self.lab.data["containers"]["agent-a"]["mounts"][0][1] = "/opt/aurora/bin"
         with self.assertRaises(cluster.native.SmokeError): self.inspect("agent-a", item)
 
+    def test_certificate_generation_has_no_legacy_toolchain_fallback(self):
+        with patch.object(cluster, "command") as command:
+            with self.assertRaisesRegex(cluster.native.SmokeError, r"Java 25\+ bundle"):
+                self.lab.certificates()
+            command.assert_not_called()
+        self.assertFalse((self.root / "certificates/generated").exists())
+
     def test_java_build_inputs_each_influence_source_provenance(self):
-        inputs = ("protocol/java/build.gradle", "protocol/java/settings.gradle",
-                  "protocol/java/runtime-dependencies.sha256", "scheduler/native/settings.gradle")
+        inputs = ("build.gradle", "settings.gradle", "gradlew", "gradlew.bat",
+                  "build-support/lab/lab_common.py", "scheduler/native/build.gradle",
+                  "protocol/java/build.gradle", "protocol/java/runtime-dependencies.sha256")
         with patch.object(cluster, "ROOT", self.root), \
                 patch.object(cluster.native, "tree_sha", return_value="source-tree"):
             baseline = cluster.source_hashes()

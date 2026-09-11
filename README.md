@@ -2,7 +2,9 @@
 
 This fork's maintained implementation is the standalone Java 25+ scheduler and
 Go agent. Start with the [native build and test guide](build-support/native/README.md)
-and [current implementation status](docs/reimagining/P6_EXECUTION_STATUS.md).
+and [current runtime status](docs/reimagining/P6_EXECUTION_STATUS.md).
+Run `./gradlew build` from the repository root to build and test the maintained
+Java projects.
 Java 8 is no longer a supported target. The [Java 25 baseline and repository
 convergence task](docs/reimagining/JAVA25_BASELINE.md) identifies the historical
 build/source paths that still need retirement. The Apache overview below describes

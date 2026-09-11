@@ -68,9 +68,9 @@ Executed on 2026-09-10, aarch64 Raspberry Pi, kernel
   `4e253e3f886f8da539e6d8fbd92c3a281f50e395bcba568ced953865e8bea5be`.
 - `readelf -l` shows both LOAD segments aligned to `0x10000`;
   actual JNI execution above is the compatibility proof on this kernel.
-- `build-support/java/gradle-local focusedTest --tests '*sql.NativeSqlStoreTest'`
-  runs the focused suite using Java 8 / Gradle 4.10.2 with at most two workers.
-  The isolated scheduler build also includes this SQL suite, with migration and
+- The current focused command is
+  `./gradlew :aurora-native-scheduler:test --tests '*sql.NativeSqlStoreTest'`
+  using the pinned Java 25+ root build. It includes migration and
   snapshot regressions in addition to the original eleven tests. Tests cover atomic rollback, nested Exception/Error, reader snapshot/no dirty
   read, terminal batch/cancelled membership persistence, immutable command
   conflicts, dedupe/cursor gaps and scope, ownership/schema rejection, escaped
@@ -78,11 +78,11 @@ Executed on 2026-09-10, aarch64 Raspberry Pi, kernel
 
 ## Standalone CLI for native image qualification
 
-Compile only this directory's Java sources (no Mesos classpath):
+With a Java 25+ JDK on PATH, compile only this directory's Java sources:
 
 ```sh
-javac -d CLASSES src/main/java/org/apache/aurora/scheduler/storage/sql/*.java
-java -cp 'CLASSES:sqlite-jdbc-3.53.4.0.jar' \
+javac --release 25 -d CLASSES src/main/java/org/apache/aurora/scheduler/storage/sql/*.java
+java --enable-native-access=ALL-UNNAMED --illegal-native-access=deny -cp 'CLASSES:sqlite-jdbc-3.53.4.0.jar' \
   org.apache.aurora.scheduler.storage.sql.NativeStoreTool self-check STATE_DIR
 ```
 

@@ -15,6 +15,26 @@ required. Network access is needed for the initial pinned tool archives, Maven
 artifacts, Go modules and Debian base image. Docker image builds themselves run
 without networking.
 
+The normal Java development entry point is the repository root:
+
+```sh
+./gradlew build
+./gradlew check
+./gradlew installDist
+```
+
+The launcher obtains checksum-pinned Java/Gradle tools from the same manifest as
+packaging and runs the single root graph: `:aurora-native-scheduler` and
+`:protocol`. No historical buildSrc, Thrift or Mesos build graph is loaded.
+Java 25 is the default; select a reviewed alternative with
+`-PnativeJavaProfile=java26-runtime` or `-PnativeJavaProfile=java26`.
+`AURORA_NATIVE_CACHE` selects the private cache (default `.cache/java11-root-build`);
+`AURORA_NATIVE_SEED_ARCHIVES` optionally provides verified archive seeds. Use
+`--offline` once tool/dependency caches are warm. Build outputs default to the
+cache's `build/{scheduler,protocol}`; `-PnativeBuildRoot=/absolute/path` selects
+another output root. Verified tools are extracted per invocation and removed
+when it finishes. The pinned launcher currently supports Linux ARM64.
+
 From a fresh checkout, using new absolute output paths:
 
 ```sh
@@ -130,12 +150,12 @@ nonroot execution and limited temporary filesystems.
 
 ## Scope and follow-on work
 
-The legacy root build, Mesos implementation and Python workers remain in the
-repository for reference, isolated from this native source set and packaging
-lane. CUT-01 enforces their absence from native distributions; it does not claim
-a repository-wide deletion or a production security audit. The cluster is a
-single scheduler with static enrollment, bounded history and no HA or rolling
-job-update API. This Pi has no memory cgroup enabled; admission accounting is
+The obsolete root build graph is retired. Legacy Mesos, Python and UI source
+remains outside the maintained graph pending the next source-retirement step.
+The runtime boundary enforces its absence from native distributions. The cluster
+is a single scheduler with static enrollment, bounded history and no HA.
+[The selected policy profile](../../docs/reimagining/P6_EXECUTION_STATUS.md) adds
+service updates/rollback and drain. This Pi has no memory cgroup enabled; admission accounting is
 not hard kernel memory isolation. See [MVP boundaries](../../docs/reimagining/CLUSTER_MVP.md).
 
 JAVA-01 requires `--release 25`, exact class-file major version 69, two builds
@@ -146,7 +166,8 @@ tools. SQLite JNI uses `--enable-native-access=ALL-UNNAMED`,
 `--illegal-native-access=deny`, and executable `/run/aurora-native`.
 
 Fresh labs require `clusterctl up --bundle`; existing no-bundle lab operations
-remain supported unchanged. New native builds do not use the legacy `build-support/java/gradle-local` wrapper.
+remain available for existing recorded labs. The old Java 8 bootstrap and local
+Gradle wrapper have been removed; root and packaged builds share the maintained graph.
 Java 25 is the minimum supported Java source/runtime baseline, including the
 shared SQL code and qualification helpers. Historical Java 8 checks impose no
 future compatibility requirement; see [repository convergence](../../docs/reimagining/JAVA25_BASELINE.md).

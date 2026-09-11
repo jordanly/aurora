@@ -142,25 +142,23 @@ assembly, ACK gap handling and crash tests remain AGENT-01/STORE-02/EXEC-01 work
 
 ## Reproduce checks
 
-From repository root, using available Python 3 and the declared dependency
+From repository root, with a Java 25+ JDK on PATH, Python 3 and the declared dependency
 `jsonschema==4.19.2` (`conformance/requirements.txt`):
 
 ```sh
 python3 protocol/native-v1alpha1/conformance/check.py
 mkdir -p /tmp/aurora-protocol-classes
-.pi-tools/jdk8u462-b08/bin/javac -d /tmp/aurora-protocol-classes protocol/native-v1alpha1/conformance/Canonical.java
+javac --release 25 -d /tmp/aurora-protocol-classes protocol/native-v1alpha1/conformance/Canonical.java
 GOCACHE="$PWD/.pi-tools/go-cache" GOTOOLCHAIN=local GOMAXPROCS=2 .pi-tools/go1.27.1/go/bin/go build -o /tmp/aurora-protocol-go protocol/native-v1alpha1/conformance/canonical.go
-python3 protocol/native-v1alpha1/conformance/check.py '.pi-tools/jdk8u462-b08/bin/java -cp /tmp/aurora-protocol-classes Canonical' /tmp/aurora-protocol-go
+python3 protocol/native-v1alpha1/conformance/check.py 'java -cp /tmp/aurora-protocol-classes Canonical' /tmp/aurora-protocol-go
 ```
 
-Verified tool archives (Linux ARM64):
+Current Java 25/26 and Go tool archives are pinned in
+[`build-support/native/toolchains.json`](../../build-support/native/toolchains.json).
+The Java 8 archive used for the original experiment is historical provenance in
+Git and is no longer a build requirement.
 
-| Tool | Archive SHA-256 |
-| --- | --- |
-| Temurin 8u462-b08 (`OpenJDK8U-jdk_aarch64_linux_hotspot_8u462b08.tar.gz`) | `19552c1cf7f5c18290a6bdcd6757f70ea5c331a2bc0dd7a3b3120e8dbc4b4891` |
-| Go 1.27.1 (`go1.27.1.linux-arm64.tar.gz`) | `3450b45a3f9ee8568792736a5c5e70a1f2e9b36c35a8f74958c03e51d7d92bec` |
-
-The independent adapters use only Java 8 and Go standard libraries. They parse and
+The independent adapters use Java 25+ and Go standard libraries. They parse and
 re-encode all valid wire vectors, including numbers above JavaScript's safe range
 encoded as strings, escaped characters and refreshed authority. Python verifies
 their exact output bytes and SHA-256 values. These standalone adapters do not

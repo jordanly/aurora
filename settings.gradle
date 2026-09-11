@@ -2,14 +2,23 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * http://www.apache.org/licenses/LICENSE-2.0
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+// Direct Gradle invocations must use the same reviewed Gradle release and Java 25+.
+def pins = new groovy.json.JsonSlurper().parse(file('build-support/native/toolchains.json'))
+if (gradle.gradleVersion != pins.tools.gradle.directory.substring('gradle-'.length())) {
+  throw new GradleException('Use ./gradlew for the pinned Gradle release')
+}
+if (JavaVersion.current() < JavaVersion.VERSION_25) {
+  throw new GradleException('The maintained build requires Java 25 or newer; use ./gradlew')
+}
+// Historical Mesos projects are retired; their build remains recoverable in Git.
 rootProject.name = 'aurora'
-include 'ui', 'api', 'buildSrc', 'commons-args', 'commons'
+include ':aurora-native-scheduler', ':protocol'
+project(':aurora-native-scheduler').projectDir = file('scheduler/native')
+project(':protocol').projectDir = file('protocol/java')

@@ -17,7 +17,7 @@
  * under the License.
  */
 
-/* Standalone Java 8 canonical adapter, deliberately independent of legacy Gradle.
+/* Standalone Java 25+ canonical adapter, deliberately independent of legacy Gradle.
  * This is a bounded fixture parser, not a production protocol implementation.
  * Schema and semantic validation remain in check.py. */
 import java.nio.charset.StandardCharsets;

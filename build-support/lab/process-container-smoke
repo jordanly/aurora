@@ -260,7 +260,7 @@ def main():
         require("," not in str(run), "Comma unsupported in Docker mount path")
         require(not run.exists() and os.getuid() > 0 and os.getgid() > 0, "New root and non-root UID/GID required")
         require(platform.machine() == "aarch64", "Native ARM64 host required")
-        image = json.loads((HERE / "native-smoke-manifest.json").read_text())["base_image"]
+        image = json.loads((HERE.parent / "native/toolchains.json").read_text())["baseImage"]
         base = json.loads(docker("image", "inspect", image).stdout)[0]
         require(base["Architecture"] == "arm64" and base["Os"] == "linux", "Base image architecture differs")
         run.parent.mkdir(parents=True, exist_ok=True)

@@ -29,11 +29,11 @@ import time
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
-loader = importlib.machinery.SourceFileLoader("cluster_native", str(HERE / "native-smoke"))
+loader = importlib.machinery.SourceFileLoader("cluster_native", str(HERE / "lab_common.py"))
 spec = importlib.util.spec_from_loader(loader.name, loader)
 native = importlib.util.module_from_spec(spec)
 loader.exec_module(native)
-BASE = json.loads((HERE / "native-smoke-manifest.json").read_text())["base_image"]
+BASE = native.BASE_IMAGE
 MARKER = ".aurora-cluster-lab.json"
 NODES = ("agent-a", "agent-b")
 BIN = "/opt/aurora/bin"
@@ -101,10 +101,9 @@ def source_hashes():
              "src/test/java/org/apache/aurora/scheduler/storage/sql", "scheduler/native/src",
              "build-support/lab/fixtures/native-workload", "build-support/lab/fixtures/cluster-helper")
     hashes = {p: native.tree_sha(ROOT / p) for p in paths}
-    for name in ("build-support/lab/clusterctl", "build-support/lab/cluster-check", "build-support/lab/native-smoke",
-                 "build-support/lab/native-smoke-manifest.json", "build-support/java/gradle-local", "scheduler/native/build.gradle",
-                 "scheduler/native/settings.gradle", "protocol/java/build.gradle",
-                 "protocol/java/settings.gradle", "protocol/java/runtime-dependencies.sha256"):
+    for name in ("build-support/lab/clusterctl", "build-support/lab/cluster-check", "build-support/lab/lab_common.py",
+                 "build.gradle", "settings.gradle", "gradlew", "gradlew.bat", "scheduler/native/build.gradle",
+                 "protocol/java/build.gradle", "protocol/java/runtime-dependencies.sha256"):
         path = ROOT / name
         if path.is_file():
             hashes[name] = native.sha(path)
@@ -286,10 +285,9 @@ class Lab:
     def certificates(self):
         out = self.root / "certificates/generated"
         bundle = self.data.get("bundle")
-        helper = (bundle_path(Path(bundle["directory"]), bundle["hostTools"]["helper"])
-                  if bundle else self.root / "artifacts/bin/cluster-helper")
-        keytool = (bundle_path(Path(bundle["directory"]), bundle["hostTools"]["keytool"])
-                   if bundle else ROOT / ".pi-tools/jdk8u462-b08/bin/keytool")
+        require(bundle is not None, "Certificate generation requires a Java 25+ bundle")
+        helper = bundle_path(Path(bundle["directory"]), bundle["hostTools"]["helper"])
+        keytool = bundle_path(Path(bundle["directory"]), bundle["hostTools"]["keytool"])
         command([helper, "certgen", "--out", out])
         password = self.root / "scheduler/tls/password"
         password.write_text(secrets.token_hex(24) + "\n")
@@ -299,8 +297,7 @@ class Lab:
                 shutil.copy2(out / src, self.root / node / "tls" / dst)
         command(["openssl", "pkcs12", "-export", "-name", "scheduler", "-inkey", out / "scheduler.key",
                  "-in", out / "scheduler.crt", "-certfile", out / "ca.crt", "-out",
-                 self.root / "scheduler/tls/keystore.p12", "-passout", "file:" + str(password),
-                 "-keypbe", "PBE-SHA1-3DES", "-certpbe", "PBE-SHA1-3DES", "-macalg", "sha1"])
+                 self.root / "scheduler/tls/keystore.p12", "-passout", "file:" + str(password)])
         command([keytool, "-importcert", "-noprompt", "-alias", "ca",
                  "-file", out / "ca.crt", "-keystore", self.root / "scheduler/tls/truststore.p12",
                  "-storetype", "PKCS12", "-storepass:file", password])
