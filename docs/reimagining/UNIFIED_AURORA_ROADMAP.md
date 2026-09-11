@@ -30,6 +30,11 @@ exploratory and do not establish a production performance SLO. These completions
 cover the retained native scheduler/protocol profile. The next bounded slice is
 SUPERVISE-01: surviving attempt supervisors and daemon reattachment.
 
+The queued [JAVA-04 review](JAVA04_TASK.md) will assess Java 25 idioms across
+the repository, starting with actively shipped standalone Java, and produce
+small, ordered refactoring tasks. This source-level review follows the runtime
+qualification above and can run alongside supervision planning.
+
 **Verified master and provenance**
 
 Both remote master refs were refreshed on 2026-09-10. At the user's request, the fork's `origin/master` was fast-forwarded by 55 commits from `d46a8d91aa69ab9cf1ebc2b13552f8093d366fe9` to Apache's current `upstream/master`, `11ebaeeb071cb182c388a40755e84f60dda32260`; the remote result was verified. Local `master` was also fast-forwarded. Implementation is isolated on `codex/standalone-foundations`, based on that upstream commit. No implementation changes were pushed to `master`.
