@@ -13,9 +13,17 @@
  */
 package org.apache.aurora.scheduler.storage.sql;
 
+import java.io.IOException;
+import java.lang.reflect.Proxy;
+import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
 import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -240,6 +248,134 @@ public class NativeSqlStoreTest {
       rejects(() -> store.read(tx -> { tx.addInstance(job, "1"); return null; }));
     }
   }
+  private static class FaultyResources extends NativeSqlStore.Resources {
+    final List<String> calls = new ArrayList<>();
+    IOException releaseFailure;
+    IOException channelFailure;
+    FileChannel channel;
+
+    @Override void release(FileLock lock) throws IOException {
+      calls.add("release");
+      if (releaseFailure != null) { throw releaseFailure; }
+      super.release(lock);
+    }
+    @Override void close(FileChannel value) throws IOException {
+      calls.add("channel");
+      channel = value;
+      super.close(value);
+      if (channelFailure != null) { throw channelFailure; }
+    }
+  }
+
+  @Test public void closeAttemptsBothResourcesAndRemainsClosedAfterFailure() throws Exception {
+    Path dir = temporary.newFolder().toPath();
+    FaultyResources resources = new FaultyResources();
+    NativeSqlStore store = new NativeSqlStore(dir, "c", "i", resources);
+    resources.releaseFailure = new IOException("release failure");
+    resources.channelFailure = new IOException("channel failure");
+    try {
+      store.close();
+      fail("Expected release failure");
+    } catch (IOException expected) {
+      assertSame(resources.releaseFailure, expected);
+      assertArrayEquals(new Throwable[] {resources.channelFailure}, expected.getSuppressed());
+    } finally {
+      store.close();
+    }
+    assertEquals(Arrays.asList("release", "channel"), resources.calls);
+    assertFalse(resources.channel.isOpen());
+    rejects(() -> store.read(tx -> null));
+    try (NativeSqlStore reopened = open(dir)) {
+      assertEquals("0", reopened.read(NativeSqlStore.Tx::schedulerEpoch));
+    }
+  }
+
+  @Test public void repeatedSuccessfulCloseReleasesOwnershipOnlyOnce() throws Exception {
+    Path dir = temporary.newFolder().toPath();
+    FaultyResources resources = new FaultyResources();
+    NativeSqlStore store = new NativeSqlStore(dir, "c", "i", resources);
+    store.close();
+    store.close();
+    assertEquals(Arrays.asList("release", "channel"), resources.calls);
+    try (NativeSqlStore reopened = open(dir)) {
+      assertEquals("0", reopened.read(NativeSqlStore.Tx::schedulerEpoch));
+    }
+  }
+
+  @Test public void initializationKeepsPrimaryAndSuppressesBothCleanupFailures() throws Exception {
+    Path dir = temporary.newFolder().toPath();
+    try (NativeSqlStore store = open(dir)) { seed(store); }
+    FaultyResources resources = new FaultyResources();
+    resources.releaseFailure = new IOException("release failure");
+    resources.channelFailure = new IOException("channel failure");
+    try {
+      new NativeSqlStore(dir, "wrong", "i", resources);
+      fail("Expected identity rejection");
+    } catch (SQLException expected) {
+      assertEquals("Wrong cluster/recovery incarnation", expected.getMessage());
+      assertArrayEquals(new Throwable[] {resources.releaseFailure, resources.channelFailure},
+          expected.getSuppressed());
+    }
+    assertEquals(Arrays.asList("release", "channel"), resources.calls);
+    assertFalse(resources.channel.isOpen());
+    try (NativeSqlStore reopened = open(dir)) {
+      assertEquals("immutable-job", reopened.read(tx -> tx.jobBody(job)));
+    }
+  }
+
+  @Test public void earlyInitializationAndLockAcquisitionFailuresCloseChannel() throws Exception {
+    Path dir = temporary.newFolder().toPath();
+    FaultyResources contested = new FaultyResources();
+    try (NativeSqlStore store = open(dir)) {
+      rejects(() -> new NativeSqlStore(dir, "c", "i", contested));
+      assertEquals(Arrays.asList("channel"), contested.calls);
+      assertFalse(contested.channel.isOpen());
+      assertEquals("0", store.read(NativeSqlStore.Tx::schedulerEpoch));
+    }
+    java.nio.file.Files.delete(dir.resolve("scheduler.db"));
+    FaultyResources missing = new FaultyResources();
+    try {
+      new NativeSqlStore(dir, "c", "i", missing);
+      fail("Expected missing database rejection");
+    } catch (IOException expected) {
+      assertEquals("Previously owned state is missing its database", expected.getMessage());
+    }
+    assertEquals(Arrays.asList("release", "channel"), missing.calls);
+    assertFalse(missing.channel.isOpen());
+  }
+
+  @Test public void connectionSetupPreservesPrimaryWhenConnectionCloseFails() throws Exception {
+    Path dir = temporary.newFolder().toPath();
+    try (NativeSqlStore store = open(dir)) { seed(store); }
+    SQLException setup = new SQLException("connection setup");
+    SQLException close = new SQLException("connection close");
+    List<String> connectionCalls = new ArrayList<>();
+    FaultyResources resources = new FaultyResources() {
+      @Override Connection connect(String url) {
+        return (Connection) Proxy.newProxyInstance(Connection.class.getClassLoader(),
+            new Class<?>[] {Connection.class}, (proxy, method, args) -> {
+              connectionCalls.add(method.getName());
+              if (method.getName().equals("createStatement")) { throw setup; }
+              if (method.getName().equals("close")) { throw close; }
+              throw new AssertionError("Unexpected connection call: " + method.getName());
+            });
+      }
+    };
+    try {
+      new NativeSqlStore(dir, "c", "i", resources);
+      fail("Expected connection setup failure");
+    } catch (SQLException expected) {
+      assertSame(setup, expected);
+      assertArrayEquals(new Throwable[] {close}, expected.getSuppressed());
+    }
+    assertEquals(Arrays.asList("createStatement", "close"), connectionCalls);
+    assertEquals(Arrays.asList("release", "channel"), resources.calls);
+    assertFalse(resources.channel.isOpen());
+    try (NativeSqlStore reopened = open(dir)) {
+      assertEquals("immutable-job", reopened.read(tx -> tx.jobBody(job)));
+    }
+  }
+
   @Test public void ownerAndSchemaAndCounterReject() throws Exception {
     Path dir = temporary.newFolder().toPath();
     try (NativeSqlStore store = open(dir)) { rejects(() -> open(dir)); }

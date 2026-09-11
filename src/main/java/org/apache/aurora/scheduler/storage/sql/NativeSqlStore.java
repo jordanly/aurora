@@ -13,6 +13,7 @@
  */
 package org.apache.aurora.scheduler.storage.sql;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.channels.FileChannel;
@@ -40,6 +41,7 @@ public final class NativeSqlStore implements AutoCloseable {
   private final String incarnation;
   private final FileChannel lockChannel;
   private final FileLock ownerLock;
+  private final Resources resources;
   private final ReentrantReadWriteLock lifecycle = new ReentrantReadWriteLock();
   private final Object writer = new Object();
   private final ThreadLocal<Tx> current = new ThreadLocal<>();
@@ -81,7 +83,20 @@ public final class NativeSqlStore implements AutoCloseable {
     private String key() { return node + "/" + journal; }
   }
 
+  /** Package-private operations permit cleanup fault injection without replacing filesystem locks. */
+  static class Resources {
+    Connection connect(String url) throws SQLException { return DriverManager.getConnection(url); }
+    void release(FileLock lock) throws IOException { lock.release(); }
+    void close(FileChannel channel) throws IOException { channel.close(); }
+  }
+
   public NativeSqlStore(Path directory, String cluster, String incarnation) throws Exception {
+    this(directory, cluster, incarnation, new Resources());
+  }
+
+  NativeSqlStore(Path directory, String cluster, String incarnation, Resources resources)
+      throws Exception {
+    this.resources = resources;
     this.cluster = token(cluster);
     this.incarnation = token(incarnation);
     Files.createDirectories(directory);
@@ -93,63 +108,71 @@ public final class NativeSqlStore implements AutoCloseable {
     boolean priorOwner = Files.exists(directory.resolve("owner.lock"));
     lockChannel = FileChannel.open(directory.resolve("owner.lock"),
         StandardOpenOption.CREATE, StandardOpenOption.WRITE);
-    FileLock acquired;
+    FileLock acquired = null;
     try {
       acquired = lockChannel.tryLock();
       if (acquired == null) { throw new IOException("Scheduler state already owned"); }
-    } catch (Exception e) {
-      lockChannel.close();
-      throw e;
-    }
-    ownerLock = acquired;
-    url = "jdbc:sqlite:" + directory.toRealPath().resolve("scheduler.db");
-    boolean existing = Files.exists(directory.resolve("scheduler.db"));
-    if (priorOwner && !existing) {
-      ownerLock.release(); lockChannel.close();
-      throw new IOException("Previously owned state is missing its database");
-    }
-    try (Connection c = connect(false)) {
-      int version = Integer.parseInt(scalar(c, "PRAGMA user_version"));
-      int application = Integer.parseInt(scalar(c, "PRAGMA application_id"));
-      if (existing && ((version != 1 && version != 2) || application != APPLICATION_ID)) {
-        throw new SQLException("Unsupported native schema/application");
+      ownerLock = acquired;
+      url = "jdbc:sqlite:" + directory.toRealPath().resolve("scheduler.db");
+      boolean existing = Files.exists(directory.resolve("scheduler.db"));
+      if (priorOwner && !existing) {
+        throw new IOException("Previously owned state is missing its database");
       }
-      if (version == 0 && (application != 0 || !"0".equals(scalar(c,
-          "SELECT count(*) FROM sqlite_master WHERE name NOT LIKE 'sqlite_%'")))) {
-        throw new SQLException("Refusing unidentified nonempty database");
-      }
-      c.setAutoCommit(false);
-      if (!existing) {
-        schema(c, 2);
-        try (PreparedStatement p = c.prepareStatement("INSERT INTO metadata VALUES (1,?,?)")) {
-          p.setString(1, cluster); p.setString(2, incarnation); p.executeUpdate();
+      try (Connection c = connect(false)) {
+        int version = Integer.parseInt(scalar(c, "PRAGMA user_version"));
+        int application = Integer.parseInt(scalar(c, "PRAGMA application_id"));
+        if (existing && ((version != 1 && version != 2) || application != APPLICATION_ID)) {
+          throw new SQLException("Unsupported native schema/application");
         }
-      }
-      if (existing && version == 1) {
-        verifySchema(c, 1);
-        schedulerSchema(c);
-      }
-      verifySchema(c, 2);
-      if (!"1".equals(scalar(c, "SELECT count(*) FROM metadata"))) {
-        throw new SQLException("Missing or multiple metadata rows");
-      }
-      try (Statement s = c.createStatement(); ResultSet r = s.executeQuery(
-          "SELECT cluster,incarnation FROM metadata WHERE id=1")) {
-        if (!r.next() || !cluster.equals(r.getString(1)) || !incarnation.equals(r.getString(2))) {
-          throw new SQLException("Wrong cluster/recovery incarnation");
+        if (version == 0 && (application != 0 || !"0".equals(scalar(c,
+            "SELECT count(*) FROM sqlite_master WHERE name NOT LIKE 'sqlite_%'")))) {
+          throw new SQLException("Refusing unidentified nonempty database");
         }
-      }
-      c.commit();
-      try (FileChannel parent = FileChannel.open(directory, StandardOpenOption.READ)) {
-        parent.force(true);
+        c.setAutoCommit(false);
+        if (!existing) {
+          schema(c, 2);
+          try (PreparedStatement p = c.prepareStatement("INSERT INTO metadata VALUES (1,?,?)")) {
+            p.setString(1, cluster); p.setString(2, incarnation); p.executeUpdate();
+          }
+        }
+        if (existing && version == 1) {
+          verifySchema(c, 1);
+          schedulerSchema(c);
+        }
+        verifySchema(c, 2);
+        if (!"1".equals(scalar(c, "SELECT count(*) FROM metadata"))) {
+          throw new SQLException("Missing or multiple metadata rows");
+        }
+        try (Statement s = c.createStatement(); ResultSet r = s.executeQuery(
+            "SELECT cluster,incarnation FROM metadata WHERE id=1")) {
+          if (!r.next() || !cluster.equals(r.getString(1)) || !incarnation.equals(r.getString(2))) {
+            throw new SQLException("Wrong cluster/recovery incarnation");
+          }
+        }
+        c.commit();
+        try (FileChannel parent = FileChannel.open(directory, StandardOpenOption.READ)) {
+          parent.force(true);
+        }
       }
     } catch (Exception | Error e) {
-      ownerLock.release(); lockChannel.close(); throw e;
+      if (acquired != null) {
+        FileLock lock = acquired;
+        closeAfterFailure(e, () -> resources.release(lock));
+      }
+      closeAfterFailure(e, () -> resources.close(lockChannel));
+      throw e;
+    }
+  }
+
+  private static void closeAfterFailure(Throwable failure, AutoCloseable resource) {
+    try { resource.close(); }
+    catch (Exception | Error cleanup) {
+      if (cleanup != failure) { failure.addSuppressed(cleanup); }
     }
   }
 
   private Connection connect(boolean readOnly) throws SQLException {
-    Connection c = DriverManager.getConnection(url);
+    Connection c = resources.connect(url);
     try {
       execute(c, "PRAGMA busy_timeout=5000");
       execute(c, "PRAGMA foreign_keys=ON");
@@ -163,7 +186,10 @@ public final class NativeSqlStore implements AutoCloseable {
       execute(c, "PRAGMA read_uncommitted=OFF");
       if (readOnly) { execute(c, "PRAGMA query_only=ON"); }
       return c;
-    } catch (SQLException e) { c.close(); throw e; }
+    } catch (SQLException | RuntimeException | Error e) {
+      closeAfterFailure(e, c);
+      throw e;
+    }
   }
 
   private void schema(Connection c, int version) throws SQLException {
@@ -606,11 +632,20 @@ public final class NativeSqlStore implements AutoCloseable {
   private static void execute(Connection c, String sql) throws SQLException {
     try (Statement s = c.createStatement()) { s.execute(sql); }
   }
+  /**
+   * Attempts both ownership releases once. Subsequent calls are no-ops even if cleanup failed;
+   * the store rejects further transactions once ownership cleanup begins.
+   */
   @Override public void close() throws IOException {
     if (current.get() != null) { throw new IllegalStateException("Close within transaction"); }
     lifecycle.writeLock().lock();
     try {
-      if (!closed) { closed = true; ownerLock.release(); lockChannel.close(); }
+      if (!closed) {
+        closed = true;
+        try (Closeable channel = () -> resources.close(lockChannel)) {
+          resources.release(ownerLock);
+        }
+      }
     } finally { lifecycle.writeLock().unlock(); }
   }
 }
