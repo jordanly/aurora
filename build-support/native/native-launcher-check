@@ -123,7 +123,7 @@ def check(args):
         env['JAVA_OPTS'] = shlex.join(flags)
         report['jvmArgs'] = flags
         protocol = directories['protocol'] / 'bin/protocol'
-        for group, count in (('valid', 13), ('invalid', 27), ('parser-invalid', 12)):
+        for group, count in (('valid', 15), ('invalid', 28), ('parser-invalid', 12)):
             paths = sorted((fixtures / group).glob('*.json'))
             need(len(paths) == count, 'Protocol fixture inventory differs')
             for path in paths:
@@ -135,7 +135,7 @@ def check(args):
                          and hashlib.sha256(result.stdout[:-1]).hexdigest() == expected['sha256'],
                          'Protocol canonical/hash golden differs: ' + path.name)
                     need(not result.stderr, 'Successful protocol launcher emitted stderr')
-        report['protocol'] = {'validAndHash': 13, 'invalid': 27, 'parserInvalid': 12}
+        report['protocol'] = {'validAndHash': 15, 'invalid': 28, 'parserInvalid': 12}
         # Exercise the original packaged CLI with otherwise valid documents at
         # both sides of its byte limit; padding must not change canonical output.
         canonical = golden['ack']['canonical'].encode('ascii')

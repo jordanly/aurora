@@ -46,6 +46,10 @@ collisions reject within an assignment; the future agent must check other active
 reservations atomically. Readiness is either none or a reference to an assigned
 TCP port. Readiness is independent of outcome and cleanup. The two service Run fixtures resolve the same template to ports 18080/18081
 on distinct agents. Their template digests match and assignment digests differ.
+The additional `run-distinct-socket-number` and `run-distinct-socket-network`
+fixtures vary the two supported socket identity components independently.
+`duplicate-assigned-socket` uses different port names for the same socket and
+must reject. TCP and IPv4 remain fixed by this protocol version.
 The checker verifies fixture resolution; future scheduler intake must perform
 that same resolution before committing a Run. There is no string interpolation
 or shell substitution language. A schema cannot verify executable behavior. No service may be replaced until

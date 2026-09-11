@@ -46,6 +46,7 @@ public final class ProtocolValidator {
   private static final Set<String> COUNTERS = Set.of(
       "revision", "desiredRevision", "schedulerEpoch", "sequence", "cursor",
       "generation", "watermark", "committedCursor");
+  private record AssignedSocket(String network, String protocol, String family, String number) { }
   private final ObjectMapper mapper;
   private final Schema schema;
 
@@ -143,16 +144,7 @@ public final class ProtocolValidator {
       process.get("requiredCapabilities").forEach(c -> capabilities.add(c.asText()));
       require(!process.get("resources").get("memoryEnforcement").asText().equals("hard")
           || capabilities.contains("hard-memory"), "hard memory needs capability requirement");
-      Set<String> names = new HashSet<>();
-      Set<List<String>> sockets = new HashSet<>();
-      for (JsonNode port : process.get("ports")) {
-        require(names.add(port.get("name").asText()), "duplicate port name");
-        if (kind.equals("Run")) {
-          require(sockets.add(Arrays.asList(port.get("network").asText(),
-              port.get("protocol").asText(), port.get("family").asText(),
-              port.get("number").asText())), "duplicate assigned socket");
-        }
-      }
+      Set<String> names = validatePorts(kind, process);
       for (JsonNode argument : process.get("argv")) {
         require(!argument.isObject() || names.contains(argument.get("portRef").asText()),
             "unknown argv port reference");
@@ -173,6 +165,22 @@ public final class ProtocolValidator {
       require(value.get("bodySha256").asText().equals(hash(canonical(body))), "body hash mismatch");
       semantics(body);
     }
+  }
+
+  private static Set<String> validatePorts(String kind, JsonNode process) {
+    Set<String> names = new HashSet<>();
+    Set<AssignedSocket> sockets = new HashSet<>();
+    for (JsonNode port : process.get("ports")) {
+      require(names.add(port.get("name").asText()), "duplicate port name");
+      if (kind.equals("Run")) {
+        require(sockets.add(new AssignedSocket(
+            port.get("network").asText(),
+            port.get("protocol").asText(),
+            port.get("family").asText(),
+            port.get("number").asText())), "duplicate assigned socket");
+      }
+    }
+    return names;
   }
 
   /** Checks actual agent capability availability separately from manifest structure. */

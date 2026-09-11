@@ -86,6 +86,19 @@ public class ProtocolValidatorTest {
   }
 
   @Test
+  public void distinctPortNamesStillRejectAnIdenticalAssignedSocket() throws IOException {
+    // TCP/IPv4 are fixed by this protocol version; network and number can vary.
+    valid("run-distinct-socket-number");
+    valid("run-distinct-socket-network");
+    try {
+      validator.validate(Files.readAllBytes(fixtures.resolve("invalid/duplicate-assigned-socket.json")));
+      fail("distinct port names allowed a duplicate assigned socket");
+    } catch (IllegalArgumentException expected) {
+      assertEquals("duplicate assigned socket", expected.getMessage());
+    }
+  }
+
+  @Test
   public void validatedResultCannotBeChangedThroughReturnedCopies() throws IOException {
     ProtocolValidator.Message message = valid("run");
     String hash = message.sha256();
