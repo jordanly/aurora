@@ -121,83 +121,139 @@ public final class NativeEngine {
       catch (Exception e) { reachable.put(node.name,false); errors.put(node.name,"command exchange failed: "+e.getClass().getSimpleName()); }
     }
   }
+  private record PollResult(String committedCursor, boolean unknownReservations) { }
+
   private void poll(NativeConfig.Node node) throws Exception {
-    JsonNode authority=Json.object().put("schedulerEpoch",epoch).put("session",session);
-    transport.request(node,"POST","/v1/session",authority,epoch,session);
-    String after=store.read(tx -> tx.committedCursor(node.scope()));
+    JsonNode authority = Json.object().put("schedulerEpoch", epoch).put("session", session);
+    transport.request(node, "POST", "/v1/session", authority, epoch, session);
+    String after = store.read(tx -> tx.committedCursor(node.scope()));
     // Bounded pages per tick; a large backlog never monopolizes operator access.
-    for (int page=0;page<4;page++) {
-      JsonNode response=transport.request(node,"GET","/v1/state?afterCursor="+after+"&limit=128",null,epoch,session);
-      JsonNode actual=response.path("config"); scope(actual);
-      for (String field:Arrays.asList("node","journal","boot","runtime")) {
-        if (!node.target().get(field).equals(actual.path(field))) { throw new Conflict("Agent identity differs"); }
+    for (int page = 0; page < 4; page++) {
+      JsonNode response = transport.request(node, "GET",
+          "/v1/state?afterCursor=" + after + "&limit=128", null, epoch, session);
+      validateAgentState(node, response);
+      JsonNode inventory = response.path("state").path("attempts");
+      String next = NativeSqlStore.counter(response.path("nextCursor").asText());
+      List<JsonNode> observations = validateObservations(node, response, after, next);
+      PollResult result = store.write(tx ->
+          reducePage(tx, node, observations, inventory));
+      if (result.unknownReservations()) {
+        unknownReservations.add(node.name);
+      } else {
+        unknownReservations.remove(node.name);
       }
-      if (!epoch.equals(actual.path("schedulerEpoch").asText()) || !session.equals(actual.path("session").asText())
-          || !"scheduler".equals(actual.path("peer").asText())
-          || actual.path("cpuMillis").asLong()!=node.cpu || actual.path("memoryBytes").asLong()!=node.memory) {
-        throw new Conflict("Agent authority/capacity differs");
+      String committed = result.committedCursor();
+      if (!committed.equals(next)) {
+        throw new Conflict("Noncontiguous committed cursor");
       }
-      JsonNode state=response.path("state"), observations=state.path("observations"), inventory=state.path("attempts");
-      if (!observations.isArray() || observations.size()>128 || !inventory.isObject() || inventory.size()>128
-          || !state.path("commands").isObject() || state.path("commands").size()>1024
-          || !response.path("hasMore").isBoolean()) { throw new Conflict("Unbounded/incomplete inventory"); }
-      NativeSqlStore.counter(state.path("cursor").asText()); NativeSqlStore.counter(state.path("ack").asText());
-      String next=NativeSqlStore.counter(response.path("nextCursor").asText());
-      String expected=after;
-      List<JsonNode> validated=new ArrayList<>();
-      for (JsonNode observation:observations) {
-        JsonNode value=validated(observation).json();
-        if (!"Observation".equals(value.path("kind").asText()) || !node.target().equals(value.path("source"))) {
-          throw new Conflict("Observation scope differs");
-        }
-        scope(value.path("identity"));
-        expected=new BigInteger(expected).add(BigInteger.ONE).toString();
-        if (!expected.equals(value.path("cursor").asText())) { throw new Conflict("Observation cursor gap"); }
-        validated.add(value);
+      ObjectNode ack = base("ObservationAck").put("cluster", config.cluster)
+          .put("incarnation", config.incarnation).put("node", node.name)
+          .put("journal", node.journal).put("committedCursor", committed);
+      transport.request(node, "POST", "/v1/ack", validated(ack).json(), epoch, session);
+      after = committed;
+      if (!response.path("hasMore").asBoolean()) {
+        return;
       }
-      if (!expected.equals(next) || (response.path("hasMore").asBoolean() && observations.size()==0)
-          || new BigInteger(next).compareTo(new BigInteger(state.path("cursor").asText()))>0) {
-        throw new Conflict("Invalid page cursor");
-      }
-      final boolean[] unknown={false};
-      String committed=store.write(tx -> {
-        Map<String,AttemptRecord> attempts=new HashMap<>();
-        for (AttemptRecord a:tx.attempts()) { attempts.put(a.attempt,a); }
-        for (JsonNode observation:validated) {
-          tx.observe(node.scope(),observation.path("cursor").asText(),Json.canonical(observation));
-          AttemptRecord attempt=matching(attempts,observation.path("identity"),node);
-          if (attempt!=null) {
-            tx.reduceAttempt(attempt.attempt,observation.path("sequence").asText(),observation.path("state").asText(),
-                observation.path("cleanup").asText(),observation.path("ready").asBoolean(),System.currentTimeMillis());
-          }
-        }
-        for (JsonNode entry:inventory) {
-          AttemptRecord attempt=matching(attempts,entry.path("identity"),node);
-          if (!entry.path("reserved").isBoolean()) { throw new Conflict("Missing reservation state"); }
-          if (attempt==null) { if (entry.path("reserved").asBoolean()) { unknown[0]=true; } continue; }
-          JsonNode execution=entry.path("execution");
-          // Snapshot absence and stop-only tombstones do not establish cleanup.
-          if (execution.isObject()) {
-            String outcome=execution.path("outcome").asText();
-            String phase=execution.path("phase").asText();
-            if (!phase.matches("intent|spawned|released|terminal")
-                || !("terminal".equals(phase) ? NativeSqlStore.terminal(outcome) : outcome.matches("unknown|running"))
-                || !execution.path("ready").isBoolean()) { throw new Conflict("Invalid execution snapshot"); }
-            tx.reduceAttempt(attempt.attempt,NativeSqlStore.counter(entry.path("sequence").asText()),outcome,
-                execution.path("cleanup").asText(),execution.path("ready").asBoolean(),System.currentTimeMillis());
-          }
-        }
-        return tx.committedCursor(node.scope());
-      });
-      if (unknown[0]) { unknownReservations.add(node.name); } else { unknownReservations.remove(node.name); }
-      if (!committed.equals(next)) { throw new Conflict("Noncontiguous committed cursor"); }
-      ObjectNode ack=base("ObservationAck").put("cluster",config.cluster).put("incarnation",config.incarnation)
-          .put("node",node.name).put("journal",node.journal).put("committedCursor",committed);
-      transport.request(node,"POST","/v1/ack",validated(ack).json(),epoch,session);
-      after=committed;
-      if (!response.path("hasMore").asBoolean()) { return; }
     }
     throw new Conflict("Observation backlog not drained");
+  }
+
+  private void validateAgentState(NativeConfig.Node node, JsonNode response) throws Exception {
+    JsonNode actual = response.path("config");
+    scope(actual);
+    for (String field : Arrays.asList("node", "journal", "boot", "runtime")) {
+      if (!node.target().get(field).equals(actual.path(field))) {
+        throw new Conflict("Agent identity differs");
+      }
+    }
+    if (!epoch.equals(actual.path("schedulerEpoch").asText())
+        || !session.equals(actual.path("session").asText())
+        || !"scheduler".equals(actual.path("peer").asText())
+        || actual.path("cpuMillis").asLong() != node.cpu
+        || actual.path("memoryBytes").asLong() != node.memory) {
+      throw new Conflict("Agent authority/capacity differs");
+    }
+    JsonNode state = response.path("state");
+    JsonNode observations = state.path("observations"), inventory = state.path("attempts");
+    if (!observations.isArray() || observations.size() > 128
+        || !inventory.isObject() || inventory.size() > 128
+        || !state.path("commands").isObject() || state.path("commands").size() > 1024
+        || !response.path("hasMore").isBoolean()) {
+      throw new Conflict("Unbounded/incomplete inventory");
+    }
+    NativeSqlStore.counter(state.path("cursor").asText());
+    NativeSqlStore.counter(state.path("ack").asText());
+  }
+
+  private List<JsonNode> validateObservations(NativeConfig.Node node, JsonNode response,
+      String after, String next) throws Exception {
+    JsonNode state = response.path("state"), observations = state.path("observations");
+    String expected = after;
+    List<JsonNode> validated = new ArrayList<>();
+    for (JsonNode observation : observations) {
+      JsonNode value = validated(observation).json();
+      if (!"Observation".equals(value.path("kind").asText())
+          || !node.target().equals(value.path("source"))) {
+        throw new Conflict("Observation scope differs");
+      }
+      scope(value.path("identity"));
+      expected = new BigInteger(expected).add(BigInteger.ONE).toString();
+      if (!expected.equals(value.path("cursor").asText())) {
+        throw new Conflict("Observation cursor gap");
+      }
+      validated.add(value);
+    }
+    if (!expected.equals(next) || (response.path("hasMore").asBoolean() && observations.size() == 0)
+        || new BigInteger(next).compareTo(new BigInteger(state.path("cursor").asText())) > 0) {
+      throw new Conflict("Invalid page cursor");
+    }
+    return validated;
+  }
+
+  private PollResult reducePage(Tx tx, NativeConfig.Node node, List<JsonNode> observations,
+      JsonNode inventory) throws Exception {
+    boolean unknown = false;
+    Map<String, AttemptRecord> attempts = new HashMap<>();
+    for (AttemptRecord attempt : tx.attempts()) {
+      attempts.put(attempt.attempt, attempt);
+    }
+    for (JsonNode observation : observations) {
+      tx.observe(node.scope(), observation.path("cursor").asText(), Json.canonical(observation));
+      AttemptRecord attempt = matching(attempts, observation.path("identity"), node);
+      if (attempt != null) {
+        tx.reduceAttempt(attempt.attempt, observation.path("sequence").asText(),
+            observation.path("state").asText(), observation.path("cleanup").asText(),
+            observation.path("ready").asBoolean(), System.currentTimeMillis());
+      }
+    }
+    for (JsonNode entry : inventory) {
+      AttemptRecord attempt = matching(attempts, entry.path("identity"), node);
+      if (!entry.path("reserved").isBoolean()) {
+        throw new Conflict("Missing reservation state");
+      }
+      if (attempt == null) {
+        if (entry.path("reserved").asBoolean()) {
+          unknown = true;
+        }
+        continue;
+      }
+      JsonNode execution = entry.path("execution");
+      // Snapshot absence and stop-only tombstones do not establish cleanup.
+      if (execution.isObject()) {
+        String outcome = execution.path("outcome").asText();
+        String phase = execution.path("phase").asText();
+        if (!phase.matches("intent|spawned|released|terminal")
+            || !("terminal".equals(phase)
+                ? NativeSqlStore.terminal(outcome) : outcome.matches("unknown|running"))
+            || !execution.path("ready").isBoolean()) {
+          throw new Conflict("Invalid execution snapshot");
+        }
+        tx.reduceAttempt(attempt.attempt, NativeSqlStore.counter(entry.path("sequence").asText()),
+            outcome, execution.path("cleanup").asText(), execution.path("ready").asBoolean(),
+            System.currentTimeMillis());
+      }
+    }
+    return new PollResult(tx.committedCursor(node.scope()), unknown);
   }
   private AttemptRecord matching(Map<String,AttemptRecord> attempts, JsonNode identity, NativeConfig.Node node) throws Exception {
     AttemptRecord attempt=attempts.get(identity.path("attempt").asText());

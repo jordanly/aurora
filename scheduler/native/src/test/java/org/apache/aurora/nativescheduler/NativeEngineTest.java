@@ -14,6 +14,9 @@ package org.apache.aurora.nativescheduler;
 import java.nio.file.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import org.junit.*;
 import org.junit.rules.TemporaryFolder;
 import static org.junit.Assert.*;
@@ -94,6 +97,83 @@ public class NativeEngineTest {
     assertEquals("1",store.read(tx -> tx.committedCursor(config.nodes.get(0).scope())));
     assertTrue(engine.state().path("attempts").get(0).path("reserved").asBoolean());
   }
+  @Test public void failedInventoryReductionCannotPublishUnknownReservationOrAcknowledge() throws Exception {
+    submit("batch.json");
+    engine.tick();
+    transport.observe(0, "succeeded", "complete", false);
+    ObjectNode inventory = Json.object();
+    inventory.set("foreign", Json.object().put("reserved", true)
+        .set("identity", Json.object().put("attempt", "foreign")));
+    ObjectNode invalid = Json.object().put("sequence", "1").put("reserved", true);
+    invalid.set("identity", transport.runs.get(0).get("identity"));
+    invalid.set("execution", Json.object().put("phase", "invalid").put("outcome", "running")
+        .put("cleanup", "pending").put("ready", false));
+    // The unknown reservation is reduced first; the later known entry rolls back the whole page.
+    inventory.set("invalid", invalid);
+    transport.inventories.put("agent-a", inventory);
+    transport.acks.clear();
+
+    engine.tick();
+
+    assertEquals("0", store.read(tx -> tx.committedCursor(config.nodes.get(0).scope())));
+    AttemptRecord attempt = store.read(Tx::attempts).get(0);
+    assertEquals("pending", attempt.state);
+    assertTrue(attempt.reserved());
+    assertFalse(transport.acks.containsKey("agent-a"));
+    assertFalse(hasUnknownReservation("agent-a"));
+  }
+
+  @Test public void failedObservationReductionCannotClearUnknownReservationOrAcknowledge() throws Exception {
+    submit("batch.json");
+    engine.tick();
+    transport.observe(0, "running", "pending", false);
+    transport.unknown = true;
+    engine.tick();
+    assertTrue(hasUnknownReservation("agent-a"));
+    transport.unknown = false;
+    transport.observe(0, "succeeded", "complete", false);
+    transport.observations.get("agent-a").get(1).put("sequence", "1");
+    transport.acks.clear();
+
+    engine.tick();
+
+    assertEquals("1", store.read(tx -> tx.committedCursor(config.nodes.get(0).scope())));
+    AttemptRecord attempt = store.read(Tx::attempts).get(0);
+    assertEquals("running", attempt.state);
+    assertEquals("pending", attempt.cleanup);
+    assertTrue(attempt.reserved());
+    assertFalse(transport.acks.containsKey("agent-a"));
+    assertTrue(hasUnknownReservation("agent-a"));
+  }
+
+  @Test public void acknowledgementSeesCommittedCursorAndProjectionFromIndependentReader() throws Exception {
+    submit("batch.json");
+    engine.tick();
+    transport.observe(0, "succeeded", "complete", false);
+    transport.acks.clear();
+    ExecutorService reader = Executors.newSingleThreadExecutor();
+    transport.ackReader = reader;
+    try {
+      engine.tick();
+      // Assert outside tick: transport exceptions are deliberately caught by the controller.
+      assertEquals(List.of("1", "succeeded", "complete", "false"),
+          transport.ackSnapshots.get("agent-a"));
+      assertEquals("1", transport.acks.get("agent-a"));
+    } finally {
+      transport.ackReader = null;
+      reader.shutdownNow();
+      assertTrue(reader.awaitTermination(5, TimeUnit.SECONDS));
+    }
+  }
+
+  private boolean hasUnknownReservation(String node) throws Exception {
+    // Failed polling also marks a node unreachable, so placement cannot expose flag publication.
+    // Read only this private invariant rather than adding a production inspection API.
+    java.lang.reflect.Field field = NativeEngine.class.getDeclaredField("unknownReservations");
+    field.setAccessible(true);
+    return ((Set<?>) field.get(engine)).contains(node);
+  }
+
   @Test public void idempotentResubmitCannotResurrectCancelledMembership() throws Exception {
     submit("batch.json"); engine.stop(job("batch.json").get("jobKey"));
     assertFalse(engine.submit(Json.canonical(job("batch.json")).getBytes(StandardCharsets.UTF_8)));
@@ -146,6 +226,9 @@ public class NativeEngineTest {
     final Map<String,List<ObjectNode>> observations=new HashMap<>();
     final Map<String,String> after=new HashMap<>(),acks=new HashMap<>();
     final Set<String> offline=new HashSet<>();
+    final Map<String, JsonNode> inventories = new HashMap<>();
+    final Map<String, List<String>> ackSnapshots = new HashMap<>();
+    ExecutorService ackReader;
     boolean loseReceipt,wrongScope,unknown,released; String lastEpoch;
     Fake() { for(NativeConfig.Node node:config.nodes) { observations.put(node.name,new ArrayList<>()); } }
     void observe(int run,String state,String cleanup,boolean ready) {
@@ -184,10 +267,20 @@ public class NativeEngineTest {
         }
         if(unknown) { inventory.set("foreign",Json.object().put("reserved",true).set("identity",Json.object().put("attempt","foreign"))); }
         ObjectNode state=Json.object().put("cursor",next).put("ack",acks.getOrDefault(node.name,"0"));
-        state.set("observations",page);state.set("commands",Json.object());state.set("attempts",inventory);
+        state.set("observations",page);state.set("commands",Json.object());
+        state.set("attempts", inventories.getOrDefault(node.name, inventory));
         ObjectNode response=Json.object().put("nextCursor",next).put("hasMore",false);response.set("config",actual);response.set("state",state);return response;
       }
       if(path.equals("/v1/ack")) {
+        if (ackReader != null && node.name.equals("agent-a")) {
+          // A separate thread gets an independent SQL snapshot, never the callback's nested Tx.
+          List<String> snapshot = ackReader.submit(() -> store.read(tx -> {
+            String cursor = tx.committedCursor(node.scope());
+            AttemptRecord attempt = tx.attempts().get(0);
+            return List.of(cursor, attempt.state, attempt.cleanup, Boolean.toString(attempt.reserved()));
+          })).get(5, TimeUnit.SECONDS);
+          ackSnapshots.put(node.name, snapshot);
+        }
         String committed=store.read(tx -> tx.committedCursor(node.scope()));
         assertEquals(committed,body.path("committedCursor").asText());acks.put(node.name,committed);return Json.object().put("ok",true);
       }
