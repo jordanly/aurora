@@ -18,7 +18,6 @@ import java.nio.file.*;
 import java.security.KeyStore;
 import java.security.cert.X509Certificate;
 import java.util.*;
-import java.util.concurrent.*;
 import javax.net.ssl.*;
 import com.sun.net.httpserver.*;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -37,7 +36,8 @@ public final class NativeSchedulerMain {
     NativeConfig config=new NativeConfig(Files.readAllBytes(Paths.get(required(options,"--config"))));
     Path directory=Paths.get(required(options,"--state"));
     if(!directory.isAbsolute()) { throw new IllegalArgumentException("Absolute state directory required"); }
-    try(NativeSqlStore store=new NativeSqlStore(directory,config.cluster,config.incarnation)) {
+    NativeSqlStore store=new NativeSqlStore(directory,config.cluster,config.incarnation);
+    try(NativeDaemon daemon=new NativeDaemon(store)) {
       if(inspect) {
         System.out.println(new NativeEngine(store,config,null,true).state()); return;
       }
@@ -45,30 +45,13 @@ public final class NativeSchedulerMain {
       NativeEngine engine=new NativeEngine(store,config,new HttpsTransport(tls),false);
       String[] listen=required(options,"--listen").split(":",-1);
       if(listen.length!=2) { throw new IllegalArgumentException("Use IPv4 address:port listen"); }
-      System.setProperty("sun.net.httpserver.maxReqTime","5");
-      System.setProperty("sun.net.httpserver.maxRspTime","5");
-      System.setProperty("sun.net.httpserver.maxReqHeaders","32");
-      HttpsServer server=HttpsServer.create(new InetSocketAddress(listen[0],Integer.parseInt(listen[1])),16);
-      configureTls(server,tls);
-      ThreadPoolExecutor requests=new ThreadPoolExecutor(2,2,0,TimeUnit.MILLISECONDS,
-          new ArrayBlockingQueue<Runnable>(16),new ThreadPoolExecutor.AbortPolicy());
-      server.setExecutor(requests);
-      server.createContext("/",exchange -> handle((HttpsExchange)exchange,engine,store,directory));
-      ScheduledExecutorService controller=Executors.newSingleThreadScheduledExecutor();
-      CountDownLatch stopped=new CountDownLatch(1);
-      Thread hook=new Thread(() -> {
-        server.stop(1); controller.shutdownNow(); requests.shutdownNow();
-        try { controller.awaitTermination(15,TimeUnit.SECONDS); } catch(InterruptedException e) { Thread.currentThread().interrupt(); }
-        stopped.countDown();
-      },"native-scheduler-shutdown");
-      Runtime.getRuntime().addShutdownHook(hook);
-      server.start();
-      controller.scheduleWithFixedDelay(() -> {
-        try { engine.tick(); }
-        catch(Exception e) { System.err.println("Scheduler tick failed: "+e.getClass().getSimpleName()); }
-      },0,250,TimeUnit.MILLISECONDS);
+      daemon.start(new InetSocketAddress(listen[0],Integer.parseInt(listen[1])),tls,
+          exchange -> handle((HttpsExchange)exchange,engine,store,directory), () -> {
+            try { engine.tick(); }
+            catch(Exception e) { System.err.println("Scheduler tick failed: "+e.getClass().getSimpleName()); }
+          });
       System.out.println("NATIVE_SCHEDULER_READY epoch="+engine.epoch);
-      stopped.await();
+      daemon.awaitShutdown();
     }
   }
   static void configureTls(HttpsServer server,SSLContext tls) {

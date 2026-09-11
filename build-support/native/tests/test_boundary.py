@@ -105,6 +105,10 @@ class BoundaryTests(unittest.TestCase):
             boundary.verify(self.lib, java_profile='java26')
 
     def test_exact_runtime_and_pinned_sqlite_jni_are_permitted(self):
+        for suffix in ("NativeDaemon", "NativeDaemon$Hooks"):
+            identity = "org/apache/aurora/nativescheduler/" + suffix
+            self.scheduler_entries[identity + ".class"] = class_file(identity)
+        jar(self.lib / "aurora-native-scheduler.jar", self.scheduler_entries)
         report = boundary.verify(self.lib)
         self.assertTrue(report["ok"])
         self.assertEqual(25, report["javaTarget"])

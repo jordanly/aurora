@@ -19,6 +19,8 @@ import java.security.KeyStore;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import javax.net.ssl.*;
 import com.sun.net.httpserver.*;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -93,6 +95,81 @@ public class NativeHttpTest {
     for(ExecutorService executor:executors) { executor.shutdownNow(); assertTrue(executor.awaitTermination(5,TimeUnit.SECONDS)); }
     if(store!=null) { store.close(); }
   }
+  @Test(timeout=15000) public void daemonWaitsForBlockedHttpsHandlerBeforeClosingStore() throws Exception {
+    CountDownLatch entered=new CountDownLatch(1), exited=new CountDownLatch(1);
+    CountDownLatch release=new CountDownLatch(1), cancellation=new CountDownLatch(1);
+    AtomicBoolean closeInterrupted=new AtomicBoolean();
+    AtomicReference<Throwable> closeFailure=new AtomicReference<>();
+    int port;
+    try(ServerSocket reserve=new ServerSocket(0)) { port=reserve.getLocalPort(); }
+    NativeDaemon.Hooks hooks=new NativeDaemon.Hooks() {
+      @Override void add(Thread hook) { }
+      @Override void remove(Thread hook) { }
+    };
+    NativeDaemon daemon=new NativeDaemon(() -> {
+      assertEquals("HTTPS handler still active",0,exited.getCount());
+      store.close();
+    },hooks,2,TimeUnit.SECONDS);
+    ExecutorService client=Executors.newSingleThreadExecutor();
+    Thread closer=new Thread(() -> {
+      try { daemon.close(); closeInterrupted.set(Thread.currentThread().isInterrupted()); }
+      catch(Throwable e) { closeFailure.set(e); }
+    },"test-daemon-close");
+    try {
+      daemon.start(new InetSocketAddress("127.0.0.1",port),contexts.get("localhost"),exchange -> {
+        entered.countDown();
+        try {
+          while(release.getCount()!=0) {
+            try { release.await(); }
+            catch(InterruptedException expected) { cancellation.countDown(); }
+          }
+        } finally { exchange.close(); exited.countDown(); }
+      },() -> { });
+      Future<?> response=client.submit(() -> {
+        HttpsURLConnection connection=null;
+        try {
+          connection=(HttpsURLConnection)URI.create("https://localhost:"+port+"/blocked")
+              .toURL().openConnection(Proxy.NO_PROXY);
+          connection.setSSLSocketFactory(contexts.get("operator").getSocketFactory());
+          connection.setConnectTimeout(1500); connection.setReadTimeout(5000);
+          connection.getResponseCode();
+        } catch(IOException expectedShutdown) { }
+        finally { if(connection!=null) { connection.disconnect(); } }
+      });
+      assertTrue(entered.await(5,TimeUnit.SECONDS));
+      closer.start();
+      boolean listenerClosed=false;
+      long deadline=System.nanoTime()+TimeUnit.SECONDS.toNanos(2);
+      while(!listenerClosed && System.nanoTime()<deadline) {
+        try(Socket probe=new Socket()) {
+          probe.connect(new InetSocketAddress("127.0.0.1",port),100);
+        } catch(ConnectException expected) { listenerClosed=true; }
+        if(!listenerClosed) { Thread.sleep(5); }
+      }
+      assertTrue("Server stop did not close its listener",listenerClosed);
+      closer.interrupt();
+      assertTrue(cancellation.await(5,TimeUnit.SECONDS));
+      release.countDown();
+      closer.join(5000);
+      assertFalse("Shutdown did not finish",closer.isAlive());
+      assertNull(closeFailure.get());
+      assertTrue("Shutdown lost caller interruption",closeInterrupted.get());
+      assertEquals(0,exited.getCount());
+      response.get(5,TimeUnit.SECONDS);
+      try(NativeSqlStore reopened=new NativeSqlStore(state,"lab","recovery-a")) {
+        assertEquals(engine.epoch,reopened.read(NativeSqlStore.Tx::schedulerEpoch));
+      }
+    } finally {
+      release.countDown();
+      closer.interrupt(); closer.join(5000);
+      try { daemon.close(); }
+      finally {
+        client.shutdownNow();
+        assertTrue(client.awaitTermination(5,TimeUnit.SECONDS));
+      }
+    }
+  }
+
   private HttpsServer server(SSLContext context,HttpHandler handler) throws Exception {
     HttpsServer server=HttpsServer.create(new InetSocketAddress("127.0.0.1",0),8); servers.add(server);
     NativeSchedulerMain.configureTls(server,context);
