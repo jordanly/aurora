@@ -21,7 +21,9 @@ public final class ProtocolTool {
   private ProtocolTool() { }
   public static void main(String[] args) {
     try {
-      if (args.length != 1) { throw new IllegalArgumentException("usage: protocol document.json"); }
+      if (args.length != 1) {
+        throw new IllegalArgumentException("usage: protocol document.json");
+      }
       ByteArrayOutputStream bytes = new ByteArrayOutputStream();
       try (InputStream stream = Files.newInputStream(Paths.get(args[0]))) {
         byte[] block = new byte[4096];

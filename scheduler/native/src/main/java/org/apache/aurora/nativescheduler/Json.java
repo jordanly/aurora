@@ -34,9 +34,12 @@ final class Json {
     return parse(data.getBytes(StandardCharsets.UTF_8));
   }
   static byte[] read(InputStream input) throws IOException {
-    ByteArrayOutputStream out = new ByteArrayOutputStream(); byte[] buffer = new byte[8192];
+    ByteArrayOutputStream out = new ByteArrayOutputStream();
+    byte[] buffer = new byte[8192];
     for (int count; (count = input.read(buffer)) != -1;) {
-      if (out.size() + count > LIMIT) { throw new IOException("Body too large"); }
+      if (out.size() + count > LIMIT) {
+        throw new IOException("Body too large");
+      }
       out.write(buffer, 0, count);
     }
     return out.toByteArray();
@@ -60,7 +63,9 @@ final class Json {
   static String sha(String value) throws Exception {
     byte[] digest = MessageDigest.getInstance("SHA-256").digest(value.getBytes(StandardCharsets.UTF_8));
     StringBuilder result = new StringBuilder();
-    for (byte b : digest) { result.append(String.format(Locale.ROOT, "%02x", b & 255)); }
+    for (byte b : digest) {
+      result.append(String.format(Locale.ROOT, "%02x", b & 255));
+    }
     return result.toString();
   }
   static String string(JsonNode node, String field) {

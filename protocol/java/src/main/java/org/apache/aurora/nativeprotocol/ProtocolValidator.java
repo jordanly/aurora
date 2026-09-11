@@ -268,7 +268,9 @@ public final class ProtocolValidator {
     try {
       byte[] digest = MessageDigest.getInstance("SHA-256").digest(bytes);
       StringBuilder result = new StringBuilder();
-      for (byte value : digest) { result.append(String.format("%02x", value & 0xff)); }
+      for (byte value : digest) {
+        result.append(String.format("%02x", value & 0xff));
+      }
       return result.toString();
     } catch (NoSuchAlgorithmException impossible) {
       throw new AssertionError(impossible);
