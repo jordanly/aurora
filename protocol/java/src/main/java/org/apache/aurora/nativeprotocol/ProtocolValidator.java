@@ -78,18 +78,18 @@ public final class ProtocolValidator {
       int depth = 0;
       JsonToken token;
       while ((token = parser.nextToken()) != null) {
-        if (token == JsonToken.START_ARRAY || token == JsonToken.START_OBJECT) {
-          require(++depth <= 64, "document exceeds nesting limit");
-        } else if (token == JsonToken.END_ARRAY || token == JsonToken.END_OBJECT) {
-          depth--;
-        } else if (token == JsonToken.FIELD_NAME || token == JsonToken.VALUE_STRING) {
-          ascii(parser.getText());
-        } else if (token == JsonToken.VALUE_NUMBER_INT) {
-          String number = parser.getText();
-          require(number.matches("0|[1-9][0-9]*")
-              && new BigInteger(number).compareTo(MAX_INTEGER) <= 0, "invalid JSON integer");
-        } else if (token == JsonToken.VALUE_NUMBER_FLOAT) {
-          throw new IllegalArgumentException("fractional/exponent numbers are unsupported");
+        switch (token) {
+          case START_ARRAY, START_OBJECT -> require(++depth <= 64, "document exceeds nesting limit");
+          case END_ARRAY, END_OBJECT -> depth--;
+          case FIELD_NAME, VALUE_STRING -> ascii(parser.getText());
+          case VALUE_NUMBER_INT -> {
+            String number = parser.getText();
+            require(number.matches("0|[1-9][0-9]*")
+                && new BigInteger(number).compareTo(MAX_INTEGER) <= 0, "invalid JSON integer");
+          }
+          case VALUE_NUMBER_FLOAT ->
+              throw new IllegalArgumentException("fractional/exponent numbers are unsupported");
+          default -> { }
         }
       }
     }
