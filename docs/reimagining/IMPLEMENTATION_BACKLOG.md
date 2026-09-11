@@ -21,8 +21,7 @@ cases. [Its evidence](java03-evidence.json) records those 69 physical cases and
 the required exploratory comparison: four variants, three sequential trials
 each, with identical workload limits and instrumentation. Java 25 remains the
 default. This completes P5 for the retained native profile; retired legacy
-build targets and broader production capabilities remain separate. SUPERVISE-01
-is the next execution-capability slice, covering surviving attempt supervisors.
+build targets and broader production capabilities remain separate.
 
 [JAVA-04](JAVA25_IDIOM_AUDIT.md) has completed its Java 25 idiom review with a
 [647-file inventory](java04-inventory.json) and independent semantic review.
@@ -42,8 +41,16 @@ and 23 physical cases per profile, plus four bidirectional compatibility pairs.
 [JAVA-09](JAVA09_SQL_RECORD_DECISION.md) retains the public SQL classes.
 [JAVA-10](JAVA10_CONCURRENCY_DECISION.md) completes the measured design decision:
 six normal and six paused-agent/load trials, with no concurrency or transport
-prototype adopted. All six Java audit follow-ups are complete. SUPERVISE-01
-remains the next execution-capability slice.
+prototype adopted. All six Java audit follow-ups are complete.
+
+[SUPERVISE-01, THERMOS-01 and POLICY-01](P6_EXECUTION_STATUS.md) are complete for
+the selected native profile, with [99 passing physical cases](p6-evidence.json).
+They add surviving attempt supervisors, a bounded native task runner and durable
+scheduler policy. Policy is enabled as a single
+profile, replacing the proposed individual feature flags. The next ordered
+execution slice is CRON-01; console, event streaming and enforcement remain
+separate tracks. Historical Python parity and production migration are not
+claimed by the selected native task contract.
 
 **First work and independent tracks**
 
@@ -79,9 +86,9 @@ Start with PLAN-01, BUILD-01 and CONTRACT-01. Go reducers/protocol fixtures can 
 | P5 follow-up / JAVA-08 | Complete: [store-resource and daemon lifecycle hardening](JAVA08_STATUS.md). | JAVA-06 | Each profile: 62 Java tests, 64 launchers and 23 physical cases. Four compatibility pairs in total, dual Java 8 source compilation, failure injection and descriptor probe. |
 | P5 follow-up / JAVA-09 | Decision complete: [retain public SQL classes](JAVA09_SQL_RECORD_DECISION.md). | JAVA-06, supported adapter decision | Consumer inventory and construction/fields/nullability/equality/diagnostics/helper policy documented; persisted contracts and historical helpers preserved. |
 | P5 follow-up / JAVA-10 | Study/decision complete: [retain serialized controller and transport](JAVA10_CONCURRENCY_DECISION.md). | JAVA-08, measured need | Six normal and six paused-agent/load trials; successful latency and failures separated; bounded candidate/HTTP requirements and reopening criteria documented. No prototype adopted. |
-| P6 / SUPERVISE-01 | Same-binary surviving attempt supervisors, local protocol/versioning and daemon reattachment. | AGENT-02, SLICE-01; integrate on modern native baseline | Kill only daemon while children exit/log; preserve exact outcomes and execution; supervisor loss differs from container loss. |
-| P6 / THERMOS-01 | Selected DAG/retry/daemon/ephemeral/finalizer behavior and trusted offline manifest conversion. | SUPERVISE-01, behavior corpus | Retained legacy cases match; intentional changes/rejections explicit; no live Python-checkpoint adoption. |
-| P6 / POLICY-01 | Broader constraints/quotas, updates/rollback, preemption and workload evacuation/SLA drain, with real stores/controllers. | JAVA-03, required agent capabilities | Restart mid-update and drain; revalidate victims; release capacity only on cleanup. Enable features individually. |
+| P6 / SUPERVISE-01 | Complete for selected profile: same-binary surviving attempt supervisors, local protocol/versioning and daemon reattachment. | AGENT-02, SLICE-01; modern native baseline | Exact exits/logs and Stop replay across daemon loss; missing evidence retains ownership; supervisor loss differs from container loss. [Contract and evidence](P6_EXECUTION_STATUS.md). |
+| P6 / THERMOS-01 | Complete for selected profile: DAG/retry/daemon/ephemeral/finalizer behavior and trusted resolved-JSON conversion. | SUPERVISE-01, source-derived behavior corpus | Real subprocess and composed-cluster execution; explicit changed/rejected semantics and separate finalization result. Historical Python execution parity and exporter remain migration gates. [Contract and evidence](P6_EXECUTION_STATUS.md). |
+| P6 / POLICY-01 | Complete for selected profile: static constraints, desired-demand quotas, sequential updates/manual rollback, single-victim preemption and service drain. | JAVA-03, required agent capabilities | Restart during update/drain/preemption; exact victim and candidate revision; capacity held until cleanup. Selected profile enabled as a whole; schema 3 refuses default readers. [Contract and evidence](P6_EXECUTION_STATUS.md). |
 | P6 / CRON-01 | Selected cron template/collision/restart behavior and any explicitly required run-slot evidence. | POLICY-01, durable job model | Completed runs not regenerated accidentally; missed/duplicate-trigger semantics documented and tested. No exactly-once claim. |
 | P1/P3/P6 / CONSOLE-01 | Typed schemas/fixtures early; small read-only workload/attempt/agent/log views with the lab; expanded navigation after native API stabilizes. | CONTRACT-01 for fixtures; SLICE-01 for real evidence | PARTITIONED/unknown, pending reasons, retry versus replacement, freshness, denied/pruned/rotated logs and legacy links behave correctly. |
 | P6 / CONSOLE-02 | Authorized operation review/submission/status; revision guards; deployment/drain controls. | POLICY-01, durable operations, CONSOLE-01 | Double-submit/response loss reconciles by operation ID; authorization remains server-side; closing browser does not interrupt controllers. |

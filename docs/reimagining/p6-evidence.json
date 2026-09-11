@@ -1,0 +1,2673 @@
+{
+  "abortedSupersededRun": {
+    "accepted": false,
+    "partialSourceExcluded": true,
+    "ref": {
+      "path": ".pi-lab/p6-java25-execution/aborted-result.json",
+      "sha256": "1b4b6243950a53909014c6a7b7de7eb9f3e0f79e01a201d3a91a0551ab4ea644"
+    }
+  },
+  "codeDelta": {
+    "base": "af74853858d23af88284824650c5c30cac937713",
+    "categories": {
+      "docs": [
+        "agent/task/README.md",
+        "docs/reimagining/P6_EXECUTION_STATUS.md"
+      ],
+      "harness": [
+        "build-support/lab/cluster-check",
+        "build-support/native/native-execution-check",
+        "build-support/native/native-policy-check",
+        "build-support/native/tests/test_boundary.py",
+        "build-support/native/verify-boundary"
+      ],
+      "productionGo": [
+        "agent/cmd/aurora-agent/main.go",
+        "agent/cmd/aurora-agent/task.go",
+        "agent/runtime.go",
+        "agent/store.go",
+        "agent/supervisor.go",
+        "agent/task/convert.go",
+        "agent/task/manifest.go",
+        "agent/task/planner.go",
+        "agent/task/runner_linux.go"
+      ],
+      "productionJava": [
+        "scheduler/native/src/main/java/org/apache/aurora/nativescheduler/NativeEngine.java",
+        "scheduler/native/src/main/java/org/apache/aurora/nativescheduler/NativePolicy.java",
+        "scheduler/native/src/main/java/org/apache/aurora/nativescheduler/NativeSchedulerMain.java",
+        "src/main/java/org/apache/aurora/scheduler/storage/sql/NativeSqlStore.java",
+        "src/test/java/org/apache/aurora/scheduler/storage/sql/NativeSqlStoreTest.java"
+      ],
+      "testGo": [
+        "agent/cmd/aurora-agent/task_test.go",
+        "agent/supervisor_test.go",
+        "agent/task/parser_test.go",
+        "agent/task/task_test.go"
+      ],
+      "testJava": [
+        "scheduler/native/src/test/java/org/apache/aurora/nativescheduler/NativePolicyTest.java"
+      ]
+    },
+    "commit": "88d9fa349f6a98286882b096d9e21970f5a7e870",
+    "numstat": {
+      "docs": {
+        "deletions": 0,
+        "files": 2,
+        "insertions": 224,
+        "net": 224
+      },
+      "harness": {
+        "deletions": 4,
+        "files": 5,
+        "insertions": 447,
+        "net": 443
+      },
+      "productionGo": {
+        "deletions": 33,
+        "files": 9,
+        "insertions": 2123,
+        "net": 2090
+      },
+      "productionJava": {
+        "deletions": 76,
+        "files": 5,
+        "insertions": 804,
+        "net": 728
+      },
+      "testGo": {
+        "deletions": 0,
+        "files": 4,
+        "insertions": 1197,
+        "net": 1197
+      },
+      "testJava": {
+        "deletions": 0,
+        "files": 1,
+        "insertions": 178,
+        "net": 178
+      }
+    },
+    "regeneratedCachesExcluded": true
+  },
+  "hostAudit": {
+    "path": ".cache/p6-qualified-host-check.json",
+    "sha256": "3ce0fe14482a4ce7e7d46404ed0bc64d381d5d700f05511e26248e803bd5a567"
+  },
+  "java8Compatibility": {
+    "refs": [
+      {
+        "path": ".cache/p6-qualified-java8-compat/result.json",
+        "sha256": "fe40b23ddf7d36d1a4a46739f721ceb8fc3c7dc58a942abc342144ac1af4102c"
+      },
+      {
+        "path": ".cache/p6-qualified-java8-compat/JvmCompatibility.java",
+        "sha256": "7125dcd9101b20dcf77276dd3ba398f79b44a369d87246e73b86315ad9bc96ff"
+      },
+      {
+        "path": ".cache/p6-qualified-java8-compat/compile.stderr",
+        "sha256": "312e9bd919c699a2f8409f70240177012720c94095f0f4374d44152defc50f7e"
+      },
+      {
+        "path": ".cache/p6-qualified-java8-compat/compile.stdout",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": ".cache/p6-qualified-java8-compat/new-advance-backup.stderr",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": ".cache/p6-qualified-java8-compat/new-advance-backup.stdout",
+        "sha256": "f0dd42c90813902d4f6a7820bbbcd3180695df9165855927674d6102d5094cb0"
+      },
+      {
+        "path": ".cache/p6-qualified-java8-compat/new-backup-reopen.stderr",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": ".cache/p6-qualified-java8-compat/new-backup-reopen.stdout",
+        "sha256": "f0dd42c90813902d4f6a7820bbbcd3180695df9165855927674d6102d5094cb0"
+      },
+      {
+        "path": ".cache/p6-qualified-java8-compat/new-dependency-backup-reopen.stderr",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": ".cache/p6-qualified-java8-compat/new-dependency-backup-reopen.stdout",
+        "sha256": "351dc2c6f690463fddf1a08f461e9d7f8bc3c0947bf3953766d5ce56ac4b0878"
+      },
+      {
+        "path": ".cache/p6-qualified-java8-compat/new-dependency-backup.stderr",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": ".cache/p6-qualified-java8-compat/new-dependency-backup.stdout",
+        "sha256": "351dc2c6f690463fddf1a08f461e9d7f8bc3c0947bf3953766d5ce56ac4b0878"
+      },
+      {
+        "path": ".cache/p6-qualified-java8-compat/new-dependency-replay.stderr",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": ".cache/p6-qualified-java8-compat/new-dependency-replay.stdout",
+        "sha256": "8dbb52c558691c89e3d3a7c42d57fc4f5a90ce38646b45de1b549d0000aed785"
+      },
+      {
+        "path": ".cache/p6-qualified-java8-compat/new-dependency-write.stderr",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": ".cache/p6-qualified-java8-compat/new-dependency-write.stdout",
+        "sha256": "351dc2c6f690463fddf1a08f461e9d7f8bc3c0947bf3953766d5ce56ac4b0878"
+      },
+      {
+        "path": ".cache/p6-qualified-java8-compat/new-inspect.stderr",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": ".cache/p6-qualified-java8-compat/new-inspect.stdout",
+        "sha256": "2764aaa3e4f5860a4800ae829fdcbf6a5bc445c77903252387cbba6372c3377a"
+      },
+      {
+        "path": ".cache/p6-qualified-java8-compat/new-version.stderr",
+        "sha256": "26355c87ae9a607a1852964702be1846ff2c75a313f8bcbfb5f2e039a1a543c1"
+      },
+      {
+        "path": ".cache/p6-qualified-java8-compat/new-version.stdout",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": ".cache/p6-qualified-java8-compat/old-backup-reopen.stderr",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": ".cache/p6-qualified-java8-compat/old-backup-reopen.stdout",
+        "sha256": "f0dd42c90813902d4f6a7820bbbcd3180695df9165855927674d6102d5094cb0"
+      },
+      {
+        "path": ".cache/p6-qualified-java8-compat/old-dependency-backup.stderr",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": ".cache/p6-qualified-java8-compat/old-dependency-backup.stdout",
+        "sha256": "351dc2c6f690463fddf1a08f461e9d7f8bc3c0947bf3953766d5ce56ac4b0878"
+      },
+      {
+        "path": ".cache/p6-qualified-java8-compat/old-dependency-replay.stderr",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": ".cache/p6-qualified-java8-compat/old-dependency-replay.stdout",
+        "sha256": "351dc2c6f690463fddf1a08f461e9d7f8bc3c0947bf3953766d5ce56ac4b0878"
+      },
+      {
+        "path": ".cache/p6-qualified-java8-compat/old-dependency-write.stderr",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": ".cache/p6-qualified-java8-compat/old-dependency-write.stdout",
+        "sha256": "8dbb52c558691c89e3d3a7c42d57fc4f5a90ce38646b45de1b549d0000aed785"
+      },
+      {
+        "path": ".cache/p6-qualified-java8-compat/old-inspect.stderr",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": ".cache/p6-qualified-java8-compat/old-inspect.stdout",
+        "sha256": "2764aaa3e4f5860a4800ae829fdcbf6a5bc445c77903252387cbba6372c3377a"
+      },
+      {
+        "path": ".cache/p6-qualified-java8-compat/old-reopen.stderr",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": ".cache/p6-qualified-java8-compat/old-reopen.stdout",
+        "sha256": "f0dd42c90813902d4f6a7820bbbcd3180695df9165855927674d6102d5094cb0"
+      },
+      {
+        "path": ".cache/p6-qualified-java8-compat/old-version.stderr",
+        "sha256": "e6c7530cdd0dc70e481e41f700cf74d9de43f99a3676175a299a15f7a4890e4c"
+      },
+      {
+        "path": ".cache/p6-qualified-java8-compat/old-version.stdout",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    ]
+  },
+  "masterVerification": {
+    "path": ".cache/p6-master-verification.json",
+    "sha256": "ac6cee9a0167242a4a2cd3e3077b6b1ae6bcbf19e32752e8cd3beb5168cba4df"
+  },
+  "normalGate": {
+    "gracefulStopTimeoutMs": 3000,
+    "scope": "TERM fixture only; production deadline unchanged"
+  },
+  "ok": true,
+  "profiles": {
+    "java25": {
+      "bundle": {
+        "path": ".cache/p6-qualified-java25-bundle/bundle.json",
+        "sha256": "9c5cb6c2ab5a96c713dc36b504f140e2b9556d2f2d8c2230ea036ee88528d47d"
+      },
+      "compatibility": {
+        "refs": [
+          {
+            "path": ".cache/p6-qualified-java25-compat/result.json",
+            "sha256": "1a8d1a6f121e1f3aea717d5e079ad0ac294cbad9be713e1f1e60246d5997875c"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-compat/JvmCompatibility.java",
+            "sha256": "7125dcd9101b20dcf77276dd3ba398f79b44a369d87246e73b86315ad9bc96ff"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-compat/compile.stderr",
+            "sha256": "312e9bd919c699a2f8409f70240177012720c94095f0f4374d44152defc50f7e"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-compat/compile.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-compat/new-advance-backup.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-compat/new-advance-backup.stdout",
+            "sha256": "ea81f67fb579db3f90f5d66410a2ee6a6f9646885e692a836de86e0695a34acc"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-compat/new-backup-reopen.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-compat/new-backup-reopen.stdout",
+            "sha256": "ea81f67fb579db3f90f5d66410a2ee6a6f9646885e692a836de86e0695a34acc"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-compat/new-dependency-backup-reopen.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-compat/new-dependency-backup-reopen.stdout",
+            "sha256": "d750d3ecd32c75f944dc281b4abc206f88771bb74d235431cc0c97f6381d3ecb"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-compat/new-dependency-backup.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-compat/new-dependency-backup.stdout",
+            "sha256": "d750d3ecd32c75f944dc281b4abc206f88771bb74d235431cc0c97f6381d3ecb"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-compat/new-dependency-replay.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-compat/new-dependency-replay.stdout",
+            "sha256": "63eae2e85b02786f42bb28e27fb114d4553e70552cc188e5fe3ee3d938bf17f1"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-compat/new-dependency-write.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-compat/new-dependency-write.stdout",
+            "sha256": "d750d3ecd32c75f944dc281b4abc206f88771bb74d235431cc0c97f6381d3ecb"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-compat/new-inspect.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-compat/new-inspect.stdout",
+            "sha256": "94a9b087ee837c881cfe5ba48e7e23b7b79245cdaae7037bf70bbacb77c94d01"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-compat/new-version.stderr",
+            "sha256": "26355c87ae9a607a1852964702be1846ff2c75a313f8bcbfb5f2e039a1a543c1"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-compat/new-version.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-compat/old-backup-reopen.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-compat/old-backup-reopen.stdout",
+            "sha256": "ea81f67fb579db3f90f5d66410a2ee6a6f9646885e692a836de86e0695a34acc"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-compat/old-dependency-backup.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-compat/old-dependency-backup.stdout",
+            "sha256": "d750d3ecd32c75f944dc281b4abc206f88771bb74d235431cc0c97f6381d3ecb"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-compat/old-dependency-replay.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-compat/old-dependency-replay.stdout",
+            "sha256": "d750d3ecd32c75f944dc281b4abc206f88771bb74d235431cc0c97f6381d3ecb"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-compat/old-dependency-write.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-compat/old-dependency-write.stdout",
+            "sha256": "63eae2e85b02786f42bb28e27fb114d4553e70552cc188e5fe3ee3d938bf17f1"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-compat/old-inspect.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-compat/old-inspect.stdout",
+            "sha256": "94a9b087ee837c881cfe5ba48e7e23b7b79245cdaae7037bf70bbacb77c94d01"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-compat/old-reopen.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-compat/old-reopen.stdout",
+            "sha256": "ea81f67fb579db3f90f5d66410a2ee6a6f9646885e692a836de86e0695a34acc"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-compat/old-version.stderr",
+            "sha256": "26355c87ae9a607a1852964702be1846ff2c75a313f8bcbfb5f2e039a1a543c1"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-compat/old-version.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        ]
+      },
+      "launcher": {
+        "commands": 64,
+        "refs": [
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/launcher-check.json",
+            "sha256": "08fcfff83ec16ea53a773d9ca88ced20a4f003424df87476547940f4a3052836"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/java-version.stderr",
+            "sha256": "26355c87ae9a607a1852964702be1846ff2c75a313f8bcbfb5f2e039a1a543c1"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/java-version.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-exact-limit.json",
+            "sha256": "4d0d39a4fdd6c3f223d719686ad49197c7e90f14f06e88365d2a09899340bf99"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-exact-limit.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-exact-limit.stdout",
+            "sha256": "7e3dce97dc7cb0f433960067a72dd3ece09de0a52eeb6d4d1cd98c1bacd0ee42"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-invalid-batch-regeneration.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-invalid-batch-regeneration.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-invalid-conflicting-body-version.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-invalid-conflicting-body-version.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-invalid-counter-overflow.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-invalid-counter-overflow.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-invalid-duplicate-assigned-socket.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-invalid-duplicate-assigned-socket.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-invalid-duplicate-key.stderr",
+            "sha256": "319ae9437f440109ca74f70cf6afa8fefde6ccb8e271b237e86e3bf06549ee09"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-invalid-duplicate-key.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-invalid-duplicate-port.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-invalid-duplicate-port.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-invalid-fraction.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-invalid-fraction.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-invalid-hard-memory-without-capability.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-invalid-hard-memory-without-capability.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-invalid-hash-mismatch.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-invalid-hash-mismatch.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-invalid-leading-zero-counter.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-invalid-leading-zero-counter.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-invalid-malformed.stderr",
+            "sha256": "92ff0cedd9a6553837bdb2c1ba10946001ad63c333962ff5dab1d2357f71f2e1"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-invalid-malformed.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-invalid-missing-job-role.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-invalid-missing-job-role.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-invalid-missing-stop-reason.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-invalid-missing-stop-reason.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-invalid-negative-zero-stop.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-invalid-negative-zero-stop.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-invalid-numeric-counter.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-invalid-numeric-counter.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-invalid-process-identity-mismatch.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-invalid-process-identity-mismatch.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-invalid-readiness-unknown-port.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-invalid-readiness-unknown-port.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-invalid-resolved-port-in-template.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-invalid-resolved-port-in-template.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-invalid-shell-string.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-invalid-shell-string.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-invalid-trailing-newline-id.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-invalid-trailing-newline-id.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-invalid-unknown-argv-port-ref.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-invalid-unknown-argv-port-ref.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-invalid-unknown-field.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-invalid-unknown-field.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-invalid-unknown-runtime.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-invalid-unknown-runtime.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-invalid-unknown-version.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-invalid-unknown-version.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-invalid-unresolved-run-argv.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-invalid-unresolved-run-argv.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-invalid-unresolved-run-port.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-invalid-unresolved-run-port.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-invalid-wrong-authority-cluster.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-invalid-wrong-authority-cluster.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-invalid-wrong-authority-incarnation.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-invalid-wrong-authority-incarnation.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-over-limit.json",
+            "sha256": "1b2b0aaf5b2087e3eebf3c0f9d4a90adc674efec133756ce538c3b93a715cae8"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-over-limit.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-over-limit.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-parser-invalid-control-key.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-parser-invalid-control-key.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-parser-invalid-duplicate-key.stderr",
+            "sha256": "319ae9437f440109ca74f70cf6afa8fefde6ccb8e271b237e86e3bf06549ee09"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-parser-invalid-duplicate-key.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-parser-invalid-exponent.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-parser-invalid-exponent.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-parser-invalid-fraction.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-parser-invalid-fraction.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-parser-invalid-integer-overflow.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-parser-invalid-integer-overflow.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-parser-invalid-leading-zero.stderr",
+            "sha256": "319ae9437f440109ca74f70cf6afa8fefde6ccb8e271b237e86e3bf06549ee09"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-parser-invalid-leading-zero.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-parser-invalid-malformed.stderr",
+            "sha256": "92ff0cedd9a6553837bdb2c1ba10946001ad63c333962ff5dab1d2357f71f2e1"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-parser-invalid-malformed.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-parser-invalid-negative-zero.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-parser-invalid-negative-zero.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-parser-invalid-negative.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-parser-invalid-negative.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-parser-invalid-nonascii-key.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-parser-invalid-nonascii-key.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-parser-invalid-trailing-json.stderr",
+            "sha256": "c7f29720ea8a0c7d94f76f153ce1c25e6d4be90599b30a2f24fc0f8b118946ea"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-parser-invalid-trailing-json.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-parser-invalid-unicode-escape-plus.stderr",
+            "sha256": "319ae9437f440109ca74f70cf6afa8fefde6ccb8e271b237e86e3bf06549ee09"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-parser-invalid-unicode-escape-plus.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-valid-ack.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-valid-ack.stdout",
+            "sha256": "7e3dce97dc7cb0f433960067a72dd3ece09de0a52eeb6d4d1cd98c1bacd0ee42"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-valid-batch.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-valid-batch.stdout",
+            "sha256": "024e1f4e2f5ee42b76205f6ba3702b6a9dc28bd322126dc93316af260c5ad8a3"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-valid-delivery-refreshed-authority.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-valid-delivery-refreshed-authority.stdout",
+            "sha256": "8e4bec0fe34681c265873f9d8661b8b3c03039395401393459c363110f2642c5"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-valid-delivery.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-valid-delivery.stdout",
+            "sha256": "3a00c2872b206c42188eabd2e352ee88eaa15a7c969a5edc660e88aff0166b54"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-valid-inventory-page-0.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-valid-inventory-page-0.stdout",
+            "sha256": "87b4651dd0e17d293d58f4e297ae3b8053f1889103e3d8244d30a61dac9355c3"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-valid-inventory-page-1.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-valid-inventory-page-1.stdout",
+            "sha256": "835d3d262d18ab0c222682272a894c52bc46d6cbc62c4040c03f2a27d737b62e"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-valid-observation-large-counters.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-valid-observation-large-counters.stdout",
+            "sha256": "9f5f0e6ddb7495d1d02c1f8af1c2cf746bde918de9c056af09cb1fde87071fdc"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-valid-run-distinct-socket-network.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-valid-run-distinct-socket-network.stdout",
+            "sha256": "93ddd5ba0b60587054c62f9c3918d943ead82e09ec4cdd1a0036ac3494dea723"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-valid-run-distinct-socket-number.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-valid-run-distinct-socket-number.stdout",
+            "sha256": "457d4c144956c0b21b6ad06e1c39becb28af00c36fbbd8aa04b37318ac4562db"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-valid-run.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-valid-run.stdout",
+            "sha256": "c745b0fc702f0c10319ea1ed4c13b59b5e9b536dafe29ddb93ead0ff958636f2"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-valid-service-run-a.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-valid-service-run-a.stdout",
+            "sha256": "78b021dcfca88be8af197c205e8199da10f836bf15afdfa4cfbaf3ee231c0a41"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-valid-service-run-b.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-valid-service-run-b.stdout",
+            "sha256": "ccbd789a1c52c6e5076c38da4e835bb7469c9b08c42f46f8fe3c43126332d295"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-valid-service-zero.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-valid-service-zero.stdout",
+            "sha256": "72b736f735ee8030778314922d668007c1136fee6575e05f742425587c46b4ef"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-valid-service.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-valid-service.stdout",
+            "sha256": "98eebd15ffa13bc576a97ec2c89eb587338c3fde3e37c486275e4e187c5df7de"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-valid-stop.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/protocol-valid-stop.stdout",
+            "sha256": "49dfb66e01ac35acba198b36cd1db87ab2c016ff0c1be4cca338ddbf07745558"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/scheduler-first.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/scheduler-first.stdout",
+            "sha256": "d17311322e8ceb4cc89fb9c9ca8adf34277157709ffe7b61f6d5315e3f54a91f"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/scheduler-missing-config.stderr",
+            "sha256": "a3b2d647eecd1f8df5cb2bdb6976fb3c00ad3b13ac32d9ffe51a3faa84ccfbc1"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/scheduler-missing-config.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/scheduler-missing-state.stderr",
+            "sha256": "95027ae3f6f1133eff7a974c2c4099c785fa4ed40e79dad517ee35c558c2f797"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/scheduler-missing-state.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/scheduler-relative-state.stderr",
+            "sha256": "2229ee2d7e74e8d91da62feb58775a1a76ab864fae40b420a9bdbd44acc0baf5"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/scheduler-relative-state.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/scheduler-second.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/scheduler-second.stdout",
+            "sha256": "d17311322e8ceb4cc89fb9c9ca8adf34277157709ffe7b61f6d5315e3f54a91f"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/scheduler-unknown.stderr",
+            "sha256": "4db1486f80d4212671e34e5ceec96d0ef465417bb1fe2bd6d3c0b4848b33f2db"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-launchers-run/scheduler-unknown.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        ]
+      },
+      "physical": {
+        "execution": {
+          "cases": 5,
+          "marker": {
+            "path": ".pi-lab/p6-qualified-java25-execution/.aurora-cluster-lab.json",
+            "sha256": "0da7a02dc6f7aa8f230d0b118a53eb5b1ef9f156aec661d8d51a34bd897f16c9"
+          },
+          "receipt": {
+            "path": ".pi-lab/p6-qualified-java25-execution/execution-result.json",
+            "sha256": "125b774a6ac5a83b510555761b144732e90f28a7ed535beca8ab9324b3766d5b"
+          },
+          "run": "5495654837efd817"
+        },
+        "policy": {
+          "cases": 5,
+          "marker": {
+            "path": ".pi-lab/p6-qualified-java25-policy/.aurora-cluster-lab.json",
+            "sha256": "3126d994e63eb627185bf81214e0f7b745d8ab459074b3e5bde9240071295cdb"
+          },
+          "receipt": {
+            "path": ".pi-lab/p6-qualified-java25-policy/policy-result.json",
+            "sha256": "f15600c6880983dc1ece74e0d5d49028aafcf6c952ae74988651c6dcfa838d60"
+          },
+          "run": "d068d31c39872fc1"
+        },
+        "qualification": {
+          "cases": 23,
+          "evidence": {
+            "path": ".pi-lab/p6-qualified-java25-qualification-2/evidence/c1789140466-result.json",
+            "sha256": "99c8ed8561cfcd92615ab33bec989f4ea2ac9019822e48c833924ab6c6848ba7"
+          },
+          "marker": {
+            "path": ".pi-lab/p6-qualified-java25-qualification-2/.aurora-cluster-lab.json",
+            "sha256": "24405d098c58b9fd17d98fd38e66d9704389a14162da68db8dbab56ddb246c7c"
+          },
+          "receipt": {
+            "path": ".pi-lab/p6-qualified-java25-qualification-2/qualification.json",
+            "sha256": "e2d62922edc1065f7f14d31979bbf007380579dec758206cd423321ebcbeb0f5"
+          },
+          "run": "068be205f10b2991",
+          "runtimeAudit": {
+            "path": ".cache/p6-qualified-java25-runtime-audit.json",
+            "sha256": "d29fd39e3987b33957278a352b86a83f73cb3dfdaefef772bbbbac44dce32582"
+          }
+        }
+      },
+      "tests": {
+        "python": {
+          "lab-tests.log": 75,
+          "packaging-tests.log": 56
+        },
+        "reports": [
+          {
+            "path": ".cache/p6-qualified-java25-bundle/build/java/protocol/test-results/test/TEST-org.apache.aurora.nativeprotocol.ProtocolValidatorTest.xml",
+            "sha256": "dd535db8eab925e58f88cb46d9175e2e4a8eda6adc3188c94dda56a5d2b74f6e"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-bundle/build/java/scheduler/test-results/test/TEST-org.apache.aurora.nativescheduler.JsonTest.xml",
+            "sha256": "c7326fe7959d3f123ea53e90964df63ec13c7e7ab53a0bb7005af33ab6bc40e4"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-bundle/build/java/scheduler/test-results/test/TEST-org.apache.aurora.nativescheduler.NativeDaemonTest.xml",
+            "sha256": "830fd9d6c8bc9663504c29759e891498fb423f3c72788f6a2404f38715ed423c"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-bundle/build/java/scheduler/test-results/test/TEST-org.apache.aurora.nativescheduler.NativeEngineTest.xml",
+            "sha256": "7d053e088c4e2309d7aab6a29e512ac46025e51225b60094926068678fe8a3a8"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-bundle/build/java/scheduler/test-results/test/TEST-org.apache.aurora.nativescheduler.NativeHttpTest.xml",
+            "sha256": "9537ce1831a2ef89940eba7fdf1ee3a8c577d03ae50871d1009358301de67cf9"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-bundle/build/java/scheduler/test-results/test/TEST-org.apache.aurora.nativescheduler.NativePolicyTest.xml",
+            "sha256": "191ba00d2c5711a74731142a89076154ace431be2cac08b5b0e9096f878c1222"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-bundle/build/java/scheduler/test-results/test/TEST-org.apache.aurora.scheduler.storage.sql.NativeSqlStoreTest.xml",
+            "sha256": "649523962e4785af746502c547147e0c3d593b03eb4a6324f72cec0ca1f6cd66"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-bundle/reports/agent-test.log",
+            "sha256": "f75dacd9c0bd49ece0533692dc05a57ecfaa5ca78d052bba55c7355a7dbc727f"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-bundle/reports/cluster-helper-test.log",
+            "sha256": "2be1cd39be3b71b843fe2733316d1af06952076b1f7408985676a0d572bb2254"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-bundle/reports/lab-tests.log",
+            "sha256": "f033e9cefe26a7bbe0907aae0af62674ff531b024d5a5a5493524a867746a0cf"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-bundle/reports/native-workload-test.log",
+            "sha256": "575122d7a27d560776b616f7f5d8bd32bdbf4934a72e2766282fc9a59917e7f8"
+          },
+          {
+            "path": ".cache/p6-qualified-java25-bundle/reports/packaging-tests.log",
+            "sha256": "d5170224e123dabc631ec62b86539ba8cd146a6de0a600ef6133bfdc78fcce8c"
+          }
+        ],
+        "suites": {
+          "org.apache.aurora.nativeprotocol.ProtocolValidatorTest": 8,
+          "org.apache.aurora.nativescheduler.JsonTest": 5,
+          "org.apache.aurora.nativescheduler.NativeDaemonTest": 6,
+          "org.apache.aurora.nativescheduler.NativeEngineTest": 16,
+          "org.apache.aurora.nativescheduler.NativeHttpTest": 8,
+          "org.apache.aurora.nativescheduler.NativePolicyTest": 9,
+          "org.apache.aurora.scheduler.storage.sql.NativeSqlStoreTest": 21
+        },
+        "total": 73
+      }
+    },
+    "java26": {
+      "bundle": {
+        "path": ".cache/p6-qualified-java26-bundle/bundle.json",
+        "sha256": "73bfa2ca86e70fc2b059fc855485a087eb0a5ae59b07cb0b02ee7e4a88a1a6de"
+      },
+      "compatibility": {
+        "refs": [
+          {
+            "path": ".cache/p6-qualified-java26-compat/result.json",
+            "sha256": "54118d0a78970c8f7fe2ffa245018db07f9c8de9ba6cea95d86f14125483e95a"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-compat/JvmCompatibility.java",
+            "sha256": "7125dcd9101b20dcf77276dd3ba398f79b44a369d87246e73b86315ad9bc96ff"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-compat/compile.stderr",
+            "sha256": "57b402a56a321944821912ee943c5845fb80a1a7a6f3a09898637dfaa7d41abc"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-compat/compile.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-compat/new-advance-backup.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-compat/new-advance-backup.stdout",
+            "sha256": "ea81f67fb579db3f90f5d66410a2ee6a6f9646885e692a836de86e0695a34acc"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-compat/new-backup-reopen.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-compat/new-backup-reopen.stdout",
+            "sha256": "ea81f67fb579db3f90f5d66410a2ee6a6f9646885e692a836de86e0695a34acc"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-compat/new-dependency-backup-reopen.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-compat/new-dependency-backup-reopen.stdout",
+            "sha256": "d750d3ecd32c75f944dc281b4abc206f88771bb74d235431cc0c97f6381d3ecb"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-compat/new-dependency-backup.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-compat/new-dependency-backup.stdout",
+            "sha256": "d750d3ecd32c75f944dc281b4abc206f88771bb74d235431cc0c97f6381d3ecb"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-compat/new-dependency-replay.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-compat/new-dependency-replay.stdout",
+            "sha256": "63eae2e85b02786f42bb28e27fb114d4553e70552cc188e5fe3ee3d938bf17f1"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-compat/new-dependency-write.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-compat/new-dependency-write.stdout",
+            "sha256": "d750d3ecd32c75f944dc281b4abc206f88771bb74d235431cc0c97f6381d3ecb"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-compat/new-inspect.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-compat/new-inspect.stdout",
+            "sha256": "94a9b087ee837c881cfe5ba48e7e23b7b79245cdaae7037bf70bbacb77c94d01"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-compat/new-version.stderr",
+            "sha256": "a6ab9f3c1bd24744c513b334449c57f4882a8a37325845c28fd103cfe780d451"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-compat/new-version.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-compat/old-backup-reopen.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-compat/old-backup-reopen.stdout",
+            "sha256": "ea81f67fb579db3f90f5d66410a2ee6a6f9646885e692a836de86e0695a34acc"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-compat/old-dependency-backup.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-compat/old-dependency-backup.stdout",
+            "sha256": "d750d3ecd32c75f944dc281b4abc206f88771bb74d235431cc0c97f6381d3ecb"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-compat/old-dependency-replay.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-compat/old-dependency-replay.stdout",
+            "sha256": "d750d3ecd32c75f944dc281b4abc206f88771bb74d235431cc0c97f6381d3ecb"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-compat/old-dependency-write.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-compat/old-dependency-write.stdout",
+            "sha256": "63eae2e85b02786f42bb28e27fb114d4553e70552cc188e5fe3ee3d938bf17f1"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-compat/old-inspect.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-compat/old-inspect.stdout",
+            "sha256": "94a9b087ee837c881cfe5ba48e7e23b7b79245cdaae7037bf70bbacb77c94d01"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-compat/old-reopen.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-compat/old-reopen.stdout",
+            "sha256": "ea81f67fb579db3f90f5d66410a2ee6a6f9646885e692a836de86e0695a34acc"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-compat/old-version.stderr",
+            "sha256": "26355c87ae9a607a1852964702be1846ff2c75a313f8bcbfb5f2e039a1a543c1"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-compat/old-version.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        ]
+      },
+      "launcher": {
+        "commands": 64,
+        "refs": [
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/launcher-check.json",
+            "sha256": "014f9c5ef62667d0feb6752da064ce041bb2fb1b7e1fe1bedc219718609a9db0"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/java-version.stderr",
+            "sha256": "a6ab9f3c1bd24744c513b334449c57f4882a8a37325845c28fd103cfe780d451"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/java-version.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-exact-limit.json",
+            "sha256": "4d0d39a4fdd6c3f223d719686ad49197c7e90f14f06e88365d2a09899340bf99"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-exact-limit.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-exact-limit.stdout",
+            "sha256": "7e3dce97dc7cb0f433960067a72dd3ece09de0a52eeb6d4d1cd98c1bacd0ee42"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-invalid-batch-regeneration.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-invalid-batch-regeneration.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-invalid-conflicting-body-version.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-invalid-conflicting-body-version.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-invalid-counter-overflow.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-invalid-counter-overflow.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-invalid-duplicate-assigned-socket.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-invalid-duplicate-assigned-socket.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-invalid-duplicate-key.stderr",
+            "sha256": "319ae9437f440109ca74f70cf6afa8fefde6ccb8e271b237e86e3bf06549ee09"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-invalid-duplicate-key.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-invalid-duplicate-port.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-invalid-duplicate-port.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-invalid-fraction.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-invalid-fraction.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-invalid-hard-memory-without-capability.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-invalid-hard-memory-without-capability.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-invalid-hash-mismatch.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-invalid-hash-mismatch.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-invalid-leading-zero-counter.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-invalid-leading-zero-counter.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-invalid-malformed.stderr",
+            "sha256": "92ff0cedd9a6553837bdb2c1ba10946001ad63c333962ff5dab1d2357f71f2e1"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-invalid-malformed.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-invalid-missing-job-role.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-invalid-missing-job-role.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-invalid-missing-stop-reason.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-invalid-missing-stop-reason.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-invalid-negative-zero-stop.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-invalid-negative-zero-stop.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-invalid-numeric-counter.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-invalid-numeric-counter.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-invalid-process-identity-mismatch.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-invalid-process-identity-mismatch.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-invalid-readiness-unknown-port.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-invalid-readiness-unknown-port.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-invalid-resolved-port-in-template.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-invalid-resolved-port-in-template.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-invalid-shell-string.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-invalid-shell-string.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-invalid-trailing-newline-id.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-invalid-trailing-newline-id.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-invalid-unknown-argv-port-ref.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-invalid-unknown-argv-port-ref.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-invalid-unknown-field.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-invalid-unknown-field.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-invalid-unknown-runtime.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-invalid-unknown-runtime.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-invalid-unknown-version.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-invalid-unknown-version.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-invalid-unresolved-run-argv.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-invalid-unresolved-run-argv.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-invalid-unresolved-run-port.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-invalid-unresolved-run-port.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-invalid-wrong-authority-cluster.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-invalid-wrong-authority-cluster.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-invalid-wrong-authority-incarnation.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-invalid-wrong-authority-incarnation.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-over-limit.json",
+            "sha256": "1b2b0aaf5b2087e3eebf3c0f9d4a90adc674efec133756ce538c3b93a715cae8"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-over-limit.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-over-limit.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-parser-invalid-control-key.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-parser-invalid-control-key.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-parser-invalid-duplicate-key.stderr",
+            "sha256": "319ae9437f440109ca74f70cf6afa8fefde6ccb8e271b237e86e3bf06549ee09"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-parser-invalid-duplicate-key.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-parser-invalid-exponent.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-parser-invalid-exponent.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-parser-invalid-fraction.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-parser-invalid-fraction.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-parser-invalid-integer-overflow.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-parser-invalid-integer-overflow.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-parser-invalid-leading-zero.stderr",
+            "sha256": "319ae9437f440109ca74f70cf6afa8fefde6ccb8e271b237e86e3bf06549ee09"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-parser-invalid-leading-zero.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-parser-invalid-malformed.stderr",
+            "sha256": "92ff0cedd9a6553837bdb2c1ba10946001ad63c333962ff5dab1d2357f71f2e1"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-parser-invalid-malformed.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-parser-invalid-negative-zero.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-parser-invalid-negative-zero.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-parser-invalid-negative.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-parser-invalid-negative.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-parser-invalid-nonascii-key.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-parser-invalid-nonascii-key.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-parser-invalid-trailing-json.stderr",
+            "sha256": "c7f29720ea8a0c7d94f76f153ce1c25e6d4be90599b30a2f24fc0f8b118946ea"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-parser-invalid-trailing-json.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-parser-invalid-unicode-escape-plus.stderr",
+            "sha256": "319ae9437f440109ca74f70cf6afa8fefde6ccb8e271b237e86e3bf06549ee09"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-parser-invalid-unicode-escape-plus.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-valid-ack.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-valid-ack.stdout",
+            "sha256": "7e3dce97dc7cb0f433960067a72dd3ece09de0a52eeb6d4d1cd98c1bacd0ee42"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-valid-batch.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-valid-batch.stdout",
+            "sha256": "024e1f4e2f5ee42b76205f6ba3702b6a9dc28bd322126dc93316af260c5ad8a3"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-valid-delivery-refreshed-authority.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-valid-delivery-refreshed-authority.stdout",
+            "sha256": "8e4bec0fe34681c265873f9d8661b8b3c03039395401393459c363110f2642c5"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-valid-delivery.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-valid-delivery.stdout",
+            "sha256": "3a00c2872b206c42188eabd2e352ee88eaa15a7c969a5edc660e88aff0166b54"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-valid-inventory-page-0.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-valid-inventory-page-0.stdout",
+            "sha256": "87b4651dd0e17d293d58f4e297ae3b8053f1889103e3d8244d30a61dac9355c3"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-valid-inventory-page-1.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-valid-inventory-page-1.stdout",
+            "sha256": "835d3d262d18ab0c222682272a894c52bc46d6cbc62c4040c03f2a27d737b62e"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-valid-observation-large-counters.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-valid-observation-large-counters.stdout",
+            "sha256": "9f5f0e6ddb7495d1d02c1f8af1c2cf746bde918de9c056af09cb1fde87071fdc"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-valid-run-distinct-socket-network.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-valid-run-distinct-socket-network.stdout",
+            "sha256": "93ddd5ba0b60587054c62f9c3918d943ead82e09ec4cdd1a0036ac3494dea723"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-valid-run-distinct-socket-number.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-valid-run-distinct-socket-number.stdout",
+            "sha256": "457d4c144956c0b21b6ad06e1c39becb28af00c36fbbd8aa04b37318ac4562db"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-valid-run.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-valid-run.stdout",
+            "sha256": "c745b0fc702f0c10319ea1ed4c13b59b5e9b536dafe29ddb93ead0ff958636f2"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-valid-service-run-a.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-valid-service-run-a.stdout",
+            "sha256": "78b021dcfca88be8af197c205e8199da10f836bf15afdfa4cfbaf3ee231c0a41"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-valid-service-run-b.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-valid-service-run-b.stdout",
+            "sha256": "ccbd789a1c52c6e5076c38da4e835bb7469c9b08c42f46f8fe3c43126332d295"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-valid-service-zero.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-valid-service-zero.stdout",
+            "sha256": "72b736f735ee8030778314922d668007c1136fee6575e05f742425587c46b4ef"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-valid-service.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-valid-service.stdout",
+            "sha256": "98eebd15ffa13bc576a97ec2c89eb587338c3fde3e37c486275e4e187c5df7de"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-valid-stop.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/protocol-valid-stop.stdout",
+            "sha256": "49dfb66e01ac35acba198b36cd1db87ab2c016ff0c1be4cca338ddbf07745558"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/scheduler-first.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/scheduler-first.stdout",
+            "sha256": "d17311322e8ceb4cc89fb9c9ca8adf34277157709ffe7b61f6d5315e3f54a91f"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/scheduler-missing-config.stderr",
+            "sha256": "a3b2d647eecd1f8df5cb2bdb6976fb3c00ad3b13ac32d9ffe51a3faa84ccfbc1"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/scheduler-missing-config.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/scheduler-missing-state.stderr",
+            "sha256": "95027ae3f6f1133eff7a974c2c4099c785fa4ed40e79dad517ee35c558c2f797"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/scheduler-missing-state.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/scheduler-relative-state.stderr",
+            "sha256": "2229ee2d7e74e8d91da62feb58775a1a76ab864fae40b420a9bdbd44acc0baf5"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/scheduler-relative-state.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/scheduler-second.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/scheduler-second.stdout",
+            "sha256": "d17311322e8ceb4cc89fb9c9ca8adf34277157709ffe7b61f6d5315e3f54a91f"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/scheduler-unknown.stderr",
+            "sha256": "4db1486f80d4212671e34e5ceec96d0ef465417bb1fe2bd6d3c0b4848b33f2db"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-launchers-run/scheduler-unknown.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        ]
+      },
+      "physical": {
+        "execution": {
+          "cases": 5,
+          "marker": {
+            "path": ".pi-lab/p6-qualified-java26-execution/.aurora-cluster-lab.json",
+            "sha256": "c7033d33002146cf6551ed35f6bc5bff0ae4e8e1dbd76ed6d663ec3d8956fee1"
+          },
+          "receipt": {
+            "path": ".pi-lab/p6-qualified-java26-execution/execution-result.json",
+            "sha256": "4a5ee1caad2e6b064bc5938624ecfc5218260ef48afa24d25416ebf67900e931"
+          },
+          "run": "d8817004ffc13990"
+        },
+        "policy": {
+          "cases": 5,
+          "marker": {
+            "path": ".pi-lab/p6-qualified-java26-policy/.aurora-cluster-lab.json",
+            "sha256": "373bf03feec5f92ceff83e16fbccf50f3f3c85e16a25a0d5db9f0f0a75559f26"
+          },
+          "receipt": {
+            "path": ".pi-lab/p6-qualified-java26-policy/policy-result.json",
+            "sha256": "63d98a8acc156e2e39abae17e71f93ee3fd7915ad771b1260e2e1a10e188cda6"
+          },
+          "run": "7af4114b2e1c59c1"
+        },
+        "qualification": {
+          "cases": 23,
+          "evidence": {
+            "path": ".pi-lab/p6-qualified-java26-qualification/evidence/c1789142072-result.json",
+            "sha256": "387102fc248d15845b67783852f9c7f17eafd9447618758c603d491fc28deff6"
+          },
+          "marker": {
+            "path": ".pi-lab/p6-qualified-java26-qualification/.aurora-cluster-lab.json",
+            "sha256": "492a585ceccfbcf41c8e9fc6056afff5a62f056f030a528e03d03b4c9a05154f"
+          },
+          "receipt": {
+            "path": ".pi-lab/p6-qualified-java26-qualification/qualification.json",
+            "sha256": "7d1b8293d59a39191d937970b97d22a0bfe5939dca35058c3f36a2753259a743"
+          },
+          "run": "28ebc75d98b56975",
+          "runtimeAudit": {
+            "path": ".cache/p6-qualified-java26-runtime-audit.json",
+            "sha256": "283f6d47af921c3642cd6d4dfc1125ce45c3f77387c33ae460c20a060832823e"
+          }
+        }
+      },
+      "tests": {
+        "python": {
+          "lab-tests.log": 75,
+          "packaging-tests.log": 56
+        },
+        "reports": [
+          {
+            "path": ".cache/p6-qualified-java26-bundle/build/java/protocol/test-results/test/TEST-org.apache.aurora.nativeprotocol.ProtocolValidatorTest.xml",
+            "sha256": "a1231caab76a3c47f84305f61c66e012d9318c557a9c10aaf33a6861563ce8dc"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-bundle/build/java/scheduler/test-results/test/TEST-org.apache.aurora.nativescheduler.JsonTest.xml",
+            "sha256": "70b399fd09d4ffe2208c15800e5d07039e9717c44fa96e253cbf66fc0be7dda4"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-bundle/build/java/scheduler/test-results/test/TEST-org.apache.aurora.nativescheduler.NativeDaemonTest.xml",
+            "sha256": "26c67b0240a3ab8b7a3c05473c5047d142694d3ff0792200b635d436f2668b36"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-bundle/build/java/scheduler/test-results/test/TEST-org.apache.aurora.nativescheduler.NativeEngineTest.xml",
+            "sha256": "675ec91609806dae460b5fc2508c64d6b5f2bea12e2dcd70f18af0d3bf883979"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-bundle/build/java/scheduler/test-results/test/TEST-org.apache.aurora.nativescheduler.NativeHttpTest.xml",
+            "sha256": "805a7257f41b51ab403ebbe73ffd5bd87c746ab0f179ddd9bece68f69055d609"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-bundle/build/java/scheduler/test-results/test/TEST-org.apache.aurora.nativescheduler.NativePolicyTest.xml",
+            "sha256": "47fde73d5bd5322b562487d621c65f150ea5c334a22852fcac67c72988b00b3b"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-bundle/build/java/scheduler/test-results/test/TEST-org.apache.aurora.scheduler.storage.sql.NativeSqlStoreTest.xml",
+            "sha256": "717dbeb3515d0a5f3a97983c67fbf5c4953db4ab826a1a352702ddc1df2905c6"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-bundle/reports/agent-test.log",
+            "sha256": "7139c6f01eda1131099edc31415f36d620528dcd0ba70ed3ff4b7c2c60d33ab8"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-bundle/reports/cluster-helper-test.log",
+            "sha256": "a51b76782bd438b2f00df55f3fb6a79d129a76e51e0e0990327e2aefc5c2b359"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-bundle/reports/lab-tests.log",
+            "sha256": "5d3cc4280198a8a8b64447c4fb6d53752bfe2dbfa893bb00a4a8c4fb699f0d8a"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-bundle/reports/native-workload-test.log",
+            "sha256": "a42eef8c8a92c42a51b54cb9b4cc317d20f0c7df0477ed15309b1e0de0709f94"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-bundle/reports/packaging-tests.log",
+            "sha256": "1ea7fecd7bb1f23819b756aa40e0113990c518aeffba87f68b625ef57716d43f"
+          }
+        ],
+        "suites": {
+          "org.apache.aurora.nativeprotocol.ProtocolValidatorTest": 8,
+          "org.apache.aurora.nativescheduler.JsonTest": 5,
+          "org.apache.aurora.nativescheduler.NativeDaemonTest": 6,
+          "org.apache.aurora.nativescheduler.NativeEngineTest": 16,
+          "org.apache.aurora.nativescheduler.NativeHttpTest": 8,
+          "org.apache.aurora.nativescheduler.NativePolicyTest": 9,
+          "org.apache.aurora.scheduler.storage.sql.NativeSqlStoreTest": 21
+        },
+        "total": 73
+      }
+    },
+    "java26-runtime": {
+      "bundle": {
+        "path": ".cache/p6-qualified-java26-runtime-bundle/bundle.json",
+        "sha256": "0fd240ca3df8c1db25929b625bdf4803a79cd3f8ec4ec2a599febd27cc7cef08"
+      },
+      "compatibility": {
+        "refs": [
+          {
+            "path": ".cache/p6-qualified-java26-runtime-compat/result.json",
+            "sha256": "b28ba1828751082c5c4a7836d15172d311bab03266b418ae928f1fc5b46c4b5c"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-compat/JvmCompatibility.java",
+            "sha256": "7125dcd9101b20dcf77276dd3ba398f79b44a369d87246e73b86315ad9bc96ff"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-compat/compile.stderr",
+            "sha256": "312e9bd919c699a2f8409f70240177012720c94095f0f4374d44152defc50f7e"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-compat/compile.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-compat/new-advance-backup.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-compat/new-advance-backup.stdout",
+            "sha256": "ea81f67fb579db3f90f5d66410a2ee6a6f9646885e692a836de86e0695a34acc"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-compat/new-backup-reopen.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-compat/new-backup-reopen.stdout",
+            "sha256": "ea81f67fb579db3f90f5d66410a2ee6a6f9646885e692a836de86e0695a34acc"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-compat/new-dependency-backup-reopen.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-compat/new-dependency-backup-reopen.stdout",
+            "sha256": "d750d3ecd32c75f944dc281b4abc206f88771bb74d235431cc0c97f6381d3ecb"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-compat/new-dependency-backup.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-compat/new-dependency-backup.stdout",
+            "sha256": "d750d3ecd32c75f944dc281b4abc206f88771bb74d235431cc0c97f6381d3ecb"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-compat/new-dependency-replay.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-compat/new-dependency-replay.stdout",
+            "sha256": "63eae2e85b02786f42bb28e27fb114d4553e70552cc188e5fe3ee3d938bf17f1"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-compat/new-dependency-write.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-compat/new-dependency-write.stdout",
+            "sha256": "d750d3ecd32c75f944dc281b4abc206f88771bb74d235431cc0c97f6381d3ecb"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-compat/new-inspect.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-compat/new-inspect.stdout",
+            "sha256": "94a9b087ee837c881cfe5ba48e7e23b7b79245cdaae7037bf70bbacb77c94d01"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-compat/new-version.stderr",
+            "sha256": "a6ab9f3c1bd24744c513b334449c57f4882a8a37325845c28fd103cfe780d451"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-compat/new-version.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-compat/old-backup-reopen.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-compat/old-backup-reopen.stdout",
+            "sha256": "ea81f67fb579db3f90f5d66410a2ee6a6f9646885e692a836de86e0695a34acc"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-compat/old-dependency-backup.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-compat/old-dependency-backup.stdout",
+            "sha256": "d750d3ecd32c75f944dc281b4abc206f88771bb74d235431cc0c97f6381d3ecb"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-compat/old-dependency-replay.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-compat/old-dependency-replay.stdout",
+            "sha256": "d750d3ecd32c75f944dc281b4abc206f88771bb74d235431cc0c97f6381d3ecb"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-compat/old-dependency-write.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-compat/old-dependency-write.stdout",
+            "sha256": "63eae2e85b02786f42bb28e27fb114d4553e70552cc188e5fe3ee3d938bf17f1"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-compat/old-inspect.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-compat/old-inspect.stdout",
+            "sha256": "94a9b087ee837c881cfe5ba48e7e23b7b79245cdaae7037bf70bbacb77c94d01"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-compat/old-reopen.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-compat/old-reopen.stdout",
+            "sha256": "ea81f67fb579db3f90f5d66410a2ee6a6f9646885e692a836de86e0695a34acc"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-compat/old-version.stderr",
+            "sha256": "26355c87ae9a607a1852964702be1846ff2c75a313f8bcbfb5f2e039a1a543c1"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-compat/old-version.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        ]
+      },
+      "launcher": {
+        "commands": 64,
+        "refs": [
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/launcher-check.json",
+            "sha256": "36a87ec579c78dfc02049eed070be05f837075f5d3d897344ad98220f73118d7"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/java-version.stderr",
+            "sha256": "a6ab9f3c1bd24744c513b334449c57f4882a8a37325845c28fd103cfe780d451"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/java-version.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-exact-limit.json",
+            "sha256": "4d0d39a4fdd6c3f223d719686ad49197c7e90f14f06e88365d2a09899340bf99"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-exact-limit.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-exact-limit.stdout",
+            "sha256": "7e3dce97dc7cb0f433960067a72dd3ece09de0a52eeb6d4d1cd98c1bacd0ee42"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-invalid-batch-regeneration.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-invalid-batch-regeneration.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-invalid-conflicting-body-version.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-invalid-conflicting-body-version.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-invalid-counter-overflow.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-invalid-counter-overflow.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-invalid-duplicate-assigned-socket.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-invalid-duplicate-assigned-socket.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-invalid-duplicate-key.stderr",
+            "sha256": "319ae9437f440109ca74f70cf6afa8fefde6ccb8e271b237e86e3bf06549ee09"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-invalid-duplicate-key.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-invalid-duplicate-port.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-invalid-duplicate-port.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-invalid-fraction.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-invalid-fraction.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-invalid-hard-memory-without-capability.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-invalid-hard-memory-without-capability.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-invalid-hash-mismatch.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-invalid-hash-mismatch.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-invalid-leading-zero-counter.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-invalid-leading-zero-counter.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-invalid-malformed.stderr",
+            "sha256": "92ff0cedd9a6553837bdb2c1ba10946001ad63c333962ff5dab1d2357f71f2e1"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-invalid-malformed.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-invalid-missing-job-role.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-invalid-missing-job-role.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-invalid-missing-stop-reason.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-invalid-missing-stop-reason.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-invalid-negative-zero-stop.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-invalid-negative-zero-stop.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-invalid-numeric-counter.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-invalid-numeric-counter.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-invalid-process-identity-mismatch.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-invalid-process-identity-mismatch.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-invalid-readiness-unknown-port.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-invalid-readiness-unknown-port.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-invalid-resolved-port-in-template.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-invalid-resolved-port-in-template.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-invalid-shell-string.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-invalid-shell-string.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-invalid-trailing-newline-id.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-invalid-trailing-newline-id.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-invalid-unknown-argv-port-ref.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-invalid-unknown-argv-port-ref.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-invalid-unknown-field.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-invalid-unknown-field.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-invalid-unknown-runtime.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-invalid-unknown-runtime.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-invalid-unknown-version.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-invalid-unknown-version.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-invalid-unresolved-run-argv.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-invalid-unresolved-run-argv.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-invalid-unresolved-run-port.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-invalid-unresolved-run-port.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-invalid-wrong-authority-cluster.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-invalid-wrong-authority-cluster.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-invalid-wrong-authority-incarnation.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-invalid-wrong-authority-incarnation.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-over-limit.json",
+            "sha256": "1b2b0aaf5b2087e3eebf3c0f9d4a90adc674efec133756ce538c3b93a715cae8"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-over-limit.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-over-limit.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-parser-invalid-control-key.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-parser-invalid-control-key.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-parser-invalid-duplicate-key.stderr",
+            "sha256": "319ae9437f440109ca74f70cf6afa8fefde6ccb8e271b237e86e3bf06549ee09"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-parser-invalid-duplicate-key.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-parser-invalid-exponent.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-parser-invalid-exponent.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-parser-invalid-fraction.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-parser-invalid-fraction.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-parser-invalid-integer-overflow.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-parser-invalid-integer-overflow.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-parser-invalid-leading-zero.stderr",
+            "sha256": "319ae9437f440109ca74f70cf6afa8fefde6ccb8e271b237e86e3bf06549ee09"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-parser-invalid-leading-zero.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-parser-invalid-malformed.stderr",
+            "sha256": "92ff0cedd9a6553837bdb2c1ba10946001ad63c333962ff5dab1d2357f71f2e1"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-parser-invalid-malformed.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-parser-invalid-negative-zero.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-parser-invalid-negative-zero.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-parser-invalid-negative.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-parser-invalid-negative.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-parser-invalid-nonascii-key.stderr",
+            "sha256": "6e22a76559d7dec663db9f207920212e138c9de69e9cb01a03c59ffcdfd3f289"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-parser-invalid-nonascii-key.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-parser-invalid-trailing-json.stderr",
+            "sha256": "c7f29720ea8a0c7d94f76f153ce1c25e6d4be90599b30a2f24fc0f8b118946ea"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-parser-invalid-trailing-json.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-parser-invalid-unicode-escape-plus.stderr",
+            "sha256": "319ae9437f440109ca74f70cf6afa8fefde6ccb8e271b237e86e3bf06549ee09"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-parser-invalid-unicode-escape-plus.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-valid-ack.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-valid-ack.stdout",
+            "sha256": "7e3dce97dc7cb0f433960067a72dd3ece09de0a52eeb6d4d1cd98c1bacd0ee42"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-valid-batch.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-valid-batch.stdout",
+            "sha256": "024e1f4e2f5ee42b76205f6ba3702b6a9dc28bd322126dc93316af260c5ad8a3"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-valid-delivery-refreshed-authority.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-valid-delivery-refreshed-authority.stdout",
+            "sha256": "8e4bec0fe34681c265873f9d8661b8b3c03039395401393459c363110f2642c5"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-valid-delivery.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-valid-delivery.stdout",
+            "sha256": "3a00c2872b206c42188eabd2e352ee88eaa15a7c969a5edc660e88aff0166b54"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-valid-inventory-page-0.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-valid-inventory-page-0.stdout",
+            "sha256": "87b4651dd0e17d293d58f4e297ae3b8053f1889103e3d8244d30a61dac9355c3"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-valid-inventory-page-1.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-valid-inventory-page-1.stdout",
+            "sha256": "835d3d262d18ab0c222682272a894c52bc46d6cbc62c4040c03f2a27d737b62e"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-valid-observation-large-counters.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-valid-observation-large-counters.stdout",
+            "sha256": "9f5f0e6ddb7495d1d02c1f8af1c2cf746bde918de9c056af09cb1fde87071fdc"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-valid-run-distinct-socket-network.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-valid-run-distinct-socket-network.stdout",
+            "sha256": "93ddd5ba0b60587054c62f9c3918d943ead82e09ec4cdd1a0036ac3494dea723"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-valid-run-distinct-socket-number.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-valid-run-distinct-socket-number.stdout",
+            "sha256": "457d4c144956c0b21b6ad06e1c39becb28af00c36fbbd8aa04b37318ac4562db"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-valid-run.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-valid-run.stdout",
+            "sha256": "c745b0fc702f0c10319ea1ed4c13b59b5e9b536dafe29ddb93ead0ff958636f2"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-valid-service-run-a.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-valid-service-run-a.stdout",
+            "sha256": "78b021dcfca88be8af197c205e8199da10f836bf15afdfa4cfbaf3ee231c0a41"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-valid-service-run-b.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-valid-service-run-b.stdout",
+            "sha256": "ccbd789a1c52c6e5076c38da4e835bb7469c9b08c42f46f8fe3c43126332d295"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-valid-service-zero.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-valid-service-zero.stdout",
+            "sha256": "72b736f735ee8030778314922d668007c1136fee6575e05f742425587c46b4ef"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-valid-service.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-valid-service.stdout",
+            "sha256": "98eebd15ffa13bc576a97ec2c89eb587338c3fde3e37c486275e4e187c5df7de"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-valid-stop.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/protocol-valid-stop.stdout",
+            "sha256": "49dfb66e01ac35acba198b36cd1db87ab2c016ff0c1be4cca338ddbf07745558"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/scheduler-first.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/scheduler-first.stdout",
+            "sha256": "d17311322e8ceb4cc89fb9c9ca8adf34277157709ffe7b61f6d5315e3f54a91f"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/scheduler-missing-config.stderr",
+            "sha256": "a3b2d647eecd1f8df5cb2bdb6976fb3c00ad3b13ac32d9ffe51a3faa84ccfbc1"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/scheduler-missing-config.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/scheduler-missing-state.stderr",
+            "sha256": "95027ae3f6f1133eff7a974c2c4099c785fa4ed40e79dad517ee35c558c2f797"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/scheduler-missing-state.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/scheduler-relative-state.stderr",
+            "sha256": "2229ee2d7e74e8d91da62feb58775a1a76ab864fae40b420a9bdbd44acc0baf5"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/scheduler-relative-state.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/scheduler-second.stderr",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/scheduler-second.stdout",
+            "sha256": "d17311322e8ceb4cc89fb9c9ca8adf34277157709ffe7b61f6d5315e3f54a91f"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/scheduler-unknown.stderr",
+            "sha256": "4db1486f80d4212671e34e5ceec96d0ef465417bb1fe2bd6d3c0b4848b33f2db"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-launchers-run/scheduler-unknown.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        ]
+      },
+      "physical": {
+        "execution": {
+          "cases": 5,
+          "marker": {
+            "path": ".pi-lab/p6-qualified-java26-runtime-execution/.aurora-cluster-lab.json",
+            "sha256": "dc065dc940436a3a954e89f46873db41d4b1099b74ea36d581982417052950eb"
+          },
+          "receipt": {
+            "path": ".pi-lab/p6-qualified-java26-runtime-execution/execution-result.json",
+            "sha256": "28694d283277a17faf5f65aafd3b629f3e91771a07dad1e0b2c52d0bfdd0833e"
+          },
+          "run": "553301fa5745fc9c"
+        },
+        "policy": {
+          "cases": 5,
+          "marker": {
+            "path": ".pi-lab/p6-qualified-java26-runtime-policy/.aurora-cluster-lab.json",
+            "sha256": "14d6148088697457ff0ea4768ea381847768d2b1a76a12f4c5fd5fe821eb80da"
+          },
+          "receipt": {
+            "path": ".pi-lab/p6-qualified-java26-runtime-policy/policy-result.json",
+            "sha256": "61f97a5d35a62bd201cfb70117580d6a7238514069c51986c5f25117b1073e50"
+          },
+          "run": "81c8e5ebde8039c2"
+        },
+        "qualification": {
+          "cases": 23,
+          "evidence": {
+            "path": ".pi-lab/p6-qualified-java26-runtime-qualification/evidence/c1789141268-result.json",
+            "sha256": "1081c8aaf658c1277080c00e0ec4420d2b32aee61b5dfd1d711372bc6dde2dd6"
+          },
+          "marker": {
+            "path": ".pi-lab/p6-qualified-java26-runtime-qualification/.aurora-cluster-lab.json",
+            "sha256": "f5e5f8413e3d9c1d2b4f92949023e6047ecac2e25a2101dd06d7de4e7b5d1bcb"
+          },
+          "receipt": {
+            "path": ".pi-lab/p6-qualified-java26-runtime-qualification/qualification.json",
+            "sha256": "1f6fd074e7b3660c44fbc63c3bd4a461534340e0891935fa749c4189c91d6d8a"
+          },
+          "run": "eaa15229bef8130c",
+          "runtimeAudit": {
+            "path": ".cache/p6-qualified-java26-runtime-runtime-audit.json",
+            "sha256": "20b9cf3f452c1235a5822f10802f86cb09f40f5fc661877bfb72af906fc2e6a3"
+          }
+        }
+      },
+      "tests": {
+        "python": {
+          "lab-tests.log": 75,
+          "packaging-tests.log": 56
+        },
+        "reports": [
+          {
+            "path": ".cache/p6-qualified-java26-runtime-bundle/build/java/protocol/test-results/test/TEST-org.apache.aurora.nativeprotocol.ProtocolValidatorTest.xml",
+            "sha256": "7cefe6a0ed03dc63ba704a94c0fab94be93e54af08c507505a306032d5e94052"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-bundle/build/java/scheduler/test-results/test/TEST-org.apache.aurora.nativescheduler.JsonTest.xml",
+            "sha256": "df8f2df31edf2704ea6546e54ab7beed0774ec3dc70450bcd9693d161e728193"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-bundle/build/java/scheduler/test-results/test/TEST-org.apache.aurora.nativescheduler.NativeDaemonTest.xml",
+            "sha256": "7736acd827928bba846996d00b42a969b7b4f937e86c3245821f3fe150f1f9a1"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-bundle/build/java/scheduler/test-results/test/TEST-org.apache.aurora.nativescheduler.NativeEngineTest.xml",
+            "sha256": "a8adf601d99d2fe6d4867cda8518a8dc56758f24af519405afdfd30b1560a97e"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-bundle/build/java/scheduler/test-results/test/TEST-org.apache.aurora.nativescheduler.NativeHttpTest.xml",
+            "sha256": "ce7ddf487453267775b745067cc5c4795b45bc6bf960200cc310f94149348bcb"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-bundle/build/java/scheduler/test-results/test/TEST-org.apache.aurora.nativescheduler.NativePolicyTest.xml",
+            "sha256": "bab83f3d126538a22492423bd54f62b682c13a774b320c10971471eecd5dd8c3"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-bundle/build/java/scheduler/test-results/test/TEST-org.apache.aurora.scheduler.storage.sql.NativeSqlStoreTest.xml",
+            "sha256": "94f3a2f2b0b4518c0e01f8151d96b0756f2cdf1680648f59cd2176c6bc965d35"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-bundle/reports/agent-test.log",
+            "sha256": "65e2500d86cbefddd01129af9f27b640faa63377565e9562bac951258e1bfe9f"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-bundle/reports/cluster-helper-test.log",
+            "sha256": "83e540f426ac68d2f38f3fe35757f68fdade3f4b4aebb1295b6090b2ea57682a"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-bundle/reports/lab-tests.log",
+            "sha256": "35863fb165ac1fd740b25488432429efab5522aabf71acb1ec6ff5af52e42b8b"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-bundle/reports/native-workload-test.log",
+            "sha256": "f5b9aa40a62c2a1f5baeb233ba6acd61b7da1aa745d4d69db1160a6911462c02"
+          },
+          {
+            "path": ".cache/p6-qualified-java26-runtime-bundle/reports/packaging-tests.log",
+            "sha256": "ea08ab780afe9e487d8e9d88f1aea094a8bb4adeaa9824c3d943d463d9afe3e5"
+          }
+        ],
+        "suites": {
+          "org.apache.aurora.nativeprotocol.ProtocolValidatorTest": 8,
+          "org.apache.aurora.nativescheduler.JsonTest": 5,
+          "org.apache.aurora.nativescheduler.NativeDaemonTest": 6,
+          "org.apache.aurora.nativescheduler.NativeEngineTest": 16,
+          "org.apache.aurora.nativescheduler.NativeHttpTest": 8,
+          "org.apache.aurora.nativescheduler.NativePolicyTest": 9,
+          "org.apache.aurora.scheduler.storage.sql.NativeSqlStoreTest": 21
+        },
+        "total": 73
+      }
+    }
+  },
+  "race": {
+    "available": false,
+    "reason": "47-bit VMA"
+  },
+  "selectedScope": "P6 selected qualification scope; no production/full-parity claim.",
+  "source": {
+    "commit": "88d9fa349f6a98286882b096d9e21970f5a7e870",
+    "currentCheckout": "88d9fa349f6a98286882b096d9e21970f5a7e870",
+    "freshSource": ".cache/p6-qualified-fresh-source"
+  },
+  "supersededFinalJava25": {
+    "execution": {
+      "accepted": false,
+      "marker": {
+        "path": ".pi-lab/p6-final-java25-execution/.aurora-cluster-lab.json",
+        "sha256": "391d56576f9c29c4a9f543fab5a19b92de153b1c86aaa41dce62ec75b97b954a"
+      },
+      "passed": true,
+      "receipt": {
+        "path": ".pi-lab/p6-final-java25-execution/execution-result.json",
+        "sha256": "e83b6889e4c7205925571a5f0209bcb4e2544474ad3e7b276eb1e31fc7d68df2"
+      },
+      "run": "14b76beb9b7d036b"
+    },
+    "policy": {
+      "accepted": false,
+      "marker": {
+        "path": ".pi-lab/p6-final-java25-policy/.aurora-cluster-lab.json",
+        "sha256": "41be841a0afac12268cec20a530cd79bc5801c603b7d9def3246756ca697e776"
+      },
+      "passed": true,
+      "receipt": {
+        "path": ".pi-lab/p6-final-java25-policy/policy-result.json",
+        "sha256": "62d424a31a5c4117d7378a8d9e45dab220d5965bdacdf3505e64bb854d7282c9"
+      },
+      "run": "ffb1b635f1dc9a01"
+    },
+    "qualification": {
+      "accepted": false,
+      "marker": {
+        "path": ".pi-lab/p6-final-java25-qualification/.aurora-cluster-lab.json",
+        "sha256": "0e9aaf2b3d72a9741527c6350ffb0510666d8ee50dbf88fe5f8f3089507c2816"
+      },
+      "passed": false,
+      "receipt": {
+        "path": ".pi-lab/p6-final-java25-qualification/qualification.json",
+        "sha256": "2d248837132fe0c06671e14a28584cac0c2041bd581cd3421bb2f57af576f85f"
+      },
+      "run": "37667c79e35c7d8f"
+    },
+    "qualification-unsuffixed-failed": {
+      "accepted": false,
+      "marker": {
+        "path": ".pi-lab/p6-qualified-java25-qualification/.aurora-cluster-lab.json",
+        "sha256": "2f17b6cb032d4d1acdc13eae9e1fca2e0961d1af84846cf8b4554215a8126033"
+      },
+      "passed": false,
+      "receipt": {
+        "path": ".pi-lab/p6-qualified-java25-qualification/qualification.json",
+        "sha256": "93ca698bef268edd3617cca8ed9030876cdd0220505bb6e4a412729f2ee67c5c"
+      },
+      "run": "6f9bb136c1877455"
+    }
+  }
+}

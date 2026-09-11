@@ -27,8 +27,7 @@ commands and the complete 23-case physical gate. [The evidence](java03-evidence.
 records all 69 physical cases and twelve sequential workload/resource trials
 against the previous baseline. Java 25 remains the default; measurements are
 exploratory and do not establish a production performance SLO. These completions
-cover the retained native scheduler/protocol profile. The next execution-capability
-slice is SUPERVISE-01: surviving attempt supervisors and daemon reattachment.
+cover the retained native scheduler/protocol profile.
 
 [JAVA-04](JAVA25_IDIOM_AUDIT.md) has completed the source-level Java 25 review:
 647 tracked Java files inventoried, active standalone code examined, and
@@ -49,7 +48,18 @@ retains the public SQL classes and Java 8 helper/source contracts.
 [JAVA-10](JAVA10_CONCURRENCY_DECISION.md) completes the concurrency/HTTP design
 study with six normal and six paused-agent/load trials. It retains the existing
 runtime and records conditions for revisiting a bounded prototype. These Java
-completions leave the broader supervision and execution-capability roadmap intact.
+completions establish the baseline for the execution-capability work.
+
+[SUPERVISE-01, THERMOS-01 and POLICY-01](P6_EXECUTION_STATUS.md) are now
+qualified for the selected native profile: surviving per-attempt supervisors,
+bounded native DAG/retry/finalizer execution with trusted resolved-JSON conversion,
+and persistent constraints, quotas, updates/rollback, service drain and explicit
+single-victim preemption. Policy is one opt-in profile with a schema upgrade.
+All three Java profiles passed 73 Java tests, 64 launcher checks and 33 physical
+cases each; [the evidence](p6-evidence.json) records compatibility and cleanup,
+including the preserved failures. The next ordered execution slice is CRON-01.
+Full Thermos parity, console work, enforcement and production migration retain
+their separate gates.
 
 **Verified master and provenance**
 

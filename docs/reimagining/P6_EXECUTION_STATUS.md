@@ -1,8 +1,8 @@
 **SUPERVISE-01, THERMOS-01 and POLICY-01**
 
-Implementation is complete and qualification is in progress. These are three
-bounded capabilities on the Java 25 native scheduler and Go agent. The historical
-MVP remains on its original binaries; new qualification uses disposable, private
+Implementation and qualification are complete for the selected native profile.
+These are three bounded capabilities on the Java 25 native scheduler and Go agent.
+The historical MVP remains on its original binaries; new qualification uses disposable, private
 scheduler/two-agent Docker labs. Java 25 remains the default; the Java 26 runtime
 and compiled profiles remain supported build targets.
 
@@ -99,10 +99,37 @@ format change; disabling the CLI option is not a downgrade path. Schema 3
 snapshots reopen only with policy enabled and identical settings; historical
 default restore tools deliberately refuse them. Existing schema 2 desired jobs
 are grandfathered with default policy and count toward later quota changes.
+Completed batches retain desired entries and therefore still count toward quota
+until an operator stops the job; physical node resources release on cleanup.
 Operation history is bounded to 64, alongside the existing job/attempt/command
 limits; no pruning or automatic multi-victim preemption is added here.
 
 **Qualification**
+
+The [evidence ledger](p6-evidence.json) binds the clean implementation commit
+`88d9fa349` to fresh source hashes, bundles, build/test reports, compatibility
+inputs, physical receipts and runtime/cleanup audits. All three profiles passed
+on 2026-09-11:
+
+| Profile | Java tests | Launcher checks | Execution cases | Policy cases | Original cluster cases |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Java 25 default | 73 | 64 | 5 | 5 | 23 |
+| Java 26 runtime, Java 25 bytecode | 73 | 64 | 5 | 5 | 23 |
+| Java 26 compiler and runtime | 73 | 64 | 5 | 5 | 23 |
+
+That is 99 accepted physical cases across nine disposable labs. Each original
+cluster gate includes three complete recovery/isolated-restore rounds and a
+600-second mixed workload with twenty batches and two service replicas. Go
+tests/vet, 75 lab Python tests and 56 packaging Python tests passed in each build.
+Four bidirectional schema-2 state/TLS compatibility pairs passed: the previous
+Java 25 bundle against each new profile, plus retained Java 8 against Java 25.
+Live container audits verified the expected images and JVM access flags.
+
+Cleanup verification found no remaining containers or networks for all fourteen
+owned runs, including five aborted, failed or superseded runs excluded from the
+accepted results. The original MVP retained its container/start identities and
+both HTTP service attempts; Home Assistant was unchanged. Local master and both
+remote master refs were reverified at upstream `11ebaeeb071cb182c388a40755e84f60dda32260`.
 
 The [execution check](../../build-support/native/native-execution-check) exercises
 daemon-only crashes with live HTTP services, offline exits/logs, replayed Stops
@@ -116,9 +143,51 @@ failure boundaries that the physical checks cannot schedule deterministically.
 ThreadSanitizer cannot execute on this Pi's 47-bit VMA layout; race results are
 unavailable, not passing. Ordinary unit tests and physical tests remain required.
 
+The Thermos comparisons are source-derived traces from the historical
+[planner tests](../../src/test/python/apache/thermos/common/test_task_planner.py),
+[failure-limit tests](../../src/test/python/apache/thermos/core/test_failure_limit.py)
+and [finalization tests](../../src/test/python/apache/thermos/core/test_finalization.py).
+The Go planner and actual subprocess runner execute these selected expectations;
+the historical Python runner was not executed for this slice. This is qualification
+of the documented native subset, not verified full Thermos equivalence. Executed
+cohort comparisons and a trusted exporter remain migration work.
+
+Reproduce the three independent physical checks with a freshly built bundle and
+three unused run directories:
+
+```sh
+build-support/native/native-execution-check --bundle "$PWD/.cache/native-bundle" --run-root "$PWD/.pi-lab/execution-new"
+build-support/native/native-policy-check --bundle "$PWD/.cache/native-bundle" --run-root "$PWD/.pi-lab/policy-new"
+build-support/native/native-qualify --bundle "$PWD/.cache/native-bundle" --run-root "$PWD/.pi-lab/qualification-new"
+```
+
+Each command owns its disposable scheduler/two-agent lab. Run the physical checks
+sequentially after build and compatibility work completes on the Pi. The original
+MVP does not need to be upgraded to run them.
+
 The existing gate's two fixtures that require an observed TERM now allow a
 three-second grace period. A superseded run with the former 300 ms fixture
 deadline recorded SIGKILL without a TERM receipt and failed that assertion.
 The fixture change gives durable admission and the signal handler time to run on
 the Pi. Runtime deadline behavior is unchanged; forced-stop checks still require
 actual SIGKILL, cleanup and exact port reuse.
+
+A later Java 25 run passed the first recovery round but timed out during the
+backup request while other profiles were building. Its five-second HTTP client
+deadline expired while the snapshot file's creation-to-last-write interval was
+over six seconds. This supports I/O contention as a possible cause, without
+proving it. The failed receipt and cleanup are preserved; the unchanged gate is
+now passing in a new Java 25 lab after competing build and compatibility work
+ended: all three backup/restore rounds and the complete ten-minute workload
+passed. This does not establish a backup latency guarantee under build load.
+
+**Change size**
+
+From the completed Java baseline `af7485385` to implementation commit `88d9fa349`,
+26 tracked files changed: 4,973 lines added and 113 removed, net +4,860. Production
+Go accounts for +2,090 net lines and production Java for +728. Tests and harnesses
+account for +1,818, and the initial contracts/status docs for +224. These counts
+exclude caches, lab state and the final qualification documentation/evidence.
+Legacy retirement remains gated on migration. The next ordered execution slice
+is CRON-01; console, event streaming and resource enforcement remain separate
+backlog tracks.
