@@ -33,6 +33,7 @@ public final class NativeEngine {
   private final NativeSqlStore store;
   private final NativeConfig config;
   private final Transport transport;
+  private final NativePolicy policy;
   private final ProtocolValidator validator = new ProtocolValidator();
   private final Map<String,Boolean> reachable = new HashMap<>();
   private final Set<String> unknownReservations = new HashSet<>();
@@ -41,7 +42,17 @@ public final class NativeEngine {
 
   public NativeEngine(NativeSqlStore store, NativeConfig config, Transport transport,
       boolean inspectOnly) throws Exception {
+    this(store, config, transport, inspectOnly, null);
+  }
+  public NativeEngine(NativeSqlStore store, NativeConfig config, Transport transport,
+      boolean inspectOnly, JsonNode policyConfig) throws Exception {
     this.store=store; this.config=config; this.transport=transport;
+    if((policyConfig!=null)!=store.read(Tx::policyEnabled)) {
+      throw new Conflict("Policy configuration must match durable schema");
+    }
+    String priorConfig=store.read(Tx::schedulerConfig);
+    if(priorConfig!=null && !priorConfig.equals(config.canonical)) { throw new Conflict("Configuration differs"); }
+    policy=policyConfig==null?null:new NativePolicy(this,store,config,policyConfig,inspectOnly);
     if (inspectOnly) {
       String prior=store.read(Tx::schedulerConfig);
       if (prior!=null && !prior.equals(config.canonical)) { throw new Conflict("Configuration differs"); }
@@ -49,13 +60,13 @@ public final class NativeEngine {
     } else { epoch=store.write(tx -> tx.startScheduler(config.canonical)); }
     session="scheduler-"+epoch;
   }
-  private Message validated(JsonNode value) throws Exception {
+  Message validated(JsonNode value) throws Exception {
     return validator.validate(Json.canonical(value).getBytes(StandardCharsets.UTF_8));
   }
-  private static JobKey key(JsonNode value) {
+  static JobKey key(JsonNode value) {
     return new JobKey(Json.string(value,"role"),Json.string(value,"environment"),Json.string(value,"name"));
   }
-  private void scope(JsonNode value) {
+  void scope(JsonNode value) {
     if (!config.cluster.equals(value.path("cluster").asText())
         || !config.incarnation.equals(value.path("incarnation").asText())) {
       throw new IllegalArgumentException("Wrong cluster/incarnation");
@@ -74,6 +85,7 @@ public final class NativeEngine {
         return false;
       }
       if (tx.jobBodies().size()>=64) { throw new Conflict("Job inventory limit"); }
+      if (policy!=null) { policy.admitJob(tx,job,NativePolicy.defaults()); }
       tx.createJob(key,job.get("revision").asText(),job.get("mode").asText(),body);
       for (int i=0;i<job.get("instances").asInt();i++) { tx.addInstance(key,"instance-"+i); }
       return true;
@@ -84,29 +96,39 @@ public final class NativeEngine {
     store.write(tx -> {
       if (tx.jobBody(key)==null) { throw new Conflict("Unknown Job"); }
       for (String instance:tx.desiredInstances(key)) { tx.removeInstance(key,instance); }
+      if (policy!=null) { policy.cancelJob(tx,key); }
       for (AttemptRecord attempt:tx.attempts()) {
-        if (!attempt.job.equals(key.toString()) || !attempt.reserved()) { continue; }
-        boolean already=false;
-        for (CommandRecord command:tx.commands()) {
-          if (!command.attempt.equals(attempt.attempt)) { continue; }
-          JsonNode body=Json.parse(command.body);
-          if ("Stop".equals(body.path("kind").asText())) { already=true; }
-          else if (command.pending) { tx.acknowledgeCommand(command.command); }
-        }
-        if (!already) {
-          JsonNode run=Json.parse(attempt.runBody);
-          ObjectNode command=base("Stop").put("command",id("stop"))
-              .put("desiredRevision",run.path("desiredRevision").asText())
-              .put("graceMillis",run.path("assignment").path("stop").path("graceMillis").asInt())
-              .put("reason","cancel");
-          command.set("identity",run.get("identity")); command.set("target",run.get("target"));
-          Message valid=validated(command);
-          tx.command(command.get("command").asText(),attempt.attempt,
-              new String(valid.canonicalBytes(),StandardCharsets.UTF_8));
-        }
+        if (attempt.job.equals(key.toString()) && attempt.reserved()) { stopAttempt(tx,attempt,"cancel"); }
       }
       return null;
     });
+  }
+  void stopAttempt(Tx tx, AttemptRecord attempt, String reason) throws Exception {
+    boolean already=false;
+    for (CommandRecord command:tx.commands()) {
+      if (!command.attempt.equals(attempt.attempt)) { continue; }
+      if ("Stop".equals(Json.parse(command.body).path("kind").asText())) { already=true; }
+      else if (command.pending) { tx.acknowledgeCommand(command.command); }
+    }
+    if (!already) {
+      JsonNode run=Json.parse(attempt.runBody);
+      ObjectNode command=base("Stop").put("command",id("stop"))
+          .put("desiredRevision",run.path("desiredRevision").asText())
+          .put("graceMillis",run.path("assignment").path("stop").path("graceMillis").asInt())
+          .put("reason",reason);
+      command.set("identity",run.get("identity")); command.set("target",run.get("target"));
+      Message valid=validated(command);
+      tx.command(command.get("command").asText(),attempt.attempt,
+          new String(valid.canonicalBytes(),StandardCharsets.UTF_8));
+    }
+  }
+  boolean trusted(String node) {
+    return Boolean.TRUE.equals(reachable.get(node)) && !unknownReservations.contains(node);
+  }
+  boolean policyEnabled() { return policy!=null; }
+  public synchronized JsonNode policyRequest(String path, JsonNode request) throws Exception {
+    if(policy==null) { throw new IllegalArgumentException("Policy capability disabled"); }
+    return policy.request(path,request);
   }
   public synchronized void tick() throws Exception {
     for (NativeConfig.Node node:config.nodes) {
@@ -114,6 +136,7 @@ public final class NativeEngine {
       try { poll(node); reachable.put(node.name,true); errors.remove(node.name); }
       catch (Exception e) { errors.put(node.name,"agent exchange failed: "+e.getClass().getSimpleName()); }
     }
+    if(policy!=null) { store.write(tx -> { policy.advance(tx); return null; }); }
     place();
     for (NativeConfig.Node node:config.nodes) {
       if (!Boolean.TRUE.equals(reachable.get(node.name))) { continue; }
@@ -264,60 +287,60 @@ public final class NativeEngine {
     }
     return attempt;
   }
+  boolean fits(Tx tx,JsonNode job,NativeConfig.Node node,String excluded) throws Exception {
+    if (!trusted(node.name)) { return false; }
+    long cpu=0,memory=0; int count=0,inventory=0; Set<Integer> ports=new HashSet<>();
+    String jobKey=key(job.path("jobKey")).toString();
+    for(AttemptRecord a:tx.attempts()) {
+      if(!node.name.equals(a.node)) { continue; }
+      inventory++;
+      if(!a.reserved() || a.attempt.equals(excluded)) { continue; }
+      JsonNode assignment=Json.parse(a.runBody).path("assignment");
+      cpu=Math.addExact(cpu,assignment.path("resources").path("cpuMillis").asLong());
+      memory=Math.addExact(memory,assignment.path("resources").path("memoryBytes").asLong());
+      if(a.job.equals(jobKey)) { count++; }
+      for(JsonNode port:assignment.path("ports")) { ports.add(port.path("number").asInt()); }
+    }
+    JsonNode resources=job.path("template").path("resources");
+    return resources.path("cpuMillis").asLong()<=node.cpu-cpu
+        && resources.path("memoryBytes").asLong()<=node.memory-memory
+        && count<job.path("maxPerAgent").asInt() && inventory<120
+        && 16-ports.size()>=job.path("template").path("ports").size();
+  }
   private void place() throws Exception {
     store.write(tx -> {
-      List<AttemptRecord> attempts=new ArrayList<>(tx.attempts());
-      if (attempts.size()>=48 || tx.commands().size()>=96) { return null; }
-      Map<String,Long> cpu=new HashMap<>(), memory=new HashMap<>();
-      Map<String,Integer> jobCounts=new HashMap<>(), inventoryCounts=new HashMap<>();
-      Map<String,Set<Integer>> ports=new HashMap<>();
-      for (NativeConfig.Node node:config.nodes) { ports.put(node.name,new HashSet<>()); }
-      for (AttemptRecord attempt:attempts) {
-        inventoryCounts.put(attempt.node,inventoryCounts.getOrDefault(attempt.node,0)+1);
-        if (!attempt.reserved()) { continue; }
-        JsonNode assignment=Json.parse(attempt.runBody).path("assignment");
-        cpu.put(attempt.node,cpu.getOrDefault(attempt.node,0L)+assignment.path("resources").path("cpuMillis").asLong());
-        memory.put(attempt.node,memory.getOrDefault(attempt.node,0L)+assignment.path("resources").path("memoryBytes").asLong());
-        String countKey=attempt.node+"/"+attempt.job;
-        jobCounts.put(countKey,jobCounts.getOrDefault(countKey,0)+1);
-        for (JsonNode port:assignment.path("ports")) { ports.get(attempt.node).add(port.path("number").asInt()); }
-      }
-      int created=0;
-      for (String body:tx.jobBodies()) {
-        JsonNode job=Json.parse(body); JobKey key=key(job.get("jobKey"));
-        for (String instance:tx.desiredInstances(key)) {
-          if (attempts.size()+created>=48) { return null; }
-          boolean previous=false, reserved=false;
-          long last=0;
-          for (AttemptRecord attempt:attempts) {
-            if (attempt.job.equals(key.toString()) && attempt.instance.equals(instance)) {
-              previous=true; reserved|=attempt.reserved(); last=Math.max(last,attempt.updatedMillis);
+      for(String body:tx.jobBodies()) {
+        JsonNode stored=Json.parse(body); JobKey key=key(stored.path("jobKey"));
+        for(String instance:tx.desiredInstances(key)) {
+          List<AttemptRecord> attempts=tx.attempts();
+          if(attempts.size()>=48 || tx.commands().size()>=96) { return null; }
+          JsonNode job=policy==null?stored:policy.effectiveJob(tx,stored,instance);
+          boolean previous=false,reserved=false; long last=0;
+          for(AttemptRecord a:attempts) {
+            if(a.job.equals(key.toString()) && a.instance.equals(instance)) {
+              previous=true; reserved|=a.reserved(); last=Math.max(last,a.updatedMillis);
             }
           }
-          if (reserved || (previous && "batch".equals(job.get("mode").asText()))
+          if(reserved || (previous && "batch".equals(job.path("mode").asText()))
               || (previous && System.currentTimeMillis()-last<1000)) { continue; }
-          for (NativeConfig.Node node:config.nodes) {
-            JsonNode resources=job.path("template").path("resources");
-            String countKey=node.name+"/"+key.toString();
-            long requestedCpu=resources.path("cpuMillis").asLong(),requestedMemory=resources.path("memoryBytes").asLong();
-            if (unknownReservations.contains(node.name) || !Boolean.TRUE.equals(reachable.get(node.name))
-                || requestedCpu>node.cpu-cpu.getOrDefault(node.name,0L)
-                || requestedMemory>node.memory-memory.getOrDefault(node.name,0L)
-                || jobCounts.getOrDefault(countKey,0)>=job.path("maxPerAgent").asInt()
-                || inventoryCounts.getOrDefault(node.name,0)>=120
-                || 16-ports.get(node.name).size()<job.path("template").path("ports").size()) { continue; }
-            ObjectNode run=resolve(job,instance,node,ports.get(node.name)); Message message=validated(run);
+          for(NativeConfig.Node node:config.nodes) {
+            if(policy!=null && !policy.allowed(tx,job,instance,node)) { continue; }
+            if(!fits(tx,job,node,null)) { continue; }
+            Set<Integer> ports=new HashSet<>();
+            for(AttemptRecord a:attempts) {
+              if(a.reserved() && node.name.equals(a.node)) {
+                for(JsonNode port:Json.parse(a.runBody).path("assignment").path("ports")) {
+                  ports.add(port.path("number").asInt());
+                }
+              }
+            }
+            ObjectNode run=resolve(job,instance,node,ports); Message message=validated(run);
             ProtocolValidator.requireResolution(validated(job),message);
             String canonical=new String(message.canonicalBytes(),StandardCharsets.UTF_8);
             String attempt=run.path("identity").path("attempt").asText();
-            created++;
             tx.createAttempt(attempt,key,instance); tx.allocate(attempt,node.name,canonical);
-            tx.command(run.get("command").asText(),attempt,canonical);
-            cpu.put(node.name,cpu.getOrDefault(node.name,0L)+requestedCpu);
-            memory.put(node.name,memory.getOrDefault(node.name,0L)+requestedMemory);
-            jobCounts.put(countKey,jobCounts.getOrDefault(countKey,0)+1);
-            inventoryCounts.put(node.name,inventoryCounts.getOrDefault(node.name,0)+1);
-            for (JsonNode port:run.path("assignment").path("ports")) { ports.get(node.name).add(port.path("number").asInt()); }
+            tx.command(run.path("command").asText(),attempt,canonical);
+            if(policy!=null) { policy.allocated(tx,job,instance,node,attempt); }
             break;
           }
         }
@@ -382,6 +405,7 @@ public final class NativeEngine {
         nodes.add(Json.object().put("node",node.name).put("reachable",Boolean.TRUE.equals(reachable.get(node.name)))
             .put("lastError",errors.get(node.name)).put("cursor",tx.committedCursor(node.scope())));
       }
+      if(policy!=null) { result.set("policy",policy.state(tx)); }
       result.set("jobs",jobs);result.set("attempts",attempts);result.set("commands",commands);result.set("nodes",nodes);return result;
     });
   }

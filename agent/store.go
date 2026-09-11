@@ -95,22 +95,26 @@ type Result struct {
 	Deadline int64  `json:"deadlineUnixMillis,omitempty"`
 }
 type Attempt struct {
-	Body      map[string]any `json:"body"`
-	Stopped   bool           `json:"stopped"`
-	Deadline  int64          `json:"deadlineUnixMillis"`
-	Sequence  uint64         `json:"sequence"`
-	Execution *Execution     `json:"execution,omitempty"`
+	DeadlineMono int64          `json:"deadlineMono,omitempty"`
+	Body         map[string]any `json:"body"`
+	Stopped      bool           `json:"stopped"`
+	Deadline     int64          `json:"deadlineUnixMillis"`
+	Sequence     uint64         `json:"sequence"`
+	Execution    *Execution     `json:"execution,omitempty"`
+	Supervisor   *SupervisorRef `json:"supervisor,omitempty"`
 }
 type State struct {
-	FormatVersion int                `json:"formatVersion"`
-	RuntimeScope  *RuntimeScope      `json:"runtimeScope,omitempty"`
-	Config        Config             `json:"config"`
-	Cursor        uint64             `json:"cursor,string"`
-	Ack           uint64             `json:"ack,string"`
-	Commands      map[string]Result  `json:"commands"`
-	Attempts      map[string]Attempt `json:"attempts"`
-	Sequences     map[string]uint64  `json:"sequences"`
-	Observations  []map[string]any   `json:"observations"`
+	FormatVersion   int                `json:"formatVersion"`
+	ExecutionEvents []ExecutionEvent   `json:"executionEvents,omitempty"`
+	StopMono        int64              `json:"stopMono,omitempty"`
+	RuntimeScope    *RuntimeScope      `json:"runtimeScope,omitempty"`
+	Config          Config             `json:"config"`
+	Cursor          uint64             `json:"cursor,string"`
+	Ack             uint64             `json:"ack,string"`
+	Commands        map[string]Result  `json:"commands"`
+	Attempts        map[string]Attempt `json:"attempts"`
+	Sequences       map[string]uint64  `json:"sequences"`
+	Observations    []map[string]any   `json:"observations"`
 }
 type Store struct {
 	db              *bolt.DB
@@ -257,11 +261,22 @@ func read(b *bolt.Bucket) (State, error) {
 	if e := d.Decode(&st); e != nil {
 		return st, e
 	}
-	if st.FormatVersion != 1 && st.FormatVersion != 2 {
+	if st.FormatVersion != 1 && st.FormatVersion != 2 && st.FormatVersion != 3 {
 		return st, errors.New("unsupported store format")
 	}
 	if st.Sequences == nil || st.Commands == nil || st.Attempts == nil || st.Observations == nil || st.Ack > st.Cursor {
 		return st, errors.New("corrupt state invariants")
+	}
+	if (len(st.ExecutionEvents) > 0 || st.StopMono != 0) && st.FormatVersion != 3 {
+		return st, errors.New("supervisor metadata without format3")
+	}
+	for i, event := range st.ExecutionEvents {
+		if event.Sequence != uint64(i+1) {
+			return st, errors.New("supervisor event sequence corruption")
+		}
+		if err := validateExecution(&event.Execution); err != nil {
+			return st, err
+		}
 	}
 	for k, a := range st.Attempts {
 		v, e := protocol.Validate(protocol.Canonical(a.Body))
@@ -273,8 +288,14 @@ func read(b *bolt.Bucket) (State, error) {
 			return st, errors.New("corrupt attempt")
 		}
 		a.Body = v
+		if a.Supervisor != nil {
+			ref := a.Supervisor
+			if st.FormatVersion != 3 || ref.Version != supervisorVersion || len(ref.Token) != 64 || ref.Process.PID < 0 || (ref.Process.PID > 0 && ref.Process.Start == "") {
+				return st, errors.New("unsupported/corrupt supervisor metadata")
+			}
+		}
 		if a.Execution != nil {
-			if st.FormatVersion != 2 || st.RuntimeScope == nil {
+			if st.FormatVersion < 2 || st.RuntimeScope == nil {
 				return st, errors.New("execution without runtime scope/version")
 			}
 			if e := validateExecution(a.Execution); e != nil {
@@ -397,6 +418,12 @@ func (s *Store) Admit(data []byte, caller Caller) (Result, error) {
 			}
 			if attempt.Deadline == 0 || deadline < attempt.Deadline {
 				attempt.Deadline = deadline
+			}
+			if st.FormatVersion == 3 {
+				deadlineMono := monoMillis() + int64(body["graceMillis"].(uint64))
+				if attempt.DeadlineMono == 0 || deadlineMono < attempt.DeadlineMono {
+					attempt.DeadlineMono = deadlineMono
+				}
 			}
 			attempt.Stopped = true
 			if attempt.Execution != nil {

@@ -1,0 +1,198 @@
+#!/usr/bin/env python3
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+# Unless required by applicable law or agreed to in writing, software distributed
+# under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+# CONDITIONS OF ANY KIND, either express or implied. See the License for the
+# specific language governing permissions and limitations under the License.
+"""Physical policy admission, restart, rollback, evacuation and preemption checks."""
+import argparse
+import copy
+import importlib.machinery
+import importlib.util
+import json
+from pathlib import Path
+import sys
+import time
+
+ROOT = Path(__file__).resolve().parents[2]
+loader = importlib.machinery.SourceFileLoader("policy_execution", str(ROOT / "build-support/native/native-execution-check"))
+spec = importlib.util.spec_from_loader(loader.name, loader)
+execution = importlib.util.module_from_spec(spec)
+loader.exec_module(execution)
+cluster, check = execution.cluster, execution.check
+
+
+class PolicyLab(execution.ExecutionLab):
+    def configure(self):
+        super().configure()
+        cluster.save(self.root / "scheduler/state/policy-config.json",
+                     {"attributes": {"agent-a": {"rack": ["a"]}, "agent-b": {"rack": ["b"]}}})
+
+    def scheduler_args(self):
+        return [*super().scheduler_args(), "--enable-policy", "--policy-config", "/state/policy-config.json"]
+
+
+def operation(state, name):
+    return next((o for o in state["policy"]["operations"] if o["operation"] == name), {})
+
+
+def complete(c, name):
+    return c.lab.await_state(lambda s: operation(s, name).get("state") == "completed", timeout=60)
+
+
+def policy(c, name, body, priority=0, preemptible=False, minimum=0, rack=None):
+    constraints = [] if rack is None else [{"attribute": "rack", "values": [rack], "negated": False}]
+    return c.lab.request("POST", "/v1/policy/jobs", {"operation": name, "job": body,
+        "policy": dict(priority=priority, preemptible=preemptible, minReady=minimum, constraints=constraints)})
+
+
+def active(state, name):
+    return [a for a in check.attempts(state, name) if a["reserved"]]
+
+
+def one_ready(state, name, node=None):
+    items = active(state, name)
+    return len(items) == 1 and items[0]["ready"] and items[0]["state"] == "running" and (
+        node is None or items[0]["node"] == node)
+
+
+def service(name, instances=1, cpu=100):
+    body = cluster.job(name, "service", refuse=True)
+    body["instances"] = instances
+    body["template"]["resources"]["cpuMillis"] = cpu
+    body["template"]["stop"]["graceMillis"] = 2000
+    return body
+
+
+def qualify(c):
+    lab = c.lab
+    quota = dict(operation="quota-one", role="fixtures", expectedRevision="0", revision="1",
+                 cpuMillis=200, memoryBytes=536870912)
+    first = lab.request("POST", "/v1/quotas", quota)
+    cluster.require(lab.request("POST", "/v1/quotas", quota) == first, "Quota replay changed result")
+    body = service("rolling", instances=2)
+    policy(c, "submit-rolling", body, minimum=1)
+    state = c.wait("rolling", check.ready)
+    before = active(state, "rolling")
+    for item in before:
+        c.physical(item)
+    rejected = service("over-quota")
+    lab.request("POST", "/v1/jobs", rejected, expected=(409,))
+    state = lab.state()
+    cluster.require(not check.attempts(state, "over-quota") and len(state["jobs"]) == 1,
+                    "Failed quota admission changed jobs/attempts")
+    c.case("policy-quota-replay-and-atomic-rejection", quota=state["policy"]["quotas"])
+    quota.update(operation="quota-two", expectedRevision="1", revision="2", cpuMillis=4000)
+    lab.request("POST", "/v1/quotas", quota)
+
+    target = copy.deepcopy(body)
+    target["revision"] = "2"
+    target["template"]["env"]["GENERATION"] = "two"
+    request = dict(operation="update-rolling", jobKey=body["jobKey"], expectedRevision="1", job=target)
+    lab.request("POST", "/v1/jobs/update", request)
+    middle = lab.await_state(lambda s: operation(s, "update-rolling").get("phase") == "replace")
+    cluster.require(any(a["ready"] for a in active(middle, "rolling")), "Update lost all readiness")
+    c.crash("scheduler")
+    state = complete(c, "update-rolling")
+    cluster.require(check.ready(check.attempts(state, "rolling")) and all(
+        a["run"]["desiredRevision"] == "2" for a in active(state, "rolling")), "Update did not converge")
+    for item in active(state, "rolling"):
+        c.physical(item)
+    c.case("policy-update-restarts-in-flight", operation=operation(state, "update-rolling"), attempts=check.attempts(state, "rolling"))
+    lab.request("POST", "/v1/jobs/rollback", dict(operation="rollback-rolling", updateOperation="update-rolling",
+                 expectedRevision="2", revision="3"))
+    state = complete(c, "rollback-rolling")
+    cluster.require(all(a["run"]["desiredRevision"] == "3" and "GENERATION" not in a["run"]["assignment"]["env"]
+                        for a in active(state, "rolling")), "Rollback did not restore prior template with new revision")
+    for item in active(state, "rolling"):
+        c.physical(item)
+    c.case("policy-explicit-rollback-monotonic-revision", operation=operation(state, "rollback-rolling"))
+    c.stop("rolling")
+    c.wait("rolling", check.terminal)
+
+    policy(c, "submit-evacuate", service("evacuate"))
+    state = lab.await_state(lambda s: one_ready(s, "evacuate", "agent-a"))
+    old = active(state, "evacuate")[0]
+    lab.request("POST", "/v1/nodes/drain", dict(operation="drain-a", node="agent-a", expectedRevision="0", revision="1"))
+    lab.await_state(lambda s: operation(s, "drain-a").get("current", {}).get("phase") == "cleanup")
+    c.crash("scheduler")
+    state = complete(c, "drain-a")
+    cluster.require(one_ready(state, "evacuate", "agent-b") and check.terminal([
+        a for a in check.attempts(state, "evacuate") if a["identity"] == old["identity"]]),
+        "Drain did not retain cleanup proof and evacuate")
+    c.physical(old, available=True)
+    c.physical(active(state, "evacuate")[0])
+    c.case("policy-drain-restarts-and-evacuates-after-cleanup", operation=operation(state, "drain-a"))
+    c.stop("evacuate")
+    c.wait("evacuate", check.terminal)
+    lab.request("POST", "/v1/nodes/cordon", dict(operation="uncordon-a", node="agent-a",
+                 expectedRevision="1", revision="2", cordoned=False))
+
+    policy(c, "submit-low", service("low", cpu=800), priority=1, preemptible=True, rack="a")
+    state = lab.await_state(lambda s: one_ready(s, "low", "agent-a"))
+    victim = active(state, "low")[0]
+    candidate = service("high", cpu=800)
+    policy(c, "submit-high", candidate, priority=2, rack="a")
+    state = lab.await_state(lambda s: any(p["job"] == "fixtures/test/high" for p in s["policy"]["pending"]))
+    cluster.require(not check.attempts(state, "high"), "Constrained candidate unexpectedly fitted")
+    request = dict(operation="preempt-low", jobKey=candidate["jobKey"], expectedRevision="1", instance="instance-0",
+                   victimAttempt=victim["identity"]["attempt"])
+    lab.request("POST", "/v1/preempt", request)
+    middle = lab.state()
+    cluster.require(not check.attempts(middle, "high"), "Candidate launched before victim cleanup")
+    c.crash("scheduler")
+    state = lab.await_state(lambda s: one_ready(s, "high", "agent-a"))
+    cluster.require(check.terminal(check.attempts(state, "low")) and operation(state, "preempt-low")["state"] == "completed",
+                    "Victim cleanup or durable preemption completion differs")
+    c.physical(active(state, "high")[0])
+    c.case("policy-preemption-revalidates-and-waits-for-cleanup", operation=operation(state, "preempt-low"))
+    c.stop("low")
+    c.stop("high")
+    c.wait("high", check.terminal)
+    cluster.require(check.terminal(lab.state()["attempts"]), "Policy check left reserved attempts")
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--bundle", type=Path, required=True)
+    parser.add_argument("--run-root", type=Path, required=True)
+    args = parser.parse_args()
+    cluster.native.safe_path(args.run_root)
+    cluster.require(args.run_root.is_absolute() and not args.run_root.exists(), "Run root must be new and absolute")
+    cluster.require(not args.run_root.is_relative_to(args.bundle), "Run root must be outside bundle")
+    lab, c = None, None
+    result = dict(ok=False, startedAt=time.time())
+    try:
+        lab = PolicyLab(args.run_root, fresh=True)
+        lab.prepare(args.bundle)
+        lab.start()
+        c = check.Check(lab, 0, 0)
+        qualify(c)
+        result.update(ok=True, finalState=lab.state(), bundle=lab.data["bundle"])
+    except BaseException as error:
+        result["error"] = cluster.native.redact(str(error))
+    finally:
+        if c is not None:
+            result["cases"] = c.evidence["cases"]
+        errors = []
+        if lab is not None and lab.data is not None and lab.lock is not None:
+            for phase in ("collect", "down", "release"):
+                try:
+                    getattr(lab, phase)()
+                except BaseException as error:
+                    errors.append(dict(phase=phase, error=cluster.native.redact(str(error))))
+            result["cleanup"] = lab.data["status"]
+        if errors:
+            result.update(ok=False, cleanupErrors=errors)
+        result["completedAt"] = time.time()
+        if args.run_root.is_dir():
+            cluster.save(args.run_root / "policy-result.json", result)
+    print(json.dumps(result if not result["ok"] else dict(ok=True, cases=len(result["cases"]),
+                          evidence=str(args.run_root / "policy-result.json"))))
+    return 0 if result["ok"] else 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())

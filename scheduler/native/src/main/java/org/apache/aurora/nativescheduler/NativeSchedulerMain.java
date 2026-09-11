@@ -27,22 +27,27 @@ import org.apache.aurora.scheduler.storage.sql.NativeSqlStore;
 public final class NativeSchedulerMain {
   private NativeSchedulerMain() { }
   public static void main(String[] args) throws Exception {
-    Map<String,String> options=new HashMap<>(); boolean inspect=false;
+    Map<String,String> options=new HashMap<>(); boolean inspect=false,enablePolicy=false;
     for(int i=0;i<args.length;i++) {
+      if ("--enable-policy".equals(args[i])) { enablePolicy=true; continue; }
       if ("--inspect-only".equals(args[i])) { inspect=true; continue; }
-      if (!Arrays.asList("--config","--state","--listen","--tls-keystore","--tls-truststore","--tls-password-file").contains(args[i])
+      if (!Arrays.asList("--config","--state","--listen","--tls-keystore","--tls-truststore","--tls-password-file","--policy-config").contains(args[i])
           || i+1==args.length || options.put(args[i],args[++i])!=null) { throw new IllegalArgumentException("Invalid CLI arguments"); }
     }
     NativeConfig config=new NativeConfig(Files.readAllBytes(Paths.get(required(options,"--config"))));
     Path directory=Paths.get(required(options,"--state"));
     if(!directory.isAbsolute()) { throw new IllegalArgumentException("Absolute state directory required"); }
-    NativeSqlStore store=new NativeSqlStore(directory,config.cluster,config.incarnation);
+    if(enablePolicy!=options.containsKey("--policy-config")) {
+      throw new IllegalArgumentException("--enable-policy and --policy-config are required together");
+    }
+    JsonNode policyConfig=enablePolicy?Json.parse(Files.readAllBytes(Paths.get(required(options,"--policy-config")))):null;
+    NativeSqlStore store=new NativeSqlStore(directory,config.cluster,config.incarnation,enablePolicy);
     try(NativeDaemon daemon=new NativeDaemon(store)) {
       if(inspect) {
-        System.out.println(new NativeEngine(store,config,null,true).state()); return;
+        System.out.println(new NativeEngine(store,config,null,true,policyConfig).state()); return;
       }
       SSLContext tls=tls(options);
-      NativeEngine engine=new NativeEngine(store,config,new HttpsTransport(tls),false);
+      NativeEngine engine=new NativeEngine(store,config,new HttpsTransport(tls),false,policyConfig);
       String[] listen=required(options,"--listen").split(":",-1);
       if(listen.length!=2) { throw new IllegalArgumentException("Use IPv4 address:port listen"); }
       daemon.start(new InetSocketAddress(listen[0],Integer.parseInt(listen[1])),tls,
@@ -108,6 +113,9 @@ public final class NativeSchedulerMain {
         response=Json.object().put("ok",true).put("created",created);
       } else if("POST".equals(method) && "/v1/jobs/stop".equals(path)) {
         engine.stop(Json.parse(Json.read(exchange.getRequestBody()))); response=Json.object().put("ok",true);
+      } else if("POST".equals(method) && engine.policyEnabled() && Set.of("/v1/policy/jobs","/v1/quotas","/v1/jobs/update",
+          "/v1/jobs/rollback","/v1/nodes/drain","/v1/nodes/cordon","/v1/preempt").contains(path)) {
+        response=engine.policyRequest(path,Json.parse(Json.read(exchange.getRequestBody())));
       } else if("POST".equals(method) && "/v1/backup".equals(path)) {
         JsonNode request=Json.parse(Json.read(exchange.getRequestBody())); Json.fields(request,"name");
         String name=NativeConfig.token(Json.string(request,"name"));

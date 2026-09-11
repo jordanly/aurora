@@ -99,6 +99,9 @@ type RuntimeOptions struct {
 	Root, Network, HelperPath string
 	HelperArgs                []string
 	LogBytes                  int64
+	Supervise                 bool
+	SupervisorArgs            []string
+	captureEvents             bool
 }
 type Runtime struct {
 	shutdownMu sync.Mutex
@@ -111,12 +114,13 @@ type Runtime struct {
 	hooks      runtimeHooks
 }
 type runtimeHooks struct {
-	beforeGate    func()
-	beforePersist func(Attempt) error
-	afterIntent   func()
-	afterSpawn    func()
-	afterIdentity func()
-	afterRelease  func()
+	beforeGate          func()
+	beforePersist       func(Attempt) error
+	afterIntent         func()
+	afterSpawn          func()
+	afterIdentity       func()
+	afterRelease        func()
+	beforeSupervisorAck func()
 }
 type liveProcess struct {
 	pidfd          int
@@ -226,7 +230,13 @@ func NewRuntime(s *Store, opts RuntimeOptions) (*Runtime, error) {
 		if st.RuntimeScope != nil && *st.RuntimeScope != scope {
 			return errors.New("actual boot/runtime scope changed; external fencing/re-enrollment required")
 		}
+		if st.FormatVersion == 3 && !opts.Supervise && !opts.captureEvents {
+			return errors.New("supervisor journal requires --supervise; downgrade refused")
+		}
 		st.FormatVersion = 2
+		if opts.Supervise || opts.captureEvents {
+			st.FormatVersion = 3
+		}
 		st.RuntimeScope = &scope
 		return save(b, st)
 	})
@@ -246,7 +256,13 @@ func (r *Runtime) recover() error {
 		return e
 	}
 	for key, a := range st.Attempts {
-		if a.Execution == nil || a.Execution.Cleanup == "complete" {
+		if a.Execution == nil || (a.Execution.Cleanup == "complete" && (a.Supervisor == nil || a.Supervisor.Acknowledged)) {
+			continue
+		}
+		if a.Supervisor != nil {
+			if e := r.pollSupervisor(key, a); e != nil {
+				return e
+			}
 			continue
 		}
 		x := a.Execution
@@ -317,9 +333,20 @@ func (r *Runtime) Tick(ctx context.Context) error {
 					return e
 				}
 			} else {
-				if e = r.start(key); e != nil {
+				if r.opts.Supervise {
+					e = r.startSupervisor(key)
+				} else {
+					e = r.start(key)
+				}
+				if e != nil {
 					return e
 				}
+			}
+			continue
+		}
+		if a.Supervisor != nil && (!a.Supervisor.Acknowledged || a.Execution.Cleanup != "complete") {
+			if e = r.pollSupervisor(key, a); e != nil {
+				return e
 			}
 			continue
 		}
@@ -352,6 +379,9 @@ func (r *Runtime) update(key string, change func(*Attempt) error, observe bool) 
 			}
 		}
 		st.Attempts[key] = a
+		if r.opts.captureEvents && a.Execution != nil {
+			st.ExecutionEvents = append(st.ExecutionEvents, ExecutionEvent{Sequence: uint64(len(st.ExecutionEvents) + 1), Execution: *a.Execution})
+		}
 		if r.hooks.beforePersist != nil {
 			if e = r.hooks.beforePersist(a); e != nil {
 				return e
@@ -639,11 +669,18 @@ func (r *Runtime) poll(ctx context.Context, key string, a Attempt, p *liveProces
 				code = -1
 			}
 		}
+		if r.opts.captureEvents && p.cmd.ProcessState != nil {
+			code = p.cmd.ProcessState.ExitCode()
+			if status, ok := p.cmd.ProcessState.Sys().(syscall.WaitStatus); ok && status.Signaled() {
+				signal = int(status.Signal())
+			}
+		}
 		if a.Stopped {
 			outcome = "stopped"
 		}
-		p.stdout.Close()
-		p.stderr.Close()
+		if e := errors.Join(p.stdout.Close(), p.stderr.Close()); e != nil {
+			return e
+		}
 		outBytes, outDropped := p.stdout.Counts()
 		errBytes, errDropped := p.stderr.Counts()
 		e = r.update(key, func(a *Attempt) error {
@@ -735,6 +772,12 @@ func (r *Runtime) Shutdown(ctx context.Context) error {
 			if !a.Stopped || a.Deadline > deadline {
 				a.Deadline = deadline
 			}
+			if r.opts.Supervise {
+				mono := monoMillis() + int64(a.Body["assignment"].(map[string]any)["stop"].(map[string]any)["graceMillis"].(uint64))
+				if a.DeadlineMono == 0 || mono < a.DeadlineMono {
+					a.DeadlineMono = mono
+				}
+			}
 			a.Stopped = true
 			if a.Execution != nil {
 				a.Execution.Ready = false
@@ -761,10 +804,16 @@ func (r *Runtime) Shutdown(ctx context.Context) error {
 			}
 			for _, a := range st.Attempts {
 				if a.Reserved() {
+					if r.opts.Supervise && a.Supervisor != nil && a.Execution.Phase != "terminal" {
+						active++
+						continue
+					}
 					return errors.New("cleanup remains unconfirmed")
 				}
 			}
-			return r.Close()
+			if active == 0 {
+				return r.Close()
+			}
 		}
 		select {
 		case <-ctx.Done():
@@ -794,6 +843,7 @@ type boundedLog struct {
 	file                    *os.File
 	limit, written, dropped int64
 	closed                  bool
+	closeErr                error
 }
 
 func newBoundedLog(path string, limit int64) (*boundedLog, error) {
@@ -830,12 +880,13 @@ func (l *boundedLog) Close() error {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	if l.closed {
-		return nil
+		return l.closeErr
 	}
 	l.closed = true
 	if e := l.file.Sync(); e != nil {
-		l.file.Close()
-		return e
+		l.closeErr = errors.Join(e, l.file.Close())
+		return l.closeErr
 	}
-	return l.file.Close()
+	l.closeErr = l.file.Close()
+	return l.closeErr
 }

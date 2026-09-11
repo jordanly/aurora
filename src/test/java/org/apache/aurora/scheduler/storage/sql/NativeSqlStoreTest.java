@@ -49,6 +49,64 @@ public class NativeSqlStoreTest {
       return null;
     });
   }
+  @Test public void policyMigrationIsOptInAndSnapshotsRetainControllerState() throws Exception {
+    Path dir = temporary.newFolder().toPath();
+    Path copy = temporary.getRoot().toPath().resolve("policy-snapshot");
+    try (NativeSqlStore store = open(dir)) {
+      seed(store); assertFalse(store.read(NativeSqlStore.Tx::policyEnabled));
+    }
+    try (NativeSqlStore store = new NativeSqlStore(dir, "c", "i", true)) {
+      assertTrue(store.read(NativeSqlStore.Tx::policyEnabled));
+      assertEquals("immutable-job", store.read(tx -> tx.jobBody(job)));
+      store.write(tx -> { tx.putPolicy("operation", "update", "durable-midway-progress"); return null; });
+      rejects(() -> store.write(tx -> {
+        tx.putPolicy("node", "n", "draining");
+        try { tx.putPolicy("unsupported", "x", "bad"); } catch (SQLException expected) { }
+        return null;
+      }));
+      assertNull(store.read(tx -> tx.policy("node", "n")));
+      store.snapshot(copy);
+    }
+    rejects(() -> open(dir));
+    rejects(() -> open(copy));
+    try (NativeSqlStore store = new NativeSqlStore(copy, "c", "i", true)) {
+      assertEquals("durable-midway-progress", store.read(tx -> tx.policy("operation", "update")));
+      assertEquals("immutable-job", store.read(tx -> tx.jobBody(job)));
+    }
+  }
+
+  @Test public void interruptedPolicyMigrationRollsBackCatalogAndVersion() throws Exception {
+    Path dir = temporary.newFolder().toPath();
+    try (NativeSqlStore store = open(dir)) { seed(store); }
+    NativeSqlStore.Resources resources = new NativeSqlStore.Resources() {
+      @Override Connection connect(String url) throws SQLException {
+        Connection delegate = super.connect(url);
+        return (Connection) Proxy.newProxyInstance(Connection.class.getClassLoader(),
+            new Class<?>[] {Connection.class}, (proxy, method, args) -> {
+              try {
+                Object result = method.invoke(delegate, args);
+                if (!method.getName().equals("createStatement")) { return result; }
+                java.sql.Statement statement = (java.sql.Statement) result;
+                return Proxy.newProxyInstance(java.sql.Statement.class.getClassLoader(),
+                    new Class<?>[] {java.sql.Statement.class}, (statementProxy, operation, values) -> {
+                      if (operation.getName().equals("execute") && values != null
+                          && "PRAGMA user_version=3".equals(values[0])) {
+                        throw new SQLException("Injected migration interruption after table creation");
+                      }
+                      try { return operation.invoke(statement, values); }
+                      catch (java.lang.reflect.InvocationTargetException e) { throw e.getCause(); }
+                    });
+              } catch (java.lang.reflect.InvocationTargetException e) { throw e.getCause(); }
+            });
+      }
+    };
+    rejects(() -> new NativeSqlStore(dir, "c", "i", resources, true));
+    try (NativeSqlStore store = open(dir)) {
+      assertFalse(store.read(NativeSqlStore.Tx::policyEnabled));
+      assertEquals("immutable-job", store.read(tx -> tx.jobBody(job)));
+    }
+  }
+
   @Test public void versionOneMigratesAtomicallyAndPreservesDurableJobs() throws Exception {
     Path dir = temporary.newFolder().toPath();
     try (NativeSqlStore store = open(dir)) { seed(store); }

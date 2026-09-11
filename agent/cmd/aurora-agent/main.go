@@ -49,6 +49,15 @@ func run() (err error) {
 	if os.Args[1] == "version" {
 		return json.NewEncoder(os.Stdout).Encode(map[string]string{"version": "native-v1alpha1-admission", "store": "bbolt-v1.5.0"})
 	}
+	if os.Args[1] == "__supervise" {
+		if len(os.Args) != 2 {
+			return fmt.Errorf("unexpected helper arguments")
+		}
+		return agent.SuperviseHelper()
+	}
+	if os.Args[1] == "execute-task" || os.Args[1] == "task-child" || os.Args[1] == "convert-task" {
+		return runTask(os.Args[1], os.Args[2:])
+	}
 	if os.Args[1] == "__launch-helper" {
 		if len(os.Args) != 2 {
 			return fmt.Errorf("unexpected helper arguments")
@@ -66,6 +75,7 @@ func run() (err error) {
 	tlsCert := f.String("tls-cert", "", "server certificate PEM")
 	tlsKey := f.String("tls-key", "", "server private key PEM")
 	tlsCA := f.String("tls-ca", "", "trusted scheduler client CA PEM")
+	supervise := f.Bool("supervise", false, "surviving same-binary attempt supervisors (journal v3)")
 	logBytes := f.Int64("log-bytes", 1048576, "maximum retained bytes per workload log stream")
 	if e := f.Parse(os.Args[2:]); e != nil {
 		return e
@@ -107,10 +117,10 @@ func run() (err error) {
 	}
 	defer func() { err = errors.Join(err, s.Close()) }()
 	if os.Args[1] == "serve" {
-		return runHTTPS(s, agent.RuntimeOptions{Root: *workRoot, Network: *network, LogBytes: *logBytes}, agent.HTTPSOptions{Listen: *listen, CertFile: *tlsCert, KeyFile: *tlsKey, CAFile: *tlsCA})
+		return runHTTPS(s, agent.RuntimeOptions{Root: *workRoot, Network: *network, LogBytes: *logBytes, Supervise: *supervise}, agent.HTTPSOptions{Listen: *listen, CertFile: *tlsCert, KeyFile: *tlsKey, CAFile: *tlsCA})
 	}
 	if os.Args[1] == "serve-local" {
-		return runLocal(s, c, agent.RuntimeOptions{Root: *workRoot, Network: *network, LogBytes: *logBytes})
+		return runLocal(s, c, agent.RuntimeOptions{Root: *workRoot, Network: *network, LogBytes: *logBytes, Supervise: *supervise})
 	}
 	var result any
 	if os.Args[1] == "inspect" {

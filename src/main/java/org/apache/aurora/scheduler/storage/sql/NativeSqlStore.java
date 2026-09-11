@@ -91,11 +91,21 @@ public final class NativeSqlStore implements AutoCloseable {
   }
 
   public NativeSqlStore(Path directory, String cluster, String incarnation) throws Exception {
-    this(directory, cluster, incarnation, new Resources());
+    this(directory, cluster, incarnation, new Resources(), false);
+  }
+
+  public NativeSqlStore(Path directory, String cluster, String incarnation, boolean enablePolicy)
+      throws Exception {
+    this(directory, cluster, incarnation, new Resources(), enablePolicy);
   }
 
   NativeSqlStore(Path directory, String cluster, String incarnation, Resources resources)
       throws Exception {
+    this(directory, cluster, incarnation, resources, false);
+  }
+
+  NativeSqlStore(Path directory, String cluster, String incarnation, Resources resources,
+      boolean enablePolicy) throws Exception {
     this.resources = resources;
     this.cluster = token(cluster);
     this.incarnation = token(incarnation);
@@ -121,8 +131,11 @@ public final class NativeSqlStore implements AutoCloseable {
       try (Connection c = connect(false)) {
         int version = Integer.parseInt(scalar(c, "PRAGMA user_version"));
         int application = Integer.parseInt(scalar(c, "PRAGMA application_id"));
-        if (existing && ((version != 1 && version != 2) || application != APPLICATION_ID)) {
+        if (existing && ((version != 1 && version != 2 && version != 3) || application != APPLICATION_ID)) {
           throw new SQLException("Unsupported native schema/application");
+        }
+        if (version == 3 && !enablePolicy) {
+          throw new SQLException("Policy schema requires --enable-policy; downgrade refused");
         }
         if (version == 0 && (application != 0 || !"0".equals(scalar(c,
             "SELECT count(*) FROM sqlite_master WHERE name NOT LIKE 'sqlite_%'")))) {
@@ -139,7 +152,11 @@ public final class NativeSqlStore implements AutoCloseable {
           verifySchema(c, 1);
           schedulerSchema(c);
         }
-        verifySchema(c, 2);
+        if (version != 3) {
+          verifySchema(c, 2);
+          if (enablePolicy) { policySchema(c); }
+        }
+        verifySchema(c, enablePolicy ? 3 : 2);
         if (!"1".equals(scalar(c, "SELECT count(*) FROM metadata"))) {
           throw new SQLException("Missing or multiple metadata rows");
         }
@@ -216,7 +233,8 @@ public final class NativeSqlStore implements AutoCloseable {
         + "cursor TEXT NOT NULL,body TEXT NOT NULL,PRIMARY KEY(scope,cursor))");
     execute(c, "PRAGMA application_id=" + APPLICATION_ID);
     execute(c, "PRAGMA user_version=1");
-    if (version == 2) { schedulerSchema(c); }
+    if (version >= 2) { schedulerSchema(c); }
+    if (version >= 3) { policySchema(c); }
   }
 
   private void schedulerSchema(Connection c) throws SQLException {
@@ -226,6 +244,13 @@ public final class NativeSqlStore implements AutoCloseable {
         + "sequence TEXT NOT NULL,state TEXT NOT NULL,cleanup TEXT NOT NULL,"
         + "ready INTEGER NOT NULL CHECK(ready IN (0,1)),updated_millis INTEGER NOT NULL)");
     execute(c, "PRAGMA user_version=2");
+  }
+
+  private void policySchema(Connection c) throws SQLException {
+    execute(c, "CREATE TABLE policy_state(kind TEXT NOT NULL CHECK(kind IN "
+        + "('config','job','quota','node','operation')),identity TEXT NOT NULL,body TEXT NOT NULL,"
+        + "PRIMARY KEY(kind,identity))");
+    execute(c, "PRAGMA user_version=3");
   }
 
   private void verifySchema(Connection c, int version) throws SQLException {
@@ -326,6 +351,34 @@ public final class NativeSqlStore implements AutoCloseable {
         for (int i = 0; i < values.length; i++) { p.setString(i + 1, values[i]); }
         try (ResultSet r = p.executeQuery()) { return r.next() ? r.getString(1) : null; }
       }
+    }
+    /** Bounded controller documents; schema 2 has no policy table and remains unchanged. */
+    public boolean policyEnabled() throws SQLException {
+      return "3".equals(get("PRAGMA user_version"));
+    }
+    public String policy(String kind, String identity) throws SQLException {
+      return get("SELECT body FROM policy_state WHERE kind=? AND identity=?", kind, identity);
+    }
+    public List<String> policies(String kind) throws SQLException {
+      return strings("SELECT body FROM policy_state WHERE kind=? ORDER BY identity", kind);
+    }
+    public void putPolicy(String kind, String identity, String body) throws SQLException {
+      mutate(() -> {
+        if (identity == null || identity.length() > 512 || body == null || body.length() > 65536) {
+          throw new IllegalArgumentException("Policy document limit");
+        }
+        update("INSERT OR REPLACE INTO policy_state VALUES (?,?,?)", kind, identity, body);
+      });
+    }
+    public void replaceJob(JobKey job, String expectedRevision, String revision, String body)
+        throws SQLException {
+      mutate(() -> {
+        if (!counter(expectedRevision).equals(jobRevision(job))) {
+          throw new SQLException("Job revision conflict");
+        }
+        counter(revision);
+        update("UPDATE jobs SET revision=?,body=? WHERE job=?", revision, body, job.key);
+      });
     }
     public void createJob(JobKey job, String revision, String kind, String body)
         throws SQLException {

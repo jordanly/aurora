@@ -1,0 +1,389 @@
+//go:build linux
+
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+package agent
+
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"golang.org/x/sys/unix"
+	"net"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strings"
+	"testing"
+	"time"
+)
+
+func supervisorOpts(t *testing.T, root string) RuntimeOptions {
+	o := testRuntimeOpts(t, root)
+	o.Supervise = true
+	o.SupervisorArgs = []string{"-test.run=^TestSupervisorChild$", "--", "supervise"}
+	return o
+}
+func TestSupervisorChild(t *testing.T) {
+	for _, arg := range os.Args {
+		if arg == "supervise" {
+			if e := SuperviseHelper(); e != nil {
+				fmt.Fprintln(os.Stderr, e)
+				os.Exit(91)
+			}
+			os.Exit(0)
+		}
+	}
+}
+func TestSupervisorDaemon(t *testing.T) {
+	for i, arg := range os.Args {
+		if arg != "supervisor-daemon" {
+			continue
+		}
+		root := os.Args[i+1]
+		c := config()
+		s := open(t, filepath.Join(root, "state"), c)
+		b := fixture(t, "run")
+		p := b["assignment"].(map[string]any)
+		p["ports"] = []any{}
+		p["readiness"] = map[string]any{"kind": "none"}
+		p["argv"] = []any{"/bin/sh", "-c", "echo launched >> '" + root + "/launches'; while [ ! -f '" + root + "/release' ]; do sleep 0.02; done; i=0; while [ $i -lt 2048 ]; do printf x; i=$((i+1)); done; echo exact-stderr >&2; exit 7"}
+		if _, e := s.Admit(delivery(c, b), caller(c)); e != nil {
+			t.Fatal(e)
+		}
+		r, e := NewRuntime(s, supervisorOpts(t, filepath.Join(root, "work")))
+		if e != nil {
+			t.Fatal(e)
+		}
+		if len(os.Args) > i+2 && os.Args[i+2] == "crash-before-ack" {
+			r.hooks.beforeSupervisorAck = func() { os.Exit(0) }
+		}
+		for {
+			if e = r.Tick(context.Background()); e != nil {
+				t.Fatal(e)
+			}
+			time.Sleep(10 * time.Millisecond)
+		}
+	}
+}
+func waitFile(t *testing.T, path string) {
+	t.Helper()
+	until := time.Now().Add(5 * time.Second)
+	for time.Now().Before(until) {
+		if b, e := os.ReadFile(path); e == nil && len(b) > 0 {
+			return
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	t.Fatal("file did not appear", path)
+}
+func TestSupervisorDaemonCrashExactExitAndReplay(t *testing.T) {
+	root := t.TempDir()
+	exe, _ := os.Executable()
+	cmd := exec.Command(exe, "-test.run=^TestSupervisorDaemon$", "--", "supervisor-daemon", root)
+	var output strings.Builder
+	cmd.Stdout = &output
+	cmd.Stderr = &output
+	if e := cmd.Start(); e != nil {
+		t.Fatal(e)
+	}
+	defer func() { cmd.Process.Kill(); cmd.Wait() }()
+	waitFile(t, filepath.Join(root, "launches"))
+	if e := cmd.Process.Kill(); e != nil {
+		t.Fatal(e)
+	}
+	cmd.Wait()
+	if e := os.WriteFile(filepath.Join(root, "release"), []byte("go"), 0600); e != nil {
+		t.Fatal(e)
+	}
+	time.Sleep(150 * time.Millisecond)
+	c := config()
+	s := open(t, filepath.Join(root, "state"), c)
+	defer s.Close()
+	r, e := NewRuntime(s, supervisorOpts(t, filepath.Join(root, "work")))
+	if e != nil {
+		t.Fatalf("recover %v; daemon %s", e, output.String())
+	}
+	runUntil(t, r, func(st State) bool {
+		a := onlyAttempt(st)
+		return a.Execution != nil && a.Execution.Cleanup == "complete"
+	})
+	st, _ := s.Inspect()
+	a := onlyAttempt(st)
+	if a.Execution.Outcome != "failed" || a.Execution.ExitCode == nil || *a.Execution.ExitCode != 7 || a.Execution.Signal != 0 || a.Execution.StdoutBytes != 1024 || a.Execution.StdoutDropped != 1024 {
+		t.Fatalf("exact durable exit/log counters: %+v", a.Execution)
+	}
+	cursor := st.Cursor
+	if e = r.Tick(context.Background()); e != nil {
+		t.Fatal(e)
+	}
+	st, _ = s.Inspect()
+	if st.Cursor != cursor {
+		t.Fatal("duplicate import")
+	}
+	b, _ := os.ReadFile(filepath.Join(root, "launches"))
+	if string(b) != "launched\n" {
+		t.Fatal("replayed launch", string(b))
+	}
+	r.Close()
+	if _, e = NewRuntime(s, testRuntimeOpts(t, filepath.Join(root, "work"))); e == nil {
+		t.Fatal("downgrade accepted")
+	}
+}
+func TestSupervisorImportFailureAndLoss(t *testing.T) {
+	for _, loss := range []bool{false, true} {
+		t.Run(fmt.Sprint(loss), func(t *testing.T) {
+			root := t.TempDir()
+			c := config()
+			s := open(t, filepath.Join(root, "state"), c)
+			defer s.Close()
+			b := runtimeBody(t, "sleep", filepath.Join(root, "marker"), 0)
+			p := b["assignment"].(map[string]any)
+			p["ports"] = []any{}
+			p["readiness"] = map[string]any{"kind": "none"}
+			if _, e := s.Admit(delivery(c, b), caller(c)); e != nil {
+				t.Fatal(e)
+			}
+			r, e := NewRuntime(s, supervisorOpts(t, filepath.Join(root, "work")))
+			if e != nil {
+				t.Fatal(e)
+			}
+			runUntil(t, r, func(st State) bool { return onlyAttempt(st).Execution.Outcome == "running" })
+			st, _ := s.Inspect()
+			a := onlyAttempt(st)
+			defer unix.Kill(a.Supervisor.Process.PID, unix.SIGKILL)
+			if loss {
+				unix.Kill(a.Supervisor.Process.PID, unix.SIGKILL)
+				time.Sleep(50 * time.Millisecond)
+				runUntil(t, r, func(st State) bool { return onlyAttempt(st).Execution.Cleanup == "complete" })
+				st, _ = s.Inspect()
+				a = onlyAttempt(st)
+				if a.Execution.Outcome != "lost" || a.Execution.ExitCode != nil {
+					t.Fatalf("fabricated outcome %+v", a.Execution)
+				}
+				return
+			}
+			stop := fixture(t, "stop")
+			if _, e := s.Admit(delivery(c, stop), caller(c)); e != nil {
+				t.Fatal(e)
+			}
+			r.hooks.beforePersist = func(Attempt) error { return errors.New("injected node journal failure") }
+			_ = r.Tick(context.Background())
+			time.Sleep(100 * time.Millisecond)
+			if e = r.Tick(context.Background()); e == nil {
+				t.Fatal("failed import accepted")
+			}
+			r.hooks.beforePersist = nil
+			runUntil(t, r, func(st State) bool { return onlyAttempt(st).Execution.Cleanup == "complete" })
+			st, _ = s.Inspect()
+			a = onlyAttempt(st)
+			if a.Execution.Outcome != "stopped" || a.Execution.Signal != int(unix.SIGTERM) {
+				t.Fatalf("lost exact signal after failed import %+v", a.Execution)
+			}
+		})
+	}
+}
+
+func TestSupervisorProtocolAndMonotonicStop(t *testing.T) {
+	root := t.TempDir()
+	c := config()
+	s := open(t, filepath.Join(root, "state"), c)
+	defer s.Close()
+	b := fixture(t, "run")
+	p := b["assignment"].(map[string]any)
+	p["ports"] = []any{}
+	p["readiness"] = map[string]any{"kind": "none"}
+	marker := filepath.Join(root, "ready")
+	p["argv"] = []any{"/bin/sh", "-c", "trap '' TERM; echo ready > '" + marker + "'; while :; do sleep 0.02; done"}
+	if _, e := s.Admit(delivery(c, b), caller(c)); e != nil {
+		t.Fatal(e)
+	}
+	r, e := NewRuntime(s, supervisorOpts(t, filepath.Join(root, "work")))
+	if e != nil {
+		t.Fatal(e)
+	}
+	runUntil(t, r, func(st State) bool { return onlyAttempt(st).Execution.Outcome == "running" })
+	waitFile(t, marker)
+	st, _ := s.Inspect()
+	a := onlyAttempt(st)
+	defer unix.Kill(a.Supervisor.Process.PID, unix.SIGKILL)
+	key := attemptKey(b["identity"].(map[string]any))
+	for _, bad := range []supervisorRequest{{Version: 0, Token: a.Supervisor.Token, Scope: r.scope}, {Version: 2, Token: a.Supervisor.Token, Scope: r.scope}, {Version: 1, Token: "wrong", Scope: r.scope}} {
+		f, address, e := socketAddress(r.opts.Root, key)
+		if e != nil {
+			t.Fatal(e)
+		}
+		conn, e := net.DialUnix("unix", nil, &net.UnixAddr{Name: address, Net: "unix"})
+		f.Close()
+		if e != nil {
+			t.Fatal(e)
+		}
+		json.NewEncoder(conn).Encode(bad)
+		var reply supervisorReply
+		e = json.NewDecoder(conn).Decode(&reply)
+		conn.Close()
+		if e != nil || reply.Error == "" {
+			t.Fatal("invalid local control accepted", bad, e)
+		}
+	}
+	before := time.Now()
+	if e = r.update(key, func(a *Attempt) error {
+		a.Stopped = true
+		a.Deadline = time.Now().Add(time.Hour).UnixMilli()
+		a.DeadlineMono = monoMillis() + 50
+		return nil
+	}, false); e != nil {
+		t.Fatal(e)
+	}
+	runUntil(t, r, func(st State) bool { return onlyAttempt(st).Execution.Phase == "terminal" })
+	st, _ = s.Inspect()
+	a = onlyAttempt(st)
+	if a.Execution.Signal != int(unix.SIGKILL) || time.Since(before) > time.Second {
+		t.Fatalf("wall clock extended monotonic stop: %+v", a.Execution)
+	}
+}
+
+func TestSupervisorMissingJournalRetainsReservation(t *testing.T) {
+	root := t.TempDir()
+	c := config()
+	s := open(t, filepath.Join(root, "state"), c)
+	defer s.Close()
+	b := runtimeBody(t, "sleep", filepath.Join(root, "marker"), 0)
+	p := b["assignment"].(map[string]any)
+	p["ports"] = []any{}
+	p["readiness"] = map[string]any{"kind": "none"}
+	if _, e := s.Admit(delivery(c, b), caller(c)); e != nil {
+		t.Fatal(e)
+	}
+	r, e := NewRuntime(s, supervisorOpts(t, filepath.Join(root, "work")))
+	if e != nil {
+		t.Fatal(e)
+	}
+	runUntil(t, r, func(st State) bool { return onlyAttempt(st).Execution.Outcome == "running" })
+	st, _ := s.Inspect()
+	a := onlyAttempt(st)
+	unix.Kill(a.Supervisor.Process.PID, unix.SIGKILL)
+	time.Sleep(50 * time.Millisecond)
+	key := attemptKey(b["identity"].(map[string]any))
+	path := filepath.Join(filepath.Dir(supervisorSocket(r.opts.Root, key)), "journal.db")
+	if e = os.Rename(path, path+".quarantined"); e != nil {
+		t.Fatal(e)
+	}
+	if e = r.Tick(context.Background()); e == nil {
+		t.Fatal("missing supervisor journal accepted")
+	}
+	st, _ = s.Inspect()
+	a = onlyAttempt(st)
+	if !a.Reserved() || a.Execution.Outcome != "lost" || a.Execution.Cleanup != "unknown" || a.Execution.ExitCode != nil {
+		t.Fatalf("missing journal released or fabricated outcome: %+v", a)
+	}
+}
+
+func TestSupervisorTerminalAckCrashBoundary(t *testing.T) {
+	root := t.TempDir()
+	if e := os.WriteFile(filepath.Join(root, "release"), []byte("go"), 0600); e != nil {
+		t.Fatal(e)
+	}
+	exe, _ := os.Executable()
+	cmd := exec.Command(exe, "-test.run=^TestSupervisorDaemon$", "--", "supervisor-daemon", root, "crash-before-ack")
+	var output strings.Builder
+	cmd.Stdout = &output
+	cmd.Stderr = &output
+	if e := cmd.Start(); e != nil {
+		t.Fatal(e)
+	}
+	done := make(chan error, 1)
+	go func() { done <- cmd.Wait() }()
+	select {
+	case e := <-done:
+		if e != nil {
+			t.Fatal(e, output.String())
+		}
+	case <-time.After(5 * time.Second):
+		cmd.Process.Kill()
+		<-done
+		t.Fatal("daemon failed to hit ACK crash boundary", output.String())
+	}
+	s := open(t, filepath.Join(root, "state"), config())
+	defer s.Close()
+	st, _ := s.Inspect()
+	a := onlyAttempt(st)
+	if a.Execution.Cleanup != "complete" || a.Supervisor.Acknowledged {
+		t.Fatalf("wrong crash boundary %+v", a)
+	}
+	pid := a.Supervisor.Process.PID
+	defer unix.Kill(pid, unix.SIGKILL)
+	if p, e := processInfo(pid); e != nil || p.State == "Z" {
+		t.Fatal("supervisor did not survive pending ACK")
+	}
+	cursor := st.Cursor
+	r, e := NewRuntime(s, supervisorOpts(t, filepath.Join(root, "work")))
+	if e != nil {
+		t.Fatal(e)
+	}
+	defer r.Close()
+	st, _ = s.Inspect()
+	a = onlyAttempt(st)
+	if !a.Supervisor.Acknowledged || a.Execution.ExitCode == nil || *a.Execution.ExitCode != 7 || st.Cursor != cursor {
+		t.Fatalf("ACK replay changed terminal outcome/cursor %+v", a)
+	}
+	until := time.Now().Add(time.Second)
+	for time.Now().Before(until) {
+		p, e := processInfo(pid)
+		if os.IsNotExist(e) || (e == nil && p.State == "Z") {
+			return
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	t.Fatal("terminal supervisor leaked after ACK replay")
+}
+
+func TestSupervisorWaitDelayRetainsKnownExit(t *testing.T) {
+	root := t.TempDir()
+	s := open(t, filepath.Join(root, "state"), config())
+	defer s.Close()
+	b := fixture(t, "run")
+	p := b["assignment"].(map[string]any)
+	p["ports"] = []any{}
+	p["readiness"] = map[string]any{"kind": "none"}
+	p["argv"] = []any{"/bin/sh", "-c", "sleep 0.6 & exit 0"}
+	if _, e := s.Admit(delivery(config(), b), caller(config())); e != nil {
+		t.Fatal(e)
+	}
+	r, e := NewRuntime(s, supervisorOpts(t, filepath.Join(root, "work")))
+	if e != nil {
+		t.Fatal(e)
+	}
+	runUntil(t, r, func(st State) bool { return onlyAttempt(st).Execution.Phase == "terminal" })
+	st, _ := s.Inspect()
+	a := onlyAttempt(st)
+	if a.Execution.ExitCode == nil || *a.Execution.ExitCode != 0 {
+		t.Fatalf("WaitDelay discarded known root exit: %+v", a.Execution)
+	}
+	unix.Kill(a.Supervisor.Process.PID, unix.SIGKILL)
+	time.Sleep(700 * time.Millisecond)
+	runUntil(t, r, func(st State) bool { return onlyAttempt(st).Execution.Cleanup == "complete" })
+	st, _ = s.Inspect()
+	a = onlyAttempt(st)
+	if a.Execution.ExitCode == nil || *a.Execution.ExitCode != 0 {
+		t.Fatalf("supervisor loss discarded durable root exit: %+v", a.Execution)
+	}
+}
