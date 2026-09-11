@@ -2,6 +2,10 @@
 
 Companion to the [unified roadmap](UNIFIED_AURORA_ROADMAP.md) and [Docker lab](PI_CONTAINER_LAB.md). These rows define intended deliverables and acceptance contracts, not created issues. The [native cluster guide](CLUSTER_MVP.md) records the integrated scheduler/two-agent implementation and its bounded operating profile. The [process runtime status](PROCESS_RUNTIME_STATUS.md), [durable core status](DURABLE_CORE_STATUS.md) and [first foundation status](FIRST_SLICE_STATUS.md) preserve the preceding increments and evidence. Keep each PR focused; split a row if its reviewable diff becomes too large. Dependencies are gate dependencies, not a requirement for one enormous PR per stage.
 
+**Current priority:** [JAVA-11 repository convergence](JAVA25_BASELINE.md) precedes
+CRON-01. The user has dropped Java 8 support and wants the entire project on
+Java 25+. Prior Java 8 checks below are historical evidence, not future gates.
+
 The integrated SLICE-01 MVP has passed its three-round and ten-minute gate.
 CUT-01 has passed its [packaged Pi qualification](CUT01_STATUS.md), with a [native packaging lane](../../build-support/native/README.md):
 pinned standalone builds, production and lab images, exact runtime content gates,
@@ -47,8 +51,8 @@ prototype adopted. All six Java audit follow-ups are complete.
 the selected native profile, with [99 passing physical cases](p6-evidence.json).
 They add surviving attempt supervisors, a bounded native task runner and durable
 scheduler policy. Policy is enabled as a single
-profile, replacing the proposed individual feature flags. The next ordered
-execution slice is CRON-01; console, event streaming and enforcement remain
+profile, replacing the proposed individual feature flags. CRON-01 follows
+JAVA-11 repository convergence; console, event streaming and enforcement remain
 separate tracks. Historical Python parity and production migration are not
 claimed by the selected native task contract.
 
@@ -86,6 +90,7 @@ Start with PLAN-01, BUILD-01 and CONTRACT-01. Go reducers/protocol fixtures can 
 | P5 follow-up / JAVA-08 | Complete: [store-resource and daemon lifecycle hardening](JAVA08_STATUS.md). | JAVA-06 | Each profile: 62 Java tests, 64 launchers and 23 physical cases. Four compatibility pairs in total, dual Java 8 source compilation, failure injection and descriptor probe. |
 | P5 follow-up / JAVA-09 | Decision complete: [retain public SQL classes](JAVA09_SQL_RECORD_DECISION.md). | JAVA-06, supported adapter decision | Consumer inventory and construction/fields/nullability/equality/diagnostics/helper policy documented; persisted contracts and historical helpers preserved. |
 | P5 follow-up / JAVA-10 | Study/decision complete: [retain serialized controller and transport](JAVA10_CONCURRENCY_DECISION.md). | JAVA-08, measured need | Six normal and six paused-agent/load trials; successful latency and failures separated; bounded candidate/HTTP requirements and reopening criteria documented. No prototype adopted. |
+| P5 follow-up / JAVA-11 | In progress: [Java 25 minimum and whole-repository convergence](JAVA25_BASELINE.md). | JAVA-08, qualified native baseline | Retarget maintained helpers; replace legacy root/build entry points; retire unused code; reconsider SQL records without Java 8 constraints. Fresh supported builds and tools all require Java 25+. |
 | P6 / SUPERVISE-01 | Complete for selected profile: same-binary surviving attempt supervisors, local protocol/versioning and daemon reattachment. | AGENT-02, SLICE-01; modern native baseline | Exact exits/logs and Stop replay across daemon loss; missing evidence retains ownership; supervisor loss differs from container loss. [Contract and evidence](P6_EXECUTION_STATUS.md). |
 | P6 / THERMOS-01 | Complete for selected profile: DAG/retry/daemon/ephemeral/finalizer behavior and trusted resolved-JSON conversion. | SUPERVISE-01, source-derived behavior corpus | Real subprocess and composed-cluster execution; explicit changed/rejected semantics and separate finalization result. Historical Python execution parity and exporter remain migration gates. [Contract and evidence](P6_EXECUTION_STATUS.md). |
 | P6 / POLICY-01 | Complete for selected profile: static constraints, desired-demand quotas, sequential updates/manual rollback, single-victim preemption and service drain. | JAVA-03, required agent capabilities | Restart during update/drain/preemption; exact victim and candidate revision; capacity held until cleanup. Selected profile enabled as a whole; schema 3 refuses default readers. [Contract and evidence](P6_EXECUTION_STATUS.md). |

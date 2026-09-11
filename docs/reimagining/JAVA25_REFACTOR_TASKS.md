@@ -1,5 +1,10 @@
 # Java 25 refactoring tasks after JAVA-04
 
+**Updated support policy:** [Java 25 is now the minimum](JAVA25_BASELINE.md).
+JAVA-11 removes remaining legacy build paths and reopens shared SQL modernization.
+Java 8 source/helper/rollback constraints in the completed tasks below are
+historical and no longer govern new work.
+
 These repository tasks implement the [source audit](JAVA25_IDIOM_AUDIT.md).
 All six follow-ups are complete: JAVA-05 through
 [JAVA-08](JAVA08_STATUS.md) are implemented and qualified;

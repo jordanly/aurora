@@ -32,7 +32,7 @@ class CompatibilityIsolationTest(unittest.TestCase):
         self.args = argparse.Namespace(old_bundle=self.root / 'old', new_bundle=self.root / 'new',
             snapshot=self.snapshot, config=self.root / 'lab/config/scheduler.json',
             output=self.root / 'output', javac=self.root / 'jdk/bin/javac',
-            old_java_major=8, new_java_major=25, dependency_writes=False)
+            old_java_major=25, new_java_major=25, dependency_writes=False)
 
     def test_undeclared_classpath_jar_is_rejected(self):
         directory = self.root / 'bundle'
@@ -96,14 +96,16 @@ class CompatibilityIsolationTest(unittest.TestCase):
         self.assertEqual(b'preserved', outside.read_bytes())
 
     def test_version_parsing_and_independent_native_access(self):
+        # Recognize an obsolete runtime so the caller can reject it explicitly.
         self.assertEqual(8, compat.java_major('openjdk version "1.8.0_462"'))
         self.assertEqual(25, compat.java_major('openjdk version "25.0.4.1" 2026-08-18 LTS'))
         self.assertEqual(26, compat.java_major('openjdk version "26.0.2.1" 2026-08-18'))
         self.assertEqual(compat.native_flags(25) + ['--illegal-final-field-mutation=deny'],
                          compat.native_flags(26))
-        self.assertEqual([], compat.native_flags(8))
         self.assertEqual(['--enable-native-access=ALL-UNNAMED', '--illegal-native-access=deny'],
-                         compat.native_flags(25))
+                          compat.native_flags(25))
+        with self.assertRaisesRegex(ValueError, 'below major 25'):
+            compat.native_flags(8)
         for invalid in ('javac 25.0.4.1', '25.0.4.1', 'openjdk version "unknown"'):
             with self.assertRaises(ValueError):
                 compat.java_major(invalid)
@@ -119,6 +121,7 @@ class CompatibilityIsolationTest(unittest.TestCase):
             (tls / name).write_text('unchanged')
         def run(command, output, name):
             (output / (name + '.stderr')).write_text('openjdk version "25.0.4.1"')
+        self.args.new_java_major = 26
         with patch.object(compat, 'bundle', return_value=(self.root / 'java', self.root / 'libs', {})), \
                 patch.object(compat, 'run', side_effect=run):
             with self.assertRaisesRegex(ValueError, 'requested old/new majors'):
@@ -128,6 +131,32 @@ class CompatibilityIsolationTest(unittest.TestCase):
         self.assertIn('requested old/new majors', result['error'])
         self.assertTrue(result['originalInputsUnchanged'])
         self.assertFalse((self.args.output / 'state').exists())
+
+    def test_unsupported_requested_major_rejected_before_bundle_or_output_access(self):
+        self.args.old_java_major = 8
+        with patch.object(compat, 'bundle') as bundle:
+            with self.assertRaisesRegex(ValueError, 'must be 25 or 26'):
+                compat.check(self.args)
+            bundle.assert_not_called()
+        self.assertFalse(self.args.output.exists())
+
+    def test_actual_runtime_below_25_rejected_before_helper_compile(self):
+        self.args.config.parent.mkdir(parents=True)
+        self.args.config.write_text('{}')
+        self.args.javac.parent.mkdir(parents=True)
+        self.args.javac.write_text('compiler')
+        tls = self.args.config.parent.parent / 'scheduler/tls'
+        tls.mkdir(parents=True)
+        for name in ('keystore.p12', 'truststore.p12', 'password'):
+            (tls / name).write_text('unchanged')
+        def run(command, output, name):
+            (output / (name + '.stderr')).write_text('openjdk version "1.8.0_462"')
+        with patch.object(compat, 'bundle', return_value=(self.root / 'java', self.root / 'libs', {})), \
+                patch.object(compat, 'run', side_effect=run) as invoke:
+            with self.assertRaisesRegex(ValueError, 'below major 25'):
+                compat.check(self.args)
+        self.assertEqual(['old-version', 'new-version'], [call.args[2] for call in invoke.call_args_list])
+        self.assertFalse((self.args.output / 'classes').exists())
 
     def test_existing_output_preserved(self):
         self.args.output.mkdir()

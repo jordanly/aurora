@@ -2,6 +2,12 @@
 
 Proposal updated 2026-09-10. Implementation order: **minimum build repairs → Go execution and Mesos replacement → durable two-agent Docker lab → full Java modernization → richer execution/policy and console → migration and production capabilities**.
 
+Support policy updated 2026-09-11: the user wants the entire project on Java 25+.
+[JAVA-11](JAVA25_BASELINE.md) drops Java 8 support and prioritizes convergence of
+the remaining root build, legacy paths and shared SQL code before CRON-01. Earlier
+Java 8 compatibility results remain historical evidence and impose no future
+source or runtime requirement.
+
 The first deliverable is a fresh, trusted laboratory on this Raspberry Pi: one scheduler and two Go agents in separate containers, running real batch and HTTP-service fixtures. Full Java modernization follows proof of standalone execution, so we modernize the code and dependencies that remain after Mesos removal.
 
 Read this with the [container lab and failure matrix](PI_CONTAINER_LAB.md), [ordered implementation backlog](IMPLEMENTATION_BACKLOG.md), and [Compose blueprint](lab/compose.blueprint.yaml). The blueprint describes future images and entry points; it is not a runnable Aurora deployment today.
@@ -44,7 +50,8 @@ including three compiled Java 26 recovery trials. [JAVA-08](JAVA08_STATUS.md)
 has qualified store-resource and daemon lifecycle hardening across all three
 profiles: 62 Java tests, 64 launcher checks and 23 physical cases each, plus four
 bidirectional compatibility pairs. [JAVA-09](JAVA09_SQL_RECORD_DECISION.md)
-retains the public SQL classes and Java 8 helper/source contracts.
+originally retained the public SQL classes and Java 8 helper/source contracts;
+the latter constraints are now superseded by JAVA-11.
 [JAVA-10](JAVA10_CONCURRENCY_DECISION.md) completes the concurrency/HTTP design
 study with six normal and six paused-agent/load trials. It retains the existing
 runtime and records conditions for revisiting a bounded prototype. These Java
@@ -57,7 +64,7 @@ and persistent constraints, quotas, updates/rollback, service drain and explicit
 single-victim preemption. Policy is one opt-in profile with a schema upgrade.
 All three Java profiles passed 73 Java tests, 64 launcher checks and 33 physical
 cases each; [the evidence](p6-evidence.json) records compatibility and cleanup,
-including the preserved failures. The next ordered execution slice is CRON-01.
+including the preserved failures. CRON-01 follows JAVA-11 repository convergence.
 Full Thermos parity, console work, enforcement and production migration retain
 their separate gates.
 

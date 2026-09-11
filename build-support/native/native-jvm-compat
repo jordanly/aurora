@@ -223,7 +223,8 @@ def java_major(text):
 
 
 def native_flags(major):
-    flags = ['--enable-native-access=ALL-UNNAMED', '--illegal-native-access=deny'] if major >= 25 else []
+    require(major >= 25, 'Java runtimes below major 25 are unsupported')
+    flags = ['--enable-native-access=ALL-UNNAMED', '--illegal-native-access=deny']
     if major >= 26:
         flags += ['--illegal-final-field-mutation=deny']
     return flags
@@ -262,6 +263,8 @@ def dependency_delta(before, after, name):
 
 
 def check(args):
+    require(args.old_java_major in (25, 26) and args.new_java_major in (25, 26),
+            'Requested Java majors must be 25 or 26')
     for path in (args.old_bundle, args.new_bundle, args.snapshot, args.config, args.output, args.javac):
         safe(path)
     require(not args.output.exists(), 'Compatibility output must be a new directory')
@@ -285,17 +288,19 @@ def check(args):
     result = {'ok': False, 'oldBundle': str(args.old_bundle), 'newBundle': str(args.new_bundle),
               'snapshot': str(args.snapshot), 'inputHashes': immutable}
     try:
-        classes = args.output / 'classes'
-        classes.mkdir()
-        source = args.output / 'JvmCompatibility.java'
-        source.write_text(HELPER)
-        run([args.javac, '--release', '8', '-cp', str(new_libs / '*'), '-d', classes, source], args.output, 'compile')
         run([old_java, '-version'], args.output, 'old-version')
         run([new_java, '-version'], args.output, 'new-version')
         old_major = java_major((args.output / 'old-version.stderr').read_text())
         new_major = java_major((args.output / 'new-version.stderr').read_text())
+        require(old_major >= 25 and new_major >= 25,
+                'Actual Java runtimes below major 25 are unsupported')
         require(old_major == args.old_java_major and new_major == args.new_java_major,
                 'Actual Java versions differ from requested old/new majors')
+        classes = args.output / 'classes'
+        classes.mkdir()
+        source = args.output / 'JvmCompatibility.java'
+        source.write_text(HELPER)
+        run([args.javac, '--release', '25', '-cp', str(new_libs / '*'), '-d', classes, source], args.output, 'compile')
         state = args.output / 'state'
         shutil.copytree(args.snapshot, state)
         state.chmod(0o700)
@@ -361,8 +366,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ('old-bundle', 'new-bundle', 'snapshot', 'config', 'output', 'javac'):
         parser.add_argument('--' + name, type=Path, required=True)
-    parser.add_argument('--old-java-major', type=int, choices=(8, 25, 26), default=8)
-    parser.add_argument('--new-java-major', type=int, choices=(8, 25, 26), default=25)
+    parser.add_argument('--old-java-major', type=int, choices=(25, 26), default=25)
+    parser.add_argument('--new-java-major', type=int, choices=(25, 26), default=25)
     parser.add_argument('--dependency-writes', action='store_true')
     args = parser.parse_args()
     try:

@@ -147,9 +147,13 @@ tools. SQLite JNI uses `--enable-native-access=ALL-UNNAMED`,
 
 Fresh labs require `clusterctl up --bundle`; existing no-bundle lab operations
 remain supported unchanged. New native builds do not use the legacy `build-support/java/gradle-local` wrapper.
-The standalone `native-jvm-compat` operation checks private copies through
-Java 8 → 25 → 8 by default. For dependency changes on Java 25, pass both major
-versions explicitly and enable bidirectional fixture writes:
+Java 25 is the minimum supported Java source/runtime baseline, including the
+shared SQL code and qualification helpers. Historical Java 8 checks impose no
+future compatibility requirement; see [repository convergence](../../docs/reimagining/JAVA25_BASELINE.md).
+The standalone `native-jvm-compat` operation checks private copies between two
+Java 25 bundles by default and can compare the supported Java 26 profiles.
+Both runtimes must be Java 25+. For dependency changes, enable bidirectional
+fixture writes:
 
 ```sh
 build-support/native/native-jvm-compat \

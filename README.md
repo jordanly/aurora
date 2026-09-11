@@ -1,5 +1,13 @@
 ![Aurora Logo](docs/images/aurora_logo.png)
 
+This fork's maintained implementation is the standalone Java 25+ scheduler and
+Go agent. Start with the [native build and test guide](build-support/native/README.md)
+and [current implementation status](docs/reimagining/P6_EXECUTION_STATUS.md).
+Java 8 is no longer a supported target. The [Java 25 baseline and repository
+convergence task](docs/reimagining/JAVA25_BASELINE.md) identifies the historical
+build/source paths that still need retirement. The Apache overview below describes
+the original project.
+
 **NOTE: The Apache Aurora project has been moved into the [Apache Attic](https://attic.apache.org/).
 A fork led by members of the former Project Management Committee (PMC) can be found at https://github.com/aurora-scheduler**
 

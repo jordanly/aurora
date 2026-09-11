@@ -1,5 +1,13 @@
 # JAVA-09 SQL record decision
 
+**Support constraint superseded on 2026-09-11:** the user selected Java 25+ for
+the entire project. [The current baseline](JAVA25_BASELINE.md) removes Java 8
+source/helper and runtime compatibility requirements. The classes remain in the
+current code, but their record conversion is reopened under JAVA-11. The
+construction, nullability, equality and diagnostic considerations below still
+apply; Java 8 compatibility is no longer a reason to defer the refactor.
+The remainder records the original decision and evidence.
+
 Decision: keep `NativeSqlStore.AttemptRecord` and `CommandRecord` as final
 classes with private constructors and public final fields. No implementation or
 API change is requested by JAVA-09. The decision is based on the current

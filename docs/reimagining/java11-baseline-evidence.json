@@ -1,0 +1,21 @@
+{
+  "comparisons": {
+    "java25": {
+      "helperBytecodeMajor": 69,
+      "newJavaMajor": 25,
+      "oldJavaMajor": 25,
+      "result": ".cache/java11-java25-compat/result.json",
+      "sha256": "4053ccd6e19a34c7f5850b7412a59f217cffe9f27294c7f319884b5f9f20a988"
+    },
+    "java26": {
+      "helperBytecodeMajor": 69,
+      "newJavaMajor": 26,
+      "oldJavaMajor": 25,
+      "result": ".cache/java11-java26-compat/result.json",
+      "sha256": "46187fcd8fc1847a2dda8b0ae41fa5c53e78bb25aeea012c2228e4420c755e2a"
+    }
+  },
+  "packagingTestsPassed": 58,
+  "scope": "JAVA-11 step 1: Java25 minimum for maintained compatibility helper; remaining repository convergence pending",
+  "scriptSha256": "5e099a638d473172f9fecee2b53e4199d0cfbbb96401bd5a660abe13c45d3c9f"
+}
