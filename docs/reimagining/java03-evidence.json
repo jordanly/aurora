@@ -1,0 +1,2476 @@
+{
+  "benchmarks": {
+    "baseline": {
+      "bundleSha256": "e22ff2dc06f95f9f1d0cb89b4f3f9e561868f62cb56aae8749616ab60ed42ef9",
+      "diagnosticJvmArgs": [
+        "-XX:NativeMemoryTracking=summary",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:+PrintNMTStatistics",
+        "-Xlog:gc*:file=/state/benchmark-gc-%p.log:uptime,level,tags:filecount=1,filesize=4m"
+      ],
+      "harnessSha256": "996027a38178293397e82d700d36ddd53533560d6979d4ccd40319976b4262dd",
+      "limits": [
+        "Exploratory single-host measurements; no production SLO or statistical significance claim.",
+        "API timings include fresh mTLS connections; submit ACK includes durable commit, not isolated SQL time.",
+        "Convergence includes polling and controller delay. Cluster start includes Docker creation.",
+        "NMT adds diagnostic overhead and excludes allocations by some third-party native libraries.",
+        "RSS/threads/FDs are sampled, not lifetime peaks. No hard memory cgroup limit on this Pi."
+      ],
+      "metrics": {
+        "backupAckMs": {
+          "count": 3,
+          "max": 55.995116010308266,
+          "median": 49.86910393927246,
+          "min": 48.66540990769863,
+          "p95": 55.995116010308266
+        },
+        "batchSubmitAckMs": {
+          "count": 18,
+          "max": 425.34139298368245,
+          "median": 82.45645847637206,
+          "min": 39.41878001205623,
+          "p95": 425.34139298368245
+        },
+        "batchSubmitToCompleteMs": {
+          "count": 18,
+          "max": 1173.0635940330103,
+          "median": 703.0958560062572,
+          "min": 475.15124292112887,
+          "p95": 1173.0635940330103
+        },
+        "clusterStartMs": {
+          "count": 3,
+          "max": 7978.543068049476,
+          "median": 7119.553683092818,
+          "min": 7084.698013961315,
+          "p95": 7978.543068049476
+        },
+        "fds": {
+          "count": 24,
+          "max": 26,
+          "median": 23.0,
+          "min": 23,
+          "p95": 24
+        },
+        "gcPauseMs": {
+          "count": 42,
+          "max": 58.563,
+          "median": 4.4395,
+          "min": 2.226,
+          "p95": 19.901
+        },
+        "rssAnonKiB": {
+          "count": 24,
+          "max": 101520,
+          "median": 98080.0,
+          "min": 91520,
+          "p95": 100928
+        },
+        "rssKiB": {
+          "count": 24,
+          "max": 126304,
+          "median": 122944.0,
+          "min": 116368,
+          "p95": 125712
+        },
+        "schedulerCrashToRecoveredMs": {
+          "count": 3,
+          "max": 3762.458623968996,
+          "median": 3729.4350509764627,
+          "min": 3504.93880698923,
+          "p95": 3762.458623968996
+        },
+        "serviceStopToCleanedMs": {
+          "count": 3,
+          "max": 849.2509979987517,
+          "median": 762.3532599536702,
+          "min": 705.1927180727944,
+          "p95": 849.2509979987517
+        },
+        "serviceSubmitToReadyMs": {
+          "count": 3,
+          "max": 1964.8216100176796,
+          "median": 1838.7732370756567,
+          "min": 1676.1365010170266,
+          "p95": 1964.8216100176796
+        },
+        "stateGetMs": {
+          "count": 90,
+          "max": 102.34417300671339,
+          "median": 26.094755565281957,
+          "min": 22.74614607449621,
+          "p95": 74.78967402130365
+        },
+        "threads": {
+          "count": 24,
+          "max": 27,
+          "median": 27.0,
+          "min": 27,
+          "p95": 27
+        }
+      },
+      "path": ".pi-lab/java03-benchmark-baseline/result.json",
+      "sha256": "8c1a3aad5600ffec9de49e24f62a6f650b8cc63fb2a2e592d81408ff0aeba7d3",
+      "trials": [
+        {
+          "cleanup": {
+            "containers": {},
+            "networks": {},
+            "status": "stopped"
+          },
+          "hostAfter": {
+            "cpu0FrequencyKHz": 2400000,
+            "loadAverage": [
+              1.88623046875,
+              3.01416015625,
+              3.31201171875
+            ],
+            "pageBytes": 16384,
+            "platform": "Linux-6.18.39+rpt-rpi-2712-aarch64-with-glibc2.41",
+            "temperatureMilliC": 65550
+          },
+          "hostBefore": {
+            "cpu0FrequencyKHz": 2400000,
+            "loadAverage": [
+              2.439453125,
+              3.21435546875,
+              3.38427734375
+            ],
+            "pageBytes": 16384,
+            "platform": "Linux-6.18.39+rpt-rpi-2712-aarch64-with-glibc2.41",
+            "temperatureMilliC": 61700
+          },
+          "nativeMemoryTracking": {
+            "heapCommittedBytes": 35651584,
+            "heapReservedBytes": 201326592,
+            "phase": "after recovery and cancellation",
+            "totalCommittedBytes": 129884352,
+            "totalReservedBytes": 1702650048,
+            "trackedNonHeapCommittedBytes": 94232768
+          },
+          "path": ".pi-lab/java03-benchmark-baseline/trial-0/benchmark.json",
+          "run": "8031358e9f90f0ee",
+          "sha256": "e712603b2f617b1fb5f48a8f7bf8c8754f50c6a723dac217e9206f104927f85a"
+        },
+        {
+          "cleanup": {
+            "containers": {},
+            "networks": {},
+            "status": "stopped"
+          },
+          "hostAfter": {
+            "cpu0FrequencyKHz": 1600000,
+            "loadAverage": [
+              1.86767578125,
+              2.8720703125,
+              3.25244140625
+            ],
+            "pageBytes": 16384,
+            "platform": "Linux-6.18.39+rpt-rpi-2712-aarch64-with-glibc2.41",
+            "temperatureMilliC": 65000
+          },
+          "hostBefore": {
+            "cpu0FrequencyKHz": 2400000,
+            "loadAverage": [
+              1.88623046875,
+              3.01416015625,
+              3.31201171875
+            ],
+            "pageBytes": 16384,
+            "platform": "Linux-6.18.39+rpt-rpi-2712-aarch64-with-glibc2.41",
+            "temperatureMilliC": 66650
+          },
+          "nativeMemoryTracking": {
+            "heapCommittedBytes": 35651584,
+            "heapReservedBytes": 201326592,
+            "phase": "after recovery and cancellation",
+            "totalCommittedBytes": 130097814,
+            "totalReservedBytes": 1702863510,
+            "trackedNonHeapCommittedBytes": 94446230
+          },
+          "path": ".pi-lab/java03-benchmark-baseline/trial-1/benchmark.json",
+          "run": "1fa9f37610f46199",
+          "sha256": "aaed1a73080cf72660dfe1b1701b5b91685131fa0ac2850a49cabc3e16cea679"
+        },
+        {
+          "cleanup": {
+            "containers": {},
+            "networks": {},
+            "status": "stopped"
+          },
+          "hostAfter": {
+            "cpu0FrequencyKHz": 2400000,
+            "loadAverage": [
+              1.74853515625,
+              2.75439453125,
+              3.201171875
+            ],
+            "pageBytes": 16384,
+            "platform": "Linux-6.18.39+rpt-rpi-2712-aarch64-with-glibc2.41",
+            "temperatureMilliC": 65550
+          },
+          "hostBefore": {
+            "cpu0FrequencyKHz": 1600000,
+            "loadAverage": [
+              1.86767578125,
+              2.8720703125,
+              3.25244140625
+            ],
+            "pageBytes": 16384,
+            "platform": "Linux-6.18.39+rpt-rpi-2712-aarch64-with-glibc2.41",
+            "temperatureMilliC": 64450
+          },
+          "nativeMemoryTracking": {
+            "heapCommittedBytes": 35651584,
+            "heapReservedBytes": 201326592,
+            "phase": "after recovery and cancellation",
+            "totalCommittedBytes": 130869599,
+            "totalReservedBytes": 1703651679,
+            "trackedNonHeapCommittedBytes": 95218015
+          },
+          "path": ".pi-lab/java03-benchmark-baseline/trial-2/benchmark.json",
+          "run": "2e17f482c21d7245",
+          "sha256": "c715c38234cda775fb55db9bf51132026546dcf85a456117bebbd263bd21cd44"
+        }
+      ]
+    },
+    "java25": {
+      "bundleSha256": "38b05a791db66b6cfb4d1f78b0dee8ed9a3c48a790a5fd31275843996b2b1e6a",
+      "diagnosticJvmArgs": [
+        "-XX:NativeMemoryTracking=summary",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:+PrintNMTStatistics",
+        "-Xlog:gc*:file=/state/benchmark-gc-%p.log:uptime,level,tags:filecount=1,filesize=4m"
+      ],
+      "harnessSha256": "996027a38178293397e82d700d36ddd53533560d6979d4ccd40319976b4262dd",
+      "limits": [
+        "Exploratory single-host measurements; no production SLO or statistical significance claim.",
+        "API timings include fresh mTLS connections; submit ACK includes durable commit, not isolated SQL time.",
+        "Convergence includes polling and controller delay. Cluster start includes Docker creation.",
+        "NMT adds diagnostic overhead and excludes allocations by some third-party native libraries.",
+        "RSS/threads/FDs are sampled, not lifetime peaks. No hard memory cgroup limit on this Pi."
+      ],
+      "metrics": {
+        "backupAckMs": {
+          "count": 3,
+          "max": 47.2996550379321,
+          "median": 45.95212696585804,
+          "min": 37.442818051204085,
+          "p95": 47.2996550379321
+        },
+        "batchSubmitAckMs": {
+          "count": 18,
+          "max": 119.13323099724948,
+          "median": 53.52474347455427,
+          "min": 38.332677097059786,
+          "p95": 119.13323099724948
+        },
+        "batchSubmitToCompleteMs": {
+          "count": 18,
+          "max": 853.3028409583494,
+          "median": 669.5320265134797,
+          "min": 521.9693640246987,
+          "p95": 853.3028409583494
+        },
+        "clusterStartMs": {
+          "count": 3,
+          "max": 7201.845212955959,
+          "median": 7178.882798994891,
+          "min": 6829.760915017687,
+          "p95": 7201.845212955959
+        },
+        "fds": {
+          "count": 24,
+          "max": 26,
+          "median": 23.0,
+          "min": 23,
+          "p95": 23
+        },
+        "gcPauseMs": {
+          "count": 41,
+          "max": 73.608,
+          "median": 4.19,
+          "min": 2.382,
+          "p95": 72.087
+        },
+        "rssAnonKiB": {
+          "count": 24,
+          "max": 102560,
+          "median": 97480.0,
+          "min": 91232,
+          "p95": 101840
+        },
+        "rssKiB": {
+          "count": 24,
+          "max": 127568,
+          "median": 122504.0,
+          "min": 116256,
+          "p95": 126848
+        },
+        "schedulerCrashToRecoveredMs": {
+          "count": 3,
+          "max": 3591.4968630531803,
+          "median": 3565.9874180564657,
+          "min": 3561.3607720006257,
+          "p95": 3591.4968630531803
+        },
+        "serviceStopToCleanedMs": {
+          "count": 3,
+          "max": 848.0548349907622,
+          "median": 791.0902769071981,
+          "min": 587.2486879816279,
+          "p95": 848.0548349907622
+        },
+        "serviceSubmitToReadyMs": {
+          "count": 3,
+          "max": 1834.0009830426425,
+          "median": 1781.8144750781357,
+          "min": 1668.993441038765,
+          "p95": 1834.0009830426425
+        },
+        "stateGetMs": {
+          "count": 90,
+          "max": 118.99806198198348,
+          "median": 27.152633934747428,
+          "min": 23.17809301894158,
+          "p95": 93.70136098004878
+        },
+        "threads": {
+          "count": 24,
+          "max": 27,
+          "median": 27.0,
+          "min": 27,
+          "p95": 27
+        }
+      },
+      "path": ".pi-lab/java03-benchmark-java25/result.json",
+      "sha256": "e30070d6c7c08cb72a079a07db1826c79f450a425034b4ba1820c16005b4be40",
+      "trials": [
+        {
+          "cleanup": {
+            "containers": {},
+            "networks": {},
+            "status": "stopped"
+          },
+          "hostAfter": {
+            "cpu0FrequencyKHz": 2400000,
+            "loadAverage": [
+              2.87109375,
+              2.912109375,
+              3.23583984375
+            ],
+            "pageBytes": 16384,
+            "platform": "Linux-6.18.39+rpt-rpi-2712-aarch64-with-glibc2.41",
+            "temperatureMilliC": 66100
+          },
+          "hostBefore": {
+            "cpu0FrequencyKHz": 2400000,
+            "loadAverage": [
+              1.74853515625,
+              2.75439453125,
+              3.201171875
+            ],
+            "pageBytes": 16384,
+            "platform": "Linux-6.18.39+rpt-rpi-2712-aarch64-with-glibc2.41",
+            "temperatureMilliC": 66650
+          },
+          "nativeMemoryTracking": {
+            "heapCommittedBytes": 35651584,
+            "heapReservedBytes": 201326592,
+            "phase": "after recovery and cancellation",
+            "totalCommittedBytes": 130790309,
+            "totalReservedBytes": 1701589925,
+            "trackedNonHeapCommittedBytes": 95138725
+          },
+          "path": ".pi-lab/java03-benchmark-java25/trial-0/benchmark.json",
+          "run": "535e3afac3a3f0b5",
+          "sha256": "2feacd50d317625941bd96c08a3cb41e194524b6a4bc11f83dd3a1b5c42192b2"
+        },
+        {
+          "cleanup": {
+            "containers": {},
+            "networks": {},
+            "status": "stopped"
+          },
+          "hostAfter": {
+            "cpu0FrequencyKHz": 1600000,
+            "loadAverage": [
+              2.26708984375,
+              2.76025390625,
+              3.173828125
+            ],
+            "pageBytes": 16384,
+            "platform": "Linux-6.18.39+rpt-rpi-2712-aarch64-with-glibc2.41",
+            "temperatureMilliC": 64450
+          },
+          "hostBefore": {
+            "cpu0FrequencyKHz": 2400000,
+            "loadAverage": [
+              2.87109375,
+              2.912109375,
+              3.23583984375
+            ],
+            "pageBytes": 16384,
+            "platform": "Linux-6.18.39+rpt-rpi-2712-aarch64-with-glibc2.41",
+            "temperatureMilliC": 65000
+          },
+          "nativeMemoryTracking": {
+            "heapCommittedBytes": 35651584,
+            "heapReservedBytes": 201326592,
+            "phase": "after recovery and cancellation",
+            "totalCommittedBytes": 131233969,
+            "totalReservedBytes": 1709799601,
+            "trackedNonHeapCommittedBytes": 95582385
+          },
+          "path": ".pi-lab/java03-benchmark-java25/trial-1/benchmark.json",
+          "run": "4aef35544d9da3d1",
+          "sha256": "c4418534e54bc5c85e756e48b8b013324ae906e91e153737a9f47ef0649d352c"
+        },
+        {
+          "cleanup": {
+            "containers": {},
+            "networks": {},
+            "status": "stopped"
+          },
+          "hostAfter": {
+            "cpu0FrequencyKHz": 2400000,
+            "loadAverage": [
+              2.3203125,
+              2.7333984375,
+              3.15234375
+            ],
+            "pageBytes": 16384,
+            "platform": "Linux-6.18.39+rpt-rpi-2712-aarch64-with-glibc2.41",
+            "temperatureMilliC": 65000
+          },
+          "hostBefore": {
+            "cpu0FrequencyKHz": 1600000,
+            "loadAverage": [
+              2.26708984375,
+              2.76025390625,
+              3.173828125
+            ],
+            "pageBytes": 16384,
+            "platform": "Linux-6.18.39+rpt-rpi-2712-aarch64-with-glibc2.41",
+            "temperatureMilliC": 63900
+          },
+          "nativeMemoryTracking": {
+            "heapCommittedBytes": 35651584,
+            "heapReservedBytes": 201326592,
+            "phase": "after recovery and cancellation",
+            "totalCommittedBytes": 129979036,
+            "totalReservedBytes": 1702744732,
+            "trackedNonHeapCommittedBytes": 94327452
+          },
+          "path": ".pi-lab/java03-benchmark-java25/trial-2/benchmark.json",
+          "run": "80bdd492d47cddf8",
+          "sha256": "d7e55894982dd5f972ac3d3ce03e57d0264737553cda067123b799f8ef8c0d11"
+        }
+      ]
+    },
+    "java26": {
+      "bundleSha256": "d3c4a43b7427af593a1bbca5f942c9a9c34ed410a26b843d1be20ee2484c4e9e",
+      "diagnosticJvmArgs": [
+        "-XX:NativeMemoryTracking=summary",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:+PrintNMTStatistics",
+        "-Xlog:gc*:file=/state/benchmark-gc-%p.log:uptime,level,tags:filecount=1,filesize=4m"
+      ],
+      "harnessSha256": "996027a38178293397e82d700d36ddd53533560d6979d4ccd40319976b4262dd",
+      "limits": [
+        "Exploratory single-host measurements; no production SLO or statistical significance claim.",
+        "API timings include fresh mTLS connections; submit ACK includes durable commit, not isolated SQL time.",
+        "Convergence includes polling and controller delay. Cluster start includes Docker creation.",
+        "NMT adds diagnostic overhead and excludes allocations by some third-party native libraries.",
+        "RSS/threads/FDs are sampled, not lifetime peaks. No hard memory cgroup limit on this Pi."
+      ],
+      "metrics": {
+        "backupAckMs": {
+          "count": 3,
+          "max": 49.16326096281409,
+          "median": 46.8030390329659,
+          "min": 44.75559596903622,
+          "p95": 49.16326096281409
+        },
+        "batchSubmitAckMs": {
+          "count": 18,
+          "max": 165.60876101721078,
+          "median": 86.3486859598197,
+          "min": 49.20937307178974,
+          "p95": 165.60876101721078
+        },
+        "batchSubmitToCompleteMs": {
+          "count": 18,
+          "max": 831.7912350175902,
+          "median": 712.1894789743237,
+          "min": 502.0111749181524,
+          "p95": 831.7912350175902
+        },
+        "clusterStartMs": {
+          "count": 3,
+          "max": 7181.694105034694,
+          "median": 7115.262094070204,
+          "min": 7080.028644995764,
+          "p95": 7181.694105034694
+        },
+        "fds": {
+          "count": 24,
+          "max": 23,
+          "median": 23.0,
+          "min": 23,
+          "p95": 23
+        },
+        "gcPauseMs": {
+          "count": 45,
+          "max": 58.511,
+          "median": 3.417,
+          "min": 1.359,
+          "p95": 9.008
+        },
+        "rssAnonKiB": {
+          "count": 24,
+          "max": 108416,
+          "median": 103968.0,
+          "min": 98640,
+          "p95": 108320
+        },
+        "rssKiB": {
+          "count": 24,
+          "max": 132752,
+          "median": 128184.0,
+          "min": 122864,
+          "p95": 132672
+        },
+        "schedulerCrashToRecoveredMs": {
+          "count": 3,
+          "max": 3769.3425859324634,
+          "median": 3763.185833930038,
+          "min": 3727.339187054895,
+          "p95": 3769.3425859324634
+        },
+        "serviceStopToCleanedMs": {
+          "count": 3,
+          "max": 906.7987059243023,
+          "median": 732.4326670495793,
+          "min": 655.6068669306114,
+          "p95": 906.7987059243023
+        },
+        "serviceSubmitToReadyMs": {
+          "count": 3,
+          "max": 1919.35627697967,
+          "median": 1742.8663109894842,
+          "min": 920.2639199793339,
+          "p95": 1919.35627697967
+        },
+        "stateGetMs": {
+          "count": 90,
+          "max": 103.10528101399541,
+          "median": 27.432681003119797,
+          "min": 23.2816661009565,
+          "p95": 87.74117892608047
+        },
+        "threads": {
+          "count": 24,
+          "max": 28,
+          "median": 28.0,
+          "min": 28,
+          "p95": 28
+        }
+      },
+      "path": ".pi-lab/java03-benchmark-java26/result.json",
+      "sha256": "a8d306b6af34b02daf2e904b783e933688c8365d304e6dbd23e727255a3cb874",
+      "trials": [
+        {
+          "cleanup": {
+            "containers": {},
+            "networks": {},
+            "status": "stopped"
+          },
+          "hostAfter": {
+            "cpu0FrequencyKHz": 2400000,
+            "loadAverage": [
+              2.259765625,
+              2.60791015625,
+              3.0537109375
+            ],
+            "pageBytes": 16384,
+            "platform": "Linux-6.18.39+rpt-rpi-2712-aarch64-with-glibc2.41",
+            "temperatureMilliC": 64450
+          },
+          "hostBefore": {
+            "cpu0FrequencyKHz": 2400000,
+            "loadAverage": [
+              2.19677734375,
+              2.62255859375,
+              3.07177734375
+            ],
+            "pageBytes": 16384,
+            "platform": "Linux-6.18.39+rpt-rpi-2712-aarch64-with-glibc2.41",
+            "temperatureMilliC": 66100
+          },
+          "nativeMemoryTracking": {
+            "heapCommittedBytes": 35651584,
+            "heapReservedBytes": 201326592,
+            "phase": "after recovery and cancellation",
+            "totalCommittedBytes": 131441209,
+            "totalReservedBytes": 1706304057,
+            "trackedNonHeapCommittedBytes": 95789625
+          },
+          "path": ".pi-lab/java03-benchmark-java26/trial-0/benchmark.json",
+          "run": "723db2c077b4fb1e",
+          "sha256": "03edb8dfb8ce8d68aa6c8e07dd93bfb26e522f9afde72ab719c11e90ca21e074"
+        },
+        {
+          "cleanup": {
+            "containers": {},
+            "networks": {},
+            "status": "stopped"
+          },
+          "hostAfter": {
+            "cpu0FrequencyKHz": 2400000,
+            "loadAverage": [
+              1.48828125,
+              2.3798828125,
+              2.9599609375
+            ],
+            "pageBytes": 16384,
+            "platform": "Linux-6.18.39+rpt-rpi-2712-aarch64-with-glibc2.41",
+            "temperatureMilliC": 63900
+          },
+          "hostBefore": {
+            "cpu0FrequencyKHz": 2400000,
+            "loadAverage": [
+              2.259765625,
+              2.60791015625,
+              3.0537109375
+            ],
+            "pageBytes": 16384,
+            "platform": "Linux-6.18.39+rpt-rpi-2712-aarch64-with-glibc2.41",
+            "temperatureMilliC": 63900
+          },
+          "nativeMemoryTracking": {
+            "heapCommittedBytes": 35651584,
+            "heapReservedBytes": 201326592,
+            "phase": "after recovery and cancellation",
+            "totalCommittedBytes": 131720666,
+            "totalReservedBytes": 1706943962,
+            "trackedNonHeapCommittedBytes": 96069082
+          },
+          "path": ".pi-lab/java03-benchmark-java26/trial-1/benchmark.json",
+          "run": "2bc5a0e946900181",
+          "sha256": "da28e3f8b68a01a10020b8d40430831f86b12053831607518b30f29f61bd745e"
+        },
+        {
+          "cleanup": {
+            "containers": {},
+            "networks": {},
+            "status": "stopped"
+          },
+          "hostAfter": {
+            "cpu0FrequencyKHz": 2400000,
+            "loadAverage": [
+              1.89306640625,
+              2.39208984375,
+              2.9453125
+            ],
+            "pageBytes": 16384,
+            "platform": "Linux-6.18.39+rpt-rpi-2712-aarch64-with-glibc2.41",
+            "temperatureMilliC": 64450
+          },
+          "hostBefore": {
+            "cpu0FrequencyKHz": 2400000,
+            "loadAverage": [
+              1.48828125,
+              2.3798828125,
+              2.9599609375
+            ],
+            "pageBytes": 16384,
+            "platform": "Linux-6.18.39+rpt-rpi-2712-aarch64-with-glibc2.41",
+            "temperatureMilliC": 64450
+          },
+          "nativeMemoryTracking": {
+            "heapCommittedBytes": 35651584,
+            "heapReservedBytes": 201326592,
+            "phase": "after recovery and cancellation",
+            "totalCommittedBytes": 130731629,
+            "totalReservedBytes": 1706004077,
+            "trackedNonHeapCommittedBytes": 95080045
+          },
+          "path": ".pi-lab/java03-benchmark-java26/trial-2/benchmark.json",
+          "run": "53421987af8bb2a7",
+          "sha256": "4a8a268bcfb2b0d3832c2a70cd6adfb182cc4b8d3760f53f01474d314ca304d5"
+        }
+      ]
+    },
+    "java26-runtime": {
+      "bundleSha256": "fc53bb64d3f49302540ad4e7c73f9acf6988dea26a652e652f8eb9c1b918275a",
+      "diagnosticJvmArgs": [
+        "-XX:NativeMemoryTracking=summary",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:+PrintNMTStatistics",
+        "-Xlog:gc*:file=/state/benchmark-gc-%p.log:uptime,level,tags:filecount=1,filesize=4m"
+      ],
+      "harnessSha256": "996027a38178293397e82d700d36ddd53533560d6979d4ccd40319976b4262dd",
+      "limits": [
+        "Exploratory single-host measurements; no production SLO or statistical significance claim.",
+        "API timings include fresh mTLS connections; submit ACK includes durable commit, not isolated SQL time.",
+        "Convergence includes polling and controller delay. Cluster start includes Docker creation.",
+        "NMT adds diagnostic overhead and excludes allocations by some third-party native libraries.",
+        "RSS/threads/FDs are sampled, not lifetime peaks. No hard memory cgroup limit on this Pi."
+      ],
+      "metrics": {
+        "backupAckMs": {
+          "count": 3,
+          "max": 49.794008024036884,
+          "median": 49.59574795793742,
+          "min": 45.012154965661466,
+          "p95": 49.794008024036884
+        },
+        "batchSubmitAckMs": {
+          "count": 18,
+          "max": 110.29847292229533,
+          "median": 72.85070000216365,
+          "min": 40.85173294879496,
+          "p95": 110.29847292229533
+        },
+        "batchSubmitToCompleteMs": {
+          "count": 18,
+          "max": 786.1360660754144,
+          "median": 668.1719120242633,
+          "min": 477.46820701286197,
+          "p95": 786.1360660754144
+        },
+        "clusterStartMs": {
+          "count": 3,
+          "max": 7194.758256082423,
+          "median": 7095.053243916482,
+          "min": 7058.112718979828,
+          "p95": 7194.758256082423
+        },
+        "fds": {
+          "count": 24,
+          "max": 25,
+          "median": 23.0,
+          "min": 23,
+          "p95": 23
+        },
+        "gcPauseMs": {
+          "count": 43,
+          "max": 73.468,
+          "median": 3.994,
+          "min": 1.322,
+          "p95": 70.226
+        },
+        "rssAnonKiB": {
+          "count": 24,
+          "max": 113600,
+          "median": 103768.0,
+          "min": 98640,
+          "p95": 106704
+        },
+        "rssKiB": {
+          "count": 24,
+          "max": 138688,
+          "median": 130424.0,
+          "min": 123584,
+          "p95": 135328
+        },
+        "schedulerCrashToRecoveredMs": {
+          "count": 3,
+          "max": 3817.34192406293,
+          "median": 3739.8540140129626,
+          "min": 3621.186265023425,
+          "p95": 3817.34192406293
+        },
+        "serviceStopToCleanedMs": {
+          "count": 3,
+          "max": 898.143864935264,
+          "median": 831.6436159657314,
+          "min": 659.9825710291043,
+          "p95": 898.143864935264
+        },
+        "serviceSubmitToReadyMs": {
+          "count": 3,
+          "max": 1808.1698350142688,
+          "median": 1711.5871530259028,
+          "min": 1691.9494440080598,
+          "p95": 1808.1698350142688
+        },
+        "stateGetMs": {
+          "count": 90,
+          "max": 156.40961495228112,
+          "median": 27.0901134936139,
+          "min": 23.134610033594072,
+          "p95": 89.93941894732416
+        },
+        "threads": {
+          "count": 24,
+          "max": 28,
+          "median": 28.0,
+          "min": 28,
+          "p95": 28
+        }
+      },
+      "path": ".pi-lab/java03-benchmark-java26-runtime/result.json",
+      "sha256": "52dd6856da3835fb4f85a76bc810e2c53c36672993814957f399f902d1b15a20",
+      "trials": [
+        {
+          "cleanup": {
+            "containers": {},
+            "networks": {},
+            "status": "stopped"
+          },
+          "hostAfter": {
+            "cpu0FrequencyKHz": 2400000,
+            "loadAverage": [
+              2.78369140625,
+              2.796875,
+              3.1572265625
+            ],
+            "pageBytes": 16384,
+            "platform": "Linux-6.18.39+rpt-rpi-2712-aarch64-with-glibc2.41",
+            "temperatureMilliC": 63350
+          },
+          "hostBefore": {
+            "cpu0FrequencyKHz": 2400000,
+            "loadAverage": [
+              2.3203125,
+              2.7333984375,
+              3.15234375
+            ],
+            "pageBytes": 16384,
+            "platform": "Linux-6.18.39+rpt-rpi-2712-aarch64-with-glibc2.41",
+            "temperatureMilliC": 65000
+          },
+          "nativeMemoryTracking": {
+            "heapCommittedBytes": 102760448,
+            "heapReservedBytes": 201326592,
+            "phase": "after recovery and cancellation",
+            "totalCommittedBytes": 201397175,
+            "totalReservedBytes": 1711756215,
+            "trackedNonHeapCommittedBytes": 98636727
+          },
+          "path": ".pi-lab/java03-benchmark-java26-runtime/trial-0/benchmark.json",
+          "run": "eb9ac966ce706168",
+          "sha256": "4d13c62bfb16619bfba02e7c1798f45964cec966179ceeee658b2891c514b614"
+        },
+        {
+          "cleanup": {
+            "containers": {},
+            "networks": {},
+            "status": "stopped"
+          },
+          "hostAfter": {
+            "cpu0FrequencyKHz": 2400000,
+            "loadAverage": [
+              2.56494140625,
+              2.736328125,
+              3.125
+            ],
+            "pageBytes": 16384,
+            "platform": "Linux-6.18.39+rpt-rpi-2712-aarch64-with-glibc2.41",
+            "temperatureMilliC": 64450
+          },
+          "hostBefore": {
+            "cpu0FrequencyKHz": 2400000,
+            "loadAverage": [
+              2.78369140625,
+              2.796875,
+              3.1572265625
+            ],
+            "pageBytes": 16384,
+            "platform": "Linux-6.18.39+rpt-rpi-2712-aarch64-with-glibc2.41",
+            "temperatureMilliC": 65000
+          },
+          "nativeMemoryTracking": {
+            "heapCommittedBytes": 35651584,
+            "heapReservedBytes": 201326592,
+            "phase": "after recovery and cancellation",
+            "totalCommittedBytes": 131325338,
+            "totalReservedBytes": 1706663322,
+            "trackedNonHeapCommittedBytes": 95673754
+          },
+          "path": ".pi-lab/java03-benchmark-java26-runtime/trial-1/benchmark.json",
+          "run": "71e2d32657cd87ca",
+          "sha256": "bcaf42ada4998f4da3aaa627c0c978606067a0e16100e9ab29dad45665d7bc41"
+        },
+        {
+          "cleanup": {
+            "containers": {},
+            "networks": {},
+            "status": "stopped"
+          },
+          "hostAfter": {
+            "cpu0FrequencyKHz": 2400000,
+            "loadAverage": [
+              2.19677734375,
+              2.62255859375,
+              3.07177734375
+            ],
+            "pageBytes": 16384,
+            "platform": "Linux-6.18.39+rpt-rpi-2712-aarch64-with-glibc2.41",
+            "temperatureMilliC": 63900
+          },
+          "hostBefore": {
+            "cpu0FrequencyKHz": 2400000,
+            "loadAverage": [
+              2.56494140625,
+              2.736328125,
+              3.125
+            ],
+            "pageBytes": 16384,
+            "platform": "Linux-6.18.39+rpt-rpi-2712-aarch64-with-glibc2.41",
+            "temperatureMilliC": 63900
+          },
+          "nativeMemoryTracking": {
+            "heapCommittedBytes": 100663296,
+            "heapReservedBytes": 201326592,
+            "phase": "after recovery and cancellation",
+            "totalCommittedBytes": 197541474,
+            "totalReservedBytes": 1706196578,
+            "trackedNonHeapCommittedBytes": 96878178
+          },
+          "path": ".pi-lab/java03-benchmark-java26-runtime/trial-2/benchmark.json",
+          "run": "1c164fb069d844a1",
+          "sha256": "6bcb46bd1ac5bdfabaf6792beaa18f0de8278e9d00ba22112bf0fcc46c80a5d0"
+        }
+      ]
+    }
+  },
+  "cleanCheckout": ".cache/java03-fresh-source",
+  "defaultJreUnchanged": true,
+  "independentBundleAudit": {
+    "path": ".cache/java03-bundle-audit.json",
+    "sha256": "3a0cccef27d175df0f0cf44da5b3270f4c7b5475de7bef3a048715b99f02cbfa"
+  },
+  "limits": [
+    "Retained native Linux ARM64 profile only; legacy root/buildSrc/Thrift/JMH/DI/HTTP stacks, other platforms, production HA and rolling migration remain outside this gate.",
+    "Compatibility uses private snapshots: bidirectional Job/Run/Stop writes/replay/rollback; new-stack snapshots reopen on both stacks. Reverse old-stack writes reopen on new without a further snapshot. PKCS12 load/init only; no TLS handshake or keystore rewrite in this harness.",
+    "Actual TLS handshakes, API operations and process recovery are covered separately by HTTP tests and the physical cluster gates.",
+    "Static JDK analysis does not exhaustively detect reflection. Optional missing edges belong to excluded validator features and SQLite Graal native-image integration.",
+    "Performance results are exploratory sequential Pi trials with the same instrumentation and resource limits, not a production SLO or significance claim.",
+    "Java artifacts/installed content reproduce; identical Docker image rebuild IDs are not claimed."
+  ],
+  "masterCommit": "11ebaeeb071cb182c388a40755e84f60dda32260",
+  "masterVerification": {
+    "path": ".cache/java03-master-verification.json",
+    "sha256": "fcaa8480f616e2d8c5d82268592554c0b163629eaaf4e263b62fd30c1e147071",
+    "verification": {
+      "checkedAt": 1789091402.1719725,
+      "ok": true,
+      "refs": {
+        "local": "11ebaeeb071cb182c388a40755e84f60dda32260",
+        "origin": "11ebaeeb071cb182c388a40755e84f60dda32260",
+        "upstream": "11ebaeeb071cb182c388a40755e84f60dda32260"
+      }
+    }
+  },
+  "ok": true,
+  "originalMvp": {
+    "path": ".pi-lab/cluster-mvp/evidence/java03-post-verification.json",
+    "sha256": "4686c0ad44bb6bde7529c20ac605a19dc7578a6826e403229bb355b560118be1",
+    "verification": {
+      "attemptCount": 3,
+      "benchmarkRuns": [
+        "8031358e9f90f0ee",
+        "1fa9f37610f46199",
+        "2e17f482c21d7245",
+        "535e3afac3a3f0b5",
+        "4aef35544d9da3d1",
+        "80bdd492d47cddf8",
+        "eb9ac966ce706168",
+        "71e2d32657cd87ca",
+        "1c164fb069d844a1",
+        "723db2c077b4fb1e",
+        "2bc5a0e946900181",
+        "53421987af8bb2a7"
+      ],
+      "checkedAt": 1789091856.8081398,
+      "containers": {
+        "agent-a": {
+          "id": "b0e739a798276ff15f9b105c9c86cc1e56b7c84539572cb5d7f814400b897c90",
+          "restartCount": 0,
+          "startedAt": "2026-09-10T15:36:01.048274149Z"
+        },
+        "agent-b": {
+          "id": "543555720a7b354708fdb117bd40eaa13c4b2d867b2a7f473d722711138d1b30",
+          "restartCount": 0,
+          "startedAt": "2026-09-10T15:36:02.348578322Z"
+        },
+        "proxy-a": {
+          "id": "066cffcf94cb40166e421a633e6dbd53855148942d050dd8d9b64a7cd9072bd7",
+          "restartCount": 0,
+          "startedAt": "2026-09-10T15:36:01.720463583Z"
+        },
+        "proxy-b": {
+          "id": "e2d504a39df1ad95cce15f87cd438209affa93c7a567ca6e84459dccc0eab118",
+          "restartCount": 0,
+          "startedAt": "2026-09-10T15:36:03.008681489Z"
+        },
+        "scheduler": {
+          "id": "225b832671a14b0f7a66988d6755d4887d6c7595e9184e9d7e13ab4dc92768be",
+          "restartCount": 0,
+          "startedAt": "2026-09-10T15:36:03.73285183Z"
+        }
+      },
+      "mvpRun": "108ede8a5cb16d26",
+      "nodes": [
+        {
+          "cursor": "6",
+          "lastError": null,
+          "node": "agent-a",
+          "reachable": true
+        },
+        {
+          "cursor": "3",
+          "lastError": null,
+          "node": "agent-b",
+          "reachable": true
+        }
+      ],
+      "ok": true,
+      "packagingProbeContainersRemaining": 0,
+      "physical": [
+        {
+          "attempt": "attempt-153e6adb-033d-4d7a-835e-c1236d66397a",
+          "http": {
+            "identity": "mvp-service",
+            "ready": true
+          },
+          "node": "agent-a"
+        },
+        {
+          "attempt": "attempt-7ed6388a-fa0c-426e-a6c0-a4e78a20dd08",
+          "http": {
+            "identity": "mvp-service",
+            "ready": true
+          },
+          "node": "agent-b"
+        }
+      ],
+      "qualificationDockerResourcesRemaining": 0,
+      "qualificationRuns": {
+        "java25": "f8a2696aae90fbef",
+        "java26": "f7b09b1bfd263481",
+        "java26-runtime": "dd46658c01200f63"
+      },
+      "unrelatedContainers": [
+        {
+          "health": "healthy",
+          "id": "372a008a8ffa8b89a6c060c709ee98b4f0896b181701605687b04e867f6b25f1",
+          "name": "homeassistant",
+          "running": true,
+          "startedAt": "2026-09-06T13:54:15.633076093Z"
+        }
+      ]
+    }
+  },
+  "preexistingPiTools": false,
+  "profiles": {
+    "java25": {
+      "bundle": {
+        "artifactHashesVerified": 280,
+        "images": {
+          "agent": {
+            "boundary": {
+              "path": ".cache/java03-java25-bundle/reports/agent-boundary.json",
+              "sha256": "9feeca8b495551b36da2b836b1de375e07fa9badbc71e0821189d5d4978e3ee9"
+            },
+            "id": "sha256:c79afc1f100d9aa278dec1d98c127a2dc2c34f091071b3f53b146fdd6c5db84c",
+            "payloadFiles": 1,
+            "reference": "aurora-native-local:a46cb84e829c75b6-agent"
+          },
+          "agent-lab": {
+            "boundary": {
+              "path": ".cache/java03-java25-bundle/reports/agent-lab-boundary.json",
+              "sha256": "b1d174124b365b6db3b8400f70788395808484b0b41ce41fadbab63b3b84a6c8"
+            },
+            "id": "sha256:70f5fbed1b469f21537e5698c96c0b5e78851b31ec665b1508344eedd2c043ff",
+            "payloadFiles": 3,
+            "reference": "aurora-native-local:a46cb84e829c75b6-agent-lab"
+          },
+          "scheduler": {
+            "boundary": {
+              "path": ".cache/java03-java25-bundle/reports/scheduler-boundary.json",
+              "sha256": "eac2d45bb2ed77840de7c72bd7d224660291293b328351708d9e5b61990cb818"
+            },
+            "id": "sha256:e4f7b36758ad9c82c5df070121933788899d1146faf43a4152a0adeb63ae9dd8",
+            "payloadFiles": 273,
+            "reference": "aurora-native-local:a46cb84e829c75b6-scheduler"
+          },
+          "scheduler-lab": {
+            "boundary": {
+              "path": ".cache/java03-java25-bundle/reports/scheduler-lab-boundary.json",
+              "sha256": "d7a8fbae572d7421a0b5d75f90d62a6caf014608922c2499e6ec87bee61c3c6b"
+            },
+            "id": "sha256:dc5b7b457865ae0b913cec2043d923f64eabda5e76d7f56aec29fe72eeb475d7",
+            "payloadFiles": 275,
+            "reference": "aurora-native-local:a46cb84e829c75b6-scheduler-lab"
+          },
+          "tools": {
+            "boundary": {
+              "path": ".cache/java03-java25-bundle/reports/tools-boundary.json",
+              "sha256": "a1ff2fea046d474e498e80d71b84c87a4cef03bcfcca4aa129e6aa834c00a07e"
+            },
+            "id": "sha256:c41f523dad31d35ba8ce091d1a6343d652ed5fbb80fd1dfbfb07e8cd9e793352",
+            "payloadFiles": 1,
+            "reference": "aurora-native-local:a46cb84e829c75b6-tools"
+          }
+        },
+        "path": ".cache/java03-java25-bundle/bundle.json",
+        "reportHashesVerified": 62,
+        "sha256": "38b05a791db66b6cfb4d1f78b0dee8ed9a3c48a790a5fd31275843996b2b1e6a"
+      },
+      "compatibility": {
+        "newJavaMajor": 25,
+        "oldBundle": {
+          "path": ".cache/java02-fresh-bundle/bundle.json",
+          "sha256": "e22ff2dc06f95f9f1d0cb89b4f3f9e561868f62cb56aae8749616ab60ed42ef9"
+        },
+        "oldJavaMajor": 25,
+        "oldPkcs12LoadedOnBoth": true,
+        "originalInputHashesVerified": 692,
+        "originalInputsUnchanged": true,
+        "path": ".cache/java03-java25-compat/result.json",
+        "scriptSha256": "75610692dea92533b3d4f23ae1589a318a9fdba0d1cabd287edbef090b74f9dd",
+        "sha256": "08c2d0ecd677f18eae86745cab72a8c2f6ac503048f0c4e85180389ca1087c7b",
+        "stateExecutions": 13,
+        "states": {
+          "advanced": {
+            "attempts": 18,
+            "commands": 30,
+            "epoch": "8",
+            "jobs": 9,
+            "jsonSha256": "8224a98255a1b7379d692c95843c1b5921e41086716b0358bf5953c678e4b42a"
+          },
+          "newWrites": {
+            "attempts": 19,
+            "commands": 32,
+            "epoch": "8",
+            "jobs": 10,
+            "jsonSha256": "ba4c02443f4027a4003ae4c2396d61905ab927d6207e1d88596d764162f4021f"
+          },
+          "old": {
+            "attempts": 18,
+            "commands": 30,
+            "epoch": "7",
+            "jobs": 9,
+            "jsonSha256": "1c15c455d0e2d31cf595fa69545aec63cdcd74764f41cb61488c8e29c1a2aec0"
+          },
+          "reverseWrites": {
+            "attempts": 20,
+            "commands": 34,
+            "epoch": "8",
+            "jobs": 11,
+            "jsonSha256": "a06163ee8a6b9e49eed6331bbfe70ca959124e1b394af8dc673456c53363c88a"
+          }
+        }
+      },
+      "externalJars": {
+        "jackson-annotations-2.22.jar": "21ddb598807d3a51a876704eb979d9296e1c6a6f47ab1826ff88c6d6a127a2d0",
+        "jackson-core-2.22.2.jar": "ff167a6317be15895706c26668f45b898efe40ab8780970658210fe1393d52a6",
+        "jackson-databind-2.22.2.jar": "d0da14c12b16b5d54719aa172d83b542ff4abeb8b0fb7db476fde8ceece760ca",
+        "json-schema-validator-2.0.7.jar": "7d01cefd6f0d656666b94778c7a13ada2941aace48e76830809c0dbf61ad5be2",
+        "slf4j-api-2.0.19.jar": "e91ff6d720609e7a194ffe758c3ed5c84e798617ae07b0a0f6a4fe229741b4bb",
+        "slf4j-nop-2.0.19.jar": "d0226062f9b3a2793f62002f892a8e624eb07f396130fc949e01b1d5f4888cba",
+        "sqlite-jdbc-3.53.4.0.jar": "bcb1f51e36f940867e83342f9efbf5968ac44a6bef4d397bb4af7b17b45cd2fb"
+      },
+      "java": {
+        "bytecodeMajor": 69,
+        "compilerRelease": "25.0.4.1+1",
+        "compilerVersionMajor": 25,
+        "illegalNativeAccess": "deny",
+        "nativeAccess": "ALL-UNNAMED",
+        "profile": "java25",
+        "release": "25.0.4.1+1",
+        "vendor": "Eclipse Adoptium",
+        "versionMajor": 25
+      },
+      "javaVersions": {
+        "path": ".cache/java03-java25-bundle/reports/java-versions.json",
+        "sha256": "3fdecc52dcd7400ff380aa7cbce920f72fef30eddecb1606e72c49bcdbac98eb"
+      },
+      "jdkDiagnostics": {
+        "jdkInternalApiEdges": 0,
+        "logs": [
+          {
+            "path": ".cache/java03-java25-audit/java03-jdk-internals.log",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/java03-java25-audit/java03-missing-deps.log",
+            "sha256": "0eaf228f10a37df9e5339821cbd68fa44fe427b4053807875330b61f8a4c02e2"
+          },
+          {
+            "path": ".cache/java03-java25-audit/java03-jdeprscan.log",
+            "sha256": "74507a829d7aeed7b7c0b93e48980c372de376aa4b2839740f096dd3654d554c"
+          }
+        ],
+        "optionalMissingEdges": 35,
+        "ownJdkDeprecations": [],
+        "path": ".cache/java03-java25-audit/java03-jdk-diagnostics.json",
+        "sha256": "78b40e974b56554632022b790f7ad944d2ef6a47863ed2ceee0b012bc2c39e03"
+      },
+      "launchers": {
+        "commands": 59,
+        "originalInputHashesVerified": 417,
+        "path": ".cache/java03-java25-launchers-run/launcher-check.json",
+        "protocol": {
+          "invalid": 27,
+          "parserInvalid": 12,
+          "validAndHash": 13
+        },
+        "scheduler": {
+          "emptyEpoch": "0",
+          "negativeCases": 4,
+          "repeatedStateEqual": true,
+          "stderrEmpty": true
+        },
+        "sha256": "07f9bb218257b6212a620c3a55ac66883934f2f21fa88e2d99223e946d63b724"
+      },
+      "probesRemoved": 8,
+      "qualification": {
+        "allTerminalCleanedUnreserved": true,
+        "cases": [
+          {
+            "at": 1789090688.1177535,
+            "name": "operator-mtls-and-role-rejection",
+            "ok": true
+          },
+          {
+            "at": 1789090689.9054255,
+            "launches": 1,
+            "name": "c1789090685-r0-batch-submit-replay",
+            "ok": true
+          },
+          {
+            "at": 1789090693.4919987,
+            "name": "c1789090685-r0-two-agent-service-ready",
+            "ok": true
+          },
+          {
+            "at": 1789090700.9148984,
+            "epoch": "2",
+            "generation": 2,
+            "name": "c1789090685-r0-scheduler-crash-recovery",
+            "ok": true
+          },
+          {
+            "at": 1789090705.8417478,
+            "name": "c1789090685-r0-partition-stop-reconnect",
+            "ok": true
+          },
+          {
+            "at": 1789090716.683597,
+            "generation": 2,
+            "launches": 3,
+            "name": "c1789090685-r0-agent-crash-lost-replace-forced-stop",
+            "ok": true
+          },
+          {
+            "at": 1789090724.6467795,
+            "name": "c1789090685-r0-no-resurrection",
+            "ok": true
+          },
+          {
+            "at": 1789090734.4475007,
+            "container": "13dcd691e7c8d7ba412d79ca36b52a3441ee04db6e1516a0fa0cfe1c3b6c6776",
+            "epoch": "4",
+            "jobs": 3,
+            "name": "isolated-live-scheduler-backup-restore-0",
+            "ok": true
+          },
+          {
+            "at": 1789090737.0539844,
+            "launches": 1,
+            "name": "c1789090685-r1-batch-submit-replay",
+            "ok": true
+          },
+          {
+            "at": 1789090740.042426,
+            "name": "c1789090685-r1-two-agent-service-ready",
+            "ok": true
+          },
+          {
+            "at": 1789090747.7729173,
+            "epoch": "4",
+            "generation": 4,
+            "name": "c1789090685-r1-scheduler-crash-recovery",
+            "ok": true
+          },
+          {
+            "at": 1789090752.3016958,
+            "name": "c1789090685-r1-partition-stop-reconnect",
+            "ok": true
+          },
+          {
+            "at": 1789090761.4781296,
+            "generation": 3,
+            "launches": 3,
+            "name": "c1789090685-r1-agent-crash-lost-replace-forced-stop",
+            "ok": true
+          },
+          {
+            "at": 1789090766.720892,
+            "name": "c1789090685-r1-no-resurrection",
+            "ok": true
+          },
+          {
+            "at": 1789090774.3116682,
+            "container": "0361d632b968e58a167eeff3f8736099985bf0c12c22137679d32ccea1ec7e52",
+            "epoch": "6",
+            "jobs": 6,
+            "name": "isolated-live-scheduler-backup-restore-1",
+            "ok": true
+          },
+          {
+            "at": 1789090776.9237857,
+            "launches": 1,
+            "name": "c1789090685-r2-batch-submit-replay",
+            "ok": true
+          },
+          {
+            "at": 1789090779.4222236,
+            "name": "c1789090685-r2-two-agent-service-ready",
+            "ok": true
+          },
+          {
+            "at": 1789090784.6719642,
+            "epoch": "6",
+            "generation": 6,
+            "name": "c1789090685-r2-scheduler-crash-recovery",
+            "ok": true
+          },
+          {
+            "at": 1789090787.8605478,
+            "name": "c1789090685-r2-partition-stop-reconnect",
+            "ok": true
+          },
+          {
+            "at": 1789090795.1174378,
+            "generation": 4,
+            "launches": 3,
+            "name": "c1789090685-r2-agent-crash-lost-replace-forced-stop",
+            "ok": true
+          },
+          {
+            "at": 1789090801.675728,
+            "name": "c1789090685-r2-no-resurrection",
+            "ok": true
+          },
+          {
+            "at": 1789090812.946534,
+            "container": "f0fc674d65bdace8bbc2745c6122f60f6423c46ec3e3229c9be1358ee2bccd48",
+            "epoch": "8",
+            "jobs": 9,
+            "name": "isolated-live-scheduler-backup-restore-2",
+            "ok": true
+          },
+          {
+            "at": 1789091416.2963192,
+            "batches": 20,
+            "elapsedSeconds": 600.7011033219751,
+            "name": "bounded-mixed-workload",
+            "ok": true,
+            "replicas": 2
+          }
+        ],
+        "cleanup": {
+          "containers": {},
+          "networks": {},
+          "status": "stopped"
+        },
+        "finalAttempts": 40,
+        "mixed": {
+          "at": 1789091416.2963192,
+          "batches": 20,
+          "elapsedSeconds": 600.7011033219751,
+          "name": "bounded-mixed-workload",
+          "ok": true,
+          "replicas": 2
+        },
+        "path": ".pi-lab/java03-java25-qualification/evidence/c1789090685-result.json",
+        "receipt": {
+          "path": ".pi-lab/java03-java25-qualification/qualification.json",
+          "sha256": "b2aca95be8934a2f520282163d3fad2908f1bdda5ceacc5a3d8c45ff6ac0cc6d"
+        },
+        "run": "f8a2696aae90fbef",
+        "runtimeAudit": {
+          "path": ".cache/java03-java25-runtime-audit.json",
+          "sha256": "a52f12308ec1e60ad7199b388a94894f23a4b915c1fa3c6998c55a93fe1b7939"
+        },
+        "sha256": "34580004972ea5c25a785315719da2d096bf9ffb643ce0b503bd4907d3bed27f"
+      },
+      "reproducibility": {
+        "path": ".cache/java03-java25-bundle/reports/java-reproducibility.json",
+        "sha256": "9a5b03e2cc26f95eca0ff60d4a6bbb51c8bee9c64abfbaef8ea1f0c8e24db128",
+        "verification": {
+          "archives": {
+            "protocol/distributions/protocol.tar": "8de831d2769d83832916bc88b014ae3a76f29863686d52c8865e0fb6e562c5a7",
+            "protocol/distributions/protocol.zip": "4a74830bc48f6e3899f85d0569a45bb5246f22b8213737e6249969f670ea18a1",
+            "protocol/libs/protocol.jar": "142f8d0933fdaf850e985d420f2673f60b1655c84abdf56bbef254e778ec8efb",
+            "scheduler/distributions/aurora-native-scheduler.tar": "e07d7476e1ee6c4e37efcb809e99dfdba3dd995e8f05922c732f282daab59ce6",
+            "scheduler/distributions/aurora-native-scheduler.zip": "dbf0daa2c5c855d9cdba108d0baf76233b487398833058d8bb822be353b6ad25",
+            "scheduler/libs/aurora-native-scheduler.jar": "f713a239820e36f12da28f6043910632a3856eac3733f52919b6e1506a4d7d78"
+          },
+          "bytecodeMajor": 69,
+          "compiledClasses": {
+            "protocol/main": 3,
+            "protocol/test": 1,
+            "scheduler/main": 18,
+            "scheduler/test": 5
+          },
+          "installedTrees": {
+            "protocol": "9019cb4847cd612766b5ee5ca2f4317542502ec83c2116b1951ffa70b06803bd",
+            "scheduler": "962efeddc221f89c2f8797cb7261a33ac24128239a02dbfeacadaaac966634ea"
+          },
+          "ok": true
+        }
+      },
+      "tests": {
+        "go": {
+          "agent": {
+            "modules": {
+              "path": ".cache/java03-java25-bundle/reports/agent-modules.log",
+              "sha256": "b4537ed75f533f993f371954de47e42a793b8e5b0587577de7e27fb3e50696bd"
+            },
+            "test": {
+              "path": ".cache/java03-java25-bundle/reports/agent-test.log",
+              "sha256": "ce335beaf77d9fcab2c2974701688a34bf84f45f4308ca80fdd543fa7e4e17e8"
+            },
+            "vet": {
+              "path": ".cache/java03-java25-bundle/reports/agent-vet.log",
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            }
+          },
+          "cluster-helper": {
+            "modules": {
+              "path": ".cache/java03-java25-bundle/reports/cluster-helper-modules.log",
+              "sha256": "b4537ed75f533f993f371954de47e42a793b8e5b0587577de7e27fb3e50696bd"
+            },
+            "test": {
+              "path": ".cache/java03-java25-bundle/reports/cluster-helper-test.log",
+              "sha256": "aaecda19ec03506bb7d3fd7fd43a60cf57f8ae43cd5b795d62a9087dd5038513"
+            },
+            "vet": {
+              "path": ".cache/java03-java25-bundle/reports/cluster-helper-vet.log",
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            }
+          },
+          "native-workload": {
+            "modules": {
+              "path": ".cache/java03-java25-bundle/reports/native-workload-modules.log",
+              "sha256": "b4537ed75f533f993f371954de47e42a793b8e5b0587577de7e27fb3e50696bd"
+            },
+            "test": {
+              "path": ".cache/java03-java25-bundle/reports/native-workload-test.log",
+              "sha256": "66971bc144d69d9217b0f68b9dd51650ce3f9f86b4f9b09cb1452819503ef7d8"
+            },
+            "vet": {
+              "path": ".cache/java03-java25-bundle/reports/native-workload-vet.log",
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            }
+          }
+        },
+        "java": [
+          {
+            "errors": 0,
+            "failures": 0,
+            "path": ".cache/java03-java25-bundle/build/java/protocol/test-results/test/TEST-org.apache.aurora.nativeprotocol.ProtocolValidatorTest.xml",
+            "sha256": "133b8e7641f53cae2426ad23c15948726fcbcb31eba157ec57837747ca0bff9e",
+            "skipped": 0,
+            "suite": "org.apache.aurora.nativeprotocol.ProtocolValidatorTest",
+            "tests": 7
+          },
+          {
+            "errors": 0,
+            "failures": 0,
+            "path": ".cache/java03-java25-bundle/build/java/scheduler/test-results/test/TEST-org.apache.aurora.nativescheduler.NativeEngineTest.xml",
+            "sha256": "2cb7829dcdb266dab1e9f9e7fdfb64eb26bc35f24bc31d3253c9b9d76e2f84de",
+            "skipped": 0,
+            "suite": "org.apache.aurora.nativescheduler.NativeEngineTest",
+            "tests": 13
+          },
+          {
+            "errors": 0,
+            "failures": 0,
+            "path": ".cache/java03-java25-bundle/build/java/scheduler/test-results/test/TEST-org.apache.aurora.nativescheduler.NativeHttpTest.xml",
+            "sha256": "b6a08e1a8ac3ad7b270e085aa933a36e8160920393890106c40d7e600f46a854",
+            "skipped": 0,
+            "suite": "org.apache.aurora.nativescheduler.NativeHttpTest",
+            "tests": 7
+          },
+          {
+            "errors": 0,
+            "failures": 0,
+            "path": ".cache/java03-java25-bundle/build/java/scheduler/test-results/test/TEST-org.apache.aurora.scheduler.storage.sql.NativeSqlStoreTest.xml",
+            "sha256": "fc98b89b8b47f2ed9a02312ec99dc43a234f07a8de962f4542fafd44c9fd4924",
+            "skipped": 0,
+            "suite": "org.apache.aurora.scheduler.storage.sql.NativeSqlStoreTest",
+            "tests": 14
+          }
+        ],
+        "python": {
+          "lab": {
+            "path": ".cache/java03-java25-bundle/reports/lab-tests.log",
+            "sha256": "b98bbc501f4f3f0682f46f2d4fa906222acc28734075a3921afacb7e6fe8d3a7",
+            "tests": 72
+          },
+          "packaging": {
+            "path": ".cache/java03-java25-bundle/reports/packaging-tests.log",
+            "sha256": "86b73ead5c73ecb259ddddc7f18fc1d5f179caddf909452104f3c58b5e22e7a9",
+            "tests": 48
+          }
+        }
+      },
+      "toolchains": {
+        "path": ".cache/java03-java25-bundle/reports/toolchains.json",
+        "sha256": "f42f902f166b1589a80b648ffcfb9ec3df7fb3ca2be24148e5fe1f117ae7e93f"
+      },
+      "unchangedGoExecutables": {
+        "context/agent/aurora-agent": "e9587ab073587c849a2e38d7f454f6dae0bb9adb616edc94809f4c032cbebb84",
+        "context/fixtures/cluster-helper": "764690ac37298fb508b4d3c2a3f683e785b1df4a784971a26c18b46f3fb0da08",
+        "context/fixtures/native-workload": "2f06dd1a7112e47534ba89b4d50d5741b57c893c6aa5c5c1fc258f0e18c7db7e"
+      }
+    },
+    "java26": {
+      "bundle": {
+        "artifactHashesVerified": 274,
+        "images": {
+          "agent": {
+            "boundary": {
+              "path": ".cache/java03-java26-bundle/reports/agent-boundary.json",
+              "sha256": "e93f9fc021101fb6a8874f7cf38d5337bf436efefe19e54e658aa1df7524b4ed"
+            },
+            "id": "sha256:b4c483b17428cfdf490c3cd93f57409bdb9c1c5860acfc02665970f80a5c7497",
+            "payloadFiles": 1,
+            "reference": "aurora-native-local:7fdad5d4f488dd68-agent"
+          },
+          "agent-lab": {
+            "boundary": {
+              "path": ".cache/java03-java26-bundle/reports/agent-lab-boundary.json",
+              "sha256": "939a22d5477eded0185829a67cd19e5bf27fd100331982304c70f7b6354363d9"
+            },
+            "id": "sha256:c4f83f225375708b69d47d81cbc110d5839bce4fe4679e00fdae08d990624d3f",
+            "payloadFiles": 3,
+            "reference": "aurora-native-local:7fdad5d4f488dd68-agent-lab"
+          },
+          "scheduler": {
+            "boundary": {
+              "path": ".cache/java03-java26-bundle/reports/scheduler-boundary.json",
+              "sha256": "9cd8d1e0da264b1621940a8884b23a640dbd1bdb488e180b960b898f9ece890f"
+            },
+            "id": "sha256:789e09ad75661925aba36260a1999122206d42359dd15e01146bbbb4db75501b",
+            "payloadFiles": 267,
+            "reference": "aurora-native-local:7fdad5d4f488dd68-scheduler"
+          },
+          "scheduler-lab": {
+            "boundary": {
+              "path": ".cache/java03-java26-bundle/reports/scheduler-lab-boundary.json",
+              "sha256": "920718e76f8abf6eb30946b3791a2e15d2f3d1778c2bc3c16ace64a787f3b2f4"
+            },
+            "id": "sha256:a96ea5120e0103d5f185f1bdfc7f3f1ef5cb5f2891d7929edd32d0239fd2b019",
+            "payloadFiles": 269,
+            "reference": "aurora-native-local:7fdad5d4f488dd68-scheduler-lab"
+          },
+          "tools": {
+            "boundary": {
+              "path": ".cache/java03-java26-bundle/reports/tools-boundary.json",
+              "sha256": "736fd3ac44d12db15fb6aac38c2ca7728791c7d343274fa292244b69576eace0"
+            },
+            "id": "sha256:7a36016de1fc71e5111efa89a8f9d51f4d39b899225778405a54a27ec3cb3cc2",
+            "payloadFiles": 1,
+            "reference": "aurora-native-local:7fdad5d4f488dd68-tools"
+          }
+        },
+        "path": ".cache/java03-java26-bundle/bundle.json",
+        "reportHashesVerified": 62,
+        "sha256": "d3c4a43b7427af593a1bbca5f942c9a9c34ed410a26b843d1be20ee2484c4e9e"
+      },
+      "compatibility": {
+        "newJavaMajor": 26,
+        "oldBundle": {
+          "path": ".cache/java02-fresh-bundle/bundle.json",
+          "sha256": "e22ff2dc06f95f9f1d0cb89b4f3f9e561868f62cb56aae8749616ab60ed42ef9"
+        },
+        "oldJavaMajor": 25,
+        "oldPkcs12LoadedOnBoth": true,
+        "originalInputHashesVerified": 686,
+        "originalInputsUnchanged": true,
+        "path": ".cache/java03-java26-compat/result.json",
+        "scriptSha256": "75610692dea92533b3d4f23ae1589a318a9fdba0d1cabd287edbef090b74f9dd",
+        "sha256": "d9ac119273d334176e660b78b7cb2d53b59443c08703c0163f8204a57c6f2243",
+        "stateExecutions": 13,
+        "states": {
+          "advanced": {
+            "attempts": 18,
+            "commands": 30,
+            "epoch": "8",
+            "jobs": 9,
+            "jsonSha256": "8224a98255a1b7379d692c95843c1b5921e41086716b0358bf5953c678e4b42a"
+          },
+          "newWrites": {
+            "attempts": 19,
+            "commands": 32,
+            "epoch": "8",
+            "jobs": 10,
+            "jsonSha256": "ba4c02443f4027a4003ae4c2396d61905ab927d6207e1d88596d764162f4021f"
+          },
+          "old": {
+            "attempts": 18,
+            "commands": 30,
+            "epoch": "7",
+            "jobs": 9,
+            "jsonSha256": "1c15c455d0e2d31cf595fa69545aec63cdcd74764f41cb61488c8e29c1a2aec0"
+          },
+          "reverseWrites": {
+            "attempts": 20,
+            "commands": 34,
+            "epoch": "8",
+            "jobs": 11,
+            "jsonSha256": "a06163ee8a6b9e49eed6331bbfe70ca959124e1b394af8dc673456c53363c88a"
+          }
+        }
+      },
+      "externalJars": {
+        "jackson-annotations-2.22.jar": "21ddb598807d3a51a876704eb979d9296e1c6a6f47ab1826ff88c6d6a127a2d0",
+        "jackson-core-2.22.2.jar": "ff167a6317be15895706c26668f45b898efe40ab8780970658210fe1393d52a6",
+        "jackson-databind-2.22.2.jar": "d0da14c12b16b5d54719aa172d83b542ff4abeb8b0fb7db476fde8ceece760ca",
+        "json-schema-validator-2.0.7.jar": "7d01cefd6f0d656666b94778c7a13ada2941aace48e76830809c0dbf61ad5be2",
+        "slf4j-api-2.0.19.jar": "e91ff6d720609e7a194ffe758c3ed5c84e798617ae07b0a0f6a4fe229741b4bb",
+        "slf4j-nop-2.0.19.jar": "d0226062f9b3a2793f62002f892a8e624eb07f396130fc949e01b1d5f4888cba",
+        "sqlite-jdbc-3.53.4.0.jar": "bcb1f51e36f940867e83342f9efbf5968ac44a6bef4d397bb4af7b17b45cd2fb"
+      },
+      "java": {
+        "bytecodeMajor": 70,
+        "compilerRelease": "26.0.2.1+1",
+        "compilerVersionMajor": 26,
+        "illegalFinalFieldMutation": "deny",
+        "illegalNativeAccess": "deny",
+        "nativeAccess": "ALL-UNNAMED",
+        "profile": "java26",
+        "release": "26.0.2.1+1",
+        "vendor": "Eclipse Adoptium",
+        "versionMajor": 26
+      },
+      "javaVersions": {
+        "path": ".cache/java03-java26-bundle/reports/java-versions.json",
+        "sha256": "d52a596aab8aed5e4fbfc55fb87abc6f6415d428073289a4da82190afa382ca6"
+      },
+      "jdkDiagnostics": {
+        "jdkInternalApiEdges": 0,
+        "logs": [
+          {
+            "path": ".cache/java03-java26-audit/java03-jdk-internals.log",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/java03-java26-audit/java03-missing-deps.log",
+            "sha256": "33e074893a553a2dbfd29ac87bdc23becb9213855929b20264796071d7dc9b5f"
+          },
+          {
+            "path": ".cache/java03-java26-audit/java03-jdeprscan.log",
+            "sha256": "d1e598a515e37dc7bc7f2eaec743a5d73860f7f1e2b633fef78f0d3acb7867c8"
+          }
+        ],
+        "optionalMissingEdges": 35,
+        "ownJdkDeprecations": [],
+        "path": ".cache/java03-java26-audit/java03-jdk-diagnostics.json",
+        "sha256": "0878e9c85ceffff4d8bc15a8cc302cdda0db75e4913207b987c99b0eb291c6da"
+      },
+      "launchers": {
+        "commands": 59,
+        "originalInputHashesVerified": 411,
+        "path": ".cache/java03-java26-launchers-run/launcher-check.json",
+        "protocol": {
+          "invalid": 27,
+          "parserInvalid": 12,
+          "validAndHash": 13
+        },
+        "scheduler": {
+          "emptyEpoch": "0",
+          "negativeCases": 4,
+          "repeatedStateEqual": true,
+          "stderrEmpty": true
+        },
+        "sha256": "9121f6a52b6b2c2abaaaffed1e27dbdb8bd69ff42399b040a677908468ee9dc4"
+      },
+      "probesRemoved": 8,
+      "qualification": {
+        "allTerminalCleanedUnreserved": true,
+        "cases": [
+          {
+            "at": 1789090685.2840807,
+            "name": "operator-mtls-and-role-rejection",
+            "ok": true
+          },
+          {
+            "at": 1789090686.6939914,
+            "launches": 1,
+            "name": "c1789090683-r0-batch-submit-replay",
+            "ok": true
+          },
+          {
+            "at": 1789090690.3120098,
+            "name": "c1789090683-r0-two-agent-service-ready",
+            "ok": true
+          },
+          {
+            "at": 1789090698.6172683,
+            "epoch": "2",
+            "generation": 2,
+            "name": "c1789090683-r0-scheduler-crash-recovery",
+            "ok": true
+          },
+          {
+            "at": 1789090704.5821211,
+            "name": "c1789090683-r0-partition-stop-reconnect",
+            "ok": true
+          },
+          {
+            "at": 1789090715.4643419,
+            "generation": 2,
+            "launches": 3,
+            "name": "c1789090683-r0-agent-crash-lost-replace-forced-stop",
+            "ok": true
+          },
+          {
+            "at": 1789090723.294971,
+            "name": "c1789090683-r0-no-resurrection",
+            "ok": true
+          },
+          {
+            "at": 1789090733.8814082,
+            "container": "ea0aa51e1ee65cd0f1f1ee8627156f783e9f09b28362d54abaff6395ad931f5d",
+            "epoch": "4",
+            "jobs": 3,
+            "name": "isolated-live-scheduler-backup-restore-0",
+            "ok": true
+          },
+          {
+            "at": 1789090737.4172597,
+            "launches": 1,
+            "name": "c1789090683-r1-batch-submit-replay",
+            "ok": true
+          },
+          {
+            "at": 1789090740.2642696,
+            "name": "c1789090683-r1-two-agent-service-ready",
+            "ok": true
+          },
+          {
+            "at": 1789090747.2155974,
+            "epoch": "4",
+            "generation": 4,
+            "name": "c1789090683-r1-scheduler-crash-recovery",
+            "ok": true
+          },
+          {
+            "at": 1789090751.7493963,
+            "name": "c1789090683-r1-partition-stop-reconnect",
+            "ok": true
+          },
+          {
+            "at": 1789090760.0765097,
+            "generation": 3,
+            "launches": 3,
+            "name": "c1789090683-r1-agent-crash-lost-replace-forced-stop",
+            "ok": true
+          },
+          {
+            "at": 1789090765.3282697,
+            "name": "c1789090683-r1-no-resurrection",
+            "ok": true
+          },
+          {
+            "at": 1789090773.6409137,
+            "container": "88ae1dd8ac8e97176d7fcbb737bd07350ef0b0c36fdbe10bcc474dc98a9d9ae9",
+            "epoch": "6",
+            "jobs": 6,
+            "name": "isolated-live-scheduler-backup-restore-1",
+            "ok": true
+          },
+          {
+            "at": 1789090775.979985,
+            "launches": 1,
+            "name": "c1789090683-r2-batch-submit-replay",
+            "ok": true
+          },
+          {
+            "at": 1789090778.2898786,
+            "name": "c1789090683-r2-two-agent-service-ready",
+            "ok": true
+          },
+          {
+            "at": 1789090783.668132,
+            "epoch": "6",
+            "generation": 6,
+            "name": "c1789090683-r2-scheduler-crash-recovery",
+            "ok": true
+          },
+          {
+            "at": 1789090787.349823,
+            "name": "c1789090683-r2-partition-stop-reconnect",
+            "ok": true
+          },
+          {
+            "at": 1789090794.7151082,
+            "generation": 4,
+            "launches": 3,
+            "name": "c1789090683-r2-agent-crash-lost-replace-forced-stop",
+            "ok": true
+          },
+          {
+            "at": 1789090801.6283312,
+            "name": "c1789090683-r2-no-resurrection",
+            "ok": true
+          },
+          {
+            "at": 1789090813.425509,
+            "container": "353d7f6aec67ee97e6142d2e3385818740abc3755d903d279eac58fd7e25c2bf",
+            "epoch": "8",
+            "jobs": 9,
+            "name": "isolated-live-scheduler-backup-restore-2",
+            "ok": true
+          },
+          {
+            "at": 1789091417.900278,
+            "batches": 20,
+            "elapsedSeconds": 601.0060931779444,
+            "name": "bounded-mixed-workload",
+            "ok": true,
+            "replicas": 2
+          }
+        ],
+        "cleanup": {
+          "containers": {},
+          "networks": {},
+          "status": "stopped"
+        },
+        "finalAttempts": 40,
+        "mixed": {
+          "at": 1789091417.900278,
+          "batches": 20,
+          "elapsedSeconds": 601.0060931779444,
+          "name": "bounded-mixed-workload",
+          "ok": true,
+          "replicas": 2
+        },
+        "path": ".pi-lab/java03-java26-qualification/evidence/c1789090683-result.json",
+        "receipt": {
+          "path": ".pi-lab/java03-java26-qualification/qualification.json",
+          "sha256": "1eabc8231893c6e35b8c5c3a1233bd22ec8520cf76b4c669d2de4fbf25791d8b"
+        },
+        "run": "f7b09b1bfd263481",
+        "runtimeAudit": {
+          "path": ".cache/java03-java26-runtime-audit.json",
+          "sha256": "710d7d5546cc6bdb4d6b8bf5c4588232bc83d2f52ed65a89b75b279fe2dfdcda"
+        },
+        "sha256": "76507359c49f4db5d611627ee854e0e722c05b970460bc98e0d3ffa9e2d3ad5b"
+      },
+      "reproducibility": {
+        "path": ".cache/java03-java26-bundle/reports/java-reproducibility.json",
+        "sha256": "2ce1e9ac28407d2da1b9e8c8e9478ef5e07830ab11c4ac0a7bdd34bcde220c9d",
+        "verification": {
+          "archives": {
+            "protocol/distributions/protocol.tar": "6725aa5e550d86505364b957ef765cb330365d62db9a3eb07c755bd77a8c404a",
+            "protocol/distributions/protocol.zip": "4ae5dcfe2ec50452b5b7e4706467a499ba13f0aa3ec671e4db277669d5213d97",
+            "protocol/libs/protocol.jar": "f32b262faa7205e679d9c6a0572f050a508f2069c6741616297f129895e0c295",
+            "scheduler/distributions/aurora-native-scheduler.tar": "3bc89db652db3aa702739bdf4e074fbd6393970acfb0532f5a6a10857884d73e",
+            "scheduler/distributions/aurora-native-scheduler.zip": "ab92ea43b9c00c09788a3a486d6e0ad2b8ad6946ce29b68aed7854d35569b957",
+            "scheduler/libs/aurora-native-scheduler.jar": "6b86b0769fc94ce1882e6dfdf7640b93cd3fb58fe211c6d431a821e80511e164"
+          },
+          "bytecodeMajor": 70,
+          "compiledClasses": {
+            "protocol/main": 3,
+            "protocol/test": 1,
+            "scheduler/main": 18,
+            "scheduler/test": 5
+          },
+          "installedTrees": {
+            "protocol": "abb5c5c831d419788cc4d9c928237929a8f5b68f756622ce53bc4c3546ae8467",
+            "scheduler": "7f55cbd8db23bdb314de99c0acf6982844b9a733bcef4d772e59ade72c7a181b"
+          },
+          "ok": true
+        }
+      },
+      "tests": {
+        "go": {
+          "agent": {
+            "modules": {
+              "path": ".cache/java03-java26-bundle/reports/agent-modules.log",
+              "sha256": "b4537ed75f533f993f371954de47e42a793b8e5b0587577de7e27fb3e50696bd"
+            },
+            "test": {
+              "path": ".cache/java03-java26-bundle/reports/agent-test.log",
+              "sha256": "096b8390bf0407a08da54b74164932d90d380d084759b6e6c5cf7501618c4e3d"
+            },
+            "vet": {
+              "path": ".cache/java03-java26-bundle/reports/agent-vet.log",
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            }
+          },
+          "cluster-helper": {
+            "modules": {
+              "path": ".cache/java03-java26-bundle/reports/cluster-helper-modules.log",
+              "sha256": "b4537ed75f533f993f371954de47e42a793b8e5b0587577de7e27fb3e50696bd"
+            },
+            "test": {
+              "path": ".cache/java03-java26-bundle/reports/cluster-helper-test.log",
+              "sha256": "e761209a657b353df4d1cf28004624d1c0ae668278763e67559a1af3fdf2bc0b"
+            },
+            "vet": {
+              "path": ".cache/java03-java26-bundle/reports/cluster-helper-vet.log",
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            }
+          },
+          "native-workload": {
+            "modules": {
+              "path": ".cache/java03-java26-bundle/reports/native-workload-modules.log",
+              "sha256": "b4537ed75f533f993f371954de47e42a793b8e5b0587577de7e27fb3e50696bd"
+            },
+            "test": {
+              "path": ".cache/java03-java26-bundle/reports/native-workload-test.log",
+              "sha256": "44f052d72fdc0b6ad9788491427bcf84241501ba2dc63ec89c422972a70fc374"
+            },
+            "vet": {
+              "path": ".cache/java03-java26-bundle/reports/native-workload-vet.log",
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            }
+          }
+        },
+        "java": [
+          {
+            "errors": 0,
+            "failures": 0,
+            "path": ".cache/java03-java26-bundle/build/java/protocol/test-results/test/TEST-org.apache.aurora.nativeprotocol.ProtocolValidatorTest.xml",
+            "sha256": "f4c87e03bc4f0af61dfb7dd100ffc880cda5a9e9a163babbff0d8e25edece30c",
+            "skipped": 0,
+            "suite": "org.apache.aurora.nativeprotocol.ProtocolValidatorTest",
+            "tests": 7
+          },
+          {
+            "errors": 0,
+            "failures": 0,
+            "path": ".cache/java03-java26-bundle/build/java/scheduler/test-results/test/TEST-org.apache.aurora.nativescheduler.NativeEngineTest.xml",
+            "sha256": "eef464fcc0fca9dd982e7bfae492976718c7582b198a8332dac8a9011971e85b",
+            "skipped": 0,
+            "suite": "org.apache.aurora.nativescheduler.NativeEngineTest",
+            "tests": 13
+          },
+          {
+            "errors": 0,
+            "failures": 0,
+            "path": ".cache/java03-java26-bundle/build/java/scheduler/test-results/test/TEST-org.apache.aurora.nativescheduler.NativeHttpTest.xml",
+            "sha256": "9ee6eb4789787ed6d362182197b61b3a19d3c5ee7ddcdea477e965680a53901f",
+            "skipped": 0,
+            "suite": "org.apache.aurora.nativescheduler.NativeHttpTest",
+            "tests": 7
+          },
+          {
+            "errors": 0,
+            "failures": 0,
+            "path": ".cache/java03-java26-bundle/build/java/scheduler/test-results/test/TEST-org.apache.aurora.scheduler.storage.sql.NativeSqlStoreTest.xml",
+            "sha256": "6128cf2994ae0cadc6becd81c631de17ef1c5167c8ed0414075c4657b62a7eb8",
+            "skipped": 0,
+            "suite": "org.apache.aurora.scheduler.storage.sql.NativeSqlStoreTest",
+            "tests": 14
+          }
+        ],
+        "python": {
+          "lab": {
+            "path": ".cache/java03-java26-bundle/reports/lab-tests.log",
+            "sha256": "d130b8255b8811eb412d51f68ed1ccfd97dc6f59ce0a6f8b02327bedf7d7ff5d",
+            "tests": 72
+          },
+          "packaging": {
+            "path": ".cache/java03-java26-bundle/reports/packaging-tests.log",
+            "sha256": "f263005a0088a40843a288c7d86bc621bbe87e35909910ffdb3313b5e40065c2",
+            "tests": 48
+          }
+        }
+      },
+      "toolchains": {
+        "path": ".cache/java03-java26-bundle/reports/toolchains.json",
+        "sha256": "03a4ae4338898704b1bca5b722babb631ebd297cb1d2fe9ce37ff216dcedfd17"
+      },
+      "unchangedGoExecutables": {
+        "context/agent/aurora-agent": "e9587ab073587c849a2e38d7f454f6dae0bb9adb616edc94809f4c032cbebb84",
+        "context/fixtures/cluster-helper": "764690ac37298fb508b4d3c2a3f683e785b1df4a784971a26c18b46f3fb0da08",
+        "context/fixtures/native-workload": "2f06dd1a7112e47534ba89b4d50d5741b57c893c6aa5c5c1fc258f0e18c7db7e"
+      }
+    },
+    "java26-runtime": {
+      "bundle": {
+        "artifactHashesVerified": 274,
+        "images": {
+          "agent": {
+            "boundary": {
+              "path": ".cache/java03-java26-runtime-bundle/reports/agent-boundary.json",
+              "sha256": "838b90fddedacbd7ddd2a64ee45477a666e04d2640e8dd7ffdc809eb744c3cf1"
+            },
+            "id": "sha256:813e0d04e7c5beadf498403ef0f4a686a34788f359a0bca9a8f77ea5f8e94f34",
+            "payloadFiles": 1,
+            "reference": "aurora-native-local:b2d157a3e6e97854-agent"
+          },
+          "agent-lab": {
+            "boundary": {
+              "path": ".cache/java03-java26-runtime-bundle/reports/agent-lab-boundary.json",
+              "sha256": "04966c5e964d71f414f47d36a10e044b236b924e6ffab433dadb03297e7d5860"
+            },
+            "id": "sha256:9b8e7fb7dc70163fa75b5c86ee39641be937cc9dd51e5b4eea0164bfab394ec2",
+            "payloadFiles": 3,
+            "reference": "aurora-native-local:b2d157a3e6e97854-agent-lab"
+          },
+          "scheduler": {
+            "boundary": {
+              "path": ".cache/java03-java26-runtime-bundle/reports/scheduler-boundary.json",
+              "sha256": "f50c10c53716116381bc535cf73d13a3acd2680767930fd163e2b54fe052fc97"
+            },
+            "id": "sha256:415e7af017a9d741edb3b5b4e2b0575f163aebd8cf7abbc098d28d6ee0edb0c5",
+            "payloadFiles": 267,
+            "reference": "aurora-native-local:b2d157a3e6e97854-scheduler"
+          },
+          "scheduler-lab": {
+            "boundary": {
+              "path": ".cache/java03-java26-runtime-bundle/reports/scheduler-lab-boundary.json",
+              "sha256": "7010f6a0fcc481872226a88defde4a4a505e31924c9c2affb250427f9a0401b3"
+            },
+            "id": "sha256:ca38dbbd60e95bf5e1fe8890a99bfb0a9ec71031d3fcbaebe39ec06879eb2c74",
+            "payloadFiles": 269,
+            "reference": "aurora-native-local:b2d157a3e6e97854-scheduler-lab"
+          },
+          "tools": {
+            "boundary": {
+              "path": ".cache/java03-java26-runtime-bundle/reports/tools-boundary.json",
+              "sha256": "e8a1727efacd00972bba39ebce29e78f97726138f455c6897b667e3ef9642b98"
+            },
+            "id": "sha256:376aa98c9292e0759f2dcb5f330460f23bf23ffc42d4bba60fc2cb922d9aa9a7",
+            "payloadFiles": 1,
+            "reference": "aurora-native-local:b2d157a3e6e97854-tools"
+          }
+        },
+        "path": ".cache/java03-java26-runtime-bundle/bundle.json",
+        "reportHashesVerified": 62,
+        "sha256": "fc53bb64d3f49302540ad4e7c73f9acf6988dea26a652e652f8eb9c1b918275a"
+      },
+      "compatibility": {
+        "newJavaMajor": 26,
+        "oldBundle": {
+          "path": ".cache/java02-fresh-bundle/bundle.json",
+          "sha256": "e22ff2dc06f95f9f1d0cb89b4f3f9e561868f62cb56aae8749616ab60ed42ef9"
+        },
+        "oldJavaMajor": 25,
+        "oldPkcs12LoadedOnBoth": true,
+        "originalInputHashesVerified": 686,
+        "originalInputsUnchanged": true,
+        "path": ".cache/java03-java26-runtime-compat/result.json",
+        "scriptSha256": "75610692dea92533b3d4f23ae1589a318a9fdba0d1cabd287edbef090b74f9dd",
+        "sha256": "163b273799069c938b9ddf3e7a88823f8218104cd9d655c120596efe2bec2174",
+        "stateExecutions": 13,
+        "states": {
+          "advanced": {
+            "attempts": 18,
+            "commands": 30,
+            "epoch": "8",
+            "jobs": 9,
+            "jsonSha256": "8224a98255a1b7379d692c95843c1b5921e41086716b0358bf5953c678e4b42a"
+          },
+          "newWrites": {
+            "attempts": 19,
+            "commands": 32,
+            "epoch": "8",
+            "jobs": 10,
+            "jsonSha256": "ba4c02443f4027a4003ae4c2396d61905ab927d6207e1d88596d764162f4021f"
+          },
+          "old": {
+            "attempts": 18,
+            "commands": 30,
+            "epoch": "7",
+            "jobs": 9,
+            "jsonSha256": "1c15c455d0e2d31cf595fa69545aec63cdcd74764f41cb61488c8e29c1a2aec0"
+          },
+          "reverseWrites": {
+            "attempts": 20,
+            "commands": 34,
+            "epoch": "8",
+            "jobs": 11,
+            "jsonSha256": "a06163ee8a6b9e49eed6331bbfe70ca959124e1b394af8dc673456c53363c88a"
+          }
+        }
+      },
+      "externalJars": {
+        "jackson-annotations-2.22.jar": "21ddb598807d3a51a876704eb979d9296e1c6a6f47ab1826ff88c6d6a127a2d0",
+        "jackson-core-2.22.2.jar": "ff167a6317be15895706c26668f45b898efe40ab8780970658210fe1393d52a6",
+        "jackson-databind-2.22.2.jar": "d0da14c12b16b5d54719aa172d83b542ff4abeb8b0fb7db476fde8ceece760ca",
+        "json-schema-validator-2.0.7.jar": "7d01cefd6f0d656666b94778c7a13ada2941aace48e76830809c0dbf61ad5be2",
+        "slf4j-api-2.0.19.jar": "e91ff6d720609e7a194ffe758c3ed5c84e798617ae07b0a0f6a4fe229741b4bb",
+        "slf4j-nop-2.0.19.jar": "d0226062f9b3a2793f62002f892a8e624eb07f396130fc949e01b1d5f4888cba",
+        "sqlite-jdbc-3.53.4.0.jar": "bcb1f51e36f940867e83342f9efbf5968ac44a6bef4d397bb4af7b17b45cd2fb"
+      },
+      "java": {
+        "bytecodeMajor": 69,
+        "compilerRelease": "25.0.4.1+1",
+        "compilerVersionMajor": 25,
+        "illegalFinalFieldMutation": "deny",
+        "illegalNativeAccess": "deny",
+        "nativeAccess": "ALL-UNNAMED",
+        "profile": "java26-runtime",
+        "release": "26.0.2.1+1",
+        "vendor": "Eclipse Adoptium",
+        "versionMajor": 26
+      },
+      "javaVersions": {
+        "path": ".cache/java03-java26-runtime-bundle/reports/java-versions.json",
+        "sha256": "f33e7b77ca10ad93600e6e65200bde19612f5d70be269b0efd6287e0c9fe0e6a"
+      },
+      "jdkDiagnostics": {
+        "jdkInternalApiEdges": 0,
+        "logs": [
+          {
+            "path": ".cache/java03-java26-runtime-audit/java03-jdk-internals.log",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".cache/java03-java26-runtime-audit/java03-missing-deps.log",
+            "sha256": "2ba662f165b7905c541a4a5787afbd7ed5dfe102b26af7b9578d9ca62692156e"
+          },
+          {
+            "path": ".cache/java03-java26-runtime-audit/java03-jdeprscan.log",
+            "sha256": "2134c2ce157d7449dc54b2873a6d153c5b062a111630c7ca8a7e7e422e4b9d92"
+          }
+        ],
+        "optionalMissingEdges": 35,
+        "ownJdkDeprecations": [],
+        "path": ".cache/java03-java26-runtime-audit/java03-jdk-diagnostics.json",
+        "sha256": "6c163b6459c542ecdbe052d8cea4d3b6b4b43b5e5863f2a68d2323944cd8377d"
+      },
+      "launchers": {
+        "commands": 59,
+        "originalInputHashesVerified": 411,
+        "path": ".cache/java03-java26-runtime-launchers-run/launcher-check.json",
+        "protocol": {
+          "invalid": 27,
+          "parserInvalid": 12,
+          "validAndHash": 13
+        },
+        "scheduler": {
+          "emptyEpoch": "0",
+          "negativeCases": 4,
+          "repeatedStateEqual": true,
+          "stderrEmpty": true
+        },
+        "sha256": "edc940267e57d7972b310c972524f962a8bc403afbc9a32dcd18229e9de2452e"
+      },
+      "probesRemoved": 8,
+      "qualification": {
+        "allTerminalCleanedUnreserved": true,
+        "cases": [
+          {
+            "at": 1789090686.9204383,
+            "name": "operator-mtls-and-role-rejection",
+            "ok": true
+          },
+          {
+            "at": 1789090688.5718098,
+            "launches": 1,
+            "name": "c1789090685-r0-batch-submit-replay",
+            "ok": true
+          },
+          {
+            "at": 1789090691.583813,
+            "name": "c1789090685-r0-two-agent-service-ready",
+            "ok": true
+          },
+          {
+            "at": 1789090699.0323868,
+            "epoch": "2",
+            "generation": 2,
+            "name": "c1789090685-r0-scheduler-crash-recovery",
+            "ok": true
+          },
+          {
+            "at": 1789090704.7706134,
+            "name": "c1789090685-r0-partition-stop-reconnect",
+            "ok": true
+          },
+          {
+            "at": 1789090715.9572337,
+            "generation": 2,
+            "launches": 3,
+            "name": "c1789090685-r0-agent-crash-lost-replace-forced-stop",
+            "ok": true
+          },
+          {
+            "at": 1789090723.6623251,
+            "name": "c1789090685-r0-no-resurrection",
+            "ok": true
+          },
+          {
+            "at": 1789090733.660714,
+            "container": "9a82531831567d967efa21409d9430026fa0ec37fe7f637fcfd40ba89afa2a0e",
+            "epoch": "4",
+            "jobs": 3,
+            "name": "isolated-live-scheduler-backup-restore-0",
+            "ok": true
+          },
+          {
+            "at": 1789090736.3825636,
+            "launches": 1,
+            "name": "c1789090685-r1-batch-submit-replay",
+            "ok": true
+          },
+          {
+            "at": 1789090739.6576054,
+            "name": "c1789090685-r1-two-agent-service-ready",
+            "ok": true
+          },
+          {
+            "at": 1789090746.278004,
+            "epoch": "4",
+            "generation": 4,
+            "name": "c1789090685-r1-scheduler-crash-recovery",
+            "ok": true
+          },
+          {
+            "at": 1789090751.0531287,
+            "name": "c1789090685-r1-partition-stop-reconnect",
+            "ok": true
+          },
+          {
+            "at": 1789090758.677257,
+            "generation": 3,
+            "launches": 3,
+            "name": "c1789090685-r1-agent-crash-lost-replace-forced-stop",
+            "ok": true
+          },
+          {
+            "at": 1789090764.474097,
+            "name": "c1789090685-r1-no-resurrection",
+            "ok": true
+          },
+          {
+            "at": 1789090772.84833,
+            "container": "786aa53ceca35a5feb35b9ce6f8ecd637f028ceff56c28b06a85555da5bf92af",
+            "epoch": "6",
+            "jobs": 6,
+            "name": "isolated-live-scheduler-backup-restore-1",
+            "ok": true
+          },
+          {
+            "at": 1789090775.2968209,
+            "launches": 1,
+            "name": "c1789090685-r2-batch-submit-replay",
+            "ok": true
+          },
+          {
+            "at": 1789090777.7532845,
+            "name": "c1789090685-r2-two-agent-service-ready",
+            "ok": true
+          },
+          {
+            "at": 1789090783.2920098,
+            "epoch": "6",
+            "generation": 6,
+            "name": "c1789090685-r2-scheduler-crash-recovery",
+            "ok": true
+          },
+          {
+            "at": 1789090786.5362248,
+            "name": "c1789090685-r2-partition-stop-reconnect",
+            "ok": true
+          },
+          {
+            "at": 1789090794.8606536,
+            "generation": 4,
+            "launches": 3,
+            "name": "c1789090685-r2-agent-crash-lost-replace-forced-stop",
+            "ok": true
+          },
+          {
+            "at": 1789090801.4126947,
+            "name": "c1789090685-r2-no-resurrection",
+            "ok": true
+          },
+          {
+            "at": 1789090813.405163,
+            "container": "69a38643d64c4326b24325b2fdac9a277c39f1227ffb9b0a883cf7e1b3f96837",
+            "epoch": "8",
+            "jobs": 9,
+            "name": "isolated-live-scheduler-backup-restore-2",
+            "ok": true
+          },
+          {
+            "at": 1789091417.7188973,
+            "batches": 20,
+            "elapsedSeconds": 601.0220966970082,
+            "name": "bounded-mixed-workload",
+            "ok": true,
+            "replicas": 2
+          }
+        ],
+        "cleanup": {
+          "containers": {},
+          "networks": {},
+          "status": "stopped"
+        },
+        "finalAttempts": 40,
+        "mixed": {
+          "at": 1789091417.7188973,
+          "batches": 20,
+          "elapsedSeconds": 601.0220966970082,
+          "name": "bounded-mixed-workload",
+          "ok": true,
+          "replicas": 2
+        },
+        "path": ".pi-lab/java03-java26-runtime-qualification/evidence/c1789090685-result.json",
+        "receipt": {
+          "path": ".pi-lab/java03-java26-runtime-qualification/qualification.json",
+          "sha256": "e4e6a0282d03d8add4ceaaa978ac76272b57f7deac6090e179121ce8fbe498de"
+        },
+        "run": "dd46658c01200f63",
+        "runtimeAudit": {
+          "path": ".cache/java03-java26-runtime-runtime-audit.json",
+          "sha256": "9efafefa4d8eed6a516f7d0dc83aa350072cf424822c10f72d423b3b3a1f1ea2"
+        },
+        "sha256": "04226b7af9d93103e96ee260b70a85340bea89152f5d05b658ff523c9890d50e"
+      },
+      "reproducibility": {
+        "path": ".cache/java03-java26-runtime-bundle/reports/java-reproducibility.json",
+        "sha256": "1074079130f106b4d6c8f5848b94d28254bfa5f2314afeb3f5d91a9c8390f9a2",
+        "verification": {
+          "archives": {
+            "protocol/distributions/protocol.tar": "4c1be477c923b2f54b974da45b7abf9ab63aeda16db8aa36c067a328920fb238",
+            "protocol/distributions/protocol.zip": "0fd8e6b98e84f893d0e149190e11ebc9933e9aab0a1c90c4e3c16b556fd27b5f",
+            "protocol/libs/protocol.jar": "142f8d0933fdaf850e985d420f2673f60b1655c84abdf56bbef254e778ec8efb",
+            "scheduler/distributions/aurora-native-scheduler.tar": "e3e299de46937a6fd9bc41f773a955ee22af914bacee4853ae005b8e3b21a400",
+            "scheduler/distributions/aurora-native-scheduler.zip": "cdf22d33f2e5a7a4cef53bb867abbc97c1b4a97d3c3f8a5edabe15a232b87129",
+            "scheduler/libs/aurora-native-scheduler.jar": "f713a239820e36f12da28f6043910632a3856eac3733f52919b6e1506a4d7d78"
+          },
+          "bytecodeMajor": 69,
+          "compiledClasses": {
+            "protocol/main": 3,
+            "protocol/test": 1,
+            "scheduler/main": 18,
+            "scheduler/test": 5
+          },
+          "installedTrees": {
+            "protocol": "faf981d6d74c11ef8fd79c21bdea12adb4c64fcce4f5b1d98eb9e2e00545d3ea",
+            "scheduler": "df8bad818c3862c3b23f72310c94020207ac24de2fdf5d0458430be519023ef9"
+          },
+          "ok": true
+        }
+      },
+      "tests": {
+        "go": {
+          "agent": {
+            "modules": {
+              "path": ".cache/java03-java26-runtime-bundle/reports/agent-modules.log",
+              "sha256": "b4537ed75f533f993f371954de47e42a793b8e5b0587577de7e27fb3e50696bd"
+            },
+            "test": {
+              "path": ".cache/java03-java26-runtime-bundle/reports/agent-test.log",
+              "sha256": "7366172633858f2bf45bbbd0435cab4717e46049c0d22301fbb0088379af0cdb"
+            },
+            "vet": {
+              "path": ".cache/java03-java26-runtime-bundle/reports/agent-vet.log",
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            }
+          },
+          "cluster-helper": {
+            "modules": {
+              "path": ".cache/java03-java26-runtime-bundle/reports/cluster-helper-modules.log",
+              "sha256": "b4537ed75f533f993f371954de47e42a793b8e5b0587577de7e27fb3e50696bd"
+            },
+            "test": {
+              "path": ".cache/java03-java26-runtime-bundle/reports/cluster-helper-test.log",
+              "sha256": "59edc627f8f918cea2191aebab92c6a37368fa72a3535e5c1de381c3f13ebe96"
+            },
+            "vet": {
+              "path": ".cache/java03-java26-runtime-bundle/reports/cluster-helper-vet.log",
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            }
+          },
+          "native-workload": {
+            "modules": {
+              "path": ".cache/java03-java26-runtime-bundle/reports/native-workload-modules.log",
+              "sha256": "b4537ed75f533f993f371954de47e42a793b8e5b0587577de7e27fb3e50696bd"
+            },
+            "test": {
+              "path": ".cache/java03-java26-runtime-bundle/reports/native-workload-test.log",
+              "sha256": "cf30c8513b12ad2284fb089f37435a4b6936868204958b29042219c9b577dc89"
+            },
+            "vet": {
+              "path": ".cache/java03-java26-runtime-bundle/reports/native-workload-vet.log",
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            }
+          }
+        },
+        "java": [
+          {
+            "errors": 0,
+            "failures": 0,
+            "path": ".cache/java03-java26-runtime-bundle/build/java/protocol/test-results/test/TEST-org.apache.aurora.nativeprotocol.ProtocolValidatorTest.xml",
+            "sha256": "ed85e04e299534d2d1ed1aea11ac2ae1959f329c1a20d2b36d8f51449bef616d",
+            "skipped": 0,
+            "suite": "org.apache.aurora.nativeprotocol.ProtocolValidatorTest",
+            "tests": 7
+          },
+          {
+            "errors": 0,
+            "failures": 0,
+            "path": ".cache/java03-java26-runtime-bundle/build/java/scheduler/test-results/test/TEST-org.apache.aurora.nativescheduler.NativeEngineTest.xml",
+            "sha256": "60d35a0c7be3eda3e24519e8c1d3391aec8436734600e590e52b2175752c6a11",
+            "skipped": 0,
+            "suite": "org.apache.aurora.nativescheduler.NativeEngineTest",
+            "tests": 13
+          },
+          {
+            "errors": 0,
+            "failures": 0,
+            "path": ".cache/java03-java26-runtime-bundle/build/java/scheduler/test-results/test/TEST-org.apache.aurora.nativescheduler.NativeHttpTest.xml",
+            "sha256": "740c26925c6e43430144953c4a3db060d202e0cbe6173ea3f04c65dbe1f82d50",
+            "skipped": 0,
+            "suite": "org.apache.aurora.nativescheduler.NativeHttpTest",
+            "tests": 7
+          },
+          {
+            "errors": 0,
+            "failures": 0,
+            "path": ".cache/java03-java26-runtime-bundle/build/java/scheduler/test-results/test/TEST-org.apache.aurora.scheduler.storage.sql.NativeSqlStoreTest.xml",
+            "sha256": "45634ea8a7708cefd0b71462a1671d11cf854a730cbce1292a92864e1eaecd48",
+            "skipped": 0,
+            "suite": "org.apache.aurora.scheduler.storage.sql.NativeSqlStoreTest",
+            "tests": 14
+          }
+        ],
+        "python": {
+          "lab": {
+            "path": ".cache/java03-java26-runtime-bundle/reports/lab-tests.log",
+            "sha256": "691697d0af87dec4e945f30ec9c0d7e625a2093df3004381968cb6131fe2728c",
+            "tests": 72
+          },
+          "packaging": {
+            "path": ".cache/java03-java26-runtime-bundle/reports/packaging-tests.log",
+            "sha256": "bcda6eb9a94ef0a2e51e0e3fbcc8f96f20d00285a3adc3ee5c7f57db29f8223e",
+            "tests": 48
+          }
+        }
+      },
+      "toolchains": {
+        "path": ".cache/java03-java26-runtime-bundle/reports/toolchains.json",
+        "sha256": "63d0f9266ad402c07761f864606d04f305ccdcf723ac89753128dd76b9d61bf3"
+      },
+      "unchangedGoExecutables": {
+        "context/agent/aurora-agent": "e9587ab073587c849a2e38d7f454f6dae0bb9adb616edc94809f4c032cbebb84",
+        "context/fixtures/cluster-helper": "764690ac37298fb508b4d3c2a3f683e785b1df4a784971a26c18b46f3fb0da08",
+        "context/fixtures/native-workload": "2f06dd1a7112e47534ba89b4d50d5741b57c893c6aa5c5c1fc258f0e18c7db7e"
+      }
+    }
+  },
+  "sameRelease25ApplicationJarsAcrossRuntimes": true,
+  "schema": 1,
+  "slice": "JAVA-03",
+  "sourceCommit": "c929970d048ade532c52bddbdf9b9104e255c6d5",
+  "verifiedAt": 1789091878.5774095
+}

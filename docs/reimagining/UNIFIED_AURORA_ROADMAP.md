@@ -20,9 +20,15 @@ has passed the same full Pi gate on Java 25 and Gradle 9, including reproducible
 Java artifacts and Java 8/25 state/TLS compatibility. [JAVA-02](JAVA02_STATUS.md)
 has also passed the full gate with maintained Jackson, schema validator and
 logging dependencies, bidirectional state compatibility and an audit of the
-retained ARM64 SQLite library. These completions cover the native
-scheduler/protocol profile; the broader release qualification matrix (JAVA-03)
-is next.
+retained ARM64 SQLite library. [JAVA-03](JAVA03_STATUS.md) has now qualified
+HTTP/auth behavior and original installed launchers across Java 25, runtime-only
+Java 26 and compiled Java 26. Each profile passed 41 Java tests, 59 launcher
+commands and the complete 23-case physical gate. [The evidence](java03-evidence.json)
+records all 69 physical cases and twelve sequential workload/resource trials
+against the previous baseline. Java 25 remains the default; measurements are
+exploratory and do not establish a production performance SLO. These completions
+cover the retained native scheduler/protocol profile. The next bounded slice is
+SUPERVISE-01: surviving attempt supervisors and daemon reattachment.
 
 **Verified master and provenance**
 

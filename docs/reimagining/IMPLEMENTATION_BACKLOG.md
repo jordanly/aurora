@@ -14,8 +14,15 @@ passing cases and cleanup. [JAVA-02](JAVA02_STATUS.md) has now qualified the
 maintained native dependency graph with bidirectional Java 8/25 and Java 25/25
 state compatibility, the exact ARM64 SQLite library and the same complete Pi
 gate. [Its evidence](java02-evidence.json) records all 23 passing cases and
-cleanup. JAVA-03 is next; retired legacy build targets remain outside these
-native completion claims.
+cleanup. [JAVA-03](JAVA03_STATUS.md) has now qualified HTTP/auth behavior and
+original installed launchers across `java25`, `java26-runtime` and `java26`.
+Each profile passed 41 Java tests, 59 launcher commands and all 23 physical
+cases. [Its evidence](java03-evidence.json) records those 69 physical cases and
+the required exploratory comparison: four variants, three sequential trials
+each, with identical workload limits and instrumentation. Java 25 remains the
+default. This completes P5 for the retained native profile; retired legacy
+build targets and broader production capabilities remain separate. The next
+bounded slice is SUPERVISE-01, covering surviving attempt supervisors.
 
 **First work and independent tracks**
 
@@ -42,7 +49,7 @@ Start with PLAN-01, BUILD-01 and CONTRACT-01. Go reducers/protocol fixtures can 
 | P4 / CUT-01 | Native distribution dependency cleanup and build profile; separate legacy adapter/importer classpaths. | SLICE-01 | Native dependency report/image/startup excludes Mesos jars/JNI/native log/Python worker; schema names alone are documented exceptions. Rerun SLICE-01. |
 | P5 / JAVA-01 | Complete for retained native profile: Gradle 9, Java 25 compiler/test/JavaExec toolchains and deterministic package tasks. Retired buildSrc/Thrift/JMH targets excluded after CUT-01 isolation. | CUT-01 | 34 Java tests, identical Java archives/installed trees, Java 8/25 state and TLS compatibility, verified production images, full three-round/ten-minute Pi gate; [recorded evidence](java01-evidence.json). |
 | P5 / JAVA-02 | Complete for retained native profile: coherent Jackson BOM/validator/logging upgrades; current SQLite JDBC retained and audited. Retired DI/network stacks excluded. | JAVA-01 | 34 Java tests, two bidirectional dependency/state compatibility lanes, exact ARM64 ELF and JDK diagnostics, reproducible artifacts and full three-round/ten-minute Pi gate; [recorded evidence](java02-evidence.json). |
-| P5 / JAVA-03 | HTTP/auth stack and distribution/launcher qualification; modern-JVM two-agent regression run. | JAVA-02 | API/auth/storage fixtures plus same SLICE-01 corpus pass; measured resource/latency changes documented. Full Java modernization gate complete. |
+| P5 / JAVA-03 | Complete for the retained native profile: HTTP/auth behavior, original launchers, Java 25 default plus runtime-only and compiled Java 26 profiles. | JAVA-02 | Each profile passed 41 Java tests, 59 launcher commands and 23 physical cases; twelve sequential trials document resource/latency measurements without a production performance SLO. [Recorded evidence](java03-evidence.json). |
 | P6 / SUPERVISE-01 | Same-binary surviving attempt supervisors, local protocol/versioning and daemon reattachment. | AGENT-02, SLICE-01; integrate on modern native baseline | Kill only daemon while children exit/log; preserve exact outcomes and execution; supervisor loss differs from container loss. |
 | P6 / THERMOS-01 | Selected DAG/retry/daemon/ephemeral/finalizer behavior and trusted offline manifest conversion. | SUPERVISE-01, behavior corpus | Retained legacy cases match; intentional changes/rejections explicit; no live Python-checkpoint adoption. |
 | P6 / POLICY-01 | Broader constraints/quotas, updates/rollback, preemption and workload evacuation/SLA drain, with real stores/controllers. | JAVA-03, required agent capabilities | Restart mid-update and drain; revalidate victims; release capacity only on cleanup. Enable features individually. |
