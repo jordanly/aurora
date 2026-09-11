@@ -1,0 +1,136 @@
+{
+  "schema_version": 1,
+  "audit_date": "2026-09-11",
+  "source_commit": "6cf7f0ea07c6355af62ceafb029fe086f55b8c65",
+  "repository": "https://github.com/jordanly/aurora",
+  "branch": "codex/in-place-java25",
+  "target": "Java 25+; stable features; original application in place",
+  "scope": "All git-tracked Java sources at source_commit; generated files inventoried separately by generator family.",
+  "tracked_java_files": 636,
+  "tracked_java_lines": 99379,
+  "dispositions": {
+    "change": 72,
+    "defer": 110,
+    "retain": 454
+  },
+  "finding_count": 188,
+  "finding_priorities": {
+    "P1": 11,
+    "P2": 124,
+    "P3": 53
+  },
+  "finding_sequences": {
+    "after-boundary": 35,
+    "framework": 78,
+    "local": 75
+  },
+  "source_sets": [
+    {
+      "path": "src/main/java/",
+      "files": 327,
+      "lines": 45582
+    },
+    {
+      "path": "commons/src/main/java/",
+      "files": 62,
+      "lines": 5978
+    },
+    {
+      "path": "src/test/java/",
+      "files": 205,
+      "lines": 42399
+    },
+    {
+      "path": "commons/src/test/java/",
+      "files": 24,
+      "lines": 2789
+    },
+    {
+      "path": "src/jmh/java/",
+      "files": 18,
+      "lines": 2631
+    }
+  ],
+  "groups": [
+    {
+      "id": "application",
+      "report": "application.md",
+      "files": 151,
+      "dispositions": {
+        "change": 40,
+        "defer": 7,
+        "retain": 104
+      }
+    },
+    {
+      "id": "core",
+      "report": "core.md",
+      "files": 176,
+      "dispositions": {
+        "change": 15,
+        "defer": 26,
+        "retain": 135
+      }
+    },
+    {
+      "id": "commons_benchmarks",
+      "report": "commons-and-benchmarks.md",
+      "files": 104,
+      "dispositions": {
+        "change": 3,
+        "defer": 31,
+        "retain": 70
+      }
+    },
+    {
+      "id": "tests",
+      "report": "tests.md",
+      "files": 205,
+      "dispositions": {
+        "change": 14,
+        "defer": 46,
+        "retain": 145
+      }
+    }
+  ],
+  "generated_files": 228,
+  "generated_families": [
+    {
+      "family": "thrift",
+      "cache_root": ".cache/inplace-build/build/api/thrift/gen-java",
+      "files": 139,
+      "owners": [
+        "api/src/main/thrift/org/apache/aurora/gen/api.thrift",
+        "api/src/main/thrift/org/apache/aurora/gen/storage.thrift",
+        "api/src/main/thrift/org/apache/aurora/gen/test.thrift",
+        "api/src/main/thrift/org/apache/thermos/thermos_internal.thrift",
+        "buildSrc/src/main/groovy/org/apache/aurora/build/ThriftPlugin.groovy"
+      ]
+    },
+    {
+      "family": "entities",
+      "cache_root": ".cache/inplace-build/build/api/thriftEntities/gen-java",
+      "files": 89,
+      "owners": [
+        "src/main/python/apache/aurora/tools/java/thrift_wrapper_codegen.py",
+        "buildSrc/src/main/groovy/org/apache/aurora/build/ThriftEntitiesPlugin.groovy"
+      ]
+    }
+  ],
+  "validation_status": "Source inspection and ledger integrity only; each finding validation field is planned work. No Gradle test rerun for this audit.",
+  "integrity_checks": [
+    "636 unique entries exactly match git ls-files *.java",
+    "Each source SHA-256 matches the working tree and immutable source commit",
+    "Every finding line includes the recorded source evidence, excluding import/comment-only anchors",
+    "Named existing test classes in validation text exist among tracked test sources",
+    "228 cached generated output paths and hashes inventoried in two generator families"
+  ],
+  "artifacts": {
+    "files.jsonl": "695f2e3f4bdf39baeb1a1fd57823f817ff22caac3567e43476ee2b2d7bd90430",
+    "generated.jsonl": "8386cd826922fa0a6269c182812499ba39d3f0ae673b4683c6224167503c3ee7",
+    "application.md": "07529dcc58eeda6d27f0a6c9518c2f38f6f83272266b6ddf1d7a35b5d9590dfe",
+    "core.md": "443134ceb481a32c64ecd30d4f831935efebaac2cfcbfcaa02e61b76f99e24fb",
+    "commons-and-benchmarks.md": "aeea143cff98cc2910912667062d7097b70cba986cf1631ddffb4f0fb134a52a",
+    "tests.md": "42982b7b95af063e34f17daffe65ee043353c77ac1f06527bf9e074c8cb05a73"
+  }
+}

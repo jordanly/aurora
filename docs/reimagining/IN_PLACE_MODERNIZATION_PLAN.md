@@ -14,6 +14,8 @@ existing task state machine, scheduling policy, updates, cron, quotas,
 maintenance, reconciliation, public Thrift API and UI. Replace their Mesos,
 execution and persistence dependencies through explicit internal interfaces.
 The Java target is **25+**, with no Java 8 source, bytecode or runtime obligation.
+The [file-by-file Java 25 audit](JAVA25_FILE_AUDIT.md) supplies concrete candidates,
+contract cautions and validation requirements for all 636 tracked Java files.
 
 The `scheduler/native` implementation is an abandoned product direction.
 `NativeEngine`, `NativePolicy`, their replacement job model and `/v1/jobs` API
