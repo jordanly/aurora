@@ -33,10 +33,13 @@ slice is SUPERVISE-01: surviving attempt supervisors and daemon reattachment.
 [JAVA-04](JAVA25_IDIOM_AUDIT.md) has completed the source-level Java 25 review:
 647 tracked Java files inventoried, active standalone code examined, and
 representative legacy findings checked independently. Its
-[six ordered tasks](JAVA25_REFACTOR_TASKS.md) start with JAVA-05 JDK helpers and
-bounded input, then private records and clearer validation. Lifecycle hardening
-precedes any concurrency experiment; public SQL records require an explicit
-compatibility decision. These follow-ups can run alongside supervision planning.
+[six ordered tasks](JAVA25_REFACTOR_TASKS.md) have begun: [JAVA-05](JAVA05_STATUS.md)
+has qualified JDK helper and bounded-input changes across all three profiles,
+with 46 Java tests, 61 launcher commands and 23 physical cases per profile,
+plus twelve workload/resource trials against JAVA-03. JAVA-06 private records
+and committed results are next, followed by clearer validation. Lifecycle
+hardening precedes concurrency experiments; public SQL records require an
+explicit compatibility decision. These follow-ups can run alongside supervision planning.
 
 **Verified master and provenance**
 

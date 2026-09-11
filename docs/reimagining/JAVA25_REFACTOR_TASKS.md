@@ -1,10 +1,11 @@
 # Java 25 refactoring tasks after JAVA-04
 
-These queued repository tasks implement the [source audit](JAVA25_IDIOM_AUDIT.md).
-They are not completed refactors or externally created issues. The recommended
-first slice is JAVA-05; JAVA-06 and JAVA-07 follow it. Resource hardening comes
-before any concurrency experiment. Public SQL records and concurrency remain
-conditional on their design decisions.
+These repository tasks implement the [source audit](JAVA25_IDIOM_AUDIT.md).
+[JAVA-05 is complete](JAVA05_STATUS.md), with all three Java profiles qualified.
+JAVA-06 is the recommended next slice, followed by JAVA-07. Resource hardening
+comes before any concurrency experiment. Public SQL records and concurrency
+remain conditional on their design decisions. These are repository tasks, not
+externally created issues.
 
 Effort estimates describe scope: **S** is one focused PR; **M** spans a few
 components or two separately reviewable changes; **L** requires a design,
@@ -13,8 +14,8 @@ Dependencies below order semantic changes, not formatting-only commits.
 
 | Task | Status | Depends on | Size | Outcome |
 | --- | --- | --- | --- | --- |
-| JAVA-05 | Queued; recommended first | JAVA-04 | S | Precise JDK helpers and bounded input with existing output/error contracts. |
-| JAVA-06 | Queued | JAVA-05 | M | Named private socket and committed-poll result values; clearer controller code. |
+| JAVA-05 | [Complete and qualified](JAVA05_STATUS.md) | JAVA-04 | S | Precise JDK helpers and bounded input with existing output/error contracts. |
+| JAVA-06 | Queued; recommended next | JAVA-05 | M | Named private socket and committed-poll result values; clearer controller code. |
 | JAVA-07 | Queued | JAVA-06 | S | Grouped validation branches and readable fixtures without changing lexical acceptance. |
 | JAVA-08 | Queued hardening | JAVA-06 | M | Explicit store-resource and daemon lifecycle failure handling. |
 | JAVA-09 | Conditional design | JAVA-06; supported adapter decision | M | Decide whether public SQL snapshot records justify their compatibility cost. |
