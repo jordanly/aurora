@@ -58,6 +58,8 @@ public class LoggingInterceptorTest extends EasyMockTest {
 
   @Before
   public void setUp() throws Exception {
+    Stats.flush();
+    addTearDown(Stats::flush);
     loggingInterceptor = new LoggingInterceptor();
 
     methodInvocation = createMock(MethodInvocation.class);

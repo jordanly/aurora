@@ -1,5 +1,16 @@
 ![Aurora Logo](docs/images/aurora_logo.png)
 
+This fork modernizes Aurora **in place**: the existing scheduler, state machines,
+policies, public API and UI remain the application while execution and persistence
+are replaced. All maintained Java code targets Java 25+.
+See the [modernization plan](docs/reimagining/IN_PLACE_MODERNIZATION_PLAN.md),
+[ordered backlog](docs/reimagining/IMPLEMENTATION_BACKLOG.md), and
+[current build status](docs/reimagining/INPLACE01_BUILD_STATUS.md).
+
+The separate scheduler prototype is preserved on `codex/standalone-foundations`
+as reference work. This branch starts from upstream and builds the original
+Aurora source. The Apache overview below describes that application's features.
+
 **NOTE: The Apache Aurora project has been moved into the [Apache Attic](https://attic.apache.org/).
 A fork led by members of the former Project Management Committee (PMC) can be found at https://github.com/aurora-scheduler**
 

@@ -769,7 +769,8 @@ public class JobUpdaterIT extends EasyMockTest {
 
   @Test(expected = IllegalStateException.class)
   public void testShutdownOnFailedPulse() throws Exception {
-    // Missing kill expectation will trigger failure.
+    // Inject the pulse failure explicitly: unexpected mock calls also fail final verification.
+    expectTaskKilled().andThrow(new AssertionError("Injected task kill failure."));
     shutdownCommand.execute();
     expectLastCall().andAnswer(() -> {
       throw new IllegalStateException("Expected shutdown triggered.");

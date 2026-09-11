@@ -1,0 +1,1592 @@
+{
+  "baselineCommit": "11ebaeeb071cb182c388a40755e84f60dda32260",
+  "date": "2026-09-11",
+  "javaRelease": 25,
+  "includesFrontend": false,
+  "includesCoverage": false,
+  "groups": {
+    "scheduler": {
+      "task": ":focusedTest",
+      "execution": "executed in full-java-final.log",
+      "totals": {
+        "tests": 1177,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 1,
+        "passed": 1176
+      },
+      "suites": [
+        {
+          "name": "org.apache.aurora.GuavaUtilsTest",
+          "tests": 1,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 1
+        },
+        {
+          "name": "org.apache.aurora.GuiceUtilsTest",
+          "tests": 3,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 3
+        },
+        {
+          "name": "org.apache.aurora.LifecycleShutdownListenerTest",
+          "tests": 1,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 1
+        },
+        {
+          "name": "org.apache.aurora.ProtobufsTest",
+          "tests": 1,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 1
+        },
+        {
+          "name": "org.apache.aurora.codec.ThriftBinaryCodecTest",
+          "tests": 6,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 6
+        },
+        {
+          "name": "org.apache.aurora.scheduler.BatchWorkerTest",
+          "tests": 3,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 3
+        },
+        {
+          "name": "org.apache.aurora.scheduler.HostOfferTest",
+          "tests": 1,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 1
+        },
+        {
+          "name": "org.apache.aurora.scheduler.SchedulerLifecycleTest",
+          "tests": 6,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 6
+        },
+        {
+          "name": "org.apache.aurora.scheduler.TaskStatusHandlerImplTest",
+          "tests": 8,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 8
+        },
+        {
+          "name": "org.apache.aurora.scheduler.TaskVarsTest",
+          "tests": 10,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 10
+        },
+        {
+          "name": "org.apache.aurora.scheduler.TierManagerTest",
+          "tests": 10,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 10
+        },
+        {
+          "name": "org.apache.aurora.scheduler.TierModuleTest",
+          "tests": 4,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 4
+        },
+        {
+          "name": "org.apache.aurora.scheduler.app.MoreModulesTest",
+          "tests": 1,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 1
+        },
+        {
+          "name": "org.apache.aurora.scheduler.app.SchedulerIT",
+          "tests": 1,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 1
+        },
+        {
+          "name": "org.apache.aurora.scheduler.app.VolumeConverterTest",
+          "tests": 4,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 4
+        },
+        {
+          "name": "org.apache.aurora.scheduler.async.AsyncModuleTest",
+          "tests": 1,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 1
+        },
+        {
+          "name": "org.apache.aurora.scheduler.base.AsyncUtilTest",
+          "tests": 3,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 3
+        },
+        {
+          "name": "org.apache.aurora.scheduler.base.ConversionsTest",
+          "tests": 1,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 1
+        },
+        {
+          "name": "org.apache.aurora.scheduler.base.JobsTest",
+          "tests": 1,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 1
+        },
+        {
+          "name": "org.apache.aurora.scheduler.base.NumbersTest",
+          "tests": 1,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 1
+        },
+        {
+          "name": "org.apache.aurora.scheduler.base.TasksTest",
+          "tests": 2,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 2
+        },
+        {
+          "name": "org.apache.aurora.scheduler.config.CommandLineTest",
+          "tests": 3,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 3
+        },
+        {
+          "name": "org.apache.aurora.scheduler.configuration.ConfigurationManagerTest",
+          "tests": 29,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 29
+        },
+        {
+          "name": "org.apache.aurora.scheduler.configuration.executor.ExecutorModuleTest",
+          "tests": 1,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 1
+        },
+        {
+          "name": "org.apache.aurora.scheduler.configuration.executor.ExecutorSettingsLoaderTest",
+          "tests": 4,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 4
+        },
+        {
+          "name": "org.apache.aurora.scheduler.cron.CrontabEntryTest",
+          "tests": 8,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 8
+        },
+        {
+          "name": "org.apache.aurora.scheduler.cron.quartz.AuroraCronJobTest",
+          "tests": 6,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 6
+        },
+        {
+          "name": "org.apache.aurora.scheduler.cron.quartz.CronIT",
+          "tests": 3,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 3
+        },
+        {
+          "name": "org.apache.aurora.scheduler.cron.quartz.CronJobManagerImplTest",
+          "tests": 14,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 14
+        },
+        {
+          "name": "org.apache.aurora.scheduler.cron.quartz.CronPredictorImplTest",
+          "tests": 4,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 4
+        },
+        {
+          "name": "org.apache.aurora.scheduler.discovery.CuratorDiscoveryModuleTest",
+          "tests": 4,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 4
+        },
+        {
+          "name": "org.apache.aurora.scheduler.discovery.CuratorServiceGroupMonitorTest",
+          "tests": 8,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 8
+        },
+        {
+          "name": "org.apache.aurora.scheduler.discovery.CuratorSingletonServiceTest",
+          "tests": 4,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 4
+        },
+        {
+          "name": "org.apache.aurora.scheduler.discovery.EncodingTest",
+          "tests": 4,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 4
+        },
+        {
+          "name": "org.apache.aurora.scheduler.discovery.ZooKeeperConfigTest",
+          "tests": 3,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 3
+        },
+        {
+          "name": "org.apache.aurora.scheduler.events.NotifyingSchedulingFilterTest",
+          "tests": 2,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 2
+        },
+        {
+          "name": "org.apache.aurora.scheduler.events.PubsubEventModuleTest",
+          "tests": 2,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 2
+        },
+        {
+          "name": "org.apache.aurora.scheduler.events.TaskStateChangeTest",
+          "tests": 2,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 2
+        },
+        {
+          "name": "org.apache.aurora.scheduler.events.WebhookTest",
+          "tests": 10,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 10
+        },
+        {
+          "name": "org.apache.aurora.scheduler.filter.AttributeAggregateTest",
+          "tests": 6,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 6
+        },
+        {
+          "name": "org.apache.aurora.scheduler.filter.SchedulingFilterImplTest",
+          "tests": 20,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 20
+        },
+        {
+          "name": "org.apache.aurora.scheduler.http.CorsFilterTest",
+          "tests": 1,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 1
+        },
+        {
+          "name": "org.apache.aurora.scheduler.http.CronTest",
+          "tests": 1,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 1
+        },
+        {
+          "name": "org.apache.aurora.scheduler.http.LeaderHealthTest",
+          "tests": 3,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 3
+        },
+        {
+          "name": "org.apache.aurora.scheduler.http.LeaderRedirectTest",
+          "tests": 8,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 8
+        },
+        {
+          "name": "org.apache.aurora.scheduler.http.MaintenanceTest",
+          "tests": 1,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 1
+        },
+        {
+          "name": "org.apache.aurora.scheduler.http.MnameTest",
+          "tests": 7,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 7
+        },
+        {
+          "name": "org.apache.aurora.scheduler.http.OffersTest",
+          "tests": 2,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 2
+        },
+        {
+          "name": "org.apache.aurora.scheduler.http.PendingTasksTest",
+          "tests": 2,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 2
+        },
+        {
+          "name": "org.apache.aurora.scheduler.http.QuitCallbackTest",
+          "tests": 1,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 1
+        },
+        {
+          "name": "org.apache.aurora.scheduler.http.ServicesTest",
+          "tests": 1,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 1
+        },
+        {
+          "name": "org.apache.aurora.scheduler.http.ServletFilterTest",
+          "tests": 3,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 3
+        },
+        {
+          "name": "org.apache.aurora.scheduler.http.StateTest",
+          "tests": 1,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 1
+        },
+        {
+          "name": "org.apache.aurora.scheduler.http.StructDumpTest",
+          "tests": 3,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 3
+        },
+        {
+          "name": "org.apache.aurora.scheduler.http.TiersTest",
+          "tests": 1,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 1
+        },
+        {
+          "name": "org.apache.aurora.scheduler.http.api.ApiBetaTest",
+          "tests": 8,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 8
+        },
+        {
+          "name": "org.apache.aurora.scheduler.http.api.ApiIT",
+          "tests": 5,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 5
+        },
+        {
+          "name": "org.apache.aurora.scheduler.http.api.security.AuthorizeHeaderTokenTest",
+          "tests": 3,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 3
+        },
+        {
+          "name": "org.apache.aurora.scheduler.http.api.security.HttpSecurityIT",
+          "tests": 3,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 3
+        },
+        {
+          "name": "org.apache.aurora.scheduler.http.api.security.Kerberos5ShiroRealmModuleTest",
+          "tests": 1,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 1
+        },
+        {
+          "name": "org.apache.aurora.scheduler.http.api.security.KerberosPrincipalConverterTest",
+          "tests": 2,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 2
+        },
+        {
+          "name": "org.apache.aurora.scheduler.http.api.security.ShiroAuthenticatingThriftInterceptorTest",
+          "tests": 2,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 2
+        },
+        {
+          "name": "org.apache.aurora.scheduler.http.api.security.ShiroAuthorizingInterceptorTest",
+          "tests": 2,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 2
+        },
+        {
+          "name": "org.apache.aurora.scheduler.http.api.security.ShiroAuthorizingParamInterceptorTest",
+          "tests": 8,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 8
+        },
+        {
+          "name": "org.apache.aurora.scheduler.http.api.security.ShiroIniConverterTest",
+          "tests": 5,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 5
+        },
+        {
+          "name": "org.apache.aurora.scheduler.http.api.security.ShiroKerberosAuthenticationFilterTest",
+          "tests": 4,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 4
+        },
+        {
+          "name": "org.apache.aurora.scheduler.http.api.security.ShiroKerberosPermissiveAuthenticationFilterTest",
+          "tests": 2,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 2
+        },
+        {
+          "name": "org.apache.aurora.scheduler.http.api.security.ThriftFieldGetterTest",
+          "tests": 2,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 2
+        },
+        {
+          "name": "org.apache.aurora.scheduler.log.mesos.MesosLogTest",
+          "tests": 8,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 8
+        },
+        {
+          "name": "org.apache.aurora.scheduler.maintenance.MaintenanceControllerImplTest",
+          "tests": 12,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 12
+        },
+        {
+          "name": "org.apache.aurora.scheduler.mesos.CommandLineDriverSettingsModuleTest",
+          "tests": 8,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 8
+        },
+        {
+          "name": "org.apache.aurora.scheduler.mesos.FrameworkInfoFactoryImplTest",
+          "tests": 1,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 1
+        },
+        {
+          "name": "org.apache.aurora.scheduler.mesos.MesosCallbackHandlerTest",
+          "tests": 23,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 23
+        },
+        {
+          "name": "org.apache.aurora.scheduler.mesos.MesosSchedulerImplTest",
+          "tests": 11,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 11
+        },
+        {
+          "name": "org.apache.aurora.scheduler.mesos.MesosTaskFactoryImplTest",
+          "tests": 15,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 15
+        },
+        {
+          "name": "org.apache.aurora.scheduler.mesos.ProtosConversionTest",
+          "tests": 4,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 4
+        },
+        {
+          "name": "org.apache.aurora.scheduler.mesos.SchedulerDriverServiceTest",
+          "tests": 7,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 7
+        },
+        {
+          "name": "org.apache.aurora.scheduler.mesos.TaskStatusStatsTest",
+          "tests": 1,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 1
+        },
+        {
+          "name": "org.apache.aurora.scheduler.mesos.VersionedMesosSchedulerImplTest",
+          "tests": 13,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 13
+        },
+        {
+          "name": "org.apache.aurora.scheduler.mesos.VersionedSchedulerDriverServiceTest",
+          "tests": 8,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 8
+        },
+        {
+          "name": "org.apache.aurora.scheduler.metadata.NearestFitTest",
+          "tests": 6,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 6
+        },
+        {
+          "name": "org.apache.aurora.scheduler.offers.OfferManagerImplTest",
+          "tests": 29,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 29
+        },
+        {
+          "name": "org.apache.aurora.scheduler.offers.RandomJitterReturnDelayTest",
+          "tests": 6,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 6
+        },
+        {
+          "name": "org.apache.aurora.scheduler.preemptor.BiCacheTest",
+          "tests": 6,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 6
+        },
+        {
+          "name": "org.apache.aurora.scheduler.preemptor.ClusterStateImplTest",
+          "tests": 4,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 4
+        },
+        {
+          "name": "org.apache.aurora.scheduler.preemptor.PendingTaskProcessorTest",
+          "tests": 7,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 7
+        },
+        {
+          "name": "org.apache.aurora.scheduler.preemptor.PreemptionVictimFilterTest",
+          "tests": 21,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 21
+        },
+        {
+          "name": "org.apache.aurora.scheduler.preemptor.PreemptionVictimTest",
+          "tests": 1,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 1
+        },
+        {
+          "name": "org.apache.aurora.scheduler.preemptor.PreemptorImplTest",
+          "tests": 5,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 5
+        },
+        {
+          "name": "org.apache.aurora.scheduler.preemptor.PreemptorModuleTest",
+          "tests": 1,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 1
+        },
+        {
+          "name": "org.apache.aurora.scheduler.pruning.JobUpdateHistoryPrunerTest",
+          "tests": 1,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 1
+        },
+        {
+          "name": "org.apache.aurora.scheduler.pruning.TaskHistoryPrunerTest",
+          "tests": 7,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 7
+        },
+        {
+          "name": "org.apache.aurora.scheduler.quota.QuotaCheckResultTest",
+          "tests": 4,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 4
+        },
+        {
+          "name": "org.apache.aurora.scheduler.quota.QuotaManagerImplTest",
+          "tests": 41,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 41
+        },
+        {
+          "name": "org.apache.aurora.scheduler.reconciliation.KillRetryTest",
+          "tests": 2,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 2
+        },
+        {
+          "name": "org.apache.aurora.scheduler.reconciliation.TaskReconcilerTest",
+          "tests": 3,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 3
+        },
+        {
+          "name": "org.apache.aurora.scheduler.reconciliation.TaskTimeoutTest",
+          "tests": 6,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 6
+        },
+        {
+          "name": "org.apache.aurora.scheduler.resources.AcceptedOfferTest",
+          "tests": 4,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 4
+        },
+        {
+          "name": "org.apache.aurora.scheduler.resources.AuroraResourceConverterTest",
+          "tests": 1,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 1
+        },
+        {
+          "name": "org.apache.aurora.scheduler.resources.MesosResourceConverterTest",
+          "tests": 10,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 10
+        },
+        {
+          "name": "org.apache.aurora.scheduler.resources.PortMapperTest",
+          "tests": 4,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 4
+        },
+        {
+          "name": "org.apache.aurora.scheduler.resources.ResourceBagTest",
+          "tests": 9,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 9
+        },
+        {
+          "name": "org.apache.aurora.scheduler.resources.ResourceManagerTest",
+          "tests": 11,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 11
+        },
+        {
+          "name": "org.apache.aurora.scheduler.resources.ResourceTypeTest",
+          "tests": 4,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 4
+        },
+        {
+          "name": "org.apache.aurora.scheduler.scheduling.RescheduleCalculatorImplTest",
+          "tests": 5,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 5
+        },
+        {
+          "name": "org.apache.aurora.scheduler.scheduling.TaskAssignerImplTest",
+          "tests": 8,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 8
+        },
+        {
+          "name": "org.apache.aurora.scheduler.scheduling.TaskGroupsTest",
+          "tests": 5,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 5
+        },
+        {
+          "name": "org.apache.aurora.scheduler.scheduling.TaskSchedulerImplTest",
+          "tests": 11,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 11
+        },
+        {
+          "name": "org.apache.aurora.scheduler.scheduling.TaskThrottlerTest",
+          "tests": 3,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 3
+        },
+        {
+          "name": "org.apache.aurora.scheduler.sla.MetricCalculatorTest",
+          "tests": 1,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 1
+        },
+        {
+          "name": "org.apache.aurora.scheduler.sla.SlaAlgorithmTest",
+          "tests": 25,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 25
+        },
+        {
+          "name": "org.apache.aurora.scheduler.sla.SlaManagerTest",
+          "tests": 25,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 25
+        },
+        {
+          "name": "org.apache.aurora.scheduler.sla.SlaModuleTest",
+          "tests": 2,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 2
+        },
+        {
+          "name": "org.apache.aurora.scheduler.sla.SlaUtilTest",
+          "tests": 6,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 6
+        },
+        {
+          "name": "org.apache.aurora.scheduler.state.PartitionManagerTest",
+          "tests": 7,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 7
+        },
+        {
+          "name": "org.apache.aurora.scheduler.state.StateManagerImplTest",
+          "tests": 20,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 20
+        },
+        {
+          "name": "org.apache.aurora.scheduler.state.TaskStateMachineTest",
+          "tests": 21,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 21
+        },
+        {
+          "name": "org.apache.aurora.scheduler.stats.AsyncStatsModuleTest",
+          "tests": 1,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 1
+        },
+        {
+          "name": "org.apache.aurora.scheduler.stats.ResourceCounterTest",
+          "tests": 5,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 5
+        },
+        {
+          "name": "org.apache.aurora.scheduler.stats.SlotSizeCounterTest",
+          "tests": 5,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 5
+        },
+        {
+          "name": "org.apache.aurora.scheduler.storage.backup.RecoveryTest",
+          "tests": 4,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 4
+        },
+        {
+          "name": "org.apache.aurora.scheduler.storage.backup.StorageBackupTest",
+          "tests": 4,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 4
+        },
+        {
+          "name": "org.apache.aurora.scheduler.storage.durability.DataCompatibilityTest",
+          "tests": 2,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 2
+        },
+        {
+          "name": "org.apache.aurora.scheduler.storage.durability.DurableStorageTest",
+          "tests": 20,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 20
+        },
+        {
+          "name": "org.apache.aurora.scheduler.storage.durability.RecoveryTest",
+          "tests": 4,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 4
+        },
+        {
+          "name": "org.apache.aurora.scheduler.storage.durability.ThriftBackfillTest",
+          "tests": 4,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 4
+        },
+        {
+          "name": "org.apache.aurora.scheduler.storage.durability.TransactionRecorderTest",
+          "tests": 1,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 1
+        },
+        {
+          "name": "org.apache.aurora.scheduler.storage.durability.WriteRecorderTest",
+          "tests": 8,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 8
+        },
+        {
+          "name": "org.apache.aurora.scheduler.storage.entities.IHostAttributesTest",
+          "tests": 1,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 1
+        },
+        {
+          "name": "org.apache.aurora.scheduler.storage.log.LogManagerTest",
+          "tests": 9,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 9
+        },
+        {
+          "name": "org.apache.aurora.scheduler.storage.log.LogPersistenceTest",
+          "tests": 2,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 2
+        },
+        {
+          "name": "org.apache.aurora.scheduler.storage.log.NonVolatileStorageTest",
+          "tests": 1,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 1
+        },
+        {
+          "name": "org.apache.aurora.scheduler.storage.log.SnapshotDeduplicatorImplTest",
+          "tests": 4,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 4
+        },
+        {
+          "name": "org.apache.aurora.scheduler.storage.log.SnapshotServiceTest",
+          "tests": 3,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 3
+        },
+        {
+          "name": "org.apache.aurora.scheduler.storage.log.SnapshotterImplIT",
+          "tests": 1,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 1
+        },
+        {
+          "name": "org.apache.aurora.scheduler.storage.mem.InternerTest",
+          "tests": 4,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 4
+        },
+        {
+          "name": "org.apache.aurora.scheduler.storage.mem.MemAttributeStoreTest",
+          "tests": 9,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 9
+        },
+        {
+          "name": "org.apache.aurora.scheduler.storage.mem.MemCronJobStoreTest",
+          "tests": 5,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 5
+        },
+        {
+          "name": "org.apache.aurora.scheduler.storage.mem.MemHostMaintenanceStoreTest",
+          "tests": 8,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 8
+        },
+        {
+          "name": "org.apache.aurora.scheduler.storage.mem.MemJobUpdateStoreTest",
+          "tests": 18,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 18
+        },
+        {
+          "name": "org.apache.aurora.scheduler.storage.mem.MemQuotaStoreTest",
+          "tests": 4,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 4
+        },
+        {
+          "name": "org.apache.aurora.scheduler.storage.mem.MemSchedulerStoreTest",
+          "tests": 1,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 1
+        },
+        {
+          "name": "org.apache.aurora.scheduler.storage.mem.MemStorageTest",
+          "tests": 2,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 2
+        },
+        {
+          "name": "org.apache.aurora.scheduler.storage.mem.MemTaskStoreTest",
+          "tests": 25,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 1,
+          "passed": 24,
+          "skippedCases": [
+            "testReadSecondaryIndexMultipleThreads"
+          ]
+        },
+        {
+          "name": "org.apache.aurora.scheduler.storage.mem.StorageTransactionTest",
+          "tests": 3,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 3
+        },
+        {
+          "name": "org.apache.aurora.scheduler.storage.testing.StorageEntityUtilTest",
+          "tests": 9,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 9
+        },
+        {
+          "name": "org.apache.aurora.scheduler.thrift.AuditMessagesTest",
+          "tests": 3,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 3
+        },
+        {
+          "name": "org.apache.aurora.scheduler.thrift.ReadOnlySchedulerImplTest",
+          "tests": 26,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 26
+        },
+        {
+          "name": "org.apache.aurora.scheduler.thrift.SchedulerThriftInterfaceTest",
+          "tests": 104,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 104
+        },
+        {
+          "name": "org.apache.aurora.scheduler.thrift.ThriftIT",
+          "tests": 2,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 2
+        },
+        {
+          "name": "org.apache.aurora.scheduler.thrift.aop.AnnotatedAuroraAdminTest",
+          "tests": 1,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 1
+        },
+        {
+          "name": "org.apache.aurora.scheduler.thrift.aop.LoggingInterceptorTest",
+          "tests": 5,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 5
+        },
+        {
+          "name": "org.apache.aurora.scheduler.thrift.aop.ServerInfoInterceptorTest",
+          "tests": 1,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 1
+        },
+        {
+          "name": "org.apache.aurora.scheduler.thrift.aop.ThriftStatsExporterInterceptorTest",
+          "tests": 5,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 5
+        },
+        {
+          "name": "org.apache.aurora.scheduler.updater.AddTaskTest",
+          "tests": 3,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 3
+        },
+        {
+          "name": "org.apache.aurora.scheduler.updater.EnumsTest",
+          "tests": 5,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 5
+        },
+        {
+          "name": "org.apache.aurora.scheduler.updater.InstanceUpdaterTest",
+          "tests": 14,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 14
+        },
+        {
+          "name": "org.apache.aurora.scheduler.updater.JobDiffTest",
+          "tests": 7,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 7
+        },
+        {
+          "name": "org.apache.aurora.scheduler.updater.JobUpdateEventSubscriberTest",
+          "tests": 5,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 5
+        },
+        {
+          "name": "org.apache.aurora.scheduler.updater.JobUpdateStateMachineTest",
+          "tests": 1,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 1
+        },
+        {
+          "name": "org.apache.aurora.scheduler.updater.JobUpdaterIT",
+          "tests": 40,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 40
+        },
+        {
+          "name": "org.apache.aurora.scheduler.updater.KillTaskTest",
+          "tests": 8,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 8
+        },
+        {
+          "name": "org.apache.aurora.scheduler.updater.NullAgentReserverTest",
+          "tests": 1,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 1
+        },
+        {
+          "name": "org.apache.aurora.scheduler.updater.OneWayJobUpdaterTest",
+          "tests": 5,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 5
+        },
+        {
+          "name": "org.apache.aurora.scheduler.updater.SlaKillControllerTest",
+          "tests": 6,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 6
+        },
+        {
+          "name": "org.apache.aurora.scheduler.updater.UpdateAgentReserverImplTest",
+          "tests": 3,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 3
+        },
+        {
+          "name": "org.apache.aurora.scheduler.updater.UpdateFactoryImplTest",
+          "tests": 9,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 9
+        },
+        {
+          "name": "org.apache.aurora.scheduler.updater.strategy.BatchStrategyTest",
+          "tests": 6,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 6
+        },
+        {
+          "name": "org.apache.aurora.scheduler.updater.strategy.QueueStrategyTest",
+          "tests": 6,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 6
+        },
+        {
+          "name": "org.apache.aurora.scheduler.updater.strategy.VariableBatchStrategyTest",
+          "tests": 13,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 13
+        }
+      ]
+    },
+    "commons": {
+      "task": ":commons:test",
+      "execution": "up-to-date in final command; last executed in full-java-after-mock-update.log",
+      "totals": {
+        "tests": 118,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": 118
+      },
+      "suites": [
+        {
+          "name": "org.apache.aurora.common.base.ConsumersTest",
+          "tests": 3,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 3
+        },
+        {
+          "name": "org.apache.aurora.common.base.MorePreconditionsTest",
+          "tests": 10,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 10
+        },
+        {
+          "name": "org.apache.aurora.common.collections.Iterables2Test",
+          "tests": 4,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 4
+        },
+        {
+          "name": "org.apache.aurora.common.collections.PairTest",
+          "tests": 3,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 3
+        },
+        {
+          "name": "org.apache.aurora.common.inject.BindingsTest",
+          "tests": 4,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 4
+        },
+        {
+          "name": "org.apache.aurora.common.net.InetSocketAddressHelperTest",
+          "tests": 4,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 4
+        },
+        {
+          "name": "org.apache.aurora.common.net.http.handlers.TimeSeriesDataSourceTest",
+          "tests": 3,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 3
+        },
+        {
+          "name": "org.apache.aurora.common.net.http.handlers.VarsHandlerTest",
+          "tests": 2,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 2
+        },
+        {
+          "name": "org.apache.aurora.common.net.http.handlers.VarsJsonHandlerTest",
+          "tests": 3,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 3
+        },
+        {
+          "name": "org.apache.aurora.common.quantity.AmountTest",
+          "tests": 6,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 6
+        },
+        {
+          "name": "org.apache.aurora.common.stats.PercentileTest",
+          "tests": 11,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 11
+        },
+        {
+          "name": "org.apache.aurora.common.stats.RateTest",
+          "tests": 13,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 13
+        },
+        {
+          "name": "org.apache.aurora.common.stats.SlidingStatsTest",
+          "tests": 6,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 6
+        },
+        {
+          "name": "org.apache.aurora.common.stats.StatsTest",
+          "tests": 5,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 5
+        },
+        {
+          "name": "org.apache.aurora.common.stats.TimeSeriesRepositoryImplTest",
+          "tests": 2,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 2
+        },
+        {
+          "name": "org.apache.aurora.common.testing.easymock.EasyMockTestTest",
+          "tests": 2,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 2
+        },
+        {
+          "name": "org.apache.aurora.common.util.BackoffHelperTest",
+          "tests": 7,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 7
+        },
+        {
+          "name": "org.apache.aurora.common.util.SamplerTest",
+          "tests": 2,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 2
+        },
+        {
+          "name": "org.apache.aurora.common.util.StateMachineTest",
+          "tests": 13,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 13
+        },
+        {
+          "name": "org.apache.aurora.common.util.TruncatedBinaryBackoffTest",
+          "tests": 7,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 7
+        },
+        {
+          "name": "org.apache.aurora.common.util.templating.StringTemplateHelperTest",
+          "tests": 3,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 3
+        },
+        {
+          "name": "org.apache.aurora.common.util.testing.FakeClockTest",
+          "tests": 3,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 3
+        },
+        {
+          "name": "org.apache.aurora.common.zookeeper.ZooKeeperUtilsTest",
+          "tests": 2,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 2
+        }
+      ]
+    }
+  },
+  "totals": {
+    "tests": 1295,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 1,
+    "passed": 1294
+  },
+  "newRegressionTests": 11,
+  "originalTestsPassed": 1283,
+  "skipNote": "Original @Ignore on AbstractTaskStoreTest.testReadSecondaryIndexMultipleThreads retained; concurrency qualification remains open."
+}

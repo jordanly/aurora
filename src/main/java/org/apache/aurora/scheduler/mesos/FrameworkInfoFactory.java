@@ -70,6 +70,8 @@ public interface FrameworkInfoFactory {
     }
 
     @Override
+    // Preserve Mesos URL formatting during build restoration; this adapter will be replaced.
+    @SuppressWarnings("deprecation")
     public FrameworkInfo getFrameworkInfo() {
       HostAndPort hostAndPort = service.getAddress();
       URL url;

@@ -16,6 +16,7 @@ package org.apache.aurora.scheduler.discovery;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.nio.file.Files;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -24,7 +25,6 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Singleton;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.io.Files;
 import com.google.common.util.concurrent.AbstractIdleService;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
@@ -75,7 +75,12 @@ public class ServiceDiscoveryModule extends AbstractModule {
 
     if (zooKeeperConfig.isInProcess()) {
       requireBinding(ShutdownRegistry.class);
-      File tempDir = Files.createTempDir();
+      File tempDir;
+      try {
+        tempDir = Files.createTempDirectory("aurora-zookeeper-").toFile();
+      } catch (IOException e) {
+        throw new IllegalStateException("Failed to create in-process ZooKeeper directory", e);
+      }
       bind(ZooKeeperTestServer.class).toInstance(new ZooKeeperTestServer(tempDir, tempDir));
       SchedulerServicesModule.addAppStartupServiceBinding(binder()).to(TestServerService.class);
 

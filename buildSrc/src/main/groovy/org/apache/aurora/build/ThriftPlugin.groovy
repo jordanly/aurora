@@ -17,9 +17,18 @@ import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.file.FileTree
+import org.gradle.process.ExecOperations
 import org.gradle.api.tasks.compile.JavaCompile
+import javax.inject.Inject
 
 class ThriftPlugin implements Plugin<Project> {
+  private final ExecOperations execOperations
+
+  @Inject
+  ThriftPlugin(ExecOperations execOperations) {
+    this.execOperations = execOperations
+  }
+
   @Override
   void apply(Project project) {
     project.configure(project) {
@@ -31,37 +40,66 @@ class ThriftPlugin implements Plugin<Project> {
       afterEvaluate {
         dependencies {
           thriftCompile "org.apache.thrift:libthrift:${thrift.version}"
+          thriftCompile 'javax.annotation:javax.annotation-api:1.3.2'
         }
       }
 
-      task('generateThriftJava') {
+      task('checkThriftCompiler') {
+        doLast {
+          if (thrift.compilerPath == null) {
+            throw new GradleException(
+                'thriftCompiler must name an explicit Thrift compiler; ' +
+                'the legacy thriftw/Pants fallback is unsupported.')
+          }
+          if (!thrift.compilerPath.isFile()) {
+            throw new GradleException("Thrift compiler does not exist: ${thrift.compilerPath}")
+          }
+          def versionOutput = new ByteArrayOutputStream()
+          execOperations.exec {
+            commandLine thrift.compilerPath, '--version'
+            standardOutput = versionOutput
+          }
+          if (versionOutput.toString('UTF-8').trim() != "Thrift version ${thrift.version}") {
+            throw new GradleException("Expected Thrift ${thrift.version}: ${versionOutput}")
+          }
+        }
+      }
+
+      task('generateThriftJava', dependsOn: 'checkThriftCompiler') {
         inputs.files {thrift.inputFiles}
+        inputs.files {thrift.compilerPath}
+        inputs.property('thriftVersion') {thrift.version}
         outputs.dir {thrift.genJavaDir}
         doLast {
-          thrift.genJavaDir.exists() || thrift.genJavaDir.mkdirs()
-          thrift.inputFiles.each { File file ->
-            exec {
-              commandLine thrift.wrapperPath, thrift.version,
-                  '--gen', 'java:private-members',
-                  '-out', thrift.genJavaDir.path,
-                  file.path
+          delete thrift.genJavaDir
+          thrift.genJavaDir.mkdirs()
+          thrift.inputFiles.sort().each { File file ->
+            execOperations.exec {
+              commandLine thrift.compilerCommand() + [
+                  // Keep generated source reproducible; this changes annotations only,
+                  // leaving the Thrift wire/API contract unchanged.
+                  '--gen', 'java:private-members,generated_annotations=undated',
+                  '-out', thrift.genJavaDir.path, file.path]
             }
           }
         }
       }
 
-      task('generateThriftResources') {
+      task('generateThriftResources', dependsOn: 'checkThriftCompiler') {
         inputs.files {thrift.inputFiles}
+        inputs.files {thrift.compilerPath}
+        inputs.property('thriftVersion') {thrift.version}
         outputs.dir {thrift.genResourcesDir}
         doLast {
+          delete thrift.genResourcesDir
           def dest = file("${thrift.genResourcesDir}/${thrift.resourcePrefix}")
           dest.exists() || dest.mkdirs()
-          thrift.inputFiles.each { File file ->
-            exec {
-              commandLine thrift.wrapperPath, thrift.version,
+          thrift.inputFiles.sort().each { File file ->
+            execOperations.exec {
+              commandLine thrift.compilerCommand() + [
                   '--gen', 'js:jquery',
                   '--gen', 'html:standalone',
-                  '-out', dest.path, file.path
+                  '-out', dest.path, file.path]
             }
           }
         }
@@ -70,7 +108,7 @@ class ThriftPlugin implements Plugin<Project> {
       task('classesThrift', type: JavaCompile) {
         source files(generateThriftJava)
         classpath = configurations.thriftCompile
-        destinationDir = file(thrift.genClassesDir)
+        destinationDirectory = file(thrift.genClassesDir)
         options.warnings = false
         // Capture method parameter names in classfiles.
         options.compilerArgs << '-parameters'
@@ -78,13 +116,13 @@ class ThriftPlugin implements Plugin<Project> {
 
       configurations.create('thriftRuntime')
       configurations.thriftRuntime.extendsFrom(configurations.thriftCompile)
-      configurations.compile.extendsFrom(configurations.thriftRuntime)
+      configurations.api.extendsFrom(configurations.thriftRuntime)
       dependencies {
-        thriftRuntime files(classesThrift)
+        thriftRuntime files(thrift.genClassesDir).builtBy(classesThrift)
       }
 
       sourceSets.main {
-        output.dir(classesThrift)
+        output.dir(thrift.genClassesDir, builtBy: 'classesThrift')
         output.dir(generateThriftResources)
       }
     }
@@ -93,10 +131,15 @@ class ThriftPlugin implements Plugin<Project> {
 
 class ThriftPluginExtension {
   def wrapperPath
+  File compilerPath
   File genResourcesDir
   File genJavaDir
   File genClassesDir
   FileTree inputFiles
+
+  List compilerCommand() {
+    [compilerPath.path]
+  }
 
   String version
   String getVersion() {
@@ -119,6 +162,9 @@ class ThriftPluginExtension {
   }
 
   ThriftPluginExtension(Project project) {
+    if (project.hasProperty('thriftCompiler')) {
+      compilerPath = project.file(project.property('thriftCompiler'))
+    }
     wrapperPath = "${project.rootDir}/build-support/thrift/thriftw"
     genResourcesDir = project.file("${project.buildDir}/thrift/gen-resources")
     genJavaDir = project.file("${project.buildDir}/thrift/gen-java")

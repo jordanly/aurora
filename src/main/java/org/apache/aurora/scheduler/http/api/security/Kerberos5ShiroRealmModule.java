@@ -125,6 +125,8 @@ public class Kerberos5ShiroRealmModule extends AbstractModule {
   }
 
   @Override
+  // Preserve credential/exception behavior for the baseline; qualify Subject.callAs separately.
+  @SuppressWarnings("removal")
   protected void configure() {
     if (!serverKeyTab.isPresent()) {
       addError("No -" + Options.SERVER_KEYTAB_ARGNAME + " specified.");

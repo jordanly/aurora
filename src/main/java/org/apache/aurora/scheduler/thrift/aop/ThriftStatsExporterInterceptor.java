@@ -59,6 +59,8 @@ class ThriftStatsExporterInterceptor implements MethodInterceptor {
       });
 
   @Override
+  // Preserve counter-constructor failure propagation while restoring the original test baseline.
+  @SuppressWarnings("deprecation")
   public Object invoke(MethodInvocation invocation) throws Throwable {
     Method method = invocation.getMethod();
     SlidingStats stat = timingStats.getUnchecked(method);

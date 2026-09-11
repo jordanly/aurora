@@ -148,6 +148,9 @@ public abstract class AbstractJettyTest extends EasyMockTest {
     expectLastCall();
 
     expect(serviceGroupMonitor.get()).andAnswer(schedulers::get).anyTimes();
+    // LeaderRedirect closes its monitor when the application service stops in replayAndStart().
+    serviceGroupMonitor.close();
+    expectLastCall();
   }
 
   protected void setLeadingScheduler(String host, int port) {

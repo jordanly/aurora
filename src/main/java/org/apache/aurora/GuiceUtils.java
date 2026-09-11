@@ -31,7 +31,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.inject.Binder;
-import com.google.inject.matcher.AbstractMatcher;
 import com.google.inject.matcher.Matcher;
 import com.google.inject.matcher.Matchers;
 
@@ -84,7 +83,7 @@ public final class GuiceUtils {
     final LoadingCache<Method, Pair<String, Class<?>[]>> cache = CacheBuilder.newBuilder()
         .build(CacheLoader.from(CANONICALIZE));
 
-    return new AbstractMatcher<Method>() {
+    return new Matcher<Method>() {
       @Override
       public boolean matches(Method method) {
         return interfaceMethods.contains(cache.getUnchecked(method));
@@ -123,7 +122,7 @@ public final class GuiceUtils {
   private static final Predicate<Method> IS_WHITELISTED =
       method -> method.getAnnotation(AllowUnchecked.class) != null;
 
-  private static final Matcher<Method> WHITELIST_MATCHER = new AbstractMatcher<Method>() {
+  private static final Matcher<Method> WHITELIST_MATCHER = new Matcher<Method>() {
     @Override
     public boolean matches(Method method) {
       return IS_WHITELISTED.apply(method);

@@ -17,9 +17,18 @@ import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.file.FileTree
+import org.gradle.process.ExecOperations
 import org.gradle.api.tasks.compile.JavaCompile
+import javax.inject.Inject
 
 class ThriftEntitiesPlugin implements Plugin<Project>  {
+  private final ExecOperations execOperations
+
+  @Inject
+  ThriftEntitiesPlugin(ExecOperations execOperations) {
+    this.execOperations = execOperations
+  }
+
   @Override
   void apply(Project project) {
 
@@ -40,11 +49,14 @@ class ThriftEntitiesPlugin implements Plugin<Project>  {
       task('generateThriftEntitiesJava') {
         inputs.files {thriftEntities.inputFiles}
         inputs.files {thriftEntities.codeGenerator}
+        inputs.property('python') {thriftEntities.python}
         outputs.dir {thriftEntities.genJavaDir}
+        outputs.dir {thriftEntities.genResourcesDir}
         doLast {
-          thriftEntities.genJavaDir.exists() || thriftEntities.genJavaDir.mkdirs()
-          thriftEntities.inputFiles.each { File file ->
-            exec {
+          delete thriftEntities.genJavaDir, thriftEntities.genResourcesDir
+          thriftEntities.genJavaDir.mkdirs()
+          thriftEntities.inputFiles.sort().each { File file ->
+            execOperations.exec {
               commandLine thriftEntities.python,
                   thriftEntities.codeGenerator,
                   file.path,
@@ -58,18 +70,18 @@ class ThriftEntitiesPlugin implements Plugin<Project>  {
       task('classesThriftEntities', type: JavaCompile) {
         source files(generateThriftEntitiesJava)
         classpath = configurations.thriftRuntime + configurations.thriftEntitiesCompile
-        destinationDir = file(thriftEntities.genClassesDir)
+        destinationDirectory = file(thriftEntities.genClassesDir)
         options.warnings = false
       }
 
       configurations.create('thriftEntitiesRuntime')
       configurations.thriftEntitiesRuntime.extendsFrom(configurations.thriftEntitiesCompile)
       dependencies {
-        thriftEntitiesRuntime files(classesThriftEntities)
+        thriftEntitiesRuntime files(thriftEntities.genClassesDir).builtBy(classesThriftEntities)
       }
-      configurations.compile.extendsFrom(configurations.thriftEntitiesRuntime)
+      configurations.api.extendsFrom(configurations.thriftEntitiesRuntime)
       sourceSets.main {
-        output.dir(classesThriftEntities)
+        output.dir(thriftEntities.genClassesDir, builtBy: 'classesThriftEntities')
         output.dir(thriftEntities.genResourcesDir, builtBy: 'generateThriftEntitiesJava')
       }
     }
@@ -77,7 +89,7 @@ class ThriftEntitiesPlugin implements Plugin<Project>  {
 }
 
 class ThriftEntitiesPluginExtension {
-  def python = 'python2.7'
+  def python
   File genClassesDir
   File genResourcesDir
   File genJavaDir
@@ -103,6 +115,7 @@ class ThriftEntitiesPluginExtension {
   }
 
   ThriftEntitiesPluginExtension(Project project) {
+    python = project.findProperty('wrapperPython') ?: 'python3'
     genClassesDir = project.file("${project.buildDir}/thriftEntities/classes")
     genResourcesDir = project.file("${project.buildDir}/thriftEntities/gen-resources")
     genJavaDir = project.file("${project.buildDir}/thriftEntities/gen-java")

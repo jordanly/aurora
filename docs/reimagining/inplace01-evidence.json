@@ -1,0 +1,247 @@
+{
+  "baselineCommit": "11ebaeeb071cb182c388a40755e84f60dda32260",
+  "branch": "codex/in-place-java25",
+  "date": "2026-09-11",
+  "scope": "Original application Java25 build and complete discovered Java suite baseline; full application packaging/quality/runtime qualification remains open.",
+  "toolchain": {
+    "schema": 1,
+    "platform": "linux/arm64",
+    "tools": {
+      "java": {
+        "file": "OpenJDK25U-jdk_aarch64_linux_hotspot_25.0.4.1_1.tar.gz",
+        "url": "https://github.com/adoptium/temurin25-binaries/releases/download/jdk-25.0.4.1%2B1/OpenJDK25U-jdk_aarch64_linux_hotspot_25.0.4.1_1.tar.gz",
+        "sha256": "69df11a02cfa3ef7d7ca645e03edce6778ec090e100f6ae2b42097865730ac52",
+        "directory": "jdk-25.0.4.1+1"
+      },
+      "gradle": {
+        "file": "gradle-9.7.1-bin.zip",
+        "url": "https://services.gradle.org/distributions/gradle-9.7.1-bin.zip",
+        "sha256": "acd53f1edaf02f1a8ff99879f8a34b302661a057d9b063ae9e35b552f804d20a",
+        "directory": "gradle-9.7.1"
+      }
+    },
+    "java": {
+      "versionMajor": 25,
+      "release": "25.0.4.1+1",
+      "vendor": "Eclipse Adoptium",
+      "bytecodeMajor": 69
+    }
+  },
+  "javaTests": {
+    "ledger": "inplace01-test-ledger.json",
+    "totals": {
+      "tests": 1295,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 1,
+      "passed": 1294
+    },
+    "originalPassed": 1283,
+    "newRegressionPassed": 11,
+    "suiteCount": 193,
+    "scheduler": {
+      "tests": 1177,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 1,
+      "passed": 1176
+    },
+    "commons": {
+      "tests": 118,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 118
+    },
+    "commonsExecution": "up-to-date in final command; last executed in full-java-after-mock-update.log"
+  },
+  "pythonTests": {
+    "generator": 8,
+    "launcher": 5,
+    "failures": 0
+  },
+  "classFiles": {
+    "build/scheduler/classes/java/main": {
+      "classFiles": 778,
+      "classFileMajor": 69
+    },
+    "build/scheduler/classes/java/test": {
+      "classFiles": 353,
+      "classFileMajor": 69
+    },
+    "build/api/thrift/classes": {
+      "classFiles": 1450,
+      "classFileMajor": 69
+    },
+    "build/api/thriftEntities/classes": {
+      "classFiles": 97,
+      "classFileMajor": 69
+    },
+    "build/commons/classes/java/main": {
+      "classFiles": 150,
+      "classFileMajor": 69
+    },
+    "build/commons/classes/java/test": {
+      "classFiles": 49,
+      "classFileMajor": 69
+    },
+    "buildSrc/classes/groovy/main": {
+      "classFiles": 46,
+      "classFileMajor": 69
+    }
+  },
+  "originalSourceCounts": {
+    "scheduler_java": {
+      "files": 327,
+      "javaSources": 327
+    },
+    "scheduler_java_tests": {
+      "files": 203,
+      "javaSources": 203
+    },
+    "benchmarks": {
+      "files": 18,
+      "javaSources": 18
+    },
+    "commons_java": {
+      "files": 62,
+      "javaSources": 62
+    },
+    "commons_java_tests": {
+      "files": 24,
+      "javaSources": 24
+    },
+    "api_schemas": {
+      "files": 6,
+      "javaSources": 0
+    },
+    "runtime_resources": {
+      "files": 18,
+      "javaSources": 0
+    },
+    "test_resources": {
+      "files": 84,
+      "javaSources": 0
+    },
+    "python_runtime_and_tools": {
+      "files": 180,
+      "javaSources": 0
+    },
+    "python_tests": {
+      "files": 126,
+      "javaSources": 0
+    },
+    "ui": {
+      "files": 132,
+      "javaSources": 0
+    },
+    "build_plugins": {
+      "files": 4,
+      "javaSources": 0
+    }
+  },
+  "allOriginalJavaSourcesInGradle": 634,
+  "independentlyRegeneratedFiles": 240,
+  "receipts": {
+    ".cache/inplace-validation/di-expanded-summary.json": {
+      "sha256": "609395662190df7dff68397719853c5637f208aafdb12a24e5fa5797967d47f7"
+    },
+    ".cache/inplace-validation/di-expanded-command.json": {
+      "sha256": "f1c2331c1ebf7a41c7f492b2bce04e8076026635b5b9fecb59431ef9842a4237"
+    },
+    ".cache/inplace-validation/di-expanded.log": {
+      "sha256": "554de6f3999fc0391b256e812153678d627eb1e1ae2f7fdfbd4217e729534394"
+    },
+    ".cache/inplace-validation/di-resolved-dependencies.json": {
+      "sha256": "f6843605f1e7c0e33aca00ed48a2521789deadc824d5af056e5c2afa711cd7f2"
+    },
+    ".cache/inplace-validation/di-commons-test-compile.log": {
+      "sha256": "5d1c50e3dee73e3bd93bd5eeb3cc4d60b3e5e4595e14319d877642efb3ffb64c"
+    },
+    ".cache/inplace-validation/gradle-source-membership.json": {
+      "sha256": "e78c92e9a38de270dd12fd831851f15ee91c45e7d0cebd189112789f6259a6c9"
+    },
+    ".cache/inplace-validation/source-inventory.json": {
+      "sha256": "ebfb29f64a38b1c1b321cee81be4cae12e90114a9c4b09fb164451f525beec64"
+    },
+    ".cache/inplace-validation/generated-source-validation.json": {
+      "sha256": "04af5b4d50726df72940bdc1d35066dc152fb8a7871c2ed5e2a08f4a67216bcc"
+    },
+    ".cache/inplace-validation/classfile-validation.json": {
+      "sha256": "d52e89063e299a9f91f04443bb1bb4d89288f95d2cd143e21b25a3fa2c7432f9"
+    },
+    ".cache/inplace-validation/behavior-before-di-summary.json": {
+      "sha256": "c4459fdd72c74b5ca4778886143bfeae5ec3d55ab341d80f81b2d16c689d143f"
+    },
+    ".cache/inplace-validation/full-java-final.log": {
+      "sha256": "ec363fc9a5f269a1abf8462bf3a3a1941dbd101bcd3e6d47712fed8bb11bcbc6"
+    },
+    ".cache/inplace-validation/full-java-before-mock-update/command.log": {
+      "sha256": "fbf54a879d73980285cdd91e49062b297ee8a95d5d66da32170b19daf6c6d764"
+    },
+    ".cache/inplace-validation/full-java-after-mock-update/command.log": {
+      "sha256": "9af519745149a87078a0d3ae752b418cf4a0783bddade603849965c6afef68aa"
+    },
+    ".cache/inplace-validation/mock-resolved-dependencies.json": {
+      "sha256": "f40d38d1f58355f5f588f3486f4705ce16dee78ebc522ddab0153fb8093a9ad1"
+    },
+    ".cache/inplace-validation/historical-webhook.jsonl": {
+      "sha256": "d82a3b30317d1755f32791c9ff48c0dfb7550cc1da981ce47242cc4b05c89cda"
+    },
+    ".cache/inplace-validation/modern-webhook.jsonl": {
+      "sha256": "d82a3b30317d1755f32791c9ff48c0dfb7550cc1da981ce47242cc4b05c89cda"
+    },
+    ".cache/inplace-validation/webhook-reference-command.json": {
+      "sha256": "d838fa9ba34e702b6492c035f60ab93d8221b46a03907e720f303deb9a0ab2dd"
+    },
+    ".cache/inplace-validation/http-updater-affected.log": {
+      "sha256": "dc0be7799e2f72e62572f5fbd7e6fbdee325a646b091045b5df6c5fd5a4ce6bc"
+    },
+    "docs/reimagining/inplace01-test-ledger.json": {
+      "sha256": "152fa4cbb3b4d9a79f26aa7010617abf5e1a71a86df970f5500b90545c44e676"
+    },
+    ".cache/inplace-validation/commons-license-gate.log": {
+      "sha256": "454d86874d61acc51fc6c433b93c0190da7b3d7b98ae7c76f1ad54d604ce3728"
+    }
+  },
+  "openGates": [
+    "UI and distribution packaging",
+    "coverage and quality integrations",
+    "fresh checkout prerequisite qualification",
+    "benchmark compilation and execution",
+    "existing ignored storage concurrency test",
+    "Mesos JNI and production runtime",
+    "broader dependency and Python client/executor modernization"
+  ],
+  "historicalAttempts": {
+    "earlyDi": {
+      "tests": 110,
+      "failures": 26
+    },
+    "diExpanded": {
+      "tests": 142,
+      "failures": 0
+    },
+    "firstFullScheduler": {
+      "tests": 1166,
+      "failures": 311,
+      "skipped": 1
+    },
+    "afterMockUpdateScheduler": {
+      "tests": 1177,
+      "failures": 36,
+      "skipped": 1
+    }
+  },
+  "webhookContract": {
+    "outputsCompared": 16,
+    "result": "byte-for-byte identical",
+    "currentCodeModuleOpenings": false
+  },
+  "qualityGateProbe": {
+    "task": ":commons:licenseMain",
+    "exitCode": 1,
+    "expectedFailure": true,
+    "reason": "Original license integration awaits Gradle 9 port; full build must not silently omit it."
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "recorded_at_utc": "2026-09-10T04:16:24.593714+00:00",
+  "origin_master": "d46a8d91aa69ab9cf1ebc2b13552f8093d366fe9",
+  "upstream_master": "11ebaeeb071cb182c388a40755e84f60dda32260",
+  "research_baseline": "e3350f63d446cca17e8f1763ce30cc94346e64cf",
+  "fork_sync": {
+    "date": "2026-09-10",
+    "origin_master_verified": "11ebaeeb071cb182c388a40755e84f60dda32260",
+    "local_master": "11ebaeeb071cb182c388a40755e84f60dda32260",
+    "method": "55-commit fast-forward, explicitly requested by user; origin_master above records the earlier planning snapshot",
+    "implementation_branch": "codex/standalone-foundations"
+  },
+  "note": "Copied research reports unchanged. Research baseline differs from upstream master only by AURORA_CONTEXT.md. Host observations in the original reports are historical.",
+  "sources": [
+    {
+      "source_worktree": "3faa",
+      "path": "docs/reimagining/JAVA_MODERNIZATION_PLAN.md",
+      "sha256": "06de86b5f8eb67b3cef4cb7b3c7b60c23fd29d67512cee620e3a2324883d34bf"
+    },
+    {
+      "source_worktree": "9e7d",
+      "path": "docs/reimagining/MESOS_REMOVAL_PLAN.md",
+      "sha256": "a151e4d035c315091368466c5d543c03f2ec8394d24c671e340fdc33e9e52832"
+    },
+    {
+      "source_worktree": "88f0",
+      "path": "docs/reimagining/GO_AGENT_DESIGN.md",
+      "sha256": "336406c9bc11d335039af1d4021294f8927d247704bd4619901635b1323b2b8c"
+    },
+    {
+      "source_worktree": "6f85",
+      "path": "docs/reimagining/CODEBASE_SIMPLIFICATION_AUDIT.md",
+      "sha256": "eb62a3d16c7d28177c5b12084fd9580d32c95c9aa29fcd485b4c82e2995c06ff"
+    },
+    {
+      "source_worktree": "cbd4",
+      "path": "docs/reimagining/UI_REIMAGINING.md",
+      "sha256": "a8e32968d5606388589bdd15ea812939a04294355ba1f4941a5ce15e8bd9430a"
+    },
+    {
+      "source_worktree": "cb00",
+      "path": "docs/reimagining/RASPBERRY_PI_TESTING_PLAN.md",
+      "sha256": "d0dd934bbf8d54eafa1a433cddaf307a1eb3badfc908e20297d1772f0c5aab9a"
+    },
+    {
+      "source_worktree": "3faa",
+      "path": "AURORA_CONTEXT.md",
+      "sha256": "fccdf7b5295a8293324ba617f2f9d56cf7ae7aa16c7c11a96c7af101a64c77c5"
+    }
+  ]
+}

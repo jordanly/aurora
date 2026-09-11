@@ -12,6 +12,13 @@
  * limitations under the License.
  */
 
-if (gradle.gradleVersion != GRADLE_VERSION) {
-  throw new GradleException("Building is only supported with gradle version: $GRADLE_VERSION .")
+plugins { id 'groovy' }
+repositories { mavenCentral() }
+dependencies {
+  implementation gradleApi()
+  implementation localGroovy()
 }
+layout.buildDirectory = file('../.cache/inplace-build/buildSrc')
+
+java { toolchain.languageVersion = JavaLanguageVersion.of(25) }
+tasks.withType(JavaCompile).configureEach { options.release = 25 }

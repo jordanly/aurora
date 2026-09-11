@@ -128,6 +128,8 @@ public class BatchWorker<T> extends AbstractExecutionThreadService {
   }
 
   @Inject
+  // Keep existing metric registration/service naming until lifecycle behavior is characterized.
+  @SuppressWarnings("this-escape")
   protected BatchWorker(
       Storage storage,
       StatsProvider statsProvider,

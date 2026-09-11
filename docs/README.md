@@ -1,3 +1,6 @@
+For this fork, start with the [in-place modernization plan](reimagining/IN_PLACE_MODERNIZATION_PLAN.md)
+and [current build status](reimagining/INPLACE01_BUILD_STATUS.md).
+
 ## Introduction
 
 Apache Aurora is a service scheduler that runs on top of Apache Mesos, enabling you to run

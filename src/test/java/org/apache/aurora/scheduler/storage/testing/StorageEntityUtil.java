@@ -59,12 +59,30 @@ public final class StorageEntityUtil {
           name + "." + union.getSetField().getFieldName(),
           union.getFieldValue(),
           ignoredFields);
-    } else if (!(object instanceof String) && !(object instanceof Enum)) {
+    } else if (isScalar(object)) {
+      assertScalarPopulated(name, object);
+    } else {
       for (Field field : object.getClass().getDeclaredFields()) {
         if (!Modifier.isStatic(field.getModifiers())) {
           validateField(name, object, field, ignoredFields);
         }
       }
+    }
+  }
+
+  /** Java scalar values are leaves; inspecting their implementation fields is not portable. */
+  private static boolean isScalar(Object object) {
+    return object instanceof String
+        || object instanceof Enum
+        || Primitives.isWrapperType(object.getClass());
+  }
+
+  private static void assertScalarPopulated(String name, Object value) {
+    if (Primitives.isWrapperType(value.getClass())) {
+      assertNotEquals(
+          "Primitive value must not be default: " + name,
+          Defaults.defaultValue(Primitives.unwrap(value.getClass())),
+          value);
     }
   }
 

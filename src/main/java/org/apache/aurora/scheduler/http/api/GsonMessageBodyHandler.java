@@ -163,7 +163,8 @@ public class GsonMessageBodyHandler
     }
   };
 
-  @SuppressWarnings({"unchecked", "rawtypes"})
+  // Preserve union-constructor exception handling until its API baseline is qualified.
+  @SuppressWarnings({"unchecked", "rawtypes", "deprecation"})
   private static TUnion<?, ?> createUnion(
       Class<?> unionType,
       TFieldIdEnum setField,

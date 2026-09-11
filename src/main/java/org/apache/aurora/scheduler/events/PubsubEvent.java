@@ -19,6 +19,7 @@ import java.util.Set;
 
 import com.google.common.base.MoreObjects;
 import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 
 import org.apache.aurora.gen.ScheduleStatus;
 import org.apache.aurora.scheduler.base.Tasks;
@@ -158,7 +159,14 @@ public interface PubsubEvent {
     }
 
     public String toJson() {
-      return new Gson().toJson(this);
+      Gson gson = new Gson();
+      JsonObject event = new JsonObject();
+      event.add("task", gson.toJsonTree(task));
+      // Preserve the webhook's historical Optional representation without reading JDK fields.
+      JsonObject previousState = new JsonObject();
+      oldState.ifPresent(state -> previousState.add("value", gson.toJsonTree(state)));
+      event.add("oldState", previousState);
+      return gson.toJson(event);
     }
 
   }
