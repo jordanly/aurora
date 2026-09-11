@@ -1,6 +1,11 @@
 # JAVA-04: review Java 25 idioms across Aurora
 
-Status: queued review task. Depends on the qualified [JAVA-03 baseline](JAVA03_STATUS.md).
+Status: complete. The [audit](JAVA25_IDIOM_AUDIT.md),
+[647-file inventory](java04-inventory.json) and
+[six ordered follow-up tasks](JAVA25_REFACTOR_TASKS.md) are delivered and
+independently reviewed. Application code is unchanged; JAVA-05 is the
+recommended first implementation slice. The review uses the qualified
+[JAVA-03 baseline](JAVA03_STATUS.md).
 
 Identify where modern Java can make Aurora easier to understand, maintain and
 verify. Produce a source-backed audit and ordered implementation tasks. The

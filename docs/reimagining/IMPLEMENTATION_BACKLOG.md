@@ -21,12 +21,16 @@ cases. [Its evidence](java03-evidence.json) records those 69 physical cases and
 the required exploratory comparison: four variants, three sequential trials
 each, with identical workload limits and instrumentation. Java 25 remains the
 default. This completes P5 for the retained native profile; retired legacy
-build targets and broader production capabilities remain separate. The next
-bounded slice is SUPERVISE-01, covering surviving attempt supervisors.
+build targets and broader production capabilities remain separate. SUPERVISE-01
+is the next execution-capability slice, covering surviving attempt supervisors.
 
-[JAVA-04](JAVA04_TASK.md) is queued as a follow-up review of Java 25 idioms
-across the repository, prioritizing actively shipped standalone Java. It will
-produce concrete refactoring tasks and can run alongside supervision planning.
+[JAVA-04](JAVA25_IDIOM_AUDIT.md) has completed its Java 25 idiom review with a
+[647-file inventory](java04-inventory.json) and independent semantic review.
+The [six follow-up tasks](JAVA25_REFACTOR_TASKS.md) prioritize small JDK API
+cleanups, private records and clearer validation. JAVA-05 is the recommended
+first Java refactoring slice; SQL model and concurrency changes remain
+conditional on compatibility and lifecycle decisions. These tasks can proceed
+alongside supervision planning, with shared contract changes coordinated.
 
 **First work and independent tracks**
 
@@ -54,7 +58,13 @@ Start with PLAN-01, BUILD-01 and CONTRACT-01. Go reducers/protocol fixtures can 
 | P5 / JAVA-01 | Complete for retained native profile: Gradle 9, Java 25 compiler/test/JavaExec toolchains and deterministic package tasks. Retired buildSrc/Thrift/JMH targets excluded after CUT-01 isolation. | CUT-01 | 34 Java tests, identical Java archives/installed trees, Java 8/25 state and TLS compatibility, verified production images, full three-round/ten-minute Pi gate; [recorded evidence](java01-evidence.json). |
 | P5 / JAVA-02 | Complete for retained native profile: coherent Jackson BOM/validator/logging upgrades; current SQLite JDBC retained and audited. Retired DI/network stacks excluded. | JAVA-01 | 34 Java tests, two bidirectional dependency/state compatibility lanes, exact ARM64 ELF and JDK diagnostics, reproducible artifacts and full three-round/ten-minute Pi gate; [recorded evidence](java02-evidence.json). |
 | P5 / JAVA-03 | Complete for the retained native profile: HTTP/auth behavior, original launchers, Java 25 default plus runtime-only and compiled Java 26 profiles. | JAVA-02 | Each profile passed 41 Java tests, 59 launcher commands and 23 physical cases; twelve sequential trials document resource/latency measurements without a production performance SLO. [Recorded evidence](java03-evidence.json). |
-| P5 follow-up / JAVA-04 | Queued: [Java 25 idiomatic-code review](JAVA04_TASK.md), covering repository Java with active standalone code first. | JAVA-03 | Source inventory, concrete before/after proposals, compatibility risks, verified feature availability, independent review and ordered implementation tasks. |
+| P5 follow-up / JAVA-04 | Complete: [Java 25 idiomatic-code audit](JAVA25_IDIOM_AUDIT.md), active code review and representative legacy findings. | JAVA-03 | All 647 tracked Java files inventoried; examples, risks, official feature checks, independent review and six ordered tasks delivered. No application refactors included. |
+| P5 follow-up / JAVA-05 | Queued first: JDK digest/collection helpers and bounded input; [task details](JAVA25_REFACTOR_TASKS.md). | JAVA-04 | Exact canonical/hash and CLI contracts; inclusive size limits and existing HTTP deadlines retained. |
+| P5 follow-up / JAVA-06 | Queued: private socket/poll-result records and clearer controller phases; [task details](JAVA25_REFACTOR_TASKS.md). | JAVA-05 | Duplicate socket coverage, one reduction transaction, post-commit publication and ACK order; no public or wire model change. |
+| P5 follow-up / JAVA-07 | Queued: grouped validation branches and focused fixture readability; [task details](JAVA25_REFACTOR_TASKS.md). | JAVA-06 | Existing lexical/schema acceptance, canonical bytes and error behavior retained. |
+| P5 follow-up / JAVA-08 | Queued hardening: store-resource and daemon lifecycle failure handling; [task details](JAVA25_REFACTOR_TASKS.md). | JAVA-06 | Failure injection, primary/suppressed errors, partial startup, bounded shutdown and physical recovery evidence. |
+| P5 follow-up / JAVA-09 | Conditional: public SQL records and compatibility-adapter decision; [task details](JAVA25_REFACTOR_TASKS.md). | JAVA-06, supported adapter decision | Explicit Java 8 helper/source contracts, public API and nullable/redacted-value policy; keep-as-class decision allowed. |
+| P5 follow-up / JAVA-10 | Conditional: bounded I/O concurrency and HTTP transport study; [task details](JAVA25_REFACTOR_TASKS.md). | JAVA-08, measured need | Admission/order/transaction ownership and recovery preserved; comparable measurements justify any adoption. |
 | P6 / SUPERVISE-01 | Same-binary surviving attempt supervisors, local protocol/versioning and daemon reattachment. | AGENT-02, SLICE-01; integrate on modern native baseline | Kill only daemon while children exit/log; preserve exact outcomes and execution; supervisor loss differs from container loss. |
 | P6 / THERMOS-01 | Selected DAG/retry/daemon/ephemeral/finalizer behavior and trusted offline manifest conversion. | SUPERVISE-01, behavior corpus | Retained legacy cases match; intentional changes/rejections explicit; no live Python-checkpoint adoption. |
 | P6 / POLICY-01 | Broader constraints/quotas, updates/rollback, preemption and workload evacuation/SLA drain, with real stores/controllers. | JAVA-03, required agent capabilities | Restart mid-update and drain; revalidate victims; release capacity only on cleanup. Enable features individually. |

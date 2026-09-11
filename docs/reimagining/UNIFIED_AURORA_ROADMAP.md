@@ -27,13 +27,16 @@ commands and the complete 23-case physical gate. [The evidence](java03-evidence.
 records all 69 physical cases and twelve sequential workload/resource trials
 against the previous baseline. Java 25 remains the default; measurements are
 exploratory and do not establish a production performance SLO. These completions
-cover the retained native scheduler/protocol profile. The next bounded slice is
-SUPERVISE-01: surviving attempt supervisors and daemon reattachment.
+cover the retained native scheduler/protocol profile. The next execution-capability
+slice is SUPERVISE-01: surviving attempt supervisors and daemon reattachment.
 
-The queued [JAVA-04 review](JAVA04_TASK.md) will assess Java 25 idioms across
-the repository, starting with actively shipped standalone Java, and produce
-small, ordered refactoring tasks. This source-level review follows the runtime
-qualification above and can run alongside supervision planning.
+[JAVA-04](JAVA25_IDIOM_AUDIT.md) has completed the source-level Java 25 review:
+647 tracked Java files inventoried, active standalone code examined, and
+representative legacy findings checked independently. Its
+[six ordered tasks](JAVA25_REFACTOR_TASKS.md) start with JAVA-05 JDK helpers and
+bounded input, then private records and clearer validation. Lifecycle hardening
+precedes any concurrency experiment; public SQL records require an explicit
+compatibility decision. These follow-ups can run alongside supervision planning.
 
 **Verified master and provenance**
 
