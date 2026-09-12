@@ -1,0 +1,66 @@
+{
+  "version": "native-v1alpha1",
+  "kind": "Delivery",
+  "authority": {
+    "cluster": "lab",
+    "incarnation": "recovery-a",
+    "schedulerEpoch": "9007199254740993",
+    "session": "session-a"
+  },
+  "body": {
+    "version": "native-v2",
+    "kind": "Run",
+    "command": "run-command-a",
+    "identity": {
+      "cluster": "lab",
+      "incarnation": "recovery-a",
+      "instance": "instance-a",
+      "attempt": "attempt-a",
+      "process": "main",
+      "run": "run-a",
+      "jobKey": {
+        "role": "fixtures",
+        "environment": "test",
+        "name": "batch"
+      }
+    },
+    "target": {
+      "node": "agent-a",
+      "journal": "journal-a",
+      "boot": "boot-a",
+      "runtime": "runtime-a"
+    },
+    "desiredRevision": "1",
+    "assignment": {
+      "process": "main",
+      "argv": [
+        "/opt/aurora-fixtures/batch",
+        "--identity",
+        "batch-a"
+      ],
+      "env": {
+        "LANG": "C",
+        "FIXTURE_TEXT": "quote: \" slash: \\ html: <&>"
+      },
+      "resources": {
+        "cpuMillis": 100,
+        "memoryBytes": 16777216,
+        "memoryEnforcement": "reservation"
+      },
+      "ports": [],
+      "readiness": {
+        "kind": "none"
+      },
+      "retry": {
+        "maxRuns": 1
+      },
+      "stop": {
+        "graceMillis": 5000
+      },
+      "runtime": "trusted-host-process",
+      "requiredCapabilities": []
+    },
+    "templateSha256": "156f547eaf72cfa1a35adb7353372f9d31cdb99892a85704d9769640a86711a8"
+  },
+  "bodySha256": "d020ff9b8ec1e847e61bcb9074737c9d4b58e2452ba7377654d25eb778098501"
+}

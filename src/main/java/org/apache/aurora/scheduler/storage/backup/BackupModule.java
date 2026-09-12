@@ -60,7 +60,6 @@ public class BackupModule extends PrivateModule {
     public int maxSavedBackups = 48;
 
     @Parameter(names = "-backup_dir",
-        required = true,
         description = "Directory to store backups under. Will be created if it does not exist.")
     public File backupDir;
   }

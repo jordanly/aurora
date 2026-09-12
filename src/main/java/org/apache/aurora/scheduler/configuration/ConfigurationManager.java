@@ -67,7 +67,13 @@ import static org.apache.aurora.scheduler.resources.ResourceType.RAM_MB;
  * TODO(William Farner): Add input validation to all fields (strings not empty, positive ints, etc).
  */
 public class ConfigurationManager {
+  private org.apache.aurora.scheduler.execution.TaskConfigValidator executionValidator =
+      task -> { };
 
+  @com.google.inject.Inject(optional = true)
+  void setExecutionValidator(org.apache.aurora.scheduler.execution.TaskConfigValidator validator) {
+    executionValidator = requireNonNull(validator);
+  }
   public static final String DEDICATED_ATTRIBUTE = "dedicated";
   public static final String DEFAULT_ALLOWED_JOB_ENVIRONMENTS = "^(prod|devel|test|staging\\d*)$";
 
@@ -469,7 +475,9 @@ public class ConfigurationManager {
 
     maybeFillLinks(builder);
 
-    return ITaskConfig.build(builder);
+    ITaskConfig populated = ITaskConfig.build(builder);
+    executionValidator.validate(populated);
+    return populated;
   }
 
   /**

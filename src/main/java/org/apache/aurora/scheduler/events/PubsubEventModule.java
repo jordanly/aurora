@@ -18,8 +18,10 @@ import java.lang.annotation.Target;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.inject.Inject;
+import javax.inject.Provider;
 import javax.inject.Qualifier;
 import javax.inject.Singleton;
 
@@ -40,6 +42,7 @@ import org.apache.aurora.scheduler.SchedulerServicesModule;
 import org.apache.aurora.scheduler.async.AsyncModule.AsyncExecutor;
 import org.apache.aurora.scheduler.base.AsyncUtil;
 import org.apache.aurora.scheduler.events.PubsubEvent.EventSubscriber;
+import org.apache.aurora.scheduler.execution.ExecutionControl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -64,6 +67,9 @@ public final class PubsubEventModule extends AbstractModule {
 
   private final Logger log;
   private final Executor registeredExecutor;
+  private final boolean synchronousFailClosed;
+  private final AtomicReference<Throwable> subscriberFailure = new AtomicReference<>();
+  private Provider<ExecutionControl> executionControl;
 
   @VisibleForTesting
   static final String EXCEPTIONS_STAT = "event_bus_exceptions";
@@ -71,17 +77,24 @@ public final class PubsubEventModule extends AbstractModule {
   static final String EVENT_BUS_DEAD_EVENTS = "event_bus_dead_events";
 
   public PubsubEventModule() {
-    this(LoggerFactory.getLogger(PubsubEventModule.class));
+    this(false);
   }
 
-  private PubsubEventModule(Logger log) {
-    this.log = requireNonNull(log);
+  public PubsubEventModule(boolean synchronousFailClosed) {
+    this.log = LoggerFactory.getLogger(PubsubEventModule.class);
+    this.synchronousFailClosed = synchronousFailClosed;
     this.registeredExecutor = AsyncUtil.singleThreadLoggingScheduledExecutor("RegisteredEventSink",
         log);
   }
 
   @VisibleForTesting
   PubsubEventModule(Logger log, Executor registeredExecutor) {
+    this(log, registeredExecutor, false);
+  }
+
+  @VisibleForTesting
+  PubsubEventModule(Logger log, Executor registeredExecutor, boolean synchronousFailClosed) {
+    this.synchronousFailClosed = synchronousFailClosed;
     this.log = requireNonNull(log);
     this.registeredExecutor = requireNonNull(registeredExecutor);
   }
@@ -91,6 +104,10 @@ public final class PubsubEventModule extends AbstractModule {
 
   @Override
   protected void configure() {
+    if (synchronousFailClosed) {
+      // Resolve only on failure, after the execution backend has finished its own injection.
+      executionControl = getProvider(ExecutionControl.class);
+    }
     // Ensure at least an empty binding is present.
     Multibinder.newSetBinder(binder(), EventSubscriber.class);
     Multibinder.newSetBinder(binder(), EventSubscriber.class, RegisteredEvents.class);
@@ -105,6 +122,11 @@ public final class PubsubEventModule extends AbstractModule {
     final AtomicLong subscriberExceptions = statsProvider.makeCounter(EXCEPTIONS_STAT);
     return (exception, context) -> {
       subscriberExceptions.incrementAndGet();
+      if (synchronousFailClosed && subscriberFailure.compareAndSet(null, exception)) {
+        // A subscriber may hold a storage/publication lock. Never wait for shutdown here.
+        Thread.ofPlatform().name("EventSubscriberFailure").daemon(true)
+            .start(() -> executionControl.get().abort());
+      }
       log.error(
           "Failed to dispatch event to " + context.getSubscriberMethod() + ": " + exception,
           exception);
@@ -131,9 +153,36 @@ public final class PubsubEventModule extends AbstractModule {
                            SubscriberExceptionHandler subscriberExceptionHandler,
                            @DeadEventHandler Object deadEventHandler) {
 
-    EventBus eventBus = new AsyncEventBus(executor, subscriberExceptionHandler);
+    EventBus eventBus = synchronousFailClosed
+        ? new FailClosedEventBus(subscriberExceptionHandler, subscriberFailure)
+        : new AsyncEventBus(executor, subscriberExceptionHandler);
     eventBus.register(deadEventHandler);
     return eventBus;
+  }
+
+  /** EventBus normally swallows subscriber exceptions; recovery must not report readiness then. */
+  private static final class FailClosedEventBus extends EventBus {
+    private final AtomicReference<Throwable> failure;
+
+    FailClosedEventBus(SubscriberExceptionHandler handler, AtomicReference<Throwable> failure) {
+      super(handler);
+      this.failure = failure;
+    }
+
+    @Override
+    public void post(Object event) {
+      checkFailure();
+      super.post(event);
+      checkFailure();
+    }
+
+    private void checkFailure() {
+      Throwable cause = failure.get();
+      if (cause != null) {
+        throw new IllegalStateException(
+            "Event subscriber failed; scheduler restart required", cause);
+      }
+    }
   }
 
   @Provides

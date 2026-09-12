@@ -1,0 +1,295 @@
+#!/usr/bin/env python3
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# http://www.apache.org/licenses/LICENSE-2.0
+"""Isolated original SchedulerMain plus two Go agents; no legacy lab mutation."""
+import argparse
+import fcntl
+import hashlib
+import json
+import os
+from pathlib import Path
+import re
+import secrets
+import shutil
+import subprocess
+import sys
+import time
+import zipfile
+
+ROOT = Path(__file__).resolve().parents[2]
+LABEL = 'org.apache.aurora.inplace'
+BASE = 'debian:bookworm-slim@sha256:6bd27d44e6c32a66bbd72d7cb2b76a8ae3497ec2e5274a81abd1b37f6013fa1f'
+ROLES = ('agent-a', 'agent-b', 'scheduler')
+
+
+def need(value, message):
+    if not value:
+        raise ValueError(message)
+
+
+def safe(path):
+    need(path.is_absolute() and '..' not in path.parts and ',' not in str(path), 'Absolute safe path required')
+    need(not any(p.is_symlink() for p in (path, *path.parents)), 'Symlink path refused')
+    return path
+
+
+def run(args, timeout=60):
+    p = subprocess.run(list(map(str, args)), capture_output=True, text=True, timeout=timeout)
+    if p.returncode:
+        raise ValueError('Command failed: ' + str(args[0]) + ': ' + p.stderr[-2000:])
+    return p.stdout.strip()
+
+
+def docker(*args):
+    return run(['docker', *args])
+
+
+def save(root, data):
+    path = root / 'lab.json'
+    temp = root / 'lab.json.tmp'
+    safe(temp)
+    with temp.open('w') as f:
+        json.dump(data, f, indent=2); f.flush(); os.fsync(f.fileno())
+    os.replace(temp, path)
+    fd = os.open(root, os.O_RDONLY | os.O_DIRECTORY)
+    try: os.fsync(fd)
+    finally: os.close(fd)
+
+
+def digest_tree(root):
+    h = hashlib.sha256()
+    for p in sorted(root.rglob('*')):
+        safe(p)
+        need(p.is_dir() or p.is_file(), 'Special artifact refused')
+        if p.is_file():
+            h.update(str(p.relative_to(root)).encode() + b'\0' + hashlib.sha256(p.read_bytes()).digest())
+    return h.hexdigest()
+
+
+def inspect(data, role, network=False):
+    record = data['network'] if network else data['containers'][role]
+    ident = record.get('id')
+    need(isinstance(ident, str) and re.fullmatch('[a-f0-9]{64}', ident), 'Unknown creation identity; preserved')
+    item = json.loads(docker(*(['network', 'inspect'] if network else ['inspect']), ident))[0]
+    labels = item.get('Labels', {}) if network else item['Config'].get('Labels', {})
+    need(item['Id'] == ident and labels.get(LABEL) == data['token'] and labels.get(LABEL + '.role') == role,
+         'Ownership mismatch; resource preserved')
+    need(item['Name'].lstrip('/') == record['name'], 'Name mismatch; preserved')
+    if network:
+        need(item['Internal'] and item['Driver'] == 'bridge', 'Network boundary mismatch')
+    else:
+        hc = item['HostConfig']
+        need(not hc['Privileged'] and hc['ReadonlyRootfs'] and hc['CapDrop'] == ['ALL']
+             and hc['NetworkMode'] == data['network']['name'] and not hc.get('PortBindings')
+             and hc.get('PidMode', '') == '' and hc.get('SecurityOpt') == ['no-new-privileges:true']
+             and item['Config']['User'] == str(data['uid']) + ':' + str(data['gid']), 'Sandbox mismatch; preserved')
+        actual = sorted((m['Source'], m['Destination'], m['RW']) for m in item['Mounts'] if m['Type'] == 'bind')
+        need(actual == sorted(tuple(m) for m in record['mounts']), 'Mount ownership mismatch; preserved')
+        need(item['Config']['Entrypoint'] == ['/opt/bin/cluster-helper'] and item['Config']['Cmd'] == record['args'], 'Command mismatch; preserved')
+        need(item['Image'] == data['image'], 'Image mismatch; preserved')
+    return item
+
+
+def prepare(root, args):
+    need(not root.exists(), 'New root required; use status/down for existing lab')
+    sources = {'scheduler': args.distribution, 'java': args.java, 'helper': args.helper, 'agent': args.agent}
+    for p in sources.values(): safe(p); need(p.exists(), 'Missing build artifact: ' + str(p))
+    need((args.distribution / 'bin/aurora-scheduler').is_file(), 'Original scheduler distribution required')
+    source_hashes = {'agent': digest_tree(ROOT / 'agent'),
+                     'helper': digest_tree(ROOT / 'build-support/lab/fixtures/cluster-helper')}
+    binaries = {}
+    for role in ('agent', 'helper'):
+        path = sources[role]
+        metadata_path = safe(path.with_name(path.name + '.provenance.json'))
+        metadata = json.loads(metadata_path.read_text())
+        digest = hashlib.sha256(path.read_bytes()).hexdigest()
+        need(metadata['sourceSha256'] == source_hashes[role] and metadata['binarySha256'] == digest,
+             role + ' source/build provenance mismatch; rebuild current source')
+        binaries[role] = metadata
+    own_main = False
+    for jar in sorted((args.distribution / 'lib').glob('*.jar')):
+        safe(jar)
+        with zipfile.ZipFile(jar) as archive:
+            names = set(archive.namelist())
+        own_main |= 'org/apache/aurora/scheduler/app/SchedulerMain.class' in names
+        need(not any(n.endswith('/NativeSchedulerMain.class') or n.endswith('/NativeEngine.class') for n in names),
+             'Replacement scheduler class refused')
+    need(own_main, 'Original SchedulerMain absent from distribution')
+    jdk_metadata = {'treeSha256': digest_tree(args.java),
+                    'releaseSha256': hashlib.sha256((args.java / 'release').read_bytes()).hexdigest(),
+                    'release': (args.java / 'release').read_text()}
+    image = json.loads(docker('image', 'inspect', BASE))[0]['Id']
+    root.mkdir(parents=True, mode=0o700)
+    token = secrets.token_hex(8)
+    data = {'schema': 1, 'token': token, 'uid': os.getuid(), 'gid': os.getgid(), 'image': image,
+            'prefix': 'aurora-inplace-' + token, 'containers': {}, 'network': None,
+            'sourceHashes': source_hashes, 'binaries': binaries, 'jdk': jdk_metadata,
+            'schedulerDistributionSha256': digest_tree(args.distribution)}
+    save(root, data)
+    artifacts = root / 'artifacts'; artifacts.mkdir()
+    shutil.copytree(args.distribution, artifacts / 'scheduler')
+    shutil.copytree(args.java, artifacts / 'java')
+    (artifacts / 'bin').mkdir()
+    shutil.copy2(args.helper, artifacts / 'bin/cluster-helper')
+    shutil.copy2(args.agent, artifacts / 'bin/aurora-agent')
+    need(digest_tree(artifacts / 'scheduler') == data['schedulerDistributionSha256']
+         and digest_tree(artifacts / 'java') == jdk_metadata['treeSha256'], 'Artifact changed during staging')
+    for role, filename in (('agent', 'aurora-agent'), ('helper', 'cluster-helper')):
+        need(hashlib.sha256((artifacts / 'bin' / filename).read_bytes()).hexdigest() == binaries[role]['binarySha256'],
+             'Binary changed during staging')
+    data['artifactsSha256'] = digest_tree(artifacts); save(root, data)
+    for role in ROLES:
+        for sub in ('state', 'work', 'control', 'tls', 'config'):
+            (root / role / sub).mkdir(parents=True, mode=0o700)
+    certs = root / 'certificates'
+    run([artifacts / 'bin/cluster-helper', 'certgen', '--out', certs])
+    password = secrets.token_hex(24)
+    password_file = root / 'scheduler/tls/password'
+    password_file.write_text(password); password_file.chmod(0o600)
+    run(['openssl', 'pkcs12', '-export', '-name', 'scheduler', '-inkey', certs / 'scheduler.key', '-in', certs / 'scheduler.crt', '-certfile', certs / 'ca.crt', '-out', root / 'scheduler/tls/keystore.p12', '-passout', 'file:' + str(password_file)])
+    run([artifacts / 'java/bin/keytool', '-importcert', '-noprompt', '-alias', 'ca', '-file', certs / 'ca.crt', '-keystore', root / 'scheduler/tls/truststore.p12', '-storetype', 'PKCS12', '-storepass:file', password_file])
+    nodes = []
+    for role in ROLES[:2]:
+        for src, dst in [('ca.crt', 'ca.crt'), (role + '.crt', 'cert.crt'), (role + '.key', 'key.pem')]:
+            shutil.copy2(certs / src, root / role / 'tls' / dst)
+        cfg = {'cluster': 'inplace', 'incarnation': 'recovery-' + token, 'node': role, 'journal': 'journal-' + role,
+               'boot': 'boot-' + role, 'runtime': 'runtime-' + role, 'session': 'initial', 'schedulerEpoch': '0',
+               'peer': 'scheduler', 'cpuMillis': 1000, 'memoryBytes': 536870912}
+        (root / role / 'config/agent.json').write_text(json.dumps(cfg))
+        nodes.append({k: cfg[k] for k in ('journal', 'boot', 'runtime', 'cpuMillis', 'memoryBytes')} | {'name': role, 'url': 'https://' + role + ':8443', 'diskMb': 1024})
+    config = {'cluster': 'inplace', 'incarnation': 'recovery-' + token, 'database': '/state/adapter.db',
+              'keyStore': '/tls/keystore.p12', 'keyStorePassword': password, 'trustStore': '/tls/truststore.p12', 'trustStorePassword': password, 'nodes': nodes}
+    (root / 'scheduler/config/scheduler.json').write_text(json.dumps(config))
+    (root / 'scheduler/config/scheduler.json').chmod(0o600)
+    return data
+
+
+def up(root, data):
+    name = data['prefix'] + '-network'
+    data['network'] = {'name': name, 'id': None}; save(root, data)
+    ident = docker('network', 'create', '--internal', '--driver', 'bridge', '--label', LABEL + '=' + data['token'], '--label', LABEL + '.role=network', name)
+    data['network']['id'] = ident; save(root, data)
+    inspect(data, 'network', True)
+    for role in ROLES:
+        mounts = [(str(root / 'artifacts/bin'), '/opt/bin', False)]
+        mounts += [(str(root / role / sub), '/' + sub, sub in ('state', 'work', 'control')) for sub in ('state', 'work', 'control', 'tls', 'config')]
+        if role == 'scheduler':
+            mounts += [(str(root / 'artifacts/scheduler'), '/opt/scheduler', False), (str(root / 'artifacts/java'), '/opt/java', False)]
+            command = ['/opt/scheduler/bin/aurora-scheduler', '-cluster_name=inplace', '-serverset_path=/aurora/inplace', '-zk_in_proc=true', '-zk_endpoints=localhost:2181', '-mesos_master_address=unused', '-go_agent_config=/config/scheduler.json', '-http_port=8081', '-http_authentication_mechanism=NONE']
+        else:
+            command = ['/opt/bin/aurora-agent', 'serve', '--config', '/config/agent.json', '--state', '/state/state.db', '--work-root', '/work', '--network', 'agent-container', '--listen', ':8443', '--tls-cert', '/tls/cert.crt', '--tls-key', '/tls/key.pem', '--tls-ca', '/tls/ca.crt', '--supervise']
+        arguments = ['keeper', '--', *command]
+        record = {'id': None, 'name': data['prefix'] + '-' + role, 'mounts': mounts, 'args': arguments}
+        data['containers'][role] = record; save(root, data)
+        cid = root / (role + '.cid')
+        argv = ['create', '--cidfile', str(cid), '--name', record['name'], '--pull', 'never', '--init', '--read-only', '--cap-drop', 'ALL', '--security-opt', 'no-new-privileges:true', '--user', str(data['uid']) + ':' + str(data['gid']), '--network', name, '--network-alias', role, '--pids-limit', '256', '--memory', '1g', '--cpus', '2', '--tmpfs', '/tmp:rw,nosuid,nodev,exec,size=64m,mode=1777', '--label', LABEL + '=' + data['token'], '--label', LABEL + '.role=' + role, '--log-opt', 'max-size=2m', '--log-opt', 'max-file=2']
+        if role == 'scheduler': argv += ['--env', 'JAVA_HOME=/opt/java', '--env', 'JAVA_OPTS=-Xmx512m --enable-native-access=ALL-UNNAMED --illegal-native-access=deny']
+        for source, destination, rw in mounts: argv += ['--mount', 'type=bind,source=' + source + ',target=' + destination + ('' if rw else ',readonly')]
+        try: docker(*argv, '--entrypoint', '/opt/bin/cluster-helper', data['image'], *arguments)
+        finally:
+            if cid.exists():
+                safe(cid); value = cid.read_text().strip(); need(re.fullmatch('[a-f0-9]{64}', value), 'Invalid creation ID')
+                record['id'] = value; save(root, data)
+        inspect(data, role)
+        docker('start', record['id'])
+
+
+def refresh_scheduler(root, data, distribution):
+    inspect(data, 'scheduler')
+    safe(distribution)
+    need(distribution.is_dir() and (distribution / 'bin/aurora-scheduler').is_file(), 'Missing scheduler distribution')
+    need(not distribution.is_relative_to(root) and not root.is_relative_to(distribution), 'Refresh input must be outside lab')
+    original = root / 'artifacts/scheduler'
+    need(digest_tree(root / 'artifacts') == data['artifactsSha256'], 'Staged artifact drift; refresh refused')
+    own_main = False
+    for jar in (distribution / 'lib').glob('*.jar'):
+        safe(jar)
+        with zipfile.ZipFile(jar) as archive:
+            names = set(archive.namelist())
+        own_main |= 'org/apache/aurora/scheduler/app/SchedulerMain.class' in names
+        need(not any(n.endswith('/NativeSchedulerMain.class') or n.endswith('/NativeEngine.class') for n in names), 'Replacement scheduler refused')
+    need(own_main, 'Original SchedulerMain absent')
+    expected = digest_tree(distribution)
+    staged = root / ('refresh-' + secrets.token_hex(8))
+    shutil.copytree(distribution, staged)
+    need(digest_tree(staged) == expected, 'Distribution changed while copying')
+    control = root / 'scheduler/control'
+    need(all(not (control / action).exists() for action in ('pause', 'resume', 'restart', 'crash')), 'Pending keeper action; refresh refused')
+    before = json.loads(safe(control / 'daemon.json').read_text())
+    data['refreshPending'] = {'oldSha256': data['schedulerDistributionSha256'], 'newSha256': expected, 'staged': str(staged)}
+    save(root, data)
+    with safe(control / 'pause').open('x') as f: f.write('scheduler artifact refresh\n')
+    deadline = time.monotonic() + 15
+    while True:
+        state = json.loads((control / 'daemon.json').read_text())
+        if state.get('paused') is True and state.get('pid') == 0 and not (control / 'pause').exists(): break
+        need(time.monotonic() < deadline, 'Keeper did not confirm stopped scheduler; evidence preserved')
+        time.sleep(0.1)
+    inspect(data, 'scheduler')
+    # Keep the bind-mounted directory inode; replace only its verified contents.
+    need(digest_tree(original) == data['schedulerDistributionSha256'], 'Scheduler distribution drift')
+    for child in original.iterdir():
+        if child.is_dir(): shutil.rmtree(child)
+        else: child.unlink()
+    for child in staged.iterdir(): shutil.move(str(child), original / child.name)
+    need(digest_tree(original) == expected, 'Replacement verification failed; scheduler remains paused')
+    staged.rmdir()
+    data.setdefault('refreshHistory', []).append(data.pop('refreshPending'))
+    data['schedulerDistributionSha256'] = expected
+    data['artifactsSha256'] = digest_tree(root / 'artifacts')
+    save(root, data)
+    with safe(control / 'resume').open('x') as f: f.write('scheduler artifact refresh complete\n')
+    deadline = time.monotonic() + 15
+    while True:
+        state = json.loads((control / 'daemon.json').read_text())
+        if not state.get('paused') and state.get('pid', 0) > 0 and state.get('generation', 0) > before.get('generation', 0): break
+        need(time.monotonic() < deadline, 'Scheduler resume not observed; inspect retained evidence')
+        time.sleep(0.1)
+
+
+def main():
+    p = argparse.ArgumentParser(description=__doc__)
+    p.add_argument('action', choices=['up', 'status', 'restart-scheduler', 'restart-agent', 'crash-scheduler', 'crash-agent', 'refresh-scheduler', 'down'])
+    p.add_argument('--root', type=Path, required=True)
+    p.add_argument('--node', choices=ROLES[:2], default='agent-a')
+    p.add_argument('--distribution', type=Path, default=ROOT / '.cache/inplace-build/build/scheduler/install/aurora-scheduler')
+    p.add_argument('--java', type=Path, default=ROOT / '.cache/java03-tools/java/jdk-25.0.4.1+1')
+    p.add_argument('--helper', type=Path, default=ROOT / '.pi-tools/agent-original-integration/cluster-helper')
+    p.add_argument('--agent', type=Path, default=ROOT / '.pi-tools/agent-original-integration/aurora-agent')
+    a = p.parse_args(); root = safe(a.root)
+    if a.action == 'up': data = prepare(root, a)
+    else:
+        need(root.stat().st_uid == os.getuid() and root.stat().st_mode & 0o077 == 0, 'Private owned root required')
+        safe(root / 'lab.json'); data = json.loads((root / 'lab.json').read_text())
+        need(data['schema'] == 1 and data['uid'] == os.getuid() and re.fullmatch('[a-f0-9]{16}', data['token']) and data['prefix'] == 'aurora-inplace-' + data['token'], 'Invalid ownership record')
+    safe(root / '.lock')
+    with (root / '.lock').open('a') as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        if a.action != 'up':
+            data = json.loads((root / 'lab.json').read_text())
+            need(data['schema'] == 1 and data['uid'] == os.getuid() and re.fullmatch('[a-f0-9]{16}', data['token']) and data['prefix'] == 'aurora-inplace-' + data['token'], 'Invalid locked ownership record')
+        if a.action == 'up': up(root, data)
+        elif a.action == 'down':
+            for role in reversed(ROLES):
+                if role in data['containers']:
+                    inspect(data, role); docker('rm', '-f', data['containers'][role]['id']); del data['containers'][role]; save(root, data)
+            if data['network']:
+                inspect(data, 'network', True); docker('network', 'rm', data['network']['id']); data['network'] = None; save(root, data)
+        elif a.action == 'refresh-scheduler':
+            refresh_scheduler(root, data, a.distribution)
+        elif a.action != 'status':
+            action, target = a.action.split('-'); role = 'scheduler' if target == 'scheduler' else a.node
+            inspect(data, role); path = safe(root / role / 'control' / action)
+            with path.open('x') as f: f.write('owned request\n')
+        result = {'root': str(root), 'containers': {}}
+        for role in data['containers']:
+            item = inspect(data, role)
+            result['containers'][role] = {'id': item['Id'], 'running': item['State']['Running'], 'address': item['NetworkSettings']['Networks'][data['network']['name']]['IPAddress']}
+        print(json.dumps(result, indent=2))
+
+
+if __name__ == '__main__':
+    try: main()
+    except (OSError, ValueError, KeyError, TypeError, subprocess.SubprocessError) as e:
+        print('inplace-cluster: ' + str(e), file=sys.stderr); sys.exit(2)

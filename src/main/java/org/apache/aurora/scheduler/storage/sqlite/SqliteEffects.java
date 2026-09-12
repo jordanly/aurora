@@ -212,6 +212,38 @@ public final class SqliteEffects {
     }
   }
 
+  /** Finds an immutable command, including retained acknowledged commands. */
+  public java.util.Optional<Command> command(String commandId) {
+    requireIdentifier(commandId);
+    try (PreparedStatement query = database.connection().prepareStatement(
+        "SELECT command_id,agent_id,task_id,command_type,payload_version,payload"
+            + " FROM command_outbox WHERE command_id=?")) {
+      query.setString(1, commandId);
+      try (ResultSet rows = query.executeQuery()) {
+        return rows.next() ? java.util.Optional.of(readCommand(rows)) : java.util.Optional.empty();
+      }
+    } catch (SQLException e) {
+      throw database.failTransaction("Unable to read command", e);
+    }
+  }
+
+  /** Highest durably processed cursor for an enrolled agent journal. */
+  public long committedCursor(String agentId, String incarnation) {
+    requireIdentifier(agentId);
+    requireIdentifier(incarnation);
+    try (PreparedStatement query = database.connection().prepareStatement(
+        "SELECT COALESCE(MAX(sequence),0) FROM observation_receipts"
+            + " WHERE agent_id=? AND incarnation=?")) {
+      query.setString(1, agentId);
+      query.setString(2, incarnation);
+      try (ResultSet rows = query.executeQuery()) {
+        return rows.next() ? rows.getLong(1) : 0;
+      }
+    } catch (SQLException e) {
+      throw database.failTransaction("Unable to read observation cursor", e);
+    }
+  }
+
   public boolean hasReceipt(ReceiptKey key) {
     requireNonNull(key);
     try (PreparedStatement query = database.connection().prepareStatement(

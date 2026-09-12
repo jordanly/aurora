@@ -1,0 +1,176 @@
+#!/usr/bin/env python3
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+"""Build the original integration binaries with the pinned Go toolchain."""
+
+import argparse
+import contextlib
+import hashlib
+import importlib.util
+import json
+import os
+from pathlib import Path
+import subprocess
+import sys
+import tempfile
+
+
+ROOT = Path(__file__).resolve().parents[2]
+GO_PIN = {
+    'file': 'go1.27.1.linux-arm64.tar.gz',
+    'url': 'https://go.dev/dl/go1.27.1.linux-arm64.tar.gz',
+    'sha256': '3450b45a3f9ee8568792736a5c5e70a1f2e9b36c35a8f74958c03e51d7d92bec',
+    'directory': 'go',
+}
+BUILD = ('CGO_ENABLED=0', 'GOOS=linux', 'GOARCH=arm64', 'GOTOOLCHAIN=local')
+
+
+def die(message):
+    raise SystemExit(message)
+
+
+def checked_path(path):
+    """Make an absolute path while rejecting symlinks before normalization."""
+    path = Path(path)
+    if not path.is_absolute():
+        path = Path.cwd() / path
+    for parent in (path, *path.parents):
+        if parent.is_symlink():
+            die('Symlink path refused: ' + str(parent))
+    return path
+
+
+def private_cache(path):
+    path = checked_path(path)
+    path.mkdir(parents=True, exist_ok=True, mode=0o700)
+    if path.is_symlink() or path.stat().st_uid != os.getuid():
+        die('Cache must be a private directory owned by the current user: ' + str(path))
+    path.chmod(0o700)
+    return path
+
+
+def digest(path):
+    value = hashlib.sha256()
+    with path.open('rb') as stream:
+        for block in iter(lambda: stream.read(1024 * 1024), b''):
+            value.update(block)
+    return value.hexdigest()
+
+
+def tree_digest(root):
+    value = hashlib.sha256()
+    for path in sorted(root.rglob('*')):
+        if path.is_symlink() or not (path.is_file() or path.is_dir()):
+            die('Unsupported source entry: ' + str(path))
+        if path.is_file():
+            value.update(str(path.relative_to(root)).encode() + b'\0')
+            value.update(bytes.fromhex(digest(path)))
+    return value.hexdigest()
+
+
+def load_bootstrap():
+    path = ROOT / 'build-support/java/bootstrap.py'
+    spec = importlib.util.spec_from_file_location('aurora_bootstrap', path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+@contextlib.contextmanager
+def tool(cache, offline, seed):
+    bootstrap = load_bootstrap()
+    pins = {'tools': {'go': GO_PIN}}
+    with tempfile.TemporaryDirectory(prefix='tool-', dir=cache) as workspace:
+        result = bootstrap.get_tools(pins, cache, Path(workspace), seed=seed, offline=offline)
+        candidate = result['go'] / 'bin/go'
+        version = subprocess.check_output([str(candidate), 'version'], text=True)
+        if not version.startswith('go version go1.27.1 '):
+            die('Bootstrapped Go tool version mismatch')
+        yield candidate
+
+
+def go_env(cache):
+    env = dict(os.environ)
+    env.update(dict(item.split('=', 1) for item in BUILD))
+    env['GOTOOLCHAIN'] = 'local'
+    env['GOCACHE'] = os.environ.get('GOCACHE', str(cache / 'gocache'))
+    env['GOMODCACHE'] = os.environ.get('GOMODCACHE', str(cache / 'gomodcache'))
+    if os.environ.get('AURORA_INPLACE_GO_OFFLINE') == '1':
+        env['GOPROXY'] = 'off'
+    return env
+
+
+def check(go, module, cache):
+    env = go_env(cache)
+    subprocess.run([str(go), '-C', str(module), 'test', '-count=1', './...'],
+                   check=True, env=env)
+    subprocess.run([str(go), '-C', str(module), 'vet', './...'], check=True, env=env)
+
+
+def build(go, module, package, output, cache):
+    output.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+    if output.is_symlink() or output.parent.is_symlink():
+        die('Symlink output path refused: ' + str(output))
+    temporary = output.with_name(output.name + '.tmp-' + str(os.getpid()))
+    if temporary.exists() or temporary.is_symlink():
+        die('Incomplete output exists: ' + str(temporary))
+    subprocess.run([str(go), '-C', str(module), 'build', '-trimpath', '-buildvcs=false',
+                    '-ldflags=-s -w', '-o', str(temporary), package],
+                   check=True, env=go_env(cache))
+    os.replace(temporary, output)
+
+
+def provenance(binary, source, go):
+    return {
+        'schema': 1,
+        'sourceSha256': tree_digest(source),
+        'binarySha256': digest(binary),
+        'goVersion': subprocess.check_output([str(go), 'version'], text=True).strip(),
+        'build': list(BUILD) + ['-trimpath', '-buildvcs=false', '-ldflags=-s -w'],
+    }
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--offline', action='store_true')
+    parser.add_argument('--check', action='store_true',
+                        help='run uncached tests and vet before building artifacts')
+    parser.add_argument('--cache', type=Path, default=ROOT / '.cache/inplace-go')
+    parser.add_argument('--seed-archives', type=Path,
+                        default=ROOT / '.pi-tools/downloads')
+    parser.add_argument('--output', type=Path,
+                        default=ROOT / '.pi-tools/agent-original-integration')
+    args = parser.parse_args()
+    cache = private_cache(args.cache)
+    seed = checked_path(args.seed_archives) if args.seed_archives else None
+    output = checked_path(args.output)
+    if args.offline:
+        os.environ['AURORA_INPLACE_GO_OFFLINE'] = '1'
+    output.mkdir(parents=True, exist_ok=True, mode=0o700)
+    if output.is_symlink():
+        die('Symlink output directory refused: ' + str(output))
+    targets = (
+        (ROOT / 'agent', 'aurora-agent', './cmd/aurora-agent'),
+        (ROOT / 'build-support/lab/fixtures/cluster-helper', 'cluster-helper', './'),
+    )
+    with tool(cache, args.offline, seed) as go:
+        if args.check:
+            for source, _, _ in targets:
+                check(go, source, cache)
+        for source, name, package in targets:
+            binary = output / name
+            build(go, source, package, binary, cache)
+            # The cluster helper validates these exact fields before copying inputs.
+            record = provenance(binary, source, go)
+            record_path = binary.with_name(binary.name + '.provenance.json')
+            temporary_record = record_path.with_name(record_path.name + '.tmp-' + str(os.getpid()))
+            if temporary_record.exists() or temporary_record.is_symlink():
+                die('Incomplete provenance exists: ' + str(temporary_record))
+            temporary_record.write_text(json.dumps(record, indent=2, sort_keys=True) + '\n')
+            os.replace(temporary_record, record_path)
+            print(binary)
+
+
+if __name__ == '__main__':
+    main()

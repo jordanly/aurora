@@ -52,7 +52,6 @@ public class CommandLineDriverSettingsModule extends AbstractModule {
   @Parameters(separators = "=")
   public static class Options {
     @Parameter(names = "-mesos_master_address",
-        required = true,
         description = "Address for the mesos master, can be a socket address or zookeeper path.")
     public String mesosMasterAddress;
 

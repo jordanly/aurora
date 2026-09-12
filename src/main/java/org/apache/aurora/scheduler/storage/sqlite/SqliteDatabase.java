@@ -27,7 +27,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -83,6 +85,7 @@ final class SqliteDatabase implements AutoCloseable {
     private final boolean writable;
     private final String operationId;
     private Throwable rollbackCause;
+    private final List<Runnable> afterCommit = new ArrayList<>();
 
     Transaction(Connection connection, boolean writable, String operationId) {
       this.connection = connection;
@@ -105,6 +108,55 @@ final class SqliteDatabase implements AutoCloseable {
   private boolean closed;
   private boolean closing;
   private volatile String uncertainOperation;
+  private List<Runnable> uncertainCallbacks = List.of();
+  private final Deque<Publication> publications = new ArrayDeque<>();
+  private boolean publishing;
+  private volatile boolean failClosedOnWriteFailureEnabled;
+  private Throwable writeFailure;
+  private SqliteStorage.PostCommitException publicationFailure;
+
+  private record Publication(String operationId, Runnable action) { }
+
+  void failClosedOnWriteFailure() {
+    failClosedOnWriteFailureEnabled = true;
+  }
+
+  /** Queues volatile notifications; durable external commands belong in SqliteEffects. */
+  void afterCommit(Runnable action) {
+    requireNonNull(action);
+    if (current.get() == null) {
+      action.run();
+    } else {
+      requireWrite();
+      current.get().afterCommit.add(action);
+    }
+  }
+
+  private void enqueue(String operationId, List<Runnable> callbacks) {
+    callbacks.forEach(action -> publications.addLast(new Publication(operationId, action)));
+  }
+
+  private void publishCommitted() {
+    if (publishing) {
+      return;
+    }
+    publishing = true;
+    try {
+      while (!publications.isEmpty()) {
+        Publication next = publications.removeFirst();
+        try {
+          next.action().run();
+        } catch (RuntimeException | Error failure) {
+          var failedPublication =
+              new SqliteStorage.PostCommitException(next.operationId(), failure);
+          publicationFailure = failedPublication;
+          throw failedPublication;
+        }
+      }
+    } finally {
+      publishing = false;
+    }
+  }
 
   static SqliteDatabase open(Path path) {
     return open(path, DriverManager::getConnection);
@@ -364,6 +416,11 @@ final class SqliteDatabase implements AutoCloseable {
       boolean committed = read(() -> hasOutcome(connection(), operationId));
       if (operationId.equals(uncertainOperation)) {
         uncertainOperation = null;
+        if (committed) {
+          enqueue(operationId, uncertainCallbacks);
+        }
+        uncertainCallbacks = List.of();
+        publishCommitted();
       }
       return committed;
     } catch (SQLException e) {
@@ -491,21 +548,36 @@ final class SqliteDatabase implements AutoCloseable {
         throw failure;
       }
     }
-    validateWork(writable, operationId, work);
     lifecycle.readLock().lock();
     try {
       if (!writable) {
+        validateWork(false, operationId, work);
         checkOpen();
         return outerTransaction(false, operationId, work);
       }
       writer.lock();
       try {
         checkOpen();
+        if (writeFailure != null) {
+          throw new StorageException(
+              "A previous write failed; scheduler restart required", writeFailure);
+        }
+        if (publicationFailure != null) {
+          throw publicationFailure;
+        }
         if (uncertainOperation != null) {
           throw new StorageException("Reconcile uncertain operation before writing: "
               + uncertainOperation);
         }
-        return outerTransaction(true, operationId, work);
+        validateWork(true, operationId, work);
+        T result = outerTransaction(true, operationId, work);
+        publishCommitted();
+        return result;
+      } catch (Exception | Error failure) {
+        if (failClosedOnWriteFailureEnabled && writeFailure == null) {
+          writeFailure = failure;
+        }
+        throw failure;
       } finally {
         writer.unlock();
       }
@@ -534,6 +606,8 @@ final class SqliteDatabase implements AutoCloseable {
     }
     boolean committed = false;
     Throwable primary = null;
+    Transaction transaction = new Transaction(connection, writable, operationId);
+    T result;
     try {
       try {
         if (!writable) {
@@ -549,9 +623,8 @@ final class SqliteDatabase implements AutoCloseable {
       } catch (SQLException e) {
         throw new StorageException("Unable to begin SQLite transaction", e);
       }
-      Transaction transaction = new Transaction(connection, writable, operationId);
       current.set(transaction);
-      T result = work.apply();
+      result = work.apply();
       if (transaction.rollbackCause != null) {
         throw new StorageException("Nested failure marked transaction rollback-only",
             transaction.rollbackCause);
@@ -578,7 +651,6 @@ final class SqliteDatabase implements AutoCloseable {
         throw new StorageException("Unable to complete SQLite read", e);
       }
       committed = true;
-      return result;
     } catch (Exception | Error failure) {
       primary = failure;
       if (!committed) {
@@ -591,8 +663,18 @@ final class SqliteDatabase implements AutoCloseable {
       throw failure;
     } finally {
       current.remove();
-      closeConnection(connection, primary, writable && committed ? operationId : null);
+      try {
+        closeConnection(connection, primary, writable && committed ? operationId : null);
+      } finally {
+        if (writable && operationId.equals(uncertainOperation)) {
+          uncertainCallbacks = List.copyOf(transaction.afterCommit);
+        }
+      }
     }
+    if (writable) {
+      enqueue(operationId, transaction.afterCommit);
+    }
+    return result;
   }
 
   private void closeConnection(

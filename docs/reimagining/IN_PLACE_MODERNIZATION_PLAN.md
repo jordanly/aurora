@@ -6,8 +6,11 @@ INPLACE-00 is complete. The original Java 25 build, behavior gates, execution
 boundary extraction and seven-store SQLite backend are implemented on
 `codex/in-place-java25`. See the [current implementation and qualification
 status](INPLACE02_04_IMPLEMENTATION_STATUS.md) for INPLACE-01 through INPLACE-04,
-executed evidence and remaining environment/HA boundaries. Earlier build and
-behavior receipts remain historical records.
+executed evidence and remaining environment/HA boundaries. The next integration
+checkpoint is documented in [INPLACE-05 through INPLACE-07 status](INPLACE05_07_IMPLEMENTATION_STATUS.md):
+the original scheduler can now execute a bounded Go process cohort with SQLite.
+Full executor compatibility and production HA remain separate gates. Earlier
+build and behavior receipts remain historical records.
 
 ## The architectural decision
 

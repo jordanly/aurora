@@ -1,0 +1,35 @@
+{
+  "version": "native-v1alpha1",
+  "kind": "InventoryPage",
+  "source": {
+    "node": "agent-a",
+    "journal": "journal-a",
+    "boot": "boot-a",
+    "runtime": "runtime-a"
+  },
+  "snapshot": "snapshot-a",
+  "generation": "2",
+  "watermark": "9007199254741000",
+  "page": 0,
+  "last": false,
+  "attempts": [
+    {
+      "identity": {
+        "cluster": "lab",
+        "incarnation": "recovery-a",
+        "instance": "instance-a",
+        "attempt": "attempt-a",
+        "process": "main",
+        "run": "run-a",
+        "jobKey": {
+          "role": "fixtures",
+          "environment": "test",
+          "name": "batch"
+        }
+      },
+      "sequence": "9007199254740993",
+      "state": "succeeded",
+      "cleanup": "pending"
+    }
+  ]
+}

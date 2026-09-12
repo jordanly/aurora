@@ -23,6 +23,8 @@ import com.google.common.collect.ImmutableSet;
 import org.apache.aurora.gen.Attribute;
 import org.apache.aurora.gen.HostAttributes;
 import org.apache.aurora.gen.MaintenanceMode;
+import org.apache.aurora.scheduler.events.EventSink;
+import org.apache.aurora.scheduler.events.PubsubEvent.HostAttributesChanged;
 import org.apache.aurora.scheduler.storage.AttributeStore;
 import org.apache.aurora.scheduler.storage.entities.IHostAttributes;
 
@@ -31,8 +33,14 @@ import static java.util.Objects.requireNonNull;
 /** SQLite-backed host attributes. */
 final class SqliteAttributeStore implements AttributeStore.Mutable {
   private final SqliteRecords<HostAttributes> records;
+  private final EventSink eventSink;
 
   SqliteAttributeStore(SqliteDatabase db) {
+    this(db, event -> { });
+  }
+
+  SqliteAttributeStore(SqliteDatabase db, EventSink eventSink) {
+    this.eventSink = requireNonNull(eventSink);
     records = new SqliteRecords<>(requireNonNull(db), SqliteRecords.Table.ATTRIBUTES,
         HostAttributes::new);
   }
@@ -53,7 +61,11 @@ final class SqliteAttributeStore implements AttributeStore.Mutable {
     records.put(host, merged.newBuilder());
     // Match MemAttributeStore: the changed result compares the caller's value with the
     // previously stored value, preserving the distinction between unset and defaulted fields.
-    return !input.equals(previous.orElse(null));
+    boolean changed = !input.equals(previous.orElse(null));
+    if (changed) {
+      eventSink.post(new HostAttributesChanged(input));
+    }
+    return changed;
   }
 
   private IHostAttributes merge(IHostAttributes input, Optional<IHostAttributes> previous) {

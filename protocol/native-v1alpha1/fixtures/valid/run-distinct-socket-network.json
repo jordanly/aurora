@@ -1,0 +1,70 @@
+{
+  "version": "native-v1alpha1",
+  "kind": "Run",
+  "command": "run-command-a",
+  "identity": {
+    "cluster": "lab",
+    "incarnation": "recovery-a",
+    "instance": "instance-a",
+    "attempt": "attempt-a",
+    "process": "main",
+    "run": "run-a",
+    "jobKey": {
+      "role": "fixtures",
+      "environment": "test",
+      "name": "batch"
+    }
+  },
+  "target": {
+    "node": "agent-a",
+    "journal": "journal-a",
+    "boot": "boot-a",
+    "runtime": "runtime-a"
+  },
+  "desiredRevision": "1",
+  "assignment": {
+    "process": "main",
+    "argv": [
+      "/opt/aurora-fixtures/batch",
+      "--identity",
+      "batch-a"
+    ],
+    "env": {
+      "LANG": "C",
+      "FIXTURE_TEXT": "quote: \" slash: \\ html: <&>"
+    },
+    "resources": {
+      "cpuMillis": 100,
+      "memoryBytes": 16777216,
+      "memoryEnforcement": "reservation"
+    },
+    "ports": [
+      {
+        "name": "http",
+        "protocol": "tcp",
+        "family": "ipv4",
+        "network": "agent-container",
+        "number": 18080
+      },
+      {
+        "name": "metrics",
+        "protocol": "tcp",
+        "family": "ipv4",
+        "network": "agent-other",
+        "number": 18080
+      }
+    ],
+    "readiness": {
+      "kind": "none"
+    },
+    "retry": {
+      "maxRuns": 1
+    },
+    "stop": {
+      "graceMillis": 5000
+    },
+    "runtime": "trusted-host-process",
+    "requiredCapabilities": []
+  },
+  "templateSha256": "21d12f4db9f4f311cf5251b74fc56f5e5e9b3aa33c668b4aff1eb867b30c2a8d"
+}

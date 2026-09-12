@@ -87,6 +87,17 @@ public class CommandLineTest {
     assertEquals("customValue", injector.getInstance(CustomModule.BINDING_KEY));
   }
 
+  @Test
+  public void testGoModeDoesNotRequireMesosOrLegacyBackupFlags() {
+    CommandLine.clearForTest();
+    CliOptions options = CommandLine.parseOptions(
+        "-cluster_name=test", "-serverset_path=/test", "-zk_endpoints=localhost:2181",
+        "-go_agent_config=enrollment.json");
+    assertEquals(new File("enrollment.json"), options.main.goAgentConfig);
+    org.junit.Assert.assertNull(options.driver.mesosMasterAddress);
+    org.junit.Assert.assertNull(options.backup.backupDir);
+  }
+
   public static class NoopModule extends AbstractModule {
     @Override
     protected void configure() {
@@ -149,6 +160,7 @@ public class CommandLineTest {
     expected.main.statsUrlPrefix = "testing";
     expected.main.allowGpuResource = true;
     expected.main.driverImpl = DriverKind.V0_DRIVER;
+    expected.main.goAgentConfig = new File("testing");
     expected.scheduling.maxScheduleAttemptsPerSec = 42;
     expected.scheduling.flappingThreshold = TEST_TIME;
     expected.scheduling.initialFlappingDelay = TEST_TIME;
@@ -304,6 +316,7 @@ public class CommandLineTest {
         "-viz_job_url_prefix=testing",
         "-allow_gpu_resource=true",
         "-mesos_driver=V0_DRIVER",
+        "-go_agent_config=testing",
         "-max_schedule_attempts_per_sec=42",
         "-flapping_task_threshold=42days",
         "-initial_flapping_task_delay=42days",

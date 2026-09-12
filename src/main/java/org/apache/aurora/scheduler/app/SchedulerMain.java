@@ -117,6 +117,10 @@ public class SchedulerMain {
       V1_DRIVER,
     }
 
+    @Parameter(names = "-go_agent_config",
+        description = "Go process agent enrollment and SQLite configuration file.")
+    public java.io.File goAgentConfig;
+
     @Parameter(names = "-mesos_driver", description = "Which Mesos Driver to use")
     public DriverKind driverImpl = DriverKind.SCHEDULER_DRIVER;
   }
@@ -212,8 +216,10 @@ public class SchedulerMain {
         new ServiceDiscoveryModule(
             FlaggedZooKeeperConfig.create(options.zk),
             options.main.serversetPath),
-        new BackupModule(options.backup, SnapshotterImpl.class),
-        new ExecutorModule(options.executor),
+        options.main.goAgentConfig == null
+            ? Modules.combine(new BackupModule(options.backup, SnapshotterImpl.class),
+                new ExecutorModule(options.executor))
+            : Modules.EMPTY_MODULE,
         new AbstractModule() {
           @Override
           protected void configure() {
@@ -246,6 +252,12 @@ public class SchedulerMain {
 
   public static void main(String... args) {
     CliOptions options = CommandLine.parseOptions(args);
+
+    if (options.main.goAgentConfig != null) {
+      flagConfiguredMain(options, Modules.combine(
+          new TierModule(options.tiers), new WebhookModule(options.webhook)));
+      return;
+    }
 
     List<Module> modules = ImmutableList.<Module>builder()
         .add(

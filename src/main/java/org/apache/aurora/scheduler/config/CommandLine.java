@@ -127,7 +127,14 @@ public final class CommandLine {
       CliOptions options = new CliOptions(ImmutableList.copyOf(customOptions));
       parser = prepareParser(options);
       parser.parse(args);
-
+      if (options.main.goAgentConfig == null) {
+        if (options.backup.backupDir == null) {
+          throw new ParameterException("The following option is required: [-backup_dir]");
+        }
+        if (options.driver.mesosMasterAddress == null) {
+          throw new ParameterException("The following option is required: [-mesos_master_address]");
+        }
+      }
       LOG.info("-----------------------------------------------------------------------");
       LOG.info("Parameters:");
       parser.getParameters().stream()

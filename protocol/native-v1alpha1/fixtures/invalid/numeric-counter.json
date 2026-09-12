@@ -1,0 +1,28 @@
+{
+  "version": "native-v1alpha1",
+  "kind": "Observation",
+  "identity": {
+    "cluster": "lab",
+    "incarnation": "recovery-a",
+    "instance": "instance-a",
+    "attempt": "attempt-a",
+    "process": "main",
+    "run": "run-a",
+    "jobKey": {
+      "role": "fixtures",
+      "environment": "test",
+      "name": "batch"
+    }
+  },
+  "source": {
+    "node": "agent-a",
+    "journal": "journal-a",
+    "boot": "boot-a",
+    "runtime": "runtime-a"
+  },
+  "sequence": 9007199254740993,
+  "cursor": "18446744073709551615",
+  "state": "succeeded",
+  "ready": false,
+  "cleanup": "pending"
+}

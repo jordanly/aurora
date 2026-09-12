@@ -1,0 +1,45 @@
+{
+  "version": "native-v1alpha1",
+  "kind": "Job",
+  "cluster": "lab",
+  "incarnation": "recovery-a",
+  "revision": "1",
+  "mode": "batch",
+  "instances": 1,
+  "maxPerAgent": 1,
+  "completion": "retain-completed",
+  "template": {
+    "process": "main",
+    "argv": [
+      "/opt/aurora-fixtures/batch",
+      "--identity",
+      "batch-a"
+    ],
+    "env": {
+      "LANG": "C",
+      "FIXTURE_TEXT": "quote: \" slash: \\ html: <&>"
+    },
+    "resources": {
+      "cpuMillis": 100.0,
+      "memoryBytes": 16777216,
+      "memoryEnforcement": "reservation"
+    },
+    "ports": [],
+    "readiness": {
+      "kind": "none"
+    },
+    "retry": {
+      "maxRuns": 1
+    },
+    "stop": {
+      "graceMillis": 5000
+    },
+    "runtime": "trusted-host-process",
+    "requiredCapabilities": []
+  },
+  "jobKey": {
+    "role": "fixtures",
+    "environment": "test",
+    "name": "batch"
+  }
+}

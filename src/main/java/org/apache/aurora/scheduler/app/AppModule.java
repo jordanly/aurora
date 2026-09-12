@@ -178,7 +178,9 @@ public class AppModule extends AbstractModule {
         .to(SchedulingFilterImpl.class);
     bind(SchedulingFilterImpl.class).in(Singleton.class);
 
-    install(new PubsubEventModule());
+    install(options.main.goAgentConfig == null ? new PubsubEventModule()
+        : com.google.inject.util.Modules.override(new PubsubEventModule(true))
+            .with(new org.apache.aurora.scheduler.execution.go.GoEventModule()));
     install(new AsyncModule(options.async));
     install(new OfferManagerModule(options));
     install(new PruningModule(options.pruning));
@@ -189,7 +191,11 @@ public class AppModule extends AbstractModule {
     install(new QuotaModule());
     install(new JettyServerModule(options));
     install(new PreemptorModule(options));
-    install(new SchedulerDriverModule(kind));
+    if (options.main.goAgentConfig == null) {
+      install(new SchedulerDriverModule(kind));
+    } else {
+      install(new org.apache.aurora.scheduler.execution.go.GoAgentModule(options));
+    }
     install(new SchedulerServicesModule());
     install(new SchedulerModule(options.scheduler));
     install(new StateModule(options));

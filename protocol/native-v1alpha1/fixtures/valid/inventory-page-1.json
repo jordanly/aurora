@@ -1,0 +1,16 @@
+{
+  "version": "native-v1alpha1",
+  "kind": "InventoryPage",
+  "source": {
+    "node": "agent-a",
+    "journal": "journal-a",
+    "boot": "boot-a",
+    "runtime": "runtime-a"
+  },
+  "snapshot": "snapshot-a",
+  "generation": "2",
+  "watermark": "9007199254741000",
+  "page": 1,
+  "last": true,
+  "attempts": []
+}

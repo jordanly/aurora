@@ -14,6 +14,36 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  go-agent:
+    name: Go agent / tests and provenance
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Check and build pinned Go integration binaries
+        run: |
+          mkdir -p .cache/inplace-go
+          if ! python3 build-support/lab/build-agents --check >.cache/inplace-go/build-agents.log 2>&1; then
+            python3 - <<'PYTHON'
+          from pathlib import Path
+          message = Path('.cache/inplace-go/build-agents.log').read_text()[-3000:]
+          print('::error title=Go checks failed::' + message.replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A'))
+          PYTHON
+            exit 1
+          fi
+      - name: Retain Go checks and provenance
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: java25-go-agent
+          include-hidden-files: true
+          if-no-files-found: warn
+          path: |
+            .cache/inplace-go/build-agents.log
+            .pi-tools/agent-original-integration/*.provenance.json
   verify:
     name: Java 25 / ${{ matrix.gate }}
     runs-on: ubuntu-24.04-arm

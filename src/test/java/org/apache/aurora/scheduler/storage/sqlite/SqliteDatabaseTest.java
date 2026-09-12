@@ -23,6 +23,8 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -555,14 +557,18 @@ public class SqliteDatabaseTest {
     database = SqliteDatabase.open(path, url -> interceptCommit(
         DriverManager.getConnection(url), failCommit, commitFirst));
     failCommit.set(true);
+    List<String> published = new ArrayList<>();
     SqliteDatabase.CommitUncertainException failure = expectFailure(
         SqliteDatabase.CommitUncertainException.class, () -> database.write("uncertain", () -> {
+          database.afterCommit(() -> published.add("committed"));
           execute("UPDATE test_values SET value='after'");
           return null;
         }));
     assertEquals("uncertain", failure.getOperationId());
     expectFailure(StorageException.class, () -> database.write("blocked", () -> null));
+    assertTrue(published.isEmpty());
     assertEquals(commitFirst, database.isCommitted("uncertain"));
+    assertEquals(commitFirst ? List.of("committed") : List.of(), published);
     assertEquals(commitFirst ? "after" : "before", database.read(this::value));
     database.write("next", () -> null);
     database.close();

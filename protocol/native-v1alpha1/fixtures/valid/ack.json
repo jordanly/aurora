@@ -1,0 +1,9 @@
+{
+  "version": "native-v1alpha1",
+  "kind": "ObservationAck",
+  "cluster": "lab",
+  "incarnation": "recovery-a",
+  "node": "agent-a",
+  "journal": "journal-a",
+  "committedCursor": "9007199254740993"
+}

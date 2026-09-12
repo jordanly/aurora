@@ -50,7 +50,7 @@ import org.apache.aurora.common.zookeeper.SingletonService;
 import org.apache.aurora.common.zookeeper.SingletonService.LeaderControl;
 import org.apache.aurora.scheduler.events.PubsubEvent.DriverRegistered;
 import org.apache.aurora.scheduler.events.PubsubEvent.EventSubscriber;
-import org.apache.aurora.scheduler.mesos.Driver;
+import org.apache.aurora.scheduler.execution.ExecutionDriver;
 import org.apache.aurora.scheduler.storage.Storage.NonVolatileStorage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -111,7 +111,7 @@ public class SchedulerLifecycle implements EventSubscriber {
   SchedulerLifecycle(
       NonVolatileStorage storage,
       Lifecycle lifecycle,
-      Driver driver,
+      ExecutionDriver driver,
       LeadingOptions leadingOptions,
       ScheduledExecutorService executorService,
       ShutdownRegistry shutdownRegistry,
@@ -178,7 +178,7 @@ public class SchedulerLifecycle implements EventSubscriber {
   SchedulerLifecycle(
       final NonVolatileStorage storage,
       final Lifecycle lifecycle,
-      final Driver driver,
+      final ExecutionDriver driver,
       final DelayedActions delayedActions,
       final ShutdownRegistry shutdownRegistry,
       StatsProvider statsProvider,

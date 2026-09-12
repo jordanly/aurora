@@ -64,6 +64,7 @@ public class SchedulerDriverModule extends AbstractModule {
   @Override
   protected void configure() {
     // Neutral policy consumers use the same lifecycle-owned Mesos driver instance.
+    bind(org.apache.aurora.scheduler.execution.ExecutionDriver.class).to(Driver.class);
     bind(TaskKiller.class).to(Driver.class);
     bind(ExecutionControl.class).to(Driver.class);
     bind(OfferTransport.class).to(MesosOfferTransport.class);

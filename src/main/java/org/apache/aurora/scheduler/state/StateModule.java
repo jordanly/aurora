@@ -59,8 +59,10 @@ public class StateModule extends AbstractModule {
     for (Module module : MoreModules.instantiateAll(options.state.taskAssignerModules, options)) {
       install(module);
     }
-    bind(MesosTaskFactory.class).to(MesosTaskFactoryImpl.class);
-    bind(TaskFactory.class).to(MesosTaskFactoryAdapter.class);
+    if (options.main.goAgentConfig == null) {
+      bind(MesosTaskFactory.class).to(MesosTaskFactoryImpl.class);
+      bind(TaskFactory.class).to(MesosTaskFactoryAdapter.class);
+    }
 
     bind(StateManager.class).to(StateManagerImpl.class);
     bind(StateManagerImpl.class).in(Singleton.class);

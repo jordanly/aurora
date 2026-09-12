@@ -1,0 +1,242 @@
+#!/usr/bin/env python3
+# Licensed under the Apache License, Version 2.0; http://www.apache.org/licenses/LICENSE-2.0
+"""Original Aurora Thrift JSON API acceptance; mutates only its new fixture jobs."""
+import argparse
+import importlib.machinery
+import importlib.util
+import json
+from pathlib import Path
+import time
+import urllib.request
+
+HERE = Path(__file__).resolve().parent
+loader = importlib.machinery.SourceFileLoader('inplace_cluster', str(HERE / 'inplace-cluster'))
+spec = importlib.util.spec_from_loader(loader.name, loader)
+lab = importlib.util.module_from_spec(spec); loader.exec_module(lab)
+
+
+def field(typ, value): return {typ: value}
+def struct(**values): return values
+def key(name): return {'1': field('str', 'fixtures'), '2': field('str', 'test'), '3': field('str', name)}
+def resource(n, typ, value): return {str(n): field(typ, value)}
+def resources(cpu=0.6): return ['rec', 3, resource(1, 'dbl', cpu), resource(2, 'i64', 32), resource(3, 'i64', 32)]
+def get(obj, number, default=None):
+    value = obj.get(str(number))
+    return next(iter(value.values())) if value else default
+
+
+def task(name, service=False, duration=None):
+    argv = ['/bin/true'] if duration is None else ['/bin/sleep', str(duration)]
+    process = json.dumps({'version': 'aurora-process-v1', 'argv': argv, 'env': {}, 'graceMillis': 1000})
+    return {'28': field('rec', key(name)), '17': field('rec', {'2': field('str', 'fixture')}),
+            '7': field('tf', int(service)), '11': field('i32', 0), '13': field('i32', 1),
+            '30': field('str', 'preferred'), '32': field('set', resources()), '20': field('set', ['rec', 0]),
+            '25': field('rec', {'1': field('str', 'go-process'), '2': field('str', process)}),
+            '34': field('rec', {'1': field('tf', 0)}),
+            '29': field('rec', {'1': field('rec', {'2': field('lst', ['rec', 0])})})}
+
+
+def job(name, service=False, duration=None, cron=None):
+    value = {'9': field('rec', key(name)), '7': field('rec', {'2': field('str', 'fixture')}),
+             '5': field('i32', 0), '6': field('rec', task(name, service, duration)), '8': field('i32', 2)}
+    if cron: value['4'] = field('str', cron)
+    return value
+
+
+class Check:
+    def __init__(self, root, phase):
+        self.root = lab.safe(root); self.data = json.loads((root / 'lab.json').read_text())
+        lab.need(self.data['uid'] == __import__('os').getuid(), 'Owner mismatch')
+        scheduler = lab.inspect(self.data, 'scheduler')
+        address = scheduler['NetworkSettings']['Networks'][self.data['network']['name']]['IPAddress']
+        self.url = 'http://' + address + ':8081/api'
+        self.prefix = 'check-' + str(int(time.time()))
+        self.report = {'ok': False, 'phase': phase, 'prefix': self.prefix, 'cases': [], 'rpc': []}
+        self.output = root / ('check-' + phase + '-' + str(time.time_ns()) + '.json')
+        self.seq = 0
+        self.opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+
+    def rpc(self, method, args):
+        self.seq += 1
+        body = json.dumps([1, method, 1, self.seq, args], separators=(',', ':')).encode()
+        request = urllib.request.Request(self.url, body, {'Content-Type': 'application/x-thrift'})
+        with self.opener.open(request, timeout=10) as response:
+            raw = response.read(1048577)
+        lab.need(len(raw) <= 1048576, 'Oversize API response')
+        wire = json.loads(raw)
+        lab.need(wire[:2] == [1, method] and wire[2] == 2 and wire[3] == self.seq, 'Thrift reply mismatch')
+        result = get(wire[4], 0)
+        lab.need(isinstance(result, dict), 'Missing Thrift success result')
+        self.report['rpc'].append({'method': method, 'response': result})
+        lab.need(get(result, 1) == 1, method + ' rejected: ' + json.dumps(get(result, 6)))
+        return result
+
+    def tasks(self, name):
+        query = {'11': field('set', ['rec', 1, key(name)])}
+        result = self.rpc('getTasksStatus', {'1': field('rec', query)})
+        values = get(get(get(result, 3), 3), 1)
+        return [{'id': get(get(v, 1), 1), 'host': get(get(v, 1), 3), 'status': get(v, 2)} for v in values[2:]]
+
+    def wait(self, name, predicate, seconds=90):
+        end = time.monotonic() + seconds
+        while time.monotonic() < end:
+            values = self.tasks(name)
+            if predicate(values): return values
+            time.sleep(1)
+        raise ValueError('Timed out waiting for ' + name + ': ' + json.dumps(values))
+
+    def kill(self, name):
+        self.rpc('killTasks', {'4': field('rec', key(name)), '5': field('set', ['i32', 0]), '6': field('str', 'isolated acceptance cleanup')})
+        self.wait(name, lambda xs: xs and all(x['status'] in (3, 4, 5, 7) for x in xs))
+
+    def physical(self, duration=300):
+        result = {}
+        for node in ('agent-a', 'agent-b'):
+            item = lab.inspect(self.data, node)
+            lines = lab.docker('top', item['Id'], '-eo', 'pid,args').splitlines()[1:]
+            result[node] = sorted(line.strip() for line in lines if ('/bin/sleep ' + str(duration)) in line and 'aurora-agent' not in line)
+            lab.need(len(result[node]) == 1, 'Expected one physical sleep' + str(duration) + ' on ' + node)
+        return result
+
+    def quota(self):
+        quota = ['rec', 3, resource(1, 'dbl', 4.0), resource(2, 'i64', 1024), resource(3, 'i64', 1024)]
+        self.rpc('setQuota', {'1': field('str', 'fixtures'), '2': field('rec', {'4': field('set', quota)})})
+
+    def smoke(self):
+        batch = self.prefix + '-batch'
+        self.rpc('createJob', {'1': field('rec', job(batch))})
+        done = self.wait(batch, lambda xs: len(xs) == 2 and all(x['status'] == 3 for x in xs))
+        self.report['cases'].append({'name': 'batch-finished', 'tasks': done})
+        service = self.prefix + '-service'
+        self.rpc('createJob', {'1': field('rec', job(service, True, 300))})
+        try:
+            live = self.wait(service, lambda xs: len(xs) == 2 and all(x['status'] == 2 for x in xs))
+            lab.need(len({x['host'] for x in live}) == 2, '600m tasks did not use both agents')
+            self.report['cases'].append({'name': 'two-agent-service', 'tasks': live, 'physical': self.physical()})
+            settings = {'1': field('i32', 1), '2': field('i32', 0), '3': field('i32', 0), '5': field('i32', 1000), '6': field('tf', 1), '7': field('set', ['rec', 0]), '8': field('tf', 1)}
+            request = {'1': field('rec', task(service, True, 301)), '2': field('i32', 2), '3': field('rec', settings)}
+            started = self.rpc('startJobUpdate', {'1': field('rec', request), '3': field('str', 'isolated acceptance update')})
+            update_key = get(get(get(started, 3), 22), 1)
+            old = {x['id'] for x in live}
+            updated = self.wait(service, lambda xs: len([x for x in xs if x['status'] == 2 and x['id'] not in old]) == 2)
+            self.wait_update(update_key)
+            self.report['cases'].append({'name': 'rolling-update', 'tasks': updated, 'updateStatus': 4})
+        finally: self.kill(service)
+        self.report['cases'].append({'name': 'service-killed'})
+        self.quota()
+        self.rpc('getQuota', {'1': field('str', 'fixtures')})
+        cron = self.prefix + '-cron'
+        self.rpc('scheduleCronJob', {'1': field('rec', job(cron, cron='0 0 1 1 *'))})
+        self.rpc('descheduleCronJob', {'4': field('rec', key(cron))})
+        self.report['cases'].append({'name': 'quota-and-cron-api'})
+        hosts = {'1': field('set', ['str', 2, 'agent-a', 'agent-b'])}
+        self.rpc('drainHosts', {'1': field('rec', hosts)})
+        self.rpc('endMaintenance', {'1': field('rec', hosts)})
+        self.report['cases'].append({'name': 'drain-empty-hosts-api'})
+
+    def wait_update(self, update_key):
+        end = time.monotonic() + 90
+        while time.monotonic() < end:
+            result = self.rpc('getJobUpdateDetails', {'1': field('rec', update_key)})
+            details = get(get(get(result, 3), 24), 1)
+            lab.need(details is not None, 'Missing update details')
+            status = get(get(get(get(details, 1), 1), 4), 1)
+            if status == 4: return
+            lab.need(status not in (5, 6, 7, 8), 'Update failed: ' + str(status))
+            time.sleep(1)
+        raise ValueError('Update did not reach ROLLED_FORWARD')
+
+    def recovery(self):
+        name = self.prefix + '-recovery'
+        duration = 3600
+        self.rpc('createJob', {'1': field('rec', job(name, True, duration))})
+        try:
+            original = self.wait(name, lambda xs: len(xs) == 2 and all(x['status'] == 2 for x in xs))
+            lab.need(len({x['host'] for x in original}) == 2, 'Recovery must use both agents')
+            physical = self.physical(duration)
+            for round_number in range(self.rounds):
+                for action in ('restart-scheduler', 'crash-scheduler', 'crash-agent'):
+                    node = 'agent-a' if round_number % 2 == 0 else 'agent-b'
+                    role = 'scheduler' if action.endswith('scheduler') else node
+                    keeper = self.root / role / 'control/daemon.json'
+                    before = json.loads(keeper.read_text())
+                    lab.run([str(HERE / 'inplace-cluster'), action, '--root', self.root, '--node', node])
+                    deadline = time.monotonic() + 90
+                    while True:
+                        after = json.loads(keeper.read_text())
+                        if after.get('generation', 0) > before.get('generation', 0) and after.get('pid', 0) > 0: break
+                        lab.need(time.monotonic() < deadline, 'Keeper did not restart daemon')
+                        time.sleep(0.2)
+                    time.sleep(3)
+                    end = time.monotonic() + 90
+                    while True:
+                        try:
+                            current = self.wait(name, lambda xs: len(xs) == 2 and all(x['status'] == 2 for x in xs), 5)
+                            break
+                        except (OSError, ValueError):
+                            if time.monotonic() >= end: raise
+                            time.sleep(1)
+                    lab.need(sorted(original, key=lambda x:x['id']) == sorted(current, key=lambda x:x['id']), 'Task IDs/hosts/status changed after ' + action)
+                    lab.need(self.physical(duration) == physical, 'Physical workload PID changed after ' + action)
+                    self.report['cases'].append({'name': action, 'round': round_number + 1, 'node': role,
+                        'beforeGeneration': before['generation'], 'afterGeneration': after['generation'],
+                        'tasks': current, 'physical': physical})
+        finally: self.kill(name)
+
+    def soak(self):
+        name = self.prefix + '-soak-service'
+        duration = 3601
+        service_config = job(name, True, duration)
+        get(service_config, 6)['32'] = field('set', resources(0.1))
+        host_limit = {'1': field('str', 'host'), '2': field('rec', {'2': field('rec', {'1': field('i32', 1)})})}
+        get(service_config, 6)['20'] = field('set', ['rec', 1, host_limit])
+        self.rpc('createJob', {'1': field('rec', service_config)})
+        started = time.monotonic()
+        completed = []
+        try:
+            original = self.wait(name, lambda xs: len(xs) == 2 and all(x['status'] == 2 for x in xs))
+            lab.need(len({x['host'] for x in original}) == 2, 'Soak service must use both agents')
+            physical = self.physical(duration)
+            started = time.monotonic()
+            samples = 0
+            # 20 bounded batches add40attempts total; host-limited100mservices leave900m.
+            for number in range(20):
+                batch = self.prefix + '-soak-batch-' + str(number)
+                config = job(batch)
+                get(config, 6)['32'] = field('set', resources(0.1))
+                self.rpc('createJob', {'1': field('rec', config)})
+                done = self.wait(batch, lambda xs: len(xs) == 2 and all(x['status'] == 3 for x in xs))
+                completed.extend(done)
+                until = started + (number + 1) * 30
+                while True:
+                    current = self.tasks(name)
+                    lab.need(sorted(current, key=lambda x:x['id']) == sorted(original, key=lambda x:x['id']), 'Soak service identity/state changed')
+                    lab.need(self.physical(duration) == physical, 'Soak workload PID changed')
+                    samples += 1
+                    remaining = until - time.monotonic()
+                    if remaining <= 0: break
+                    time.sleep(min(5, remaining))
+            elapsed = time.monotonic() - started
+            lab.need(elapsed >= 600 and len(completed) == 40 and len({x['id'] for x in completed}) == 40, 'Incomplete mixed soak')
+            self.report['cases'].append({'name': 'mixed-soak', 'elapsedSeconds': elapsed, 'batches': 20,
+                'finishedTasks': completed, 'serviceTasks': original, 'physical': physical, 'samples': samples})
+        finally: self.kill(name)
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--root', type=Path, required=True)
+    parser.add_argument('--phase', choices=('smoke', 'recovery', 'soak'), required=True)
+    parser.add_argument('--rounds', type=int, choices=range(1, 4), default=3)
+    args = parser.parse_args(); check = Check(args.root, args.phase)
+    check.rounds = args.rounds
+    check.report['recoveryRounds'] = args.rounds if args.phase == 'recovery' else None
+    try:
+        check.quota(); getattr(check, args.phase)(); check.report['ok'] = True
+    except BaseException as error:
+        check.report['error'] = str(error); raise
+    finally: check.output.write_text(json.dumps(check.report, indent=2) + '\n')
+    print(json.dumps({'ok': True, 'report': str(check.output)}))
+
+
+if __name__ == '__main__': main()

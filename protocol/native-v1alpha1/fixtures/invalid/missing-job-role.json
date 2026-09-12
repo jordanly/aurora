@@ -1,0 +1,55 @@
+{
+  "version": "native-v1alpha1",
+  "kind": "Job",
+  "cluster": "lab",
+  "incarnation": "recovery-a",
+  "revision": "1",
+  "mode": "service",
+  "instances": 2,
+  "maxPerAgent": 1,
+  "completion": "maintain-desired",
+  "template": {
+    "process": "main",
+    "argv": [
+      "/opt/aurora-fixtures/http",
+      "--port",
+      {
+        "portRef": "http"
+      }
+    ],
+    "env": {
+      "LANG": "C",
+      "FIXTURE_TEXT": "quote: \" slash: \\ html: <&>"
+    },
+    "resources": {
+      "cpuMillis": 100,
+      "memoryBytes": 16777216,
+      "memoryEnforcement": "reservation"
+    },
+    "ports": [
+      {
+        "name": "http",
+        "protocol": "tcp",
+        "family": "ipv4"
+      }
+    ],
+    "readiness": {
+      "kind": "tcp",
+      "port": "http",
+      "intervalMillis": 1000,
+      "timeoutMillis": 500
+    },
+    "retry": {
+      "maxRuns": 1
+    },
+    "stop": {
+      "graceMillis": 5000
+    },
+    "runtime": "trusted-host-process",
+    "requiredCapabilities": []
+  },
+  "jobKey": {
+    "environment": "test",
+    "name": "http"
+  }
+}
