@@ -25,6 +25,17 @@ coverage counters, analyzer results, tool and source hashes, full suite ledger,
 installed artifacts and clean-checkout validation. Reproduction commands are in
 [the build guide](../../build-support/java/README.md).
 
+The clean-checkout run passed **1,556 Java tests** (1,432 scheduler and 124
+commons), with **zero failures, errors or skips**. It also passed 37 Python build
+helper tests, all 33 UI suites / 144 tests, lint, packaging and both installed
+launchers. All nine main/test/JMH analyzer tasks passed, together with 18 paired
+Checkstyle fixture cases plus three record cases, 106 PMD cases and 76 SpotBugs
+filter cases. API/entity generation reproduced all 228 Java files byte-for-byte.
+Clean-checkout coverage is **90.44% instructions / 83.25% branches**; exact
+counters are retained in the receipt. That report contains 803 application
+classes. Earlier incremental output still held seven obsolete class files from
+renames/refactors, so its counts are not used as the final qualification baseline.
+
 The restored build runs the original scheduling, filter, state, quota, updater,
 cron, maintenance, SLA, reconciliation, storage, RPC and security tests. This
 includes `JobUpdaterIT`, `SchedulerIT`, `HttpSecurityIT`, `ApiIT`, `ThriftIT`,
@@ -47,13 +58,17 @@ launchers' argument/help paths, every classpath JAR, required generated API and
 UI assets, and Java 25 bytecode for scheduler, commons and API/entity artifacts.
 It starts no cluster services. Thrift 0.10.0 is built from its verified release
 source, with compiler/source/recipe hashes in a reusable receipt; no preinstalled
-Pi compiler is required.
+Pi compiler is required. The clean-checkout check also found a legacy
+`commons-args` project with no tracked directory; a README now preserves that
+empty project identity without claiming source or test coverage.
 
 Checkstyle 14.1.0, PMD 7.27.0 and SpotBugs 4.10.4 analyze main, test and benchmark
 sources. Apache headers and analyzer migration fixtures are explicit gate
 prerequisites. Excluding, disabling or skipping a prerequisite cannot qualify the
 aggregate; legitimate Gradle up-to-date results remain usable. CI separates
-behavior/distribution and quality jobs and retains reports on failure.
+behavior/distribution and quality jobs and retains reports on failure. An
+excluded benchmark analyzer was rejected despite its existing passing report.
+The final complete gate also passed offline with cached dependencies.
 
 Analyzer upgrades preserve the reviewed historical policy rather than silently
 adopting every newly introduced detector. Narrow mappings and exclusions are
@@ -129,7 +144,8 @@ WAL, FULL synchronization and foreign-key settings. Process-crash tests halt a
 child JVM immediately before and after commit and reopen the database, checking
 state, intents, receipts and operation outcomes together. Additional tests cover
 uniqueness conflicts, checked/unchecked rollback, concurrent snapshots, schema
-migration, ambiguous commits and cleanup faults.
+migration (including a failed upgrade that preserves the prior schema, owner
+and operation outcomes before retry), ambiguous commits and cleanup faults.
 
 Backups use `VACUUM INTO` a private temporary file, integrity verification,
 explicit flushing and atomic publication without overwriting the destination.

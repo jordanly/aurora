@@ -1,0 +1,213 @@
+{
+  "branch": "codex/in-place-java25",
+  "clean_checkout": {
+    "commit": "96311c2839fd4c8f90cebdadcf00e01f4ecde679",
+    "final_result_reuse": "Final run: 33 tasks executed, 21 up-to-date. Java behavior tests and coverage reran; unchanged generated/compiled inputs were reused. Production Java sources did not change after the initial fresh build.",
+    "initial_fresh_commit": "22ed0f91a268a005d81e3091a296cced56de2b9f",
+    "reused_downloads": "Verified tool archives and Maven/npm downloaded dependency caches only. Thrift compiler was separately bootstrapped from verified release source and its receipt/hash rechecked.",
+    "scope": "Initial full qualification regenerated and compiled all source sets from empty build outputs/project state. Final qualification reran after the offline argument fix and added migration test."
+  },
+  "commands": [
+    "python3 -m unittest discover -s build-support/java -p 'test_*.py'",
+    "./gradlew -PthriftCompiler=<verified-compiler> -Pq verifyOriginalQuality verifyOriginalBehavior :ui:build verifyInstalledDistribution --continue",
+    "./gradlew --offline -PthriftCompiler=<verified-compiler> -Pq verifyOriginalQuality verifyOriginalBehavior :ui:build verifyInstalledDistribution --continue"
+  ],
+  "coverage": {
+    "BRANCH": {
+      "covered": 2470,
+      "missed": 497,
+      "ratio": 0.8324907313784968
+    },
+    "CLASS": {
+      "covered": 622,
+      "missed": 38,
+      "ratio": 0.9424242424242424
+    },
+    "COMPLEXITY": {
+      "covered": 3971,
+      "missed": 745,
+      "ratio": 0.8420271416454622
+    },
+    "INSTRUCTION": {
+      "covered": 51252,
+      "missed": 5420,
+      "ratio": 0.9043619424054207
+    },
+    "LINE": {
+      "covered": 11752,
+      "missed": 1283,
+      "ratio": 0.9015726889144611
+    },
+    "METHOD": {
+      "covered": 2881,
+      "missed": 302,
+      "ratio": 0.9051209550738297
+    }
+  },
+  "coverage_report": {
+    "classes": 803,
+    "path": ".cache/inplace02-04-clean-checkout/.cache/inplace-build/build/scheduler/reports/jacoco/behaviorCoverageReport/behaviorCoverageReport.xml",
+    "scope": "All root production class directories, no exclusions; commons tests separately required.",
+    "sha256": "8b95ad64d3f5deecc2a86a48780c129a57991dc786259ec6adbeaeff9ee4f9da"
+  },
+  "distribution_receipt": {
+    "path": ".cache/inplace02-04-clean-checkout/.cache/inplace-build/build/scheduler/distribution-verification.json",
+    "sha256": "a4dbd6f4f143c01946e572d3936f41809e40299a15709bfc9c1432227ce31313"
+  },
+  "generated_source_comparison": {
+    "comparison": "Independent original-workspace and fresh-checkout API/entity Java generation are byte-for-byte identical.",
+    "java_sources": 228,
+    "sorted_path_sha256_digest": "d0b593f60c780dba4fd981a18f6f25b1ab97115cb513bae67ca168d1d5fdf77e",
+    "status": "passed"
+  },
+  "java_sources": {
+    "files": 691,
+    "sorted_path_sha256_digest": "f932d8ecd50cbf2c5f53b0fddc132e0359c9a1ea7b2651343bb8c7d056c5cd62"
+  },
+  "limits": [
+    "SQLite is a single-owner local implementation; production runtime wiring awaits INPLACE-05 durable dispatch and event recovery.",
+    "No real Mesos/JNI, real-KDC, Python client/executor runtime or two-agent container qualification claimed.",
+    "No production HA, host/media failure, power-loss, RPO/RTO or large-scale query/retention qualification.",
+    "CI workflow added; remote CI results reported separately."
+  ],
+  "logs": [
+    {
+      "path": ".cache/inplace02-04-qualified.log",
+      "sha256": "fdd7121ef6792d9169e54be9239e01f81a47a6e8ede09158b26834c9f2015f03"
+    },
+    {
+      "path": ".cache/inplace02-04-clean-build2.log",
+      "sha256": "fbbd73f82cfc634cb36bd91cc31842e298c870fc599665abe14ed284bfa3b66d"
+    },
+    {
+      "path": ".cache/inplace02-04-offline-final.log",
+      "sha256": "bdea30145789db82bfefd2e6299a91612ba6539090b74a0c3bea6fbb6e697ccc"
+    },
+    {
+      "path": ".cache/inplace02-04-quality-final.log",
+      "sha256": "b98ff03002926d9a4c5d65143395272e6bc1c53c7e3c8fd704aea2dbf2bbd8bb"
+    },
+    {
+      "path": ".cache/inplace02-04-quality-negative2.log",
+      "sha256": "632ea70ab728e32cadcad48c392819bcc44899677d50184905a389abdbb79ae5"
+    },
+    {
+      "path": ".cache/inplace02-04-clean-python.log",
+      "sha256": "8cd18853a002fd4d970a0b6340d50b51c814f49dd5a9ca70973a7a7a13dae609"
+    },
+    {
+      "path": ".cache/inplace02-thrift-bootstrap2.log",
+      "sha256": "034c7889f68b13736fd5a45c5928a5a5982817a55f9db0387bdb64cb09160658"
+    }
+  ],
+  "migration_fixtures": {
+    "checkstyle_additional_record_cases": 3,
+    "checkstyle_shared_cases": 18,
+    "pmd_cases": 106,
+    "spotbugs_cases": 76
+  },
+  "negative_checks": {
+    "excluded_benchmark_analyzer": "Rejected by verifyOriginalQuality despite an existing passing SpotBugs JMH report."
+  },
+  "python_build_helper_tests": 37,
+  "qualified_commit": "96311c2839fd4c8f90cebdadcf00e01f4ecde679",
+  "quality": {
+    "checkstyleJmh": {
+      "findings": 0,
+      "path": ".cache/inplace02-04-clean-checkout/.cache/inplace-build/build/scheduler/reports/checkstyle/jmh.xml",
+      "sha256": "df1dd1ad0d175fd8eb5a7310b1bc090ee72272625da5de2fb899473c431931d7"
+    },
+    "checkstyleMain": {
+      "findings": 0,
+      "path": ".cache/inplace02-04-clean-checkout/.cache/inplace-build/build/scheduler/reports/checkstyle/main.xml",
+      "sha256": "d0fd00940838393bf10b456f5dcb9292e395b48685cdcf54f9fc8856a2faa826"
+    },
+    "checkstyleTest": {
+      "findings": 0,
+      "path": ".cache/inplace02-04-clean-checkout/.cache/inplace-build/build/scheduler/reports/checkstyle/test.xml",
+      "sha256": "6cceda82806bd78f3b65cb9f22e895202ad37e592d7fd624cb18c44d57997c60"
+    },
+    "pmdJmh": {
+      "findings": 0,
+      "path": ".cache/inplace02-04-clean-checkout/.cache/inplace-build/build/scheduler/reports/pmd/jmh.xml",
+      "sha256": "1d9a5bdaff7c59ca630cb158ae92f7c16127d1d1c83733ab5ba3558be230c0ba"
+    },
+    "pmdMain": {
+      "findings": 0,
+      "path": ".cache/inplace02-04-clean-checkout/.cache/inplace-build/build/scheduler/reports/pmd/main.xml",
+      "sha256": "ac05d7bae6b1795ff0a2ab884ea2a907927c3c3cb58d4ce1fb8aecf77e5a7e0e"
+    },
+    "pmdTest": {
+      "findings": 0,
+      "path": ".cache/inplace02-04-clean-checkout/.cache/inplace-build/build/scheduler/reports/pmd/test.xml",
+      "sha256": "e4a1f87eb27d61f56e856172c934287a00bf47417d6ea2b9a197b3fe47e599b0"
+    },
+    "spotbugsJmh": {
+      "findings": 0,
+      "path": ".cache/inplace02-04-clean-checkout/.cache/inplace-build/build/scheduler/reports/spotbugs/jmh.xml",
+      "sha256": "6a7108ffe31e8236e75479abc21efe0be875b4c4bab1277f7a83829b624bb8c3"
+    },
+    "spotbugsMain": {
+      "findings": 0,
+      "path": ".cache/inplace02-04-clean-checkout/.cache/inplace-build/build/scheduler/reports/spotbugs/main.xml",
+      "sha256": "bb6bb522fb1ffa724dfd98dc6da4dbd74260b20c43b950de15473fd2a3294903"
+    },
+    "spotbugsTest": {
+      "findings": 0,
+      "path": ".cache/inplace02-04-clean-checkout/.cache/inplace-build/build/scheduler/reports/spotbugs/test.xml",
+      "sha256": "6972bd2587f72ce095690a51d1144eba58e7bbab3c42f79c510ad4575203d3c7"
+    }
+  },
+  "recorded_at": "2026-09-12T02:29:21.599436+00:00",
+  "schema_version": 1,
+  "source_base_commit": "1e0f9d54a10a448d82fe890cb0689e44a2e4d110",
+  "test_counts_by_task": {
+    ":commons:test": 124,
+    "behaviorTest": 1432
+  },
+  "test_ledger": {
+    "path": "docs/reimagining/inplace02-04-tests.jsonl",
+    "sha256": "a7dc925ae4e8c23153896c5c8e5b46dd2f011b236cf856c1a224b4879729e1ce"
+  },
+  "test_totals": {
+    "errors": 0,
+    "failures": 0,
+    "passed": 1556,
+    "skipped": 0,
+    "tests": 1556
+  },
+  "tested_inputs": {
+    "path": "docs/reimagining/inplace02-04-inputs.json",
+    "sha256": "13b02deefb5818cdfce32e3360645a5ca3f15d024936bd2716e705e72f7d68c4"
+  },
+  "thrift_bootstrap": {
+    "compiler": "compiler/cpp/thrift",
+    "compiler_sha256": "c1f1a4b42ee5f088ea6a8e97dfd97aa723de7aaea8458c0e9aa89e828b7476f5",
+    "recipe_sha256": "db2f85c848282402ee0e9d2f1bdc40bfdbb1c0ba5cc058cee1ffc7704797e61d",
+    "source_sha256": "2289d02de6e8db04cbbabb921aeb62bfe3098c4c83f36eec6c31194301efa10b",
+    "source_url": "https://archive.apache.org/dist/thrift/0.10.0/thrift-0.10.0.tar.gz",
+    "source_version": "0.10.0",
+    "version": "Thrift version 0.10.0"
+  },
+  "tools": {
+    "checkstyle": "14.1.0",
+    "gradle": "9.7.1",
+    "jacoco": "0.8.14",
+    "java": "25.0.4.1",
+    "node": "24.21.0",
+    "npm": "11.19.0",
+    "pmd": "7.27.0",
+    "spotbugs": "4.10.4",
+    "sqlite_jdbc": "3.53.4.0",
+    "thrift": "0.10.0"
+  },
+  "ui": {
+    "failures": 0,
+    "lint": "passed",
+    "suites": 33,
+    "tests": 144,
+    "webpack": "passed"
+  },
+  "upstream_master": "11ebaeeb071cb182c388a40755e84f60dda32260",
+  "usage_remaining_percent": 41.0
+}
