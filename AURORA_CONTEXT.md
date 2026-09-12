@@ -1,5 +1,10 @@
 # Apache Aurora: local project context
 
+> Historical review of upstream Aurora as of 2026-09-09. The Mesos, Thermos,
+> Python and Pants workflows below are retired in this branch. For current
+> development instructions use the [README](README.md); for the implemented
+> Java 25 scheduler and Go agents see [INPLACE-08 status](docs/reimagining/INPLACE08_IMPLEMENTATION_STATUS.md).
+
 This is a working guide for returning to this repository and experimenting with it. It records a source review, not a successful build or deployment. Research date: 2026-09-09 (America/New_York). Three subagents independently examined the Java scheduler, Python execution stack, and build/UI; their findings were cross-checked against source, tests, and Git history.
 
 For a quick return: Aurora places job instances on Mesos; Thermos supervises their process graphs. This snapshot uses map-backed volatile storage plus the Mesos replicated log, **without local write rollback**. The most promising first scheduler experiment is its built-in fake-cluster simulator, but even that build needs legacy Python 2 code generation. Start with the build section before attempting old setup commands.

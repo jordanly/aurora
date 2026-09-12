@@ -437,3 +437,99 @@ func TestServeHTTPSExecutesDurablyAndReopensWithStaticEnrollment(t *testing.T) {
 		t.Fatal("HTTPS reconnect duplicated execution", string(effects), e)
 	}
 }
+
+func TestServeHTTPSBindFailurePreservesSupervisedWork(t *testing.T) {
+	root := t.TempDir()
+	c := config()
+	s := open(t, filepath.Join(root, "state"), c)
+	defer s.Close()
+	opts := supervisorOpts(t, filepath.Join(root, "work"))
+	b := runtimeBody(t, "sleep", filepath.Join(root, "marker"), 0)
+	p := b["assignment"].(map[string]any)
+	p["ports"] = []any{}
+	p["readiness"] = map[string]any{"kind": "none"}
+	if _, err := s.Admit(delivery(c, b), caller(c)); err != nil {
+		t.Fatal(err)
+	}
+	r, err := NewRuntime(s, opts)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if r.closed {
+			reopened, reopenErr := NewRuntime(s, opts)
+			if reopenErr != nil {
+				t.Error(reopenErr)
+				return
+			}
+			r = reopened
+		}
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err = r.Shutdown(ctx); err != nil {
+			t.Error(err)
+		}
+	}()
+	runUntil(t, r, func(st State) bool { return onlyAttempt(st).Execution.Outcome == "running" })
+	before, err := s.Inspect()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err = r.Close(); err != nil {
+		t.Fatal(err)
+	}
+	occupied, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer occupied.Close()
+	pki := newPKI(t)
+	cert := pki.leaf(t, "agent-a", true)
+	options := HTTPSOptions{Listen: occupied.Addr().String(), CertFile: filepath.Join(root, "cert"), KeyFile: filepath.Join(root, "key"), CAFile: filepath.Join(root, "ca")}
+	key, err := x509.MarshalPKCS8PrivateKey(cert.PrivateKey)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for path, data := range map[string][]byte{
+		options.CertFile: pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: cert.Certificate[0]}),
+		options.KeyFile:  pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: key}),
+		options.CAFile:   pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: pki.ca.Raw}),
+	} {
+		if err = os.WriteFile(path, data, 0600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err = ServeHTTPS(context.Background(), s, opts, options); err == nil {
+		t.Fatal("occupied listener accepted")
+	}
+	after, err := s.Inspect()
+	if err != nil {
+		t.Fatal(err)
+	}
+	a := onlyAttempt(after)
+	old := onlyAttempt(before)
+	if a.Stopped || !a.Reserved() || a.Execution.PID != old.Execution.PID || a.Execution.Start != old.Execution.Start || a.Execution.ExitCode != nil {
+		t.Fatalf("bind failure drained task: %+v", a)
+	}
+	process, err := processInfo(a.Execution.PID)
+	if err != nil || process.Start != a.Execution.Start || process.State == "Z" || process.State == "X" {
+		t.Fatalf("workload did not survive bind failure: %+v %v", process, err)
+	}
+	if err = occupied.Close(); err != nil {
+		t.Fatal(err)
+	}
+	// An explicit expired context is operator shutdown, unlike the bind fault.
+	ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(-time.Second))
+	defer cancel()
+	if err = ServeHTTPS(ctx, s, opts, options); err != nil {
+		t.Fatal(err)
+	}
+	after, err = s.Inspect()
+	if err != nil {
+		t.Fatal(err)
+	}
+	a = onlyAttempt(after)
+	if !a.Stopped || a.Reserved() || a.Execution.Outcome != "stopped" {
+		t.Fatalf("explicit context deadline did not drain: %+v", a)
+	}
+}

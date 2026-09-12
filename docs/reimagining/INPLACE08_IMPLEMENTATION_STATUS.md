@@ -56,6 +56,17 @@ Command selection and acknowledgement use short transactions on either side of
 delivery. The existing local offer-expiry refresh is separate from network
 inventory traffic; pending commands retain a bounded retry path.
 
+Host attribute changes invalidate static scheduling vetoes for the affected
+offer. A host leaving maintenance can be evaluated again without waiting for
+the offer identity to expire; unrelated offers keep their cached vetoes.
+
+Transient supervisor socket failures are retried per attempt while its resource
+reservation remains held. Other attempts continue reconciling. Authentication,
+protocol and durable-state failures remain errors. Internal daemon failures do
+not manufacture Stop intents for unrelated workloads; explicit operator
+shutdown still drains them. Detached supervisors support recovery within the
+same container namespace.
+
 Transport counters are exported through the original `/vars.json` endpoint:
 `go_agent_watch_connections`, `go_agent_watch_snapshots`, `go_agent_watch_deltas`,
 `go_agent_watch_heartbeats`, `go_agent_inventory_requests`,

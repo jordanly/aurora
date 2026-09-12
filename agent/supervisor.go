@@ -43,6 +43,21 @@ import (
 
 const supervisorVersion = 1
 
+// supervisorUnavailable is deliberately limited to transport availability.
+// Authentication, protocol and durable-state failures must remain fatal.
+type supervisorUnavailable struct{ cause error }
+
+func (e *supervisorUnavailable) Error() string { return e.cause.Error() }
+func (e *supervisorUnavailable) Unwrap() error { return e.cause }
+
+func supervisorIOError(err error) error {
+	var network net.Error
+	if errors.As(err, &network) && network.Timeout() || errors.Is(err, io.EOF) || errors.Is(err, unix.ECONNRESET) || errors.Is(err, unix.EPIPE) {
+		return &supervisorUnavailable{err}
+	}
+	return err
+}
+
 // SupervisorRef is private, durable attachment identity. Imported advances in
 // the same node transaction as the corresponding observation.
 type SupervisorRef struct {
@@ -451,13 +466,20 @@ func (r *Runtime) pollSupervisor(key string, a Attempt) error {
 	}
 	socketDir, address, e := socketAddress(r.opts.Root, key)
 	if e != nil {
+		if !os.IsNotExist(e) {
+			return e
+		}
 		return r.supervisorLost(key, a)
 	}
-	c, e := net.DialUnix("unix", nil, &net.UnixAddr{Name: address, Net: "unix"})
+	connection, e := net.DialTimeout("unix", address, time.Second)
 	socketDir.Close()
 	if e != nil {
+		if !errors.Is(e, unix.ECONNREFUSED) && !os.IsNotExist(e) && !errors.Is(e, unix.EAGAIN) {
+			return supervisorIOError(e)
+		}
 		return r.supervisorLost(key, a)
 	}
+	c := connection.(*net.UnixConn)
 	defer c.Close()
 	c.SetDeadline(time.Now().Add(time.Second))
 	if e = peer(c, ref.Process.PID); e != nil {
@@ -469,13 +491,20 @@ func (r *Runtime) pollSupervisor(key string, a Attempt) error {
 	}
 	q := supervisorRequest{supervisorVersion, ref.Token, r.scope, a.Deadline, a.DeadlineMono, a.Stopped, ref.Imported}
 	if e = json.NewEncoder(c).Encode(q); e != nil {
-		return e
+		return supervisorIOError(e)
 	}
 	var reply supervisorReply
-	d := json.NewDecoder(io.LimitReader(c, 16<<20))
+	limited := &io.LimitedReader{R: c, N: 16 << 20}
+	d := json.NewDecoder(limited)
 	d.DisallowUnknownFields()
 	if e = d.Decode(&reply); e != nil {
-		return e
+		if limited.N == 0 {
+			return errors.New("supervisor response size limit")
+		}
+		if errors.Is(e, io.EOF) && limited.N != 16<<20 {
+			return errors.New("incomplete supervisor response")
+		}
+		return supervisorIOError(e)
 	}
 	if reply.Error != "" {
 		return errors.New(reply.Error)
@@ -534,7 +563,7 @@ func (r *Runtime) supervisorLost(key string, a Attempt) error {
 	if a.Supervisor.Process.PID > 0 {
 		p, e := processInfo(a.Supervisor.Process.PID)
 		if e == nil && p.Start == a.Supervisor.Process.Start && p.State != "Z" && p.State != "X" {
-			return errors.New("live supervisor unavailable; admission blocked")
+			return &supervisorUnavailable{errors.New("live supervisor unavailable; reservation retained")}
 		}
 		if e != nil && !os.IsNotExist(e) {
 			return e

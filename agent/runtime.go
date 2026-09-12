@@ -104,14 +104,15 @@ type RuntimeOptions struct {
 	captureEvents             bool
 }
 type Runtime struct {
-	shutdownMu sync.Mutex
-	store      *Store
-	opts       RuntimeOptions
-	scope      RuntimeScope
-	mu         sync.Mutex
-	live       map[string]*liveProcess
-	closed     bool
-	hooks      runtimeHooks
+	shutdownMu      sync.Mutex
+	store           *Store
+	opts            RuntimeOptions
+	scope           RuntimeScope
+	mu              sync.Mutex
+	live            map[string]*liveProcess
+	supervisorRetry map[string]time.Time
+	closed          bool
+	hooks           runtimeHooks
 }
 type runtimeHooks struct {
 	beforeGate          func()
@@ -261,6 +262,9 @@ func (r *Runtime) recover() error {
 		}
 		if a.Supervisor != nil {
 			if e := r.pollSupervisor(key, a); e != nil {
+				if r.retrySupervisor(key, e) {
+					continue
+				}
 				return e
 			}
 			continue
@@ -345,9 +349,16 @@ func (r *Runtime) Tick(ctx context.Context) error {
 			continue
 		}
 		if a.Supervisor != nil && (!a.Supervisor.Acknowledged || a.Execution.Cleanup != "complete") {
+			if time.Now().Before(r.supervisorRetry[key]) {
+				continue
+			}
 			if e = r.pollSupervisor(key, a); e != nil {
+				if r.retrySupervisor(key, e) {
+					continue
+				}
 				return e
 			}
+			delete(r.supervisorRetry, key)
 			continue
 		}
 		if live := r.live[key]; live != nil {
@@ -357,6 +368,18 @@ func (r *Runtime) Tick(ctx context.Context) error {
 		}
 	}
 	return nil
+}
+
+func (r *Runtime) retrySupervisor(key string, err error) bool {
+	var unavailable *supervisorUnavailable
+	if !errors.As(err, &unavailable) {
+		return false
+	}
+	if r.supervisorRetry == nil {
+		r.supervisorRetry = make(map[string]time.Time)
+	}
+	r.supervisorRetry[key] = time.Now().Add(250 * time.Millisecond)
+	return true
 }
 
 func (r *Runtime) update(key string, change func(*Attempt) error, observe bool) error {

@@ -27,6 +27,7 @@ import (
 	"errors"
 	"fmt"
 	"golang.org/x/sys/unix"
+	"io"
 	"net"
 	"os"
 	"os/exec"
@@ -403,5 +404,178 @@ func TestSupervisorWaitDelayRetainsKnownExit(t *testing.T) {
 	a = onlyAttempt(st)
 	if a.Execution.ExitCode == nil || *a.Execution.ExitCode != 0 {
 		t.Fatalf("supervisor loss discarded durable root exit: %+v", a.Execution)
+	}
+}
+
+func TestSupervisorTimeoutPreservesWorkAndReconcilesOtherAttempts(t *testing.T) {
+	root := t.TempDir()
+	c := config()
+	c.CPU *= 3
+	c.Memory *= 3
+	s := open(t, filepath.Join(root, "state"), c)
+	defer s.Close()
+	opts := supervisorOpts(t, filepath.Join(root, "work"))
+	r, err := NewRuntime(s, opts)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var paused int
+	defer func() {
+		if paused != 0 {
+			unix.Kill(paused, unix.SIGCONT)
+		}
+		if r.closed {
+			reopened, reopenErr := NewRuntime(s, opts)
+			if reopenErr != nil {
+				t.Error(reopenErr)
+				return
+			}
+			r = reopened
+		}
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err := r.Shutdown(ctx); err != nil {
+			t.Error(err)
+		}
+	}()
+	add := func(name, mode string) string {
+		b := runtimeBody(t, mode, filepath.Join(root, name), 0)
+		b["command"] = "command-" + name
+		id := b["identity"].(map[string]any)
+		id["attempt"] = "attempt-" + name
+		id["run"] = "run-" + name
+		id["instance"] = "instance-" + name
+		p := b["assignment"].(map[string]any)
+		p["ports"] = []any{}
+		p["readiness"] = map[string]any{"kind": "none"}
+		result, e := s.Admit(delivery(c, b), caller(c))
+		if e != nil || result.Outcome != "accepted" {
+			t.Fatalf("admit: %+v %v", result, e)
+		}
+		return attemptKey(id)
+	}
+	first := add("first", "sleep")
+	second := add("second", "sleep")
+	runUntil(t, r, func(st State) bool {
+		return st.Attempts[first].Execution != nil && st.Attempts[second].Execution != nil && st.Attempts[first].Execution.Outcome == "running" && st.Attempts[second].Execution.Outcome == "running"
+	})
+	before, err := s.Inspect()
+	if err != nil {
+		t.Fatal(err)
+	}
+	paused = before.Attempts[first].Supervisor.Process.PID
+	if err = unix.Kill(paused, unix.SIGSTOP); err != nil {
+		t.Fatal(err)
+	}
+	// Pause an actual authenticated supervisor; its socket stays connected but
+	// cannot reply. This reaches the same one-second read timeout as the soak.
+	start := time.Now()
+	if err = r.Tick(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if time.Since(start) < 900*time.Millisecond || len(r.supervisorRetry) != 1 {
+		t.Fatal("did not exercise actual supervisor timeout")
+	}
+	batch := add("batch", "batch")
+	runUntil(t, r, func(st State) bool {
+		return st.Attempts[batch].Execution != nil && st.Attempts[batch].Execution.Cleanup == "complete"
+	})
+	assertPreserved := func() {
+		t.Helper()
+		st, e := s.Inspect()
+		if e != nil {
+			t.Fatal(e)
+		}
+		if st.Config != before.Config {
+			t.Fatal("authority changed")
+		}
+		for _, key := range []string{first, second} {
+			a := st.Attempts[key]
+			original := before.Attempts[key]
+			if a.Stopped || !a.Reserved() || a.Execution.ExitCode != nil || a.Execution.PID != original.Execution.PID || a.Execution.Start != original.Execution.Start {
+				t.Fatalf("unrelated stop or identity change: %+v", a.Execution)
+			}
+			p, e := processInfo(a.Execution.PID)
+			if e != nil || p.Start != a.Execution.Start || p.State == "Z" || p.State == "X" {
+				t.Fatalf("workload not alive: %+v %v", p, e)
+			}
+		}
+	}
+	assertPreserved()
+	// An internal fatal server/runtime exit must detach without a bulk Stop.
+	if err = finishHTTPSRuntime(r, false); err != nil {
+		t.Fatal(err)
+	}
+	assertPreserved()
+	// Restart while the supervisor remains unavailable must retain the same
+	// durable reservation and retry later, not fail into a keeper restart loop.
+	reopened, err := NewRuntime(s, opts)
+	if err != nil {
+		t.Fatal(err)
+	}
+	r = reopened
+	if len(r.supervisorRetry) != 1 {
+		t.Fatal("restart did not retain unavailable supervisor")
+	}
+	assertPreserved()
+	if err = unix.Kill(paused, unix.SIGCONT); err != nil {
+		t.Fatal(err)
+	}
+	paused = 0
+	runUntil(t, r, func(st State) bool { return len(r.supervisorRetry) == 0 })
+	assertPreserved()
+	// A reachable supervisor rejecting our token is not a transport retry.
+	state, err := s.Inspect()
+	if err != nil {
+		t.Fatal(err)
+	}
+	token := state.Attempts[first].Supervisor.Token
+	defer func() {
+		if restoreErr := r.update(first, func(a *Attempt) error { a.Supervisor.Token = token; return nil }, false); restoreErr != nil {
+			t.Error(restoreErr)
+		}
+	}()
+	wrongToken := "0" + token[1:]
+	if token[0] == '0' {
+		wrongToken = "1" + token[1:]
+	}
+	if err = r.update(first, func(a *Attempt) error { a.Supervisor.Token = wrongToken; return nil }, false); err != nil {
+		t.Fatal(err)
+	}
+	if err = r.Tick(context.Background()); err == nil || !strings.Contains(err.Error(), "identity mismatch") {
+		t.Fatalf("authentication failure was not fatal: %v", err)
+	}
+	if err = r.update(first, func(a *Attempt) error { a.Supervisor.Token = token; return nil }, false); err != nil {
+		t.Fatal(err)
+	}
+	assertPreserved()
+	// Explicit operator shutdown retains its existing drain behavior.
+	if err = finishHTTPSRuntime(r, true); err != nil {
+		t.Fatal(err)
+	}
+	st, err := s.Inspect()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, key := range []string{first, second} {
+		a := st.Attempts[key]
+		if !a.Stopped || a.Reserved() || a.Execution.Outcome != "stopped" {
+			t.Fatalf("explicit shutdown failed: %+v", a)
+		}
+	}
+}
+
+func TestSupervisorRetryClassificationRejectsIntegrityFailures(t *testing.T) {
+	for _, err := range []error{io.ErrUnexpectedEOF, unix.EACCES, errors.New("supervisor peer mismatch"), errors.New("supervisor event gap"), &json.SyntaxError{Offset: 1}} {
+		var retry *supervisorUnavailable
+		if errors.As(supervisorIOError(err), &retry) {
+			t.Fatalf("integrity failure treated as retryable: %v", err)
+		}
+	}
+	for _, err := range []error{io.EOF, unix.EPIPE, unix.ECONNRESET, os.ErrDeadlineExceeded} {
+		var retry *supervisorUnavailable
+		if !errors.As(supervisorIOError(err), &retry) {
+			t.Fatalf("availability failure not retryable: %v", err)
+		}
 	}
 }

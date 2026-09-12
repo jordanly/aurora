@@ -273,8 +273,8 @@ func serverTLS(options HTTPSOptions) (*tls.Config, error) {
 	return &tls.Config{Certificates: []tls.Certificate{cert}, ClientAuth: tls.RequireAndVerifyClientCert, ClientCAs: roots, MinVersion: tls.VersionTLS13, NextProtos: []string{"http/1.1"}}, nil
 }
 
-// ServeHTTPS owns runtime ticking and graceful drain. Transport loss does not
-// stop workloads; daemon shutdown drains them using the existing runtime policy.
+// ServeHTTPS owns runtime ticking. Explicit context completion requests graceful
+// drain; internal runtime/server errors preserve supervised workloads for recovery.
 func ServeHTTPS(ctx context.Context, store *Store, runtimeOptions RuntimeOptions, options HTTPSOptions) (err error) {
 	if options.Listen == "" || options.CertFile == "" || options.KeyFile == "" || options.CAFile == "" {
 		return errors.New("listen and TLS cert/key/CA required")
@@ -287,11 +287,8 @@ func ServeHTTPS(ctx context.Context, store *Store, runtimeOptions RuntimeOptions
 	if e != nil {
 		return e
 	}
-	defer func() {
-		drain, cancel := context.WithTimeout(context.Background(), 65*time.Second)
-		defer cancel()
-		err = errors.Join(err, runtime.Shutdown(drain), runtime.Close())
-	}()
+	graceful := false
+	defer func() { err = errors.Join(err, finishHTTPSRuntime(runtime, graceful)) }()
 	listener, e := net.Listen("tcp", options.Listen)
 	if e != nil {
 		return e
@@ -307,6 +304,7 @@ func ServeHTTPS(ctx context.Context, store *Store, runtimeOptions RuntimeOptions
 	for {
 		select {
 		case <-ctx.Done():
+			graceful = true
 			shutdown, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 			defer cancel()
 			return server.Shutdown(shutdown)
@@ -317,11 +315,23 @@ func ServeHTTPS(ctx context.Context, store *Store, runtimeOptions RuntimeOptions
 			return e
 		case <-ticker.C:
 			if e = runtime.Tick(ctx); e != nil {
-				if ctx.Err() != nil && errors.Is(e, context.Canceled) {
+				if ctx.Err() != nil && errors.Is(e, ctx.Err()) {
+					graceful = true
 					return nil
 				}
 				return e
 			}
 		}
 	}
+}
+
+// Internal failures must not invent operator Stop intent. In supervised mode
+// Close detaches the daemon while durable attempt supervisors keep running.
+func finishHTTPSRuntime(runtime *Runtime, graceful bool) error {
+	if !graceful {
+		return runtime.Close()
+	}
+	drain, cancel := context.WithTimeout(context.Background(), 65*time.Second)
+	defer cancel()
+	return errors.Join(runtime.Shutdown(drain), runtime.Close())
 }
