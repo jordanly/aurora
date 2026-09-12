@@ -133,6 +133,46 @@ modernization remain subsequent work in the retained application.
 
 ## Qualification
 
-Final build, cluster and client receipts are being collected for this checkpoint.
+The implementation is published at
+[`b5405842b`](https://github.com/jordanly/aurora/commit/b5405842b94cc89219f5ebc548af8fd619711059).
+All three [CI jobs](https://github.com/jordanly/aurora/actions/runs/34702901597)
+passed for that commit: Go tests/provenance, Java behavior/distribution and Java
+quality. The [evidence receipt](inplace08-evidence.json),
+[source hashes](inplace08-inputs.json) and [Java suite ledger](inplace08-tests.jsonl)
+bind the results to their inputs and artifacts.
+
+| Gate | Result |
+| --- | --- |
+| Original Java behavior | 1,342 scheduler and 124 commons tests; zero failures, errors or skips |
+| Coverage | 91.39% instructions, 80.77% branches; existing 87% / 79% thresholds retained |
+| Java quality and packaging | Checkstyle, PMD, SpotBugs, original UI and installed distribution passed |
+| UI | 144 tests in 33 suites passed |
+| Go agent and tools | Uncached full tests and vet passed for both modules; real supervisor timeout, bind-failure and shutdown regressions passed |
+| Fresh cluster smoke | Batch completion, one service per agent, rolling update and clean stops passed |
+| Recovery | Three rounds each of scheduler restart, scheduler crash and agent crash preserved task IDs, host placement and workload PIDs |
+| Policy | Automatic rollback restored the exact executor configuration; active drain/replacement and manual cron execution passed |
+| Mixed workload | 40 distinct batch tasks finished over 600.14 seconds; 136 checks preserved both service identities and PIDs |
+| Standalone Go client | 61 commands passed, including updates, restart, scaling, cron, quota and maintenance; cleanup completed without errors |
+| SQLite | Read-only integrity check returned `ok`; no pending commands after demo startup |
+| Quiet push traffic | 360.004 seconds / 25 samples: 24 heartbeats, two reconciliation snapshots and zero inventory polls, extra commands, acknowledgements, deltas or reconnects |
+
+The fresh `.pi-lab/inplace08-qualified` lab contains the original Java 25
+scheduler and two Go agents in separate containers. Two 100mCPU / 32 MiB demo
+services remain running as `fixtures/test/push-mvp-demo`, with one per agent.
+The quiet measurement ran from 15:55:57 to 16:01:57 UTC on 2026-09-12. Every
+health sample passed; task IDs, placement, process IDs/start times and daemon
+generations matched at both boundaries. The exact manifest and scheduler
+distribution remained unchanged.
+
+Local qualification reused unchanged build outputs; the distribution's
+`build.properties` records the preceding commit and dirty working tree from its
+build. Source and artifact hashes establish the tested inputs, while CI checks
+the committed implementation independently. The earlier failed smoke and soak
+runs remain diagnostic evidence, alongside their fixes; they do not count as
+successful qualification. In particular, the task that timed out before the
+signal fix retains its original LOST history even though its update recovered.
+
 Earlier [INPLACE-05–07 evidence](INPLACE05_07_IMPLEMENTATION_STATUS.md) remains
-unchanged and establishes only its named source and artifact versions.
+unchanged and establishes only its named source and artifact versions. The old
+temporary INPLACE-08 test containers were removed with their files retained;
+the original qualified lab and unrelated Pi applications were preserved.

@@ -1,0 +1,2163 @@
+{
+  "acceptance": {
+    "policy": {
+      "cases": [
+        {
+          "executorRestored": true,
+          "name": "automatic-rollback",
+          "tasks": [
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789227820-560a263b3377-policy-service-0-728d82c0-0d95-44da-ba67-f62e326a7b04",
+              "status": 2
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789227820-560a263b3377-policy-service-0-9951041c-3712-44f0-ba79-a65e7b96e0bf",
+              "status": 5
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789227820-560a263b3377-policy-service-0-feaea5a3-25aa-4f81-a3b3-afc21cbe2358",
+              "status": 4
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789227820-560a263b3377-policy-service-1-7c8d4add-76f2-4609-8b5e-e1549fd3e051",
+              "status": 2
+            }
+          ],
+          "updateStatus": 5
+        },
+        {
+          "drainedTasks": [
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789227820-560a263b3377-policy-service-0-728d82c0-0d95-44da-ba67-f62e326a7b04",
+              "status": 5
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789227820-560a263b3377-policy-service-0-9951041c-3712-44f0-ba79-a65e7b96e0bf",
+              "status": 5
+            },
+            {
+              "host": null,
+              "id": "fixtures-test-check-1789227820-560a263b3377-policy-service-0-b01567d6-01d1-4100-bac6-2fa6be8347f3",
+              "status": 0
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789227820-560a263b3377-policy-service-0-feaea5a3-25aa-4f81-a3b3-afc21cbe2358",
+              "status": 4
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789227820-560a263b3377-policy-service-1-7c8d4add-76f2-4609-8b5e-e1549fd3e051",
+              "status": 2
+            }
+          ],
+          "host": "agent-a",
+          "name": "active-drain-replacement",
+          "replacedTasks": [
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789227820-560a263b3377-policy-service-0-728d82c0-0d95-44da-ba67-f62e326a7b04",
+              "status": 5
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789227820-560a263b3377-policy-service-0-9951041c-3712-44f0-ba79-a65e7b96e0bf",
+              "status": 5
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789227820-560a263b3377-policy-service-0-b01567d6-01d1-4100-bac6-2fa6be8347f3",
+              "status": 2
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789227820-560a263b3377-policy-service-0-feaea5a3-25aa-4f81-a3b3-afc21cbe2358",
+              "status": 4
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789227820-560a263b3377-policy-service-1-7c8d4add-76f2-4609-8b5e-e1549fd3e051",
+              "status": 2
+            }
+          ]
+        },
+        {
+          "name": "manual-cron-finished",
+          "tasks": [
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789227820-560a263b3377-policy-cron-0-7c589206-5912-4f22-8034-9946c46b6f26",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789227820-560a263b3377-policy-cron-1-4af8df50-45b6-4f06-918d-7757042e3be2",
+              "status": 3
+            }
+          ]
+        }
+      ],
+      "ok": true,
+      "path": ".pi-lab/inplace08-qualified/check-policy-1789227820993302199.json",
+      "prefix": "check-1789227820-560a263b3377",
+      "recoveryRounds": null,
+      "sha256": "e155c66a5e282608fa9f1563b1237e25c255ab57a9b6364d9cab6c6f9a3cda1e"
+    },
+    "recovery": {
+      "cases": [
+        {
+          "afterGeneration": 2,
+          "beforeGeneration": 1,
+          "name": "restart-scheduler",
+          "node": "scheduler",
+          "physical": {
+            "agent-a": [
+              "1819159             /bin/sleep 3600"
+            ],
+            "agent-b": [
+              "1819167             /bin/sleep 3600"
+            ]
+          },
+          "round": 1,
+          "tasks": [
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789227737-aa249c09ad5f-recovery-0-25269f08-6aea-4299-9b11-f448096bd080",
+              "status": 2
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789227737-aa249c09ad5f-recovery-1-23d4d4ae-73e2-4f58-9b73-5d9bcab17a4b",
+              "status": 2
+            }
+          ]
+        },
+        {
+          "afterGeneration": 3,
+          "beforeGeneration": 2,
+          "name": "crash-scheduler",
+          "node": "scheduler",
+          "physical": {
+            "agent-a": [
+              "1819159             /bin/sleep 3600"
+            ],
+            "agent-b": [
+              "1819167             /bin/sleep 3600"
+            ]
+          },
+          "round": 1,
+          "tasks": [
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789227737-aa249c09ad5f-recovery-0-25269f08-6aea-4299-9b11-f448096bd080",
+              "status": 2
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789227737-aa249c09ad5f-recovery-1-23d4d4ae-73e2-4f58-9b73-5d9bcab17a4b",
+              "status": 2
+            }
+          ]
+        },
+        {
+          "afterGeneration": 2,
+          "beforeGeneration": 1,
+          "name": "crash-agent",
+          "node": "agent-a",
+          "physical": {
+            "agent-a": [
+              "1819159             /bin/sleep 3600"
+            ],
+            "agent-b": [
+              "1819167             /bin/sleep 3600"
+            ]
+          },
+          "round": 1,
+          "tasks": [
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789227737-aa249c09ad5f-recovery-0-25269f08-6aea-4299-9b11-f448096bd080",
+              "status": 2
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789227737-aa249c09ad5f-recovery-1-23d4d4ae-73e2-4f58-9b73-5d9bcab17a4b",
+              "status": 2
+            }
+          ]
+        },
+        {
+          "afterGeneration": 4,
+          "beforeGeneration": 3,
+          "name": "restart-scheduler",
+          "node": "scheduler",
+          "physical": {
+            "agent-a": [
+              "1819159             /bin/sleep 3600"
+            ],
+            "agent-b": [
+              "1819167             /bin/sleep 3600"
+            ]
+          },
+          "round": 2,
+          "tasks": [
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789227737-aa249c09ad5f-recovery-0-25269f08-6aea-4299-9b11-f448096bd080",
+              "status": 2
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789227737-aa249c09ad5f-recovery-1-23d4d4ae-73e2-4f58-9b73-5d9bcab17a4b",
+              "status": 2
+            }
+          ]
+        },
+        {
+          "afterGeneration": 5,
+          "beforeGeneration": 4,
+          "name": "crash-scheduler",
+          "node": "scheduler",
+          "physical": {
+            "agent-a": [
+              "1819159             /bin/sleep 3600"
+            ],
+            "agent-b": [
+              "1819167             /bin/sleep 3600"
+            ]
+          },
+          "round": 2,
+          "tasks": [
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789227737-aa249c09ad5f-recovery-0-25269f08-6aea-4299-9b11-f448096bd080",
+              "status": 2
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789227737-aa249c09ad5f-recovery-1-23d4d4ae-73e2-4f58-9b73-5d9bcab17a4b",
+              "status": 2
+            }
+          ]
+        },
+        {
+          "afterGeneration": 2,
+          "beforeGeneration": 1,
+          "name": "crash-agent",
+          "node": "agent-b",
+          "physical": {
+            "agent-a": [
+              "1819159             /bin/sleep 3600"
+            ],
+            "agent-b": [
+              "1819167             /bin/sleep 3600"
+            ]
+          },
+          "round": 2,
+          "tasks": [
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789227737-aa249c09ad5f-recovery-0-25269f08-6aea-4299-9b11-f448096bd080",
+              "status": 2
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789227737-aa249c09ad5f-recovery-1-23d4d4ae-73e2-4f58-9b73-5d9bcab17a4b",
+              "status": 2
+            }
+          ]
+        },
+        {
+          "afterGeneration": 6,
+          "beforeGeneration": 5,
+          "name": "restart-scheduler",
+          "node": "scheduler",
+          "physical": {
+            "agent-a": [
+              "1819159             /bin/sleep 3600"
+            ],
+            "agent-b": [
+              "1819167             /bin/sleep 3600"
+            ]
+          },
+          "round": 3,
+          "tasks": [
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789227737-aa249c09ad5f-recovery-0-25269f08-6aea-4299-9b11-f448096bd080",
+              "status": 2
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789227737-aa249c09ad5f-recovery-1-23d4d4ae-73e2-4f58-9b73-5d9bcab17a4b",
+              "status": 2
+            }
+          ]
+        },
+        {
+          "afterGeneration": 7,
+          "beforeGeneration": 6,
+          "name": "crash-scheduler",
+          "node": "scheduler",
+          "physical": {
+            "agent-a": [
+              "1819159             /bin/sleep 3600"
+            ],
+            "agent-b": [
+              "1819167             /bin/sleep 3600"
+            ]
+          },
+          "round": 3,
+          "tasks": [
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789227737-aa249c09ad5f-recovery-0-25269f08-6aea-4299-9b11-f448096bd080",
+              "status": 2
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789227737-aa249c09ad5f-recovery-1-23d4d4ae-73e2-4f58-9b73-5d9bcab17a4b",
+              "status": 2
+            }
+          ]
+        },
+        {
+          "afterGeneration": 3,
+          "beforeGeneration": 2,
+          "name": "crash-agent",
+          "node": "agent-a",
+          "physical": {
+            "agent-a": [
+              "1819159             /bin/sleep 3600"
+            ],
+            "agent-b": [
+              "1819167             /bin/sleep 3600"
+            ]
+          },
+          "round": 3,
+          "tasks": [
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789227737-aa249c09ad5f-recovery-0-25269f08-6aea-4299-9b11-f448096bd080",
+              "status": 2
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789227737-aa249c09ad5f-recovery-1-23d4d4ae-73e2-4f58-9b73-5d9bcab17a4b",
+              "status": 2
+            }
+          ]
+        }
+      ],
+      "ok": true,
+      "path": ".pi-lab/inplace08-qualified/check-recovery-1789227737821168048.json",
+      "prefix": "check-1789227737-aa249c09ad5f",
+      "recoveryRounds": 3,
+      "sha256": "29de4e75af8656136bd2a6beaa67dd556a5ff835222b8b2753a14cb26e1f4fe9"
+    },
+    "smoke": {
+      "cases": [
+        {
+          "name": "batch-finished",
+          "tasks": [
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789227719-b3edb26fd9e9-batch-0-a220450a-4382-4291-a4ad-432ed7db44b0",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789227719-b3edb26fd9e9-batch-1-9b694968-b188-4296-be54-3076fefd4119",
+              "status": 3
+            }
+          ]
+        },
+        {
+          "name": "two-agent-service",
+          "physical": {
+            "agent-a": [
+              "1818953             /bin/sleep 300"
+            ],
+            "agent-b": [
+              "1818961             /bin/sleep 300"
+            ]
+          },
+          "tasks": [
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789227719-b3edb26fd9e9-service-0-313660b3-389d-425c-9df2-2ba3e864ba0b",
+              "status": 2
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789227719-b3edb26fd9e9-service-1-1196fc6c-8601-40ab-b7dc-ff5f1ed84433",
+              "status": 2
+            }
+          ]
+        },
+        {
+          "name": "rolling-update",
+          "tasks": [
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789227719-b3edb26fd9e9-service-0-25c934df-829f-4231-90df-28b3a4b8e109",
+              "status": 2
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789227719-b3edb26fd9e9-service-0-313660b3-389d-425c-9df2-2ba3e864ba0b",
+              "status": 5
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789227719-b3edb26fd9e9-service-1-1196fc6c-8601-40ab-b7dc-ff5f1ed84433",
+              "status": 5
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789227719-b3edb26fd9e9-service-1-733b0c4b-dfbd-46da-93d9-52488432640a",
+              "status": 2
+            }
+          ],
+          "updateStatus": 4
+        },
+        {
+          "name": "service-killed"
+        },
+        {
+          "name": "quota-and-cron-api"
+        },
+        {
+          "name": "drain-empty-hosts-api"
+        }
+      ],
+      "ok": true,
+      "path": ".pi-lab/inplace08-qualified/check-smoke-1789227719930269467.json",
+      "prefix": "check-1789227719-b3edb26fd9e9",
+      "recoveryRounds": null,
+      "sha256": "5ecdf473d856f295dddef07bfeef9ba5a4647c2c67f2080891a2329282c5afdf"
+    },
+    "soak": {
+      "cases": [
+        {
+          "batches": 20,
+          "elapsedSeconds": 600.138017985,
+          "finishedTasks": [
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789227837-a65a61af631d-soak-batch-0-0-7f369b60-2f33-4a9a-8825-40f5689ac44b",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789227837-a65a61af631d-soak-batch-0-1-905b5231-3560-4e90-b7a2-88c33873a03a",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789227837-a65a61af631d-soak-batch-1-0-83d109d1-46b5-41ef-a5c6-ad8eb8028cfc",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789227837-a65a61af631d-soak-batch-1-1-05e24098-36ba-4c6f-8221-28673669cb7d",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789227837-a65a61af631d-soak-batch-2-0-6051ecfb-5cb2-4039-96ff-86aa41d40b1f",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789227837-a65a61af631d-soak-batch-2-1-eade5af0-2eda-4665-9cee-1bbc09fcf1d0",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789227837-a65a61af631d-soak-batch-3-0-7368ab73-916c-4d5f-b027-b3b6a2a9ee5f",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789227837-a65a61af631d-soak-batch-3-1-fe095141-fc10-4e3b-b641-072879d0aa6b",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789227837-a65a61af631d-soak-batch-4-0-3d54916c-383a-4e9b-9502-58487dd2dca4",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789227837-a65a61af631d-soak-batch-4-1-6b5d97d1-fff7-4fcf-8940-43d4826da2da",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789227837-a65a61af631d-soak-batch-5-0-d2071061-4ee8-4426-bd86-aab403d19561",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789227837-a65a61af631d-soak-batch-5-1-74997182-855a-42d7-b463-d50f8d356049",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789227837-a65a61af631d-soak-batch-6-0-c533ba82-17b7-4c83-a43b-4e1c690c3d7d",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789227837-a65a61af631d-soak-batch-6-1-32deb5ae-4fd4-441c-919a-3ae9bf51310a",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789227837-a65a61af631d-soak-batch-7-0-2260cc4a-5fb4-46d7-a51f-88ee5857fec0",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789227837-a65a61af631d-soak-batch-7-1-cf18487a-12a4-40f6-8eab-609d238abde3",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789227837-a65a61af631d-soak-batch-8-0-f2fc31c7-2e7d-46d1-b5ef-36b1abbfc6ad",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789227837-a65a61af631d-soak-batch-8-1-fea932ac-a9bc-400f-aa61-19a5836895f1",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789227837-a65a61af631d-soak-batch-9-0-f00a94b8-0703-4252-8f42-58fa048264ab",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789227837-a65a61af631d-soak-batch-9-1-d10af7d5-9568-4437-9955-fa298480622e",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789227837-a65a61af631d-soak-batch-10-0-27275b1e-04fa-4cb2-9a59-23be18d1e48f",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789227837-a65a61af631d-soak-batch-10-1-e0b96188-ea96-4951-bc9d-1d763c55716a",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789227837-a65a61af631d-soak-batch-11-0-baf2c3cc-79fe-48a3-bc37-c7d1ffe73849",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789227837-a65a61af631d-soak-batch-11-1-83af55b9-27b9-43ab-8a51-ad82bedcfb47",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789227837-a65a61af631d-soak-batch-12-0-a63302d6-f129-4e2f-a795-86bcf10805df",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789227837-a65a61af631d-soak-batch-12-1-066aeccc-2686-4be1-ab5f-502e0304a53f",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789227837-a65a61af631d-soak-batch-13-0-a95cbdb1-cca2-4d9f-b140-9c3736740c10",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789227837-a65a61af631d-soak-batch-13-1-9d97e1e7-988c-4c9b-87b9-4f83c201bb3a",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789227837-a65a61af631d-soak-batch-14-0-8dcadf0a-fa69-4e20-8188-ae3cc566f0e7",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789227837-a65a61af631d-soak-batch-14-1-1da134bf-4671-483b-883a-38e120933578",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789227837-a65a61af631d-soak-batch-15-0-e0ef4c35-9419-4fb2-8b83-3765c10df75e",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789227837-a65a61af631d-soak-batch-15-1-3439a0a7-a010-42a3-8720-af9506a3cdc2",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789227837-a65a61af631d-soak-batch-16-0-ad6fdfd7-d06b-4623-9c7c-fc5c201fa87a",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789227837-a65a61af631d-soak-batch-16-1-b66432c4-aec9-4a04-ac14-fd49804ce398",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789227837-a65a61af631d-soak-batch-17-0-3265542c-436b-400f-b0f2-7484518204c2",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789227837-a65a61af631d-soak-batch-17-1-d3577071-10d2-4b1d-ba40-0c9dc3bcb7e1",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789227837-a65a61af631d-soak-batch-18-0-7d4a0fe9-cf93-4c79-965b-fb30890808e6",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789227837-a65a61af631d-soak-batch-18-1-0a15a9d2-3b09-41f6-b820-314254f120a2",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789227837-a65a61af631d-soak-batch-19-0-f6294d6b-ea69-49a4-8dae-b4889b0c1c78",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789227837-a65a61af631d-soak-batch-19-1-d4bf938f-15ea-4da0-a182-557f307b9d7b",
+              "status": 3
+            }
+          ],
+          "name": "mixed-soak",
+          "physical": {
+            "agent-a": [
+              "1821302             /bin/sleep 3601"
+            ],
+            "agent-b": [
+              "1821301             /bin/sleep 3601"
+            ]
+          },
+          "samples": 136,
+          "serviceTasks": [
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789227837-a65a61af631d-soak-service-0-52a97f0a-19ce-4927-8654-5781228c4f96",
+              "status": 2
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789227837-a65a61af631d-soak-service-1-44d491f2-de6b-48e7-be50-182c9a28fe71",
+              "status": 2
+            }
+          ]
+        }
+      ],
+      "ok": true,
+      "path": ".pi-lab/inplace08-qualified/check-soak-1789227837231069391.json",
+      "prefix": "check-1789227837-a65a61af631d",
+      "recoveryRounds": null,
+      "sha256": "19074fbcb3093c7a04f87293951f42053536aca68bd66cf80c27821ec70c7430"
+    }
+  },
+  "baseline": "5b2ba9d95b1e8200e91714071a4cb0953d317d8a",
+  "checks": {
+    ".cache/inplace08-final-behavior.log": {
+      "path": ".cache/inplace08-final-behavior.log",
+      "sha256": "ccc2eb4f581e7156de5f64c36bdc42f507ea2e3a77c635861f283f5c0645243c"
+    },
+    ".cache/inplace08-full-07.log": {
+      "path": ".cache/inplace08-full-07.log",
+      "sha256": "eeb4d0c97545794af57854a58fef386f2d74ba0cec379e9dae4498e6442c585f"
+    },
+    ".cache/inplace08-go-build-04.log": {
+      "path": ".cache/inplace08-go-build-04.log",
+      "sha256": "9d0caae7ba813d91246ab3f2abbbc62971cd0bdb580a466499a76849ec439683"
+    },
+    ".cache/inplace08-maintenance-final.log": {
+      "path": ".cache/inplace08-maintenance-final.log",
+      "sha256": "dde086120a1f2680471bf7ad2b79cf0c40d3723e88591b3be2149a1ac3847d4d"
+    },
+    ".cache/inplace08-signal-fix-focused.log": {
+      "path": ".cache/inplace08-signal-fix-focused.log",
+      "sha256": "677380952ac8249dd7f23b51335fafa18e818fd81ef0e06cc9c3eb6e0111ca4e"
+    },
+    ".cache/inplace08-supervisor-retry-full.log": {
+      "path": ".cache/inplace08-supervisor-retry-full.log",
+      "sha256": "425c84c65de0f22f432b4da7793239274e5b29960c5b0794f42996efaa60212d"
+    },
+    ".cache/inplace08-tools-final-03.log": {
+      "path": ".cache/inplace08-tools-final-03.log",
+      "sha256": "f612caae892c1ab4b0dc1a0ede17971c04e3d7e6edd66cf1e26da1a5c92926dd"
+    }
+  },
+  "ci": {
+    "conclusion": "success",
+    "headSha": "b5405842b94cc89219f5ebc548af8fd619711059",
+    "id": 34702901597,
+    "jobs": {
+      "path": ".cache/inplace08-ci-final-jobs.json",
+      "sha256": "aa73475482c17c045799f6fb27e700794fbb3131ea7741d5c2fa68e58c37b97f"
+    },
+    "run": {
+      "path": ".cache/inplace08-ci-final-run.json",
+      "sha256": "b0f9c98460b8ae52217dd13ac9120edd947d10d50dc6739986993af378e3c740"
+    },
+    "url": "https://github.com/jordanly/aurora/actions/runs/34702901597"
+  },
+  "client": {
+    "binarySha256": "a6d9678821fafc817a8405815583f6addba314928aad4d43d5c70c9b7e4343b3",
+    "checks": [
+      "two 600m services running",
+      "600m services on distinct hosts",
+      "changed rolling update ROLLED_FORWARD",
+      "updated services running",
+      "restart replaces instance zero",
+      "one service remains before add",
+      "add restores two service instances",
+      "no active tasks fixtures/test/cli-1b0ef0477d8f-service",
+      "two batch tasks FINISHED",
+      "manual cron FINISHED",
+      "empty hosts DRAINED",
+      "maintenance completed on empty hosts"
+    ],
+    "cleanupErrors": [],
+    "commands": 61,
+    "finished": "2026-09-12T15:54:41.524292252Z",
+    "path": ".cache/inplace08-cli-acceptance/report.json",
+    "provenance": {
+      "binarySha256": "a6d9678821fafc817a8405815583f6addba314928aad4d43d5c70c9b7e4343b3",
+      "build": [
+        "CGO_ENABLED=0",
+        "GOOS=linux",
+        "GOARCH=arm64",
+        "GOTOOLCHAIN=local",
+        "-trimpath",
+        "-buildvcs=false",
+        "-ldflags=-s -w"
+      ],
+      "goArchiveSha256": "3450b45a3f9ee8568792736a5c5e70a1f2e9b36c35a8f74958c03e51d7d92bec",
+      "goVersion": "go version go1.27.1 linux/arm64",
+      "package": "./cmd/aurora",
+      "schema": 1,
+      "sourceSha256": "8cc8e889bfba71b0b0eadce008acced2fc5f7503121a968459c8ad707f039957"
+    },
+    "sha256": "4fe11a47b08e08bd9ba84760aba0dd6ade5310b87a3ede8d870ec07faf2854ac",
+    "started": "2026-09-12T15:54:20.130096007Z"
+  },
+  "coverage": {
+    "BRANCH": {
+      "covered": 2710,
+      "fraction": 0.8077496274217586,
+      "missed": 645
+    },
+    "CLASS": {
+      "covered": 587,
+      "fraction": 0.9467741935483871,
+      "missed": 33
+    },
+    "COMPLEXITY": {
+      "covered": 3899,
+      "fraction": 0.8182581322140609,
+      "missed": 866
+    },
+    "INSTRUCTION": {
+      "covered": 52102,
+      "fraction": 0.9139258713536459,
+      "missed": 4907
+    },
+    "LINE": {
+      "covered": 11593,
+      "fraction": 0.9091835934436515,
+      "missed": 1158
+    },
+    "METHOD": {
+      "covered": 2764,
+      "fraction": 0.9080157687253614,
+      "missed": 280
+    }
+  },
+  "coverageThresholds": {
+    "BRANCH": 0.79,
+    "INSTRUCTION": 0.87
+  },
+  "created": "2026-09-12T16:04:11.928183+00:00",
+  "databaseCheck": {
+    "path": ".cache/inplace08-qualified-db.json",
+    "report": {
+      "access": "mode=ro",
+      "capturedAt": "2026-09-12T15:57:06.100731+00:00",
+      "database": ".pi-lab/inplace08-qualified/scheduler/state/adapter.db",
+      "integrity": [
+        [
+          "ok"
+        ]
+      ],
+      "pendingCommands": 0
+    },
+    "sha256": "f7610ca25ea82e31e9a0777278e9ee4d03138734c7a27bf9404fb6dd548c252e"
+  },
+  "diagnosedFailures": {
+    "signalExit": {
+      "capturedAt": "2026-09-12T15:18:43.790307+00:00",
+      "interpretation": "The fixed transport accepted the delayed stopped/cleanup-complete observation and retained its receipt. Original terminal task history remains LOST. Recovery restored update progress without relabeling the timed-out task. Current journal/pending counts were captured after subsequent fresh phases, not at the refresh instant. Cursor24 is confirmed present; the exact earlier instantaneous max24/pending0 is not independently reconstructed.",
+      "journalEvidence": {
+        "access": "SQLite mode=ro",
+        "agentBCommittedCursor": 117,
+        "agentBCursor24Present": true,
+        "capturedAt": "2026-09-12T15:18:43.790307+00:00",
+        "database": ".pi-lab/inplace08-push/scheduler/state/adapter.db",
+        "delayedAttempt": "a-1f7d8ec522883f34798521af1f858bda188e1985afd601b8620859f609c4be",
+        "delayedObservation": {
+          "cleanup": "complete",
+          "cursor": "19",
+          "ready": false,
+          "sequence": "7",
+          "state": "stopped"
+        },
+        "pendingCommands": 0
+      },
+      "logOrigin": {
+        "container": "f6182f775ce57afe7178258043979555921a23bd3995127e4e57557af6a770a2",
+        "selection": "Only target task transitions/timeout and target update ROLLED_FORWARD; no executor argv/env",
+        "since": "2026-09-12T14:44:00Z",
+        "until": "2026-09-12T15:07:05Z"
+      },
+      "normalStopLatencyQualifiedByThisReceipt": false,
+      "savedRecoveredTaskStatus": 7,
+      "savedRecoveredTaskStatusName": "LOST",
+      "savedRecoveredUpdateStatus": 4,
+      "savedRecoveredUpdateStatusName": "ROLLED_FORWARD",
+      "schema": 1,
+      "scope": "Recovery of the original failed smoke fixture; not a fresh smoke qualification",
+      "sources": [
+        {
+          "path": ".cache/inplace08-signal-recovery-events.log",
+          "sha256": "f5ab4ca4496ab95f5419d5a66d7af04bf38173f1624f587da3a2df8eac462686"
+        },
+        {
+          "path": ".cache/inplace08-signal-recovery-sqlite.json",
+          "sha256": "530b66f276c11485a9de31a980be440f9451680972ef1f325217ee13706f3a77"
+        },
+        {
+          "path": ".cache/inplace08-recovered-tasks.json",
+          "sha256": "0707836b25193d3539d2176665572d5ce7400cd214557efcc9c91413e86c6be7"
+        },
+        {
+          "path": ".cache/inplace08-recovered-update.json",
+          "sha256": "23755ac12e7968880f5af1faae20a38731d3306e0ed4f4d51b15e69fd3e5bd91"
+        },
+        {
+          "path": ".cache/inplace08-recovered-cleanup.json",
+          "sha256": "c6cc8174001768e7e3acac567db528b4bc60bc6fffed33da4b6f90e98656fdaf"
+        },
+        {
+          "path": ".cache/inplace08-signal-fix-refresh.log",
+          "sha256": "632d58836e033fc638bb470545dc14e59ed775037558f43a2e62e7de7a29e2bc"
+        }
+      ],
+      "taskId": "fixtures-test-check-1789224240-4174810819da-service-0-125500c2-bfd8-4cdd-8c44-6702e0bef329",
+      "timeline": [
+        {
+          "at": "2026-09-12T14:44:04.961Z",
+          "event": "RUNNING -> KILLING"
+        },
+        {
+          "at": "2026-09-12T14:49:05.008Z",
+          "event": "KILLING -> LOST before signal fix"
+        },
+        {
+          "at": "2026-09-12T14:49:05.048Z",
+          "event": "TaskTimeout confirms timeout"
+        },
+        {
+          "at": "2026-09-12T15:06:44.734Z",
+          "event": "Delayed stopped observation attempts LOST -> KILLED; original terminal transition policy rejects change"
+        },
+        {
+          "at": "2026-09-12T15:07:04.248Z",
+          "event": "Update ROLLED_FORWARD"
+        }
+      ],
+      "updateId": "2606f179-99c4-44a4-98ae-fe4dbe965309"
+    },
+    "supervisorTimeout": {
+      "acceptanceCleanupStartedAt": "2026-09-12T15:17:50.367Z",
+      "agent": "agent-b",
+      "agentError": "read unix @->/proc/self/fd/10/control.sock: i/o timeout",
+      "attemptKey": "d437be9e8bcc8ee69f90d3de65afd588b45cef1cc1c51700e284b0656cd5e6bd",
+      "containerId": "a210da33186d396dacae0e69ee0441af815cae90e6db7d684ac2677a83bcf32c",
+      "durableAttempt": {
+        "cleanup": "complete",
+        "exitCode": -1,
+        "outcome": "stopped",
+        "phase": "terminal",
+        "sequence": 6,
+        "signal": 15,
+        "stopped": true,
+        "workloadPid": 226,
+        "workloadStart": "73614575"
+      },
+      "instance": 1,
+      "job": "fixtures/test/check-1789226221-c5b88c29b3ef-soak-service",
+      "labRoot": ".pi-lab/inplace08-push",
+      "phase": "soak",
+      "rootCause": "A supervisor IPC read timeout propagated through Runtime.Tick into ServeHTTPS fatal exit. Its unconditional deferred Runtime.Shutdown persisted local Stop intent for all incomplete attempts, despite no scheduler Stop command.",
+      "runningAt": "2026-09-12T15:17:02.777Z",
+      "schedulerCommandAudit": {
+        "priorReceiptCursor": 97,
+        "runCommand": "r-0e81d6e8bda5264000d7b3d5ac6eb80155e7c4ea3b30302efda724d585afc9",
+        "runDisposition": "ACKed",
+        "runSequence": 43,
+        "source": "Independent read-only SQLite audit by push_scheduler, reported in collaboration thread",
+        "stopCommandCount": 0,
+        "terminalReceiptCursor": 110
+      },
+      "schema": 1,
+      "scope": "Sanitized evidence only: no private keys, supervisor tokens, or live state changes. Docker logs/processes and copied bbolt state were inspected read-only. This failed soak is not qualification evidence.",
+      "sources": [
+        {
+          "kind": "read-only diagnostic copy; embedded state checksum verified",
+          "path": "/tmp/aurora-soak-agent-b.db",
+          "sha256": "efa8f8f7ae08388ff716c061df4bc7f7a672adae8cf46ec3c9659200eadb138d"
+        },
+        {
+          "path": ".cache/inplace08-soak-agent-b-keeper.jsonl",
+          "sha256": "2874236a276578ef95b9f4fb5c2bf59746894e84862de6abe62dc2d3d63a2a01"
+        },
+        {
+          "path": ".pi-lab/inplace08-push/check-soak-1789226221201340237.json",
+          "sha256": "fda929efc7a1c7ab231ae28043f33862112b0ef2ac055633b659d04f2438983a"
+        }
+      ],
+      "taskIdSuffix": "b9a67dbd-7a74-47ca-912e-511bbba0246e",
+      "terminalObservationCommittedAt": "2026-09-12T15:17:49.899Z",
+      "unexpectedDaemonRestart": {
+        "keeperActionRecorded": false,
+        "newGeneration": 3,
+        "newPid": 259,
+        "priorGeneration": 2,
+        "priorPid": 148,
+        "startedAt": "2026-09-12T15:17:49.134344025Z"
+      }
+    }
+  },
+  "distribution": {
+    "path": ".cache/inplace-build/build/scheduler/distribution-verification.json",
+    "report": {
+      "artifacts": {
+        "activation-1.1.1.jar": {
+          "sha256": "ae475120e9fcd99b4b00b38329bd61cdc5eb754eee03fe66c01f50e137724f99",
+          "size": 69409
+        },
+        "antlr-2.7.7.jar": {
+          "sha256": "88fbda4b912596b9f56e8e12e580cc954bacfb51776ecfddd3e18fc1cf56dc4c",
+          "size": 445288
+        },
+        "aopalliance-1.0.jar": {
+          "sha256": "0addec670fedcd3f113c5c8091d783280d23f75e3acb841b61a9cdb079376a08",
+          "size": 4467
+        },
+        "asm-9.8.jar": {
+          "sha256": "876eab6a83daecad5ca67eb9fcabb063c97b5aeb8cf1fca7a989ecde17522051",
+          "size": 126113
+        },
+        "async-http-client-2.0.37.jar": {
+          "sha256": "cb1c6583c18b7e180e59584c8ef1d5c8064939af861a4c898661ba6e3014df3f",
+          "size": 433590
+        },
+        "async-http-client-netty-utils-2.0.37.jar": {
+          "sha256": "6c9e79cf4f3eac56fa01ca4a31d18b2a95c5636142760a517e74bff4fe58925d",
+          "size": 7287
+        },
+        "aurora-0.23.0-SNAPSHOT.jar": {
+          "auroraClassCount": 761,
+          "bytecodeMajor": 69,
+          "requiredEntries": [
+            "org/apache/aurora/scheduler/storage/durability/RecoveryTool.class",
+            "scheduler/assets/scheduler/index.html",
+            "scheduler/assets/js/bundle.js",
+            "scheduler/assets/js/bundle.js.map",
+            "scheduler/assets/js/thrift.js",
+            "scheduler/assets/bower_components/jquery/dist/jquery.min.js"
+          ],
+          "sha256": "ee04e349eb59b28714cbc69e920299badb76a611cd5d49c120ce61b1efaee7be",
+          "size": 3612485
+        },
+        "aurora-api-0.23.0-SNAPSHOT.jar": {
+          "auroraClassCount": 1547,
+          "bytecodeMajor": 69,
+          "requiredEntries": [
+            "org/apache/aurora/gen/AuroraAdmin.class",
+            "org/apache/aurora/scheduler/storage/entities/IScheduledTask.class",
+            "org/apache/aurora/scheduler/gen/client/ReadOnlyScheduler.js",
+            "org/apache/aurora/scheduler/gen/client/AuroraAdmin.js",
+            "org/apache/aurora/scheduler/gen/client/api_types.js",
+            "org/apache/aurora/scheduler/gen/client/api.html"
+          ],
+          "sha256": "daea331459e39255df142a92fc73e148fd9291fc67976c223d4d9289e72ab4a1",
+          "size": 2989975
+        },
+        "byte-buddy-1.17.5.jar": {
+          "sha256": "71568c9f8396677219f650268fbf6493ded484edcdbdf2dae6129ca5be81e8db",
+          "size": 8953594
+        },
+        "c3p0-0.9.1.1.jar": {
+          "sha256": "a3c772033d43c85f2635596e2421496d55840abbde64ad64b8d0298cacbba466",
+          "size": 608376
+        },
+        "checker-qual-3.12.0.jar": {
+          "sha256": "ff10785ac2a357ec5de9c293cb982a2cbb605c0309ea4cc1cb9b9bc6dbe7f3cb",
+          "size": 208835
+        },
+        "commons-0.23.0-SNAPSHOT.jar": {
+          "auroraClassCount": 150,
+          "bytecodeMajor": 69,
+          "sha256": "9221503c961065a94f718b494ac301927ecbf0d9875728763111dc69611fa807",
+          "size": 160237
+        },
+        "commons-beanutils-1.9.3.jar": {
+          "sha256": "c058e39c7c64203d3a448f3adb588cb03d6378ed808485618f26e137f29dae73",
+          "size": 246174
+        },
+        "commons-codec-1.9.jar": {
+          "sha256": "ad19d2601c3abf0b946b5c3a4113e226a8c1e3305e395b90013b78dd94a723ce",
+          "size": 263965
+        },
+        "commons-collections-3.2.2.jar": {
+          "sha256": "eeeae917917144a68a741d4c0dff66aa5c5c5fd85593ff217bced3fc8ca783b8",
+          "size": 588337
+        },
+        "commons-io-2.5.jar": {
+          "sha256": "a10418348d234968600ccb1d988efcbbd08716e1d96936ccc1880e7d22513474",
+          "size": 208700
+        },
+        "commons-lang-2.6.jar": {
+          "sha256": "50f11b09f877c294d56f24463f47d28f929cf5044f648661c0f0cfbae9a2f49c",
+          "size": 284220
+        },
+        "commons-logging-1.2.jar": {
+          "sha256": "daddea1ea0be0f56978ab3006b8ac92834afeefbd9b7e4e6316fca57df0fa636",
+          "size": 61829
+        },
+        "curator-client-2.12.0.jar": {
+          "sha256": "683c5410fba7fe622f2aec6cfaff335838204d5bcd569157a548e3c1506c16aa",
+          "size": 2423138
+        },
+        "curator-framework-2.12.0.jar": {
+          "sha256": "8c5e2ccdd94088f7db3669b8183345d88c6d3dca931542a39fe15304a3c1b278",
+          "size": 201953
+        },
+        "curator-recipes-2.12.0.jar": {
+          "sha256": "4166d93e88c3a7bbc890e21cb927108d6efc9435c57fb5ceac9665e17fbccec2",
+          "size": 283598
+        },
+        "easymock-5.6.0.jar": {
+          "sha256": "63efc00da99774fb0253330ef9b5788b261022ba73f36bf76889ce7edf3d2b31",
+          "size": 148389
+        },
+        "error_prone_annotations-2.18.0.jar": {
+          "sha256": "9e6814cb71816988a4fd1b07a993a8f21bb7058d522c162b1de849e19bea54ae",
+          "size": 16017
+        },
+        "failureaccess-1.0.1.jar": {
+          "sha256": "a171ee4c734dd2da837e4b16be9df4661afab72a41adaf31eb84dfdaf936ca26",
+          "size": 4617
+        },
+        "gson-2.3.1.jar": {
+          "sha256": "13f44a2f6ead058da80a91ee650c073871942468e684a9bf6a0d0319138924ce",
+          "size": 210856
+        },
+        "guava-31.0.1-jre.jar": {
+          "sha256": "d5be94d65e87bd219fb3193ad1517baa55a3b88fc91d21cf735826ab5af087b9",
+          "size": 2974216
+        },
+        "guice-6.0.0.jar": {
+          "sha256": "b4d4f7ec5e8fc17b4f98dee9d3f6cf6ae3ae13e2e5ed4b2f7bbf09bc4bb675d5",
+          "size": 805724
+        },
+        "guice-assistedinject-6.0.0.jar": {
+          "sha256": "f4d264534f213af7beb493273f72f02ef9eb4b229d71a0a80f003b7349dee6f9",
+          "size": 51293
+        },
+        "guice-servlet-6.0.0.jar": {
+          "sha256": "0450043d0770b816957856ff9d08209c31f801a31e820e53e45ac29468514002",
+          "size": 82123
+        },
+        "hamcrest-core-1.3.jar": {
+          "sha256": "66fdef91e9739348df7a096aa384a5685f4e875584cce89386a7a47251c4d8e9",
+          "size": 45024
+        },
+        "httpclient-4.5.2.jar": {
+          "sha256": "0dffc621400d6c632f55787d996b8aeca36b30746a716e079a985f24d8074057",
+          "size": 736658
+        },
+        "httpcore-4.4.4.jar": {
+          "sha256": "f7bc09dc8a7003822d109634ffd3845d579d12e725ae54673e323a7ce7f5e325",
+          "size": 326724
+        },
+        "j2objc-annotations-1.3.jar": {
+          "sha256": "21af30c92267bd6122c0e0b4d20cccb6641a37eaf956c6540ec471d584e64a7b",
+          "size": 8781
+        },
+        "jackson-annotations-2.5.1.jar": {
+          "sha256": "836a18d49b1cc515dde8b14cb7ea2b3ac3fd26b1c914b5a399bca0ecc9fbf4bc",
+          "size": 39817
+        },
+        "jackson-core-2.5.1.jar": {
+          "sha256": "ba80bd8304bc268a573ac424b692f465a7c087db2207daa50979d7ab2751baf6",
+          "size": 229860
+        },
+        "jackson-core-asl-1.9.13.jar": {
+          "sha256": "440a9cb5ca95b215f953d3a20a6b1a10da1f09b529a9ddea5f8a4905ddab4f5a",
+          "size": 232248
+        },
+        "jackson-databind-2.5.1.jar": {
+          "sha256": "0d817bad8b533a61fe0e50b53303d89a1f71b2f92b237d9fe2e314bc4a9b0f90",
+          "size": 1138921
+        },
+        "jackson-jaxrs-1.9.13.jar": {
+          "sha256": "1770570a6ba5c87a4795c0aeb40ee7c5fe5e31df64ef1d4795a0d427796b84bb",
+          "size": 18336
+        },
+        "jackson-mapper-asl-1.9.13.jar": {
+          "sha256": "74e7a07a76f2edbade29312a5a2ebccfa019128bc021ece3856d76197e9be0c2",
+          "size": 780664
+        },
+        "jackson-xc-1.9.13.jar": {
+          "sha256": "2d2905fcec7d1c55b775995617685dbb03672350704d9e40b492eab5b54d0be7",
+          "size": 27084
+        },
+        "jakarta.inject-api-2.0.1.jar": {
+          "sha256": "f7dc98062fccf14126abb751b64fab12c312566e8cbdc8483598bffcea93af7c",
+          "size": 10681
+        },
+        "javax.activation-api-1.2.0.jar": {
+          "sha256": "43fdef0b5b6ceb31b0424b208b930c74ab58fac2ceeb7b3f6fd3aeb8b5ca4393",
+          "size": 56674
+        },
+        "javax.annotation-api-1.3.2.jar": {
+          "sha256": "e04ba5195bcd555dc95650f7cc614d151e4bcd52d29a10b8aa2197f3ab89ab9b",
+          "size": 26586
+        },
+        "javax.inject-1.jar": {
+          "sha256": "91c77044a50c481636c32d916fd89c9118a72195390452c81065080f957de7ff",
+          "size": 2497
+        },
+        "javax.servlet-api-3.1.0.jar": {
+          "sha256": "af456b2dd41c4e82cf54f3e743bc678973d9fe35bd4d3071fa05c7e5333b8482",
+          "size": 95806
+        },
+        "javax.ws.rs-api-2.0.jar": {
+          "sha256": "ca88fcb9ce85aac4f77e42eac486aa7fde6ead6a545d74ccef6089241c84db53",
+          "size": 112758
+        },
+        "jaxb-api-2.3.1.jar": {
+          "sha256": "88b955a0df57880a26a74708bc34f74dcaf8ebf4e78843a28b50eae945732b06",
+          "size": 128076
+        },
+        "jboss-annotations-api_1.2_spec-1.0.0.Final.jar": {
+          "sha256": "bb979cac95ef2748bc85d4b8151bef88b9a203d03068fbe799c6e6162c950780",
+          "size": 19197
+        },
+        "jboss-jaxrs-api_2.0_spec-1.0.1.Beta1.jar": {
+          "sha256": "1218fa20acae20a0cfb618b452e01c9bf2bfa9cb12fadb308a7a3adbdc45d2b5",
+          "size": 120531
+        },
+        "jboss-logging-3.3.0.Final.jar": {
+          "sha256": "e0e0595e7f70c464609095aef9e47a8484e05f2f621c0aa5081c18e3db2d498c",
+          "size": 66802
+        },
+        "jcip-annotations-1.0.jar": {
+          "sha256": "be5805392060c71474bf6c9a67a099471274d30b83eef84bfc4e0889a4f1dcc0",
+          "size": 2254
+        },
+        "jcommander-1.72.jar": {
+          "sha256": "e0de160b129b2414087e01fe845609cd55caec6820cfd4d0c90fabcc7bdb8c1e",
+          "size": 69254
+        },
+        "jetty-client-9.3.11.v20160721.jar": {
+          "sha256": "6ead2ce0e191e105b036db9a44abc99edc78c165077a21bbab73a150cd1d9424",
+          "size": 260660
+        },
+        "jetty-continuation-9.3.11.v20160721.jar": {
+          "sha256": "fe3297049fc1bed6800cf50793645ef035be157b7207655e70131a2dcaf5fa1b",
+          "size": 15769
+        },
+        "jetty-http-9.3.11.v20160721.jar": {
+          "sha256": "067808638b6129cfbd7445d100344eb05d4f375be8bfa547bd4e35cce316fe77",
+          "size": 148566
+        },
+        "jetty-io-9.3.11.v20160721.jar": {
+          "sha256": "33c7429413ea999fcd8fdf8f4590eaf2437e3189a8799478001928b8848491f9",
+          "size": 112071
+        },
+        "jetty-rewrite-9.3.11.v20160721.jar": {
+          "sha256": "4219807d37b2268df09eff6b7eb7ba5ca1a5b14df150526764300fe0a407fe4f",
+          "size": 34019
+        },
+        "jetty-security-9.3.11.v20160721.jar": {
+          "sha256": "6ad79d7edc8205ab0a8e95fcb205b60d8ac0d818c6e6afa05ba1b1bbb22299c9",
+          "size": 94503
+        },
+        "jetty-server-9.3.11.v20160721.jar": {
+          "sha256": "dc8f2e0e1f167aa6aa9b077c26f6147f0c634a8cc87a3144dd3f62bac82d1ab7",
+          "size": 494012
+        },
+        "jetty-servlet-9.3.11.v20160721.jar": {
+          "sha256": "03409dcf7b0d85d29f7d7603e5fe8900462df80496b9f6cd11bf1da6d52e9997",
+          "size": 116571
+        },
+        "jetty-servlets-9.3.11.v20160721.jar": {
+          "sha256": "8d9df4d916d9a602b20c6182d056ae934a636877b7560598f7124d3dd754c2da",
+          "size": 86413
+        },
+        "jetty-util-9.3.11.v20160721.jar": {
+          "sha256": "d5bda0c878cf2b36f74fa000535abdbcfec6a6704ae6791ed6b34a0be0d0c728",
+          "size": 431954
+        },
+        "jline-0.9.94.jar": {
+          "sha256": "d8df0ffb12d87ca876271cda4d59b3feb94123882c1be1763b7faf2e0a0b0cbb",
+          "size": 87325
+        },
+        "jsr305-3.0.2.jar": {
+          "sha256": "766ad2a0783f2687962c8ad74ceecc38a28b9f72a2d085ee438b7813e928d0c7",
+          "size": 19936
+        },
+        "junit-4.12.jar": {
+          "sha256": "59721f0805e223d84b90677887d9ff567dc534d7c502ca903c0c2b17f05c116a",
+          "size": 314932
+        },
+        "libthrift-0.10.0.jar": {
+          "sha256": "8591718c1884ac8001b4c5ca80f349c0a6deec691de0af720c5e3bc3a581dada",
+          "size": 236865
+        },
+        "listenablefuture-9999.0-empty-to-avoid-conflict-with-guava.jar": {
+          "sha256": "b372a037d4230aa57fbeffdef30fd6123f9c0c2db85d0aced00c91b974f33f99",
+          "size": 2199
+        },
+        "logback-classic-1.2.3.jar": {
+          "sha256": "fb53f8539e7fcb8f093a56e138112056ec1dc809ebb020b59d8a36a5ebac37e0",
+          "size": 290339
+        },
+        "logback-core-1.2.3.jar": {
+          "sha256": "5946d837fe6f960c02a53eda7a6926ecc3c758bbdd69aa453ee429f858217f22",
+          "size": 471901
+        },
+        "netty-3.7.0.Final.jar": {
+          "sha256": "aa44be64442b9cbc5edd521476b9f1c272eec6a53dca104cf3032f42ad20ff89",
+          "size": 1208356
+        },
+        "netty-buffer-4.0.52.Final.jar": {
+          "sha256": "ff765973f863cbfc7137ff2ca0d3765224b6d5370ed421a4f3c4c66b24626e11",
+          "size": 234592
+        },
+        "netty-codec-4.0.52.Final.jar": {
+          "sha256": "55825f3e34b20f9fb0e78dc2e2c9f7d00e13d14657418e88e5431562d0386dd2",
+          "size": 151008
+        },
+        "netty-codec-dns-2.0.37.jar": {
+          "sha256": "39c3b61c546444b33690500da1203ee60294ef9a7c5b5f567cfb2cc717ccd9be",
+          "size": 55155
+        },
+        "netty-codec-http-4.0.52.Final.jar": {
+          "sha256": "99e3a087d0347e30c30d5a8d829abba5f8fdc9e66c43a17a70e4d25a5cbf9526",
+          "size": 460925
+        },
+        "netty-common-4.0.52.Final.jar": {
+          "sha256": "5b154c5424807b62a51f3278530c5eaf2c6dfa9c1a4417c2fb8e4e7ceda0bfbc",
+          "size": 398158
+        },
+        "netty-handler-4.0.52.Final.jar": {
+          "sha256": "9695d34837da27d307e860b445b0c922c8eb5cf1837a0f7f0077cb050c830ab7",
+          "size": 358962
+        },
+        "netty-reactive-streams-1.0.8.jar": {
+          "sha256": "a368c024079971086d83c89ff7fbd6a028e6a8185faafd6ab8339e760f0f7aa2",
+          "size": 20938
+        },
+        "netty-resolver-2.0.37.jar": {
+          "sha256": "90c1271f0fc80ea785334c2d04598f305c9cd0871fd41e32bc9ca60c52043be7",
+          "size": 36585
+        },
+        "netty-resolver-dns-2.0.37.jar": {
+          "sha256": "e8320966446ada2ffaee05b38f138cba1ef9c22e33b944d3efb13a566dcd01b4",
+          "size": 89181
+        },
+        "netty-transport-4.0.52.Final.jar": {
+          "sha256": "7a3aed2ae297318eba6d713cc867313220fe1d41608ce6a9627871f58ed7a989",
+          "size": 387718
+        },
+        "netty-transport-native-epoll-4.0.52.Final-linux-x86_64.jar": {
+          "sha256": "0b9ea2848c2cec2c72453d425bb2f96dc744027aba2b8ecf64e343c21b6fbad1",
+          "size": 151894
+        },
+        "objenesis-3.4.jar": {
+          "sha256": "95488102feaf2e2858adf6b299353677dac6c15294006f8ed1c5556f8e3cd251",
+          "size": 49076
+        },
+        "quartz-2.2.2.jar": {
+          "sha256": "739b70bc472f91cbaa8e3e4ce5ec5c8354a43b0d4b16516319f3ffcd7b05920a",
+          "size": 660382
+        },
+        "reactive-streams-1.0.0.jar": {
+          "sha256": "ef867702a614b96eb6c64fb65a8f5e14bdfcabbc1ae056f78a1643f7b79ca0eb",
+          "size": 2042
+        },
+        "resteasy-client-3.1.4.Final.jar": {
+          "sha256": "51a608a464697a68ebcbdd382c2bf46428b5942de4ae1ebc3c9d2ae45b0d8bd7",
+          "size": 175335
+        },
+        "resteasy-guice-3.1.4.Final.jar": {
+          "sha256": "3efac44fa687778c526213fbd7f6afe1e4502a619060932af1b95cf7f2775d92",
+          "size": 20841
+        },
+        "resteasy-jackson-provider-3.1.4.Final.jar": {
+          "sha256": "e9649ce493378e741da9639a47be360547196a4ccdab34f3a67b7ef716148ba0",
+          "size": 7996
+        },
+        "resteasy-jaxrs-3.1.4.Final.jar": {
+          "sha256": "3da64ce6622d037dbb1cb4ae0098429f5b9930199794c42a9e49cd4b9f37e102",
+          "size": 698875
+        },
+        "resteasy-jaxrs-services-3.1.4.Final.jar": {
+          "sha256": "e8512a73bf5d5f911c1d38a8367ffb1b92d604aff3b67914c9c62c895797f461",
+          "size": 2564
+        },
+        "shiro-cache-1.4.0.jar": {
+          "sha256": "abab87532d6139cea5a48aee34a20daa15757917a65c7032976fdc014dd4c46a",
+          "size": 13601
+        },
+        "shiro-config-core-1.4.0.jar": {
+          "sha256": "77e2cf1d210f334cba0e8902d01fd2acbf61b599c39c6cf023241fc6784a82a0",
+          "size": 18037
+        },
+        "shiro-config-ogdl-1.4.0.jar": {
+          "sha256": "d21bf04b78c69748db2fcf0315df00347bda43b65ef0aa83a7e496070c8e34f9",
+          "size": 43303
+        },
+        "shiro-core-1.4.0.jar": {
+          "sha256": "1c1aa41af7a3314678154ff0456d7592bbd00f298ce3a94a417a1bd4bcfd1104",
+          "size": 410541
+        },
+        "shiro-crypto-cipher-1.4.0.jar": {
+          "sha256": "67f8bc6f9dfa11a9c4959284f2f591dbd238ca20e1fbd1964d0c2daa69cf9ec0",
+          "size": 24024
+        },
+        "shiro-crypto-core-1.4.0.jar": {
+          "sha256": "1cba00a55eb65858ba0fd76e515d2177e6b834f37277a76afecd1cad0957d36c",
+          "size": 10873
+        },
+        "shiro-crypto-hash-1.4.0.jar": {
+          "sha256": "3a40fb67aa4c118cb3e47ca339a3094707778f0ea0c9fedca2147c9bfdb8647f",
+          "size": 34298
+        },
+        "shiro-event-1.4.0.jar": {
+          "sha256": "eed623e101d2bc5b29be2c93679504d411eedb2261b95a478cd5140d82734e7c",
+          "size": 19210
+        },
+        "shiro-guice-1.4.0.jar": {
+          "sha256": "a742efd9355202c07987893a28a82b4c7f0044e3cb76634b30e36db1ba669392",
+          "size": 52382
+        },
+        "shiro-lang-1.4.0.jar": {
+          "sha256": "8d78850ff764f72803568bbe0789eee513e2dcee990f465adbfdf0916a10ea9d",
+          "size": 51122
+        },
+        "shiro-web-1.4.0.jar": {
+          "sha256": "92f3fbb4f3425d6aa7cdd5f5fc3160cfeb561ada968b360c86c6fd7afb168364",
+          "size": 150341
+        },
+        "slf4j-api-1.7.25.jar": {
+          "sha256": "18c4a0095d5c1da6b817592e767bb23d29dd2f560ad74df75ff3961dbde25b79",
+          "size": 41203
+        },
+        "sqlite-jdbc-3.53.4.0.jar": {
+          "sha256": "bcb1f51e36f940867e83342f9efbf5968ac44a6bef4d397bb4af7b17b45cd2fb",
+          "size": 12002370
+        },
+        "stringtemplate-3.2.1.jar": {
+          "sha256": "f66ce72e965e5301cb0f020e54d2ba6ad76feb91b3cbfc30dbbf00c06a6df6d7",
+          "size": 148627
+        },
+        "zookeeper-3.4.8.jar": {
+          "sha256": "d47d35b9a10af53b7967ff4851bff832778539eed1e43fae6bfcb1f13576bdf5",
+          "size": 804601
+        }
+      },
+      "checkedAt": "2026-09-12T15:34:26.515482301Z",
+      "distribution": "/home/jordanly/.codex/worktrees/da231709-add9-4468-b3a5-712561554031/aurora/.cache/inplace-build/build/scheduler/install/aurora-scheduler",
+      "java": {
+        "command": [
+          "/home/jordanly/.codex/worktrees/da231709-add9-4468-b3a5-712561554031/aurora/.cache/inplace-build/tools-344443515/java/jdk-25.0.4.1+1/bin/java",
+          "--version"
+        ],
+        "exitCode": 0,
+        "javaHome": "/home/jordanly/.codex/worktrees/da231709-add9-4468-b3a5-712561554031/aurora/.cache/inplace-build/tools-344443515/java/jdk-25.0.4.1+1",
+        "output": "openjdk 25.0.4.1 2026-08-18 LTS\nOpenJDK Runtime Environment Temurin-25.0.4.1+1 (build 25.0.4.1+1-LTS)\nOpenJDK 64-Bit Server VM Temurin-25.0.4.1+1 (build 25.0.4.1+1-LTS, mixed mode, sharing)\n",
+        "outputSha256": "2ea09eaf7b3c2db5256b076f18d3758d1f2a5746384c9f6b58a2c5d244864971"
+      },
+      "launchers": {
+        "aurora-scheduler": {
+          "classpathJars": [
+            "aurora-0.23.0-SNAPSHOT.jar",
+            "aurora-api-0.23.0-SNAPSHOT.jar",
+            "commons-0.23.0-SNAPSHOT.jar",
+            "guice-assistedinject-6.0.0.jar",
+            "guice-servlet-6.0.0.jar",
+            "resteasy-guice-3.1.4.Final.jar",
+            "shiro-guice-1.4.0.jar",
+            "guice-6.0.0.jar",
+            "aopalliance-1.0.jar",
+            "logback-classic-1.2.3.jar",
+            "jcommander-1.72.jar",
+            "jackson-databind-2.5.1.jar",
+            "jackson-core-2.5.1.jar",
+            "resteasy-jackson-provider-3.1.4.Final.jar",
+            "resteasy-client-3.1.4.Final.jar",
+            "resteasy-jaxrs-3.1.4.Final.jar",
+            "javax.inject-1.jar",
+            "jetty-rewrite-9.3.11.v20160721.jar",
+            "jetty-servlet-9.3.11.v20160721.jar",
+            "jetty-security-9.3.11.v20160721.jar",
+            "jetty-server-9.3.11.v20160721.jar",
+            "javax.servlet-api-3.1.0.jar",
+            "stringtemplate-3.2.1.jar",
+            "curator-recipes-2.12.0.jar",
+            "curator-framework-2.12.0.jar",
+            "curator-client-2.12.0.jar",
+            "async-http-client-2.0.37.jar",
+            "shiro-web-1.4.0.jar",
+            "zookeeper-3.4.8.jar",
+            "jetty-servlets-9.3.11.v20160721.jar",
+            "quartz-2.2.2.jar",
+            "jaxb-api-2.3.1.jar",
+            "sqlite-jdbc-3.53.4.0.jar",
+            "libthrift-0.10.0.jar",
+            "javax.annotation-api-1.3.2.jar",
+            "gson-2.3.1.jar",
+            "guava-31.0.1-jre.jar",
+            "commons-lang-2.6.jar",
+            "javax.ws.rs-api-2.0.jar",
+            "easymock-5.6.0.jar",
+            "junit-4.12.jar",
+            "logback-core-1.2.3.jar",
+            "async-http-client-netty-utils-2.0.37.jar",
+            "netty-resolver-dns-2.0.37.jar",
+            "netty-resolver-2.0.37.jar",
+            "netty-codec-dns-2.0.37.jar",
+            "shiro-core-1.4.0.jar",
+            "shiro-cache-1.4.0.jar",
+            "shiro-crypto-hash-1.4.0.jar",
+            "shiro-crypto-cipher-1.4.0.jar",
+            "shiro-config-ogdl-1.4.0.jar",
+            "shiro-config-core-1.4.0.jar",
+            "shiro-event-1.4.0.jar",
+            "shiro-crypto-core-1.4.0.jar",
+            "shiro-lang-1.4.0.jar",
+            "slf4j-api-1.7.25.jar",
+            "jakarta.inject-api-2.0.1.jar",
+            "error_prone_annotations-2.18.0.jar",
+            "jackson-annotations-2.5.1.jar",
+            "jboss-annotations-api_1.2_spec-1.0.0.Final.jar",
+            "jboss-logging-3.3.0.Final.jar",
+            "jackson-jaxrs-1.9.13.jar",
+            "jackson-xc-1.9.13.jar",
+            "jackson-mapper-asl-1.9.13.jar",
+            "jackson-core-asl-1.9.13.jar",
+            "jboss-jaxrs-api_2.0_spec-1.0.1.Beta1.jar",
+            "resteasy-jaxrs-services-3.1.4.Final.jar",
+            "activation-1.1.1.jar",
+            "httpclient-4.5.2.jar",
+            "commons-io-2.5.jar",
+            "jcip-annotations-1.0.jar",
+            "antlr-2.7.7.jar",
+            "netty-codec-http-4.0.52.Final.jar",
+            "netty-reactive-streams-1.0.8.jar",
+            "netty-handler-4.0.52.Final.jar",
+            "netty-transport-native-epoll-4.0.52.Final-linux-x86_64.jar",
+            "reactive-streams-1.0.0.jar",
+            "jline-0.9.94.jar",
+            "netty-3.7.0.Final.jar",
+            "jetty-client-9.3.11.v20160721.jar",
+            "jetty-http-9.3.11.v20160721.jar",
+            "jetty-io-9.3.11.v20160721.jar",
+            "jetty-continuation-9.3.11.v20160721.jar",
+            "jetty-util-9.3.11.v20160721.jar",
+            "c3p0-0.9.1.1.jar",
+            "javax.activation-api-1.2.0.jar",
+            "httpcore-4.4.4.jar",
+            "failureaccess-1.0.1.jar",
+            "listenablefuture-9999.0-empty-to-avoid-conflict-with-guava.jar",
+            "jsr305-3.0.2.jar",
+            "checker-qual-3.12.0.jar",
+            "j2objc-annotations-1.3.jar",
+            "byte-buddy-1.17.5.jar",
+            "asm-9.8.jar",
+            "objenesis-3.4.jar",
+            "hamcrest-core-1.3.jar",
+            "commons-logging-1.2.jar",
+            "commons-codec-1.9.jar",
+            "netty-codec-4.0.52.Final.jar",
+            "netty-transport-4.0.52.Final.jar",
+            "netty-buffer-4.0.52.Final.jar",
+            "netty-common-4.0.52.Final.jar",
+            "commons-beanutils-1.9.3.jar",
+            "commons-collections-3.2.2.jar"
+          ],
+          "command": [
+            "/home/jordanly/.codex/worktrees/da231709-add9-4468-b3a5-712561554031/aurora/.cache/inplace-build/build/scheduler/install/aurora-scheduler/bin/aurora-scheduler",
+            "-help"
+          ],
+          "exitCode": 1,
+          "expectedExitCode": 1,
+          "output": "11:34:32,533 |-INFO in ch.qos.logback.core.joran.action.AppenderAction - About to instantiate appender of type [ch.qos.logback.core.ConsoleAppender]\n11:34:32,644 |-INFO in ch.qos.logback.core.joran.action.AppenderAction - Naming appender as [STDERR]\n11:34:32,665 |-INFO in ch.qos.logback.core.joran.action.NestedComplexPropertyIA - Assuming default type [ch.qos.logback.classic.encoder.PatternLayoutEncoder] for [encoder] property\n11:34:32,706 |-INFO in ch.qos.logback.classic.joran.action.LoggerAction - Setting level of logger [h2database] to WARN\n11:34:32,708 |-INFO in ch.qos.logback.classic.joran.action.RootLoggerAction - Setting level of ROOT logger to INFO\n11:34:32,708 |-INFO in ch.qos.logback.core.joran.action.AppenderRefAction - Attaching appender named [STDERR] to Logger[ROOT]\n11:34:32,709 |-INFO in ch.qos.logback.classic.joran.action.ConfigurationAction - End of configuration.\n11:34:32,710 |-INFO in ch.qos.logback.classic.joran.JoranConfigurator@7d907bac - Registering current configuration as safe fallback point\nUsage: org.apache.aurora.scheduler.app.SchedulerMain [options]\n  Options:\n    -allow_container_volumes\n      Allow passing in volumes in the job. Enabling this could pose a \n      privilege escalation threat.\n      Default: false\n    -allow_docker_parameters\n      Allow to pass docker container parameters in the job.\n      Default: false\n    -allow_gpu_resource\n      Allow jobs to request GPU resources.\n      Default: false\n    -allowed_container_types\n      Container types that are allowed to be used by jobs.\n      Default: [MESOS]\n    -allowed_job_environments\n      Regular expression describing the environments that are allowed to be \n      used by jobs.\n      Default: ^(prod|devel|test|staging\\d*)$\n    -async_slot_stat_update_interval\n      Interval on which to try to update open slot stats.\n      Default: (1, mins)\n    -async_task_stat_update_interval\n      Interval on which to try to update resource consumption stats.\n      Default: (1, hrs)\n    -async_worker_threads\n      The number of worker threads to process async task operations with.\n      Default: 8\n    -backup_dir\n      Directory to store backups under. Will be created if it does not exist.\n    -backup_interval\n      Minimum interval on which to write a storage backup.\n      Default: (1, hrs)\n  * -cluster_name\n      Name to identify the cluster being served.\n    -cron_scheduler_num_threads\n      Number of threads to use for the cron scheduler thread pool.\n      Default: 10\n    -cron_scheduling_max_batch_size\n      The maximum number of triggered cron jobs that can be processed in a \n      batch. \n      Default: 10\n    -cron_start_initial_backoff\n      Initial backoff delay while waiting for a previous cron run to be \n      killed. \n      Default: (5, secs)\n    -cron_start_max_backoff\n      Max backoff delay while waiting for a previous cron run to be killed.\n      Default: (1, mins)\n    -cron_timezone\n      TimeZone to use for cron predictions.\n      Default: GMT\n    -default_docker_parameters\n      Default docker parameters for any job that does not explicitly declare \n      parameters. \n      Default: []\n    -dlog_max_entry_size\n      Specifies the maximum entry size to append to the log. Larger entries \n      will be split across entry Frames.\n      Default: (512, KB)\n    -dlog_snapshot_interval\n      Specifies the frequency at which snapshots of local storage are taken \n      and written to the log.\n      Default: (1, hrs)\n    -enable_cors_for\n      List of domains for which CORS support should be enabled.\n    -enable_mesos_fetcher\n      Allow jobs to pass URIs to the Mesos Fetcher. Note that enabling this \n      feature could pose a privilege escalation threat.\n      Default: false\n    -enable_preemptor\n      Enable the preemptor and preemption\n      Default: true\n    -enable_revocable_cpus\n      Treat CPUs as a revocable resource.\n      Default: true\n    -enable_revocable_ram\n      Treat RAM as a revocable resource.\n      Default: false\n    -enable_update_affinity\n      Enable best-effort affinity of task updates.\n      Default: false\n    -first_schedule_delay\n      Initial amount of time to wait before first attempting to schedule a \n      PENDING task.\n      Default: (1, ms)\n    -flapping_task_threshold\n      A task that repeatedly runs for less than this time is considered to be \n      flapping. \n      Default: (5, mins)\n  * -go_agent_config\n      Go process agent enrollment and SQLite configuration file.\n    -history_max_per_job_threshold\n      Maximum number of terminated tasks to retain in a job history.\n      Default: 100\n    -history_min_retention_threshold\n      Minimum guaranteed time for task history retention before any pruning is \n      attempted. \n      Default: (1, hrs)\n    -history_prune_threshold\n      Time after which the scheduler will prune terminated task history.\n      Default: (2, days)\n    -hold_offers_forever\n      Hold resource offers indefinitely, disabling automatic offer decline \n      settings. \n      Default: false\n    -host_maintenance_polling_interval\n      Interval between polling for pending host maintenance requests.\n      Default: (1, mins)\n    -hostname\n      The hostname to advertise in ZooKeeper instead of the locally-resolved \n      hostname. \n    -http_authentication_mechanism\n      HTTP Authentication mechanism to use.\n      Default: NONE\n      Possible Values: [NONE, BASIC, NEGOTIATE]\n    -http_port\n      The port to start an HTTP server on.  Default value will choose a random \n      port. \n      Default: 0\n    -initial_flapping_task_delay\n      Initial amount of time to wait before attempting to schedule a flapping \n      task. \n      Default: (30, secs)\n    -initial_schedule_penalty\n      Initial amount of time to wait before attempting to schedule a task that \n      has failed to schedule.\n      Default: (1, secs)\n    -initial_task_kill_retry_interval\n      When killing a task, retry after this delay if the agent has not \n      responded, backing off up to transient_task_state_timeout\n      Default: (15, secs)\n    -ip\n      The ip address to listen. If not set, the scheduler will listen on all \n      interfaces. \n    -job_update_history_per_job_threshold\n      Maximum number of completed job updates to retain in a job update \n      history. \n      Default: 10\n    -job_update_history_pruning_interval\n      Job update history pruning interval.\n      Default: (15, mins)\n    -job_update_history_pruning_threshold\n      Time after which the scheduler will prune completed job update history.\n      Default: (30, days)\n    -kerberos_debug\n      Produce additional Kerberos debugging output.\n      Default: false\n    -kerberos_server_keytab\n      Path to the server keytab.\n    -kerberos_server_principal\n      Kerberos server principal to use, usually of the form \n      HTTP/aurora.example.com@EXAMPLE.COM \n    -max_flapping_task_delay\n      Maximum delay between attempts to schedule a flapping task.\n      Default: (5, mins)\n    -max_leading_duration\n      After leading for this duration, the scheduler should commit suicide.\n      Default: (1, days)\n    -max_parallel_coordinated_maintenance\n      Maximum number of coordinators that can be contacted in parallel.\n      Default: 10\n    -max_registration_delay\n      Max allowable delay to allow the driver to register before aborting\n      Default: (1, mins)\n    -max_reschedule_task_delay_on_startup\n      Upper bound of random delay for pending task rescheduling on scheduler \n      startup. \n      Default: (30, secs)\n    -max_saved_backups\n      Maximum number of backups to retain before deleting the oldest backups.\n      Default: 48\n    -max_schedule_attempts_per_sec\n      Maximum number of scheduling attempts to make per second.\n      Default: 40.0\n    -max_schedule_penalty\n      Maximum delay between attempts to schedule a PENDING tasks.\n      Default: (1, mins)\n    -max_sla_duration_secs\n      Maximum duration window for which SLA requirements are to be \n      satisfied.This does not apply to jobs that have a CoordinatorSlaPolicy.\n      Default: (2, hrs)\n    -max_status_update_batch_size\n      The maximum number of status updates that can be processed in a batch.\n      Default: 1000\n    -max_task_event_batch_size\n      The maximum number of task state change events that can be processed in \n      a batch.\n      Default: 300\n    -max_tasks_per_job\n      Maximum number of allowed tasks in a single job.\n      Default: 4000\n    -max_tasks_per_schedule_attempt\n      The maximum number of tasks to pick in a single scheduling attempt.\n      Default: 5\n    -max_update_instance_failures\n      Upper limit on the number of failures allowed during a job update. This \n      helps cap potentially unbounded entries into storage.\n      Default: 20000\n    -min_offer_hold_time\n      Minimum amount of time to hold a resource offer before declining.\n      Default: (5, mins)\n    -min_required_instances_for_sla_check\n      Minimum number of instances required for a job to be eligible for SLA \n      check. This does not apply to jobs that have a CoordinatorSlaPolicy.\n      Default: 20\n    -offer_filter_duration\n      Requested retry delay supplied to the offer transport when resources are \n      declined. Go agents refresh cached offers on demand without applying \n      this delay.\n      Default: (5, secs)\n    -offer_hold_jitter_window\n      Maximum amount of random jitter to add to the offer hold time window.\n      Default: (1, mins)\n    -offer_order\n      Iteration order for offers, to influence task scheduling. Multiple \n      orderings will be compounded together. E.g. CPU,MEMORY,RANDOM would sort \n      first by cpus offered, then memory and finally would randomize any equal \n      offers. \n      Default: [RANDOM]\n    -offer_reservation_duration\n      Time to reserve a agent's offers while trying to satisfy a task \n      preempting another.\n      Default: (3, mins)\n    -offer_set_module\n      Custom Guice module to provide a custom OfferSet.\n      Default: class org.apache.aurora.scheduler.offers.OfferManagerModule$OfferSetModule\n    -offer_static_ban_cache_max_size\n      The number of offers to hold in the static ban cache. If no value is \n      specified, the cache will grow indefinitely. However, entries will \n      expire within 'min_offer_hold_time' + 'offer_hold_jitter_window' of \n      being written.\n      Default: 9223372036854775807\n    -preemption_delay\n      Time interval after which a pending task becomes eligible to preempt \n      other tasks\n      Default: (3, mins)\n    -preemption_reservation_max_batch_size\n      The maximum number of reservations for a task group to be made in a \n      batch. \n      Default: 5\n    -preemption_slot_finder_modules\n      Guice modules for custom preemption slot searching for pending tasks.\n      Default: [class org.apache.aurora.scheduler.preemptor.PendingTaskProcessorModule, class org.apache.aurora.scheduler.preemptor.PreemptionVictimFilterModule]\n    -preemption_slot_hold_time\n      Time to hold a preemption slot found before it is discarded.\n      Default: (5, mins)\n    -preemption_slot_search_initial_delay\n      Initial amount of time to delay preemption slot searching after \n      scheduler start up.\n      Default: (3, mins)\n    -preemption_slot_search_interval\n      Time interval between pending task preemption slot searches.\n      Default: (1, mins)\n    -reconciliation_explicit_batch_interval\n      Interval between explicit batch reconciliation requests.\n      Default: (5, secs)\n    -reconciliation_explicit_batch_size\n      Number of tasks in each explicit execution driver reconciliation \n      request. \n      Default: 1000\n    -reconciliation_explicit_interval\n      Interval for explicit execution driver reconciliation of non-terminal \n      tasks known to the scheduler. Go agents reconcile through watch \n      snapshots. \n      Default: (60, mins)\n    -reconciliation_implicit_interval\n      Interval for implicit execution driver reconciliation of tasks known to \n      agents. Go agents reconcile through watch snapshots.\n      Default: (60, mins)\n    -reconciliation_initial_delay\n      Initial amount of time to delay task reconciliation after scheduler \n      start up.\n      Default: (1, mins)\n    -reconciliation_schedule_spread\n      Difference between explicit and implicit reconciliation intervals \n      intended to create a non-overlapping task reconciliation schedule.\n      Default: (30, mins)\n    -require_docker_use_executor\n      If false, Docker tasks may run without an executor (EXPERIMENTAL)\n      Default: true\n    -scheduling_max_batch_size\n      The maximum number of scheduling attempts that can be processed in a \n      batch. \n      Default: 3\n    -serverset_endpoint_name\n      Name of the scheduler endpoint published in ZooKeeper.\n      Default: http\n  * -serverset_path\n      ZooKeeper ServerSet path to register at.\n    -shiro_after_auth_filter\n      Fully qualified class name of the servlet filter to be applied after the \n      shiro auth filters are applied.\n    -shiro_credentials_matcher\n      The shiro credentials matcher to use (will be constructed by Guice).\n      Default: class org.apache.shiro.authc.credential.SimpleCredentialsMatcher\n    -shiro_ini_path\n      Path to shiro.ini for authentication and authorization configuration.\n    -shiro_realm_modules\n      Guice modules for configuring Shiro Realms.\n      Default: [class org.apache.aurora.scheduler.http.api.security.IniShiroRealmModule]\n    -sla_aware_action_max_batch_size\n      The maximum number of sla aware update actions that can be processed in \n      a batch.\n      Default: 300\n    -sla_aware_kill_non_prod\n      Enables SLA awareness for drain and and update for non-production tasks\n      Default: false\n    -sla_aware_kill_retry_max_delay\n      Maximum amount of time to wait between attempting to perform an \n      SLA-Aware kill on a task.\n      Default: (5, mins)\n    -sla_aware_kill_retry_min_delay\n      Minimum amount of time to wait between attempting to perform an \n      SLA-Aware kill on a task.\n      Default: (1, mins)\n    -sla_coordinator_timeout\n      Timeout interval for communicating with Coordinator.\n      Default: (1, mins)\n    -sla_non_prod_metrics\n      Metric categories collected for non production tasks.\n      Default: []\n    -sla_prod_metrics\n      Metric categories collected for production tasks.\n      Default: [JOB_UPTIMES, PLATFORM_UPTIME, MEDIANS]\n    -sla_stat_refresh_interval\n      The SLA stat refresh interval.\n      Default: (1, mins)\n    -stat_retention_period\n      Time for a stat to be retained in memory before expiring.\n      Default: (1, hrs)\n    -stat_sampling_interval\n      Statistic value sampling interval.\n      Default: (1, secs)\n    -task_assigner_modules\n      Guice modules for customizing task assignment.\n      Default: [class org.apache.aurora.scheduler.scheduling.TaskAssignerImplModule]\n    -thrift_method_interceptor_modules\n      Custom Guice module(s) to provide additional Thrift method interceptors.\n      Default: []\n    -tier_config\n      Configuration file defining supported task tiers, task traits and \n      behaviors. \n    -transient_task_state_timeout\n      The amount of time after which to treat a task stuck in a transient \n      state as LOST.\n      Default: (5, mins)\n    -unavailability_threshold\n      Threshold time, when running tasks should be drained from a host, before \n      a host becomes unavailable. Should be greater than min_offer_hold_time + \n      offer_hold_jitter_window. \n      Default: (6, mins)\n    -update_affinity_reservation_hold_time\n      How long to wait for a reserved agent to reoffer freed up resources.\n      Default: (3, mins)\n    -viz_job_url_prefix\n      URL prefix for job container stats.\n      Default: <empty string>\n    -webhook_config\n      Path to webhook configuration file.\n    -zk_chroot_path\n      chroot path to use for the ZooKeeper connections\n    -zk_connection_timeout\n      The ZooKeeper connection timeout.\n      Default: (10, secs)\n    -zk_digest_credentials\n      user:password to use when authenticating with ZooKeeper.\n  * -zk_endpoints\n      Endpoint specification for the ZooKeeper servers.\n    -zk_in_proc\n      Launches an embedded zookeeper server for local testing causing \n      -zk_endpoints to be ignored if specified.\n      Default: false\n    -zk_session_timeout\n      The ZooKeeper session timeout.\n      Default: (15, secs)\n\nE0912 11:34:34.283 [main, CommandLine] Was passed main parameter '-help' but no main parameter was defined in your arg class \n",
+          "outputSha256": "c4e58fd9c5e696a65972c17b12af4366dc67e2db4d72e2f78f4dd00fe92e3a2e",
+          "unixSha256": "8bab8c8e27140618b021362da81ec4b4e2477e2b024e3a9855c257a77e97436f",
+          "usageVerified": true,
+          "windowsSha256": "e7fbd2251eecaf473161cc59e916e5e203d22103a1ee666ce41c47720f07d62f"
+        },
+        "recovery-tool": {
+          "classpathJars": [
+            "aurora-0.23.0-SNAPSHOT.jar",
+            "aurora-api-0.23.0-SNAPSHOT.jar",
+            "commons-0.23.0-SNAPSHOT.jar",
+            "guice-assistedinject-6.0.0.jar",
+            "guice-servlet-6.0.0.jar",
+            "resteasy-guice-3.1.4.Final.jar",
+            "shiro-guice-1.4.0.jar",
+            "guice-6.0.0.jar",
+            "aopalliance-1.0.jar",
+            "logback-classic-1.2.3.jar",
+            "jcommander-1.72.jar",
+            "jackson-databind-2.5.1.jar",
+            "jackson-core-2.5.1.jar",
+            "resteasy-jackson-provider-3.1.4.Final.jar",
+            "resteasy-client-3.1.4.Final.jar",
+            "resteasy-jaxrs-3.1.4.Final.jar",
+            "javax.inject-1.jar",
+            "jetty-rewrite-9.3.11.v20160721.jar",
+            "jetty-servlet-9.3.11.v20160721.jar",
+            "jetty-security-9.3.11.v20160721.jar",
+            "jetty-server-9.3.11.v20160721.jar",
+            "javax.servlet-api-3.1.0.jar",
+            "stringtemplate-3.2.1.jar",
+            "curator-recipes-2.12.0.jar",
+            "curator-framework-2.12.0.jar",
+            "curator-client-2.12.0.jar",
+            "async-http-client-2.0.37.jar",
+            "shiro-web-1.4.0.jar",
+            "zookeeper-3.4.8.jar",
+            "jetty-servlets-9.3.11.v20160721.jar",
+            "quartz-2.2.2.jar",
+            "jaxb-api-2.3.1.jar",
+            "sqlite-jdbc-3.53.4.0.jar",
+            "libthrift-0.10.0.jar",
+            "javax.annotation-api-1.3.2.jar",
+            "gson-2.3.1.jar",
+            "guava-31.0.1-jre.jar",
+            "commons-lang-2.6.jar",
+            "javax.ws.rs-api-2.0.jar",
+            "easymock-5.6.0.jar",
+            "junit-4.12.jar",
+            "logback-core-1.2.3.jar",
+            "async-http-client-netty-utils-2.0.37.jar",
+            "netty-resolver-dns-2.0.37.jar",
+            "netty-resolver-2.0.37.jar",
+            "netty-codec-dns-2.0.37.jar",
+            "shiro-core-1.4.0.jar",
+            "shiro-cache-1.4.0.jar",
+            "shiro-crypto-hash-1.4.0.jar",
+            "shiro-crypto-cipher-1.4.0.jar",
+            "shiro-config-ogdl-1.4.0.jar",
+            "shiro-config-core-1.4.0.jar",
+            "shiro-event-1.4.0.jar",
+            "shiro-crypto-core-1.4.0.jar",
+            "shiro-lang-1.4.0.jar",
+            "slf4j-api-1.7.25.jar",
+            "jakarta.inject-api-2.0.1.jar",
+            "error_prone_annotations-2.18.0.jar",
+            "jackson-annotations-2.5.1.jar",
+            "jboss-annotations-api_1.2_spec-1.0.0.Final.jar",
+            "jboss-logging-3.3.0.Final.jar",
+            "jackson-jaxrs-1.9.13.jar",
+            "jackson-xc-1.9.13.jar",
+            "jackson-mapper-asl-1.9.13.jar",
+            "jackson-core-asl-1.9.13.jar",
+            "jboss-jaxrs-api_2.0_spec-1.0.1.Beta1.jar",
+            "resteasy-jaxrs-services-3.1.4.Final.jar",
+            "activation-1.1.1.jar",
+            "httpclient-4.5.2.jar",
+            "commons-io-2.5.jar",
+            "jcip-annotations-1.0.jar",
+            "antlr-2.7.7.jar",
+            "netty-codec-http-4.0.52.Final.jar",
+            "netty-reactive-streams-1.0.8.jar",
+            "netty-handler-4.0.52.Final.jar",
+            "netty-transport-native-epoll-4.0.52.Final-linux-x86_64.jar",
+            "reactive-streams-1.0.0.jar",
+            "jline-0.9.94.jar",
+            "netty-3.7.0.Final.jar",
+            "jetty-client-9.3.11.v20160721.jar",
+            "jetty-http-9.3.11.v20160721.jar",
+            "jetty-io-9.3.11.v20160721.jar",
+            "jetty-continuation-9.3.11.v20160721.jar",
+            "jetty-util-9.3.11.v20160721.jar",
+            "c3p0-0.9.1.1.jar",
+            "javax.activation-api-1.2.0.jar",
+            "httpcore-4.4.4.jar",
+            "failureaccess-1.0.1.jar",
+            "listenablefuture-9999.0-empty-to-avoid-conflict-with-guava.jar",
+            "jsr305-3.0.2.jar",
+            "checker-qual-3.12.0.jar",
+            "j2objc-annotations-1.3.jar",
+            "byte-buddy-1.17.5.jar",
+            "asm-9.8.jar",
+            "objenesis-3.4.jar",
+            "hamcrest-core-1.3.jar",
+            "commons-logging-1.2.jar",
+            "commons-codec-1.9.jar",
+            "netty-codec-4.0.52.Final.jar",
+            "netty-transport-4.0.52.Final.jar",
+            "netty-buffer-4.0.52.Final.jar",
+            "netty-common-4.0.52.Final.jar",
+            "commons-beanutils-1.9.3.jar",
+            "commons-collections-3.2.2.jar"
+          ],
+          "command": [
+            "/home/jordanly/.codex/worktrees/da231709-add9-4468-b3a5-712561554031/aurora/.cache/inplace-build/build/scheduler/install/aurora-scheduler/bin/recovery-tool",
+            "--help"
+          ],
+          "exitCode": 1,
+          "expectedExitCode": 1,
+          "output": "Usage: org.apache.aurora.scheduler.storage.durability.RecoveryTool [options]\n  Options:\n    --help\n      Print usage\n  * -backup\n      Read-only source backup file\n  * -from\n      BACKUP for a drained Thrift snapshot; SQLITE for a standalone backup\n      Possible Values: [BACKUP, SQLITE]\n  * -sqlite-destination\n      New file in an existing offline directory; never replaces a database\n  * -to\n      Destination type (SQLITE only)\n      Possible Values: [BACKUP, SQLITE]\n\n",
+          "outputSha256": "08e6674ccaf1fb6ce0f71ee4760f526a578a1c456d9a95e665382ff14a77a2d2",
+          "unixSha256": "736cecddc2a1acbf20cff24b9a0a6ba32e30d4e186d1303a788cafc48a2d5fb7",
+          "usageVerified": true,
+          "windowsSha256": "cc2da7927fef76e0142275f7ce42e36be91ba447b5df2be7f5d83dc0b767d646"
+        }
+      },
+      "runtimeDependencies": {
+        "com/google/common/collect/ImmutableList.class": "guava-31.0.1-jre.jar",
+        "com/google/gson/Gson.class": "gson-2.3.1.jar",
+        "com/google/inject/Guice.class": "guice-6.0.0.jar",
+        "javax/xml/bind/annotation/XmlElement.class": "jaxb-api-2.3.1.jar",
+        "org/apache/thrift/TBase.class": "libthrift-0.10.0.jar",
+        "org/apache/zookeeper/ZooKeeper.class": "zookeeper-3.4.8.jar",
+        "org/eclipse/jetty/server/Server.class": "jetty-server-9.3.11.v20160721.jar",
+        "org/sqlite/JDBC.class": "sqlite-jdbc-3.53.4.0.jar"
+      },
+      "schema": 1,
+      "status": "passed"
+    },
+    "sha256": "928c31bd09df819725b9976b30035d032ca1678ad6b928a4fdd75821694d6b7e"
+  },
+  "goChecks": {
+    "path": ".cache/inplace08-supervisor-retry-full.receipt.json",
+    "report": {
+      "agentSourceSha256After": "4328cab8e9cccafc0b6695355f43ff26aecfe3aae1d9a6b9c9d8a7a881463b21",
+      "agentSourceSha256Before": "4328cab8e9cccafc0b6695355f43ff26aecfe3aae1d9a6b9c9d8a7a881463b21",
+      "commands": [
+        {
+          "argv": [
+            "/home/jordanly/.codex/worktrees/da231709-add9-4468-b3a5-712561554031/aurora/.pi-tools/go1.27.1/go/bin/go",
+            "-C",
+            "/home/jordanly/.codex/worktrees/da231709-add9-4468-b3a5-712561554031/aurora/agent",
+            "test",
+            "-count=1",
+            "-run",
+            "TestSupervisorTimeoutPreserves|TestSupervisorRetryClassification|TestServeHTTPSBindFailure",
+            "."
+          ],
+          "exitCode": 0,
+          "finishedAt": "2026-09-12T15:38:12.79575834Z",
+          "startedAt": "2026-09-12T15:38:07.810398359Z"
+        },
+        {
+          "argv": [
+            "/home/jordanly/.codex/worktrees/da231709-add9-4468-b3a5-712561554031/aurora/.pi-tools/go1.27.1/go/bin/go",
+            "-C",
+            "/home/jordanly/.codex/worktrees/da231709-add9-4468-b3a5-712561554031/aurora/agent",
+            "test",
+            "-count=1",
+            "./..."
+          ],
+          "exitCode": 0,
+          "finishedAt": "2026-09-12T15:38:23.342821788Z",
+          "startedAt": "2026-09-12T15:38:12.795833063Z"
+        },
+        {
+          "argv": [
+            "/home/jordanly/.codex/worktrees/da231709-add9-4468-b3a5-712561554031/aurora/.pi-tools/go1.27.1/go/bin/go",
+            "-C",
+            "/home/jordanly/.codex/worktrees/da231709-add9-4468-b3a5-712561554031/aurora/agent",
+            "vet",
+            "./..."
+          ],
+          "exitCode": 0,
+          "finishedAt": "2026-09-12T15:38:23.916909353Z",
+          "startedAt": "2026-09-12T15:38:23.342894733Z"
+        },
+        {
+          "argv": [
+            "/home/jordanly/.codex/worktrees/da231709-add9-4468-b3a5-712561554031/aurora/.pi-tools/go1.27.1/go/bin/go",
+            "-C",
+            "/home/jordanly/.codex/worktrees/da231709-add9-4468-b3a5-712561554031/aurora/tools",
+            "test",
+            "-count=1",
+            "./..."
+          ],
+          "exitCode": 0,
+          "finishedAt": "2026-09-12T15:38:28.384166931Z",
+          "startedAt": "2026-09-12T15:38:23.916971298Z"
+        },
+        {
+          "argv": [
+            "/home/jordanly/.codex/worktrees/da231709-add9-4468-b3a5-712561554031/aurora/.pi-tools/go1.27.1/go/bin/go",
+            "-C",
+            "/home/jordanly/.codex/worktrees/da231709-add9-4468-b3a5-712561554031/aurora/tools",
+            "vet",
+            "./..."
+          ],
+          "exitCode": 0,
+          "finishedAt": "2026-09-12T15:38:28.863855851Z",
+          "startedAt": "2026-09-12T15:38:28.384215857Z"
+        }
+      ],
+      "finishedAt": "2026-09-12T15:38:28.866494396Z",
+      "logPath": ".cache/inplace08-supervisor-retry-full.log",
+      "logSha256": "425c84c65de0f22f432b4da7793239274e5b29960c5b0794f42996efaa60212d",
+      "ok": true,
+      "schema": 1,
+      "sourceDigestAlgorithm": "commands.TreeDigest: sorted relative slash paths + NUL + raw SHA256(file), then SHA256",
+      "startedAt": "2026-09-12T15:38:07.805874661Z",
+      "toolchain": "Go1.27.1 pinned workspace SDK",
+      "toolsSourceSha256After": "8cc8e889bfba71b0b0eadce008acced2fc5f7503121a968459c8ad707f039957",
+      "toolsSourceSha256Before": "8cc8e889bfba71b0b0eadce008acced2fc5f7503121a968459c8ad707f039957"
+    },
+    "sha256": "eeb2bc4e980a6746c4df3ff4e97c0b1d6c4486f01f8b18810296e8909ac18d3b"
+  },
+  "idlePush": {
+    "boundaryEnd": {
+      "nodes": {
+        "agent-a": {
+          "containerId": "0cc3727ab52102981363b088a33b01eda4997f01c4a4c3aff7d766f6f8db3515",
+          "daemon": {
+            "generation": 3,
+            "paused": false,
+            "pid": 87,
+            "startedAt": "2026-09-12T15:43:33.268090111Z"
+          },
+          "name": "aurora-inplace-b2847e0eb6fba952-agent-a",
+          "running": true,
+          "workloadProcesses": [
+            {
+              "command": "/bin/sleep infinity",
+              "pid": 1831120,
+              "start": "73843098"
+            }
+          ]
+        },
+        "agent-b": {
+          "containerId": "d42b8326f2b3eb646832b10e7a5806fe6a7c0f660202ba4faaa31d6d7b0d84a5",
+          "daemon": {
+            "generation": 2,
+            "paused": false,
+            "pid": 80,
+            "startedAt": "2026-09-12T15:43:11.598798201Z"
+          },
+          "name": "aurora-inplace-b2847e0eb6fba952-agent-b",
+          "running": true,
+          "workloadProcesses": [
+            {
+              "command": "/bin/sleep infinity",
+              "pid": 1831104,
+              "start": "73843095"
+            }
+          ]
+        },
+        "scheduler": {
+          "containerId": "37590c0a077010d11ec7719d71977680524547b4c872025796d491ff1aad1de3",
+          "daemon": {
+            "generation": 7,
+            "paused": false,
+            "pid": 826,
+            "startedAt": "2026-09-12T15:43:25.184200039Z"
+          },
+          "name": "aurora-inplace-b2847e0eb6fba952-scheduler",
+          "running": true
+        }
+      },
+      "tasks": [
+        {
+          "host": "agent-b",
+          "instance": 0,
+          "status": 2,
+          "taskId": "fixtures-test-push-mvp-demo-0-2d4e5825-5be5-4dac-9393-5311ff2161c9"
+        },
+        {
+          "host": "agent-a",
+          "instance": 1,
+          "status": 2,
+          "taskId": "fixtures-test-push-mvp-demo-1-a4916981-dac9-449a-be1b-25a361463fbd"
+        }
+      ],
+      "timestamp": "2026-09-12T16:01:57.892342053Z"
+    },
+    "boundaryStart": {
+      "nodes": {
+        "agent-a": {
+          "containerId": "0cc3727ab52102981363b088a33b01eda4997f01c4a4c3aff7d766f6f8db3515",
+          "daemon": {
+            "generation": 3,
+            "paused": false,
+            "pid": 87,
+            "startedAt": "2026-09-12T15:43:33.268090111Z"
+          },
+          "name": "aurora-inplace-b2847e0eb6fba952-agent-a",
+          "running": true,
+          "workloadProcesses": [
+            {
+              "command": "/bin/sleep infinity",
+              "pid": 1831120,
+              "start": "73843098"
+            }
+          ]
+        },
+        "agent-b": {
+          "containerId": "d42b8326f2b3eb646832b10e7a5806fe6a7c0f660202ba4faaa31d6d7b0d84a5",
+          "daemon": {
+            "generation": 2,
+            "paused": false,
+            "pid": 80,
+            "startedAt": "2026-09-12T15:43:11.598798201Z"
+          },
+          "name": "aurora-inplace-b2847e0eb6fba952-agent-b",
+          "running": true,
+          "workloadProcesses": [
+            {
+              "command": "/bin/sleep infinity",
+              "pid": 1831104,
+              "start": "73843095"
+            }
+          ]
+        },
+        "scheduler": {
+          "containerId": "37590c0a077010d11ec7719d71977680524547b4c872025796d491ff1aad1de3",
+          "daemon": {
+            "generation": 7,
+            "paused": false,
+            "pid": 826,
+            "startedAt": "2026-09-12T15:43:25.184200039Z"
+          },
+          "name": "aurora-inplace-b2847e0eb6fba952-scheduler",
+          "running": true
+        }
+      },
+      "tasks": [
+        {
+          "host": "agent-b",
+          "instance": 0,
+          "status": 2,
+          "taskId": "fixtures-test-push-mvp-demo-0-2d4e5825-5be5-4dac-9393-5311ff2161c9"
+        },
+        {
+          "host": "agent-a",
+          "instance": 1,
+          "status": 2,
+          "taskId": "fixtures-test-push-mvp-demo-1-a4916981-dac9-449a-be1b-25a361463fbd"
+        }
+      ],
+      "timestamp": "2026-09-12T15:55:57.672992213Z"
+    },
+    "first": {
+      "elapsedSeconds": 1.444e-06,
+      "healthBody": "OK",
+      "healthHttpStatus": 200,
+      "metrics": {
+        "go_agent_ack_requests": 376,
+        "go_agent_command_requests": 74,
+        "go_agent_inventory_requests": 0,
+        "go_agent_watch_connections": 3,
+        "go_agent_watch_deltas": 433,
+        "go_agent_watch_heartbeats": 48,
+        "go_agent_watch_snapshots": 7,
+        "jvm_uptime_secs": 752,
+        "scheduler_lifecycle_ACTIVE": 1,
+        "task_store_ASSIGNED": 0,
+        "task_store_DRAINING": 0,
+        "task_store_FAILED": 1,
+        "task_store_FINISHED": 47,
+        "task_store_INIT": 0,
+        "task_store_KILLED": 18,
+        "task_store_KILLING": 0,
+        "task_store_LOST": 0,
+        "task_store_PARTITIONED": 0,
+        "task_store_PENDING": 0,
+        "task_store_PREEMPTING": 0,
+        "task_store_RESTARTING": 0,
+        "task_store_RUNNING": 2,
+        "task_store_STARTING": 0,
+        "task_store_THROTTLED": 0,
+        "thrift_workload_addInstances": 1,
+        "thrift_workload_createJob": 50,
+        "thrift_workload_createOrUpdateCronTemplate": 4,
+        "thrift_workload_drainHosts": 3,
+        "thrift_workload_endMaintenance": 3,
+        "thrift_workload_killTasks": 9,
+        "thrift_workload_maintenanceStatus": 8,
+        "thrift_workload_pruneTasks": 0,
+        "thrift_workload_restartShards": 1,
+        "thrift_workload_slaDrainHosts": 0,
+        "thrift_workload_startJobUpdate": 4,
+        "thrift_workload_startMaintenance": 2
+      },
+      "metricsHttpStatus": 200,
+      "timestamp": "2026-09-12T15:55:57.67301475Z"
+    },
+    "last": {
+      "elapsedSeconds": 360.004140607,
+      "healthBody": "OK",
+      "healthHttpStatus": 200,
+      "metrics": {
+        "go_agent_ack_requests": 376,
+        "go_agent_command_requests": 74,
+        "go_agent_inventory_requests": 0,
+        "go_agent_watch_connections": 3,
+        "go_agent_watch_deltas": 433,
+        "go_agent_watch_heartbeats": 72,
+        "go_agent_watch_snapshots": 9,
+        "jvm_uptime_secs": 1112,
+        "scheduler_lifecycle_ACTIVE": 1,
+        "task_store_ASSIGNED": 0,
+        "task_store_DRAINING": 0,
+        "task_store_FAILED": 1,
+        "task_store_FINISHED": 47,
+        "task_store_INIT": 0,
+        "task_store_KILLED": 18,
+        "task_store_KILLING": 0,
+        "task_store_LOST": 0,
+        "task_store_PARTITIONED": 0,
+        "task_store_PENDING": 0,
+        "task_store_PREEMPTING": 0,
+        "task_store_RESTARTING": 0,
+        "task_store_RUNNING": 2,
+        "task_store_STARTING": 0,
+        "task_store_THROTTLED": 0,
+        "thrift_workload_addInstances": 1,
+        "thrift_workload_createJob": 50,
+        "thrift_workload_createOrUpdateCronTemplate": 4,
+        "thrift_workload_drainHosts": 3,
+        "thrift_workload_endMaintenance": 3,
+        "thrift_workload_killTasks": 9,
+        "thrift_workload_maintenanceStatus": 8,
+        "thrift_workload_pruneTasks": 0,
+        "thrift_workload_restartShards": 1,
+        "thrift_workload_slaDrainHosts": 0,
+        "thrift_workload_startJobUpdate": 4,
+        "thrift_workload_startMaintenance": 2
+      },
+      "metricsHttpStatus": 200,
+      "timestamp": "2026-09-12T16:01:57.67714132Z"
+    },
+    "path": ".cache/inplace08-push-final-metrics.json",
+    "sampler": {
+      "path": ".cache/inplace08-push-final-metrics.receipt.json",
+      "report": {
+        "argv": [
+          "/tmp/aurora-push-final-metrics"
+        ],
+        "endpoint": "http://172.18.0.4:8081",
+        "exitCode": 0,
+        "finishedAt": "2026-09-12T16:01:57.892342053Z",
+        "labRoot": ".pi-lab/inplace08-qualified",
+        "logPath": ".cache/inplace08-push-final-metrics.log",
+        "logSha256": "895612800420191de699e91f3bd9333de471593497a3cb2e4334bc3fb2b9acc5",
+        "manifestSha256": "8c9931025651145d410e05c070df362a5e905c553d5307c7d806236cb6b4db45",
+        "metricsPath": ".cache/inplace08-push-final-metrics.json",
+        "metricsSha256": "f46ae41418b6f43e6a898ada26e6ae5a37164e85ccc868da80dfee38893a1742",
+        "ok": true,
+        "samplerBinaryPath": "/tmp/aurora-push-final-metrics",
+        "samplerBinarySha256": "b7fe3098decdcf72ed635f1a56512c16fb3e7bf0bb67db400d45e2eaeb4d0799",
+        "samplerSourcePath": ".cache/inplace08-push-final-metrics-sampler.go",
+        "samplerSourceSha256": "3d9902b75dda435a0f6bfc7bec265b753f32327cfd45edd2059352c4c903e991",
+        "schedulerDistributionSha256": "c456c580d5efc1401c70664144e8257cb00860fb28ea722e079248e424e769d7",
+        "schema": 1,
+        "startedAt": "2026-09-12T15:55:57.672992213Z"
+      },
+      "sha256": "366873b5d4a7dbc076fb4b4f96229d1bf174e57f62f81986973d14050034e1aa"
+    },
+    "sha256": "f46ae41418b6f43e6a898ada26e6ae5a37164e85ccc868da80dfee38893a1742",
+    "summary": {
+      "allHealthyAndActive": true,
+      "counterDeltas": {
+        "go_agent_ack_requests": 0,
+        "go_agent_command_requests": 0,
+        "go_agent_inventory_requests": 0,
+        "go_agent_watch_connections": 0,
+        "go_agent_watch_deltas": 0,
+        "go_agent_watch_heartbeats": 24,
+        "go_agent_watch_snapshots": 2
+      },
+      "elapsedSeconds": 360.004140607,
+      "end": "2026-09-12T16:01:57.67714132Z",
+      "limitations": [
+        "15 second sampling bounds aggregate frame times; snapshots are not individually attributed to agents.",
+        "Read-only getTasksStatus and Docker identity/process inspections occur only before and after the quiet counters interval."
+      ],
+      "manifestUnchanged": true,
+      "stableBoundaryTaskAndProcessIdentities": true,
+      "start": "2026-09-12T15:55:57.67301475Z"
+    }
+  },
+  "implementationCommit": "b5405842b94cc89219f5ebc548af8fd619711059",
+  "javaTests": {
+    "commons": {
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0,
+      "tests": 124
+    },
+    "scheduler": {
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0,
+      "tests": 1342
+    }
+  },
+  "lab": {
+    "artifactsSha256": "a600eea431037e4ed53104508b4cbd09059f6974ccae0fd0c6fe68b2a3705862",
+    "binaries": {
+      "agent": {
+        "binarySha256": "ecdebc1caab5b1f4f694097e95b3302e8f5b6d0e310a040ffb446f376773b2bc",
+        "build": [
+          "CGO_ENABLED=0",
+          "GOOS=linux",
+          "GOARCH=arm64",
+          "GOTOOLCHAIN=local",
+          "-trimpath",
+          "-buildvcs=false",
+          "-ldflags=-s -w"
+        ],
+        "goVersion": "go version go1.27.1 linux/arm64",
+        "schema": 1,
+        "sourceSha256": "4328cab8e9cccafc0b6695355f43ff26aecfe3aae1d9a6b9c9d8a7a881463b21"
+      },
+      "helper": {
+        "binarySha256": "4f4a288467fea2689871497eb5a4e32312e968b80db08c2a514a8a2bd58459ec",
+        "build": [
+          "CGO_ENABLED=0",
+          "GOOS=linux",
+          "GOARCH=arm64",
+          "GOTOOLCHAIN=local",
+          "-trimpath",
+          "-buildvcs=false",
+          "-ldflags=-s -w"
+        ],
+        "goVersion": "go version go1.27.1 linux/arm64",
+        "schema": 1,
+        "sourceSha256": "da069ff44924ae6baba7a71a58409eb41091c5fa95373a7aea60c386aed612e6"
+      }
+    },
+    "containers": {
+      "agent-a": {
+        "id": "0cc3727ab52102981363b088a33b01eda4997f01c4a4c3aff7d766f6f8db3515",
+        "name": "aurora-inplace-b2847e0eb6fba952-agent-a"
+      },
+      "agent-b": {
+        "id": "d42b8326f2b3eb646832b10e7a5806fe6a7c0f660202ba4faaa31d6d7b0d84a5",
+        "name": "aurora-inplace-b2847e0eb6fba952-agent-b"
+      },
+      "scheduler": {
+        "id": "37590c0a077010d11ec7719d71977680524547b4c872025796d491ff1aad1de3",
+        "name": "aurora-inplace-b2847e0eb6fba952-scheduler"
+      }
+    },
+    "image": "sha256:32d322b19846336d25f755f73618a448e3621982d52c48064e95af8b3dcbc2d9",
+    "jdk": {
+      "release": "IMPLEMENTOR=\"Eclipse Adoptium\"\nIMPLEMENTOR_VERSION=\"Temurin-25.0.4.1+1\"\nJAVA_RUNTIME_VERSION=\"25.0.4.1+1-LTS\"\nJAVA_VERSION=\"25.0.4.1\"\nJAVA_VERSION_DATE=\"2026-08-18\"\nLIBC=\"gnu\"\nMODULES=\"java.base java.compiler java.datatransfer java.xml java.prefs java.desktop java.instrument java.logging java.management java.security.sasl java.naming java.rmi java.management.rmi java.net.http java.scripting java.security.jgss java.transaction.xa java.sql java.sql.rowset java.xml.crypto java.se java.smartcardio jdk.accessibility jdk.internal.jvmstat jdk.attach jdk.charsets jdk.internal.opt jdk.zipfs jdk.compiler jdk.crypto.cryptoki jdk.crypto.ec jdk.dynalink jdk.internal.ed jdk.editpad jdk.internal.vm.ci jdk.graal.compiler jdk.graal.compiler.management jdk.hotspot.agent jdk.httpserver jdk.incubator.vector jdk.internal.le jdk.internal.md jdk.jartool jdk.javadoc jdk.jcmd jdk.management jdk.management.agent jdk.jconsole jdk.jdeps jdk.jdwp.agent jdk.jdi jdk.jfr jdk.jlink jdk.jpackage jdk.jshell jdk.jsobject jdk.jstatd jdk.localedata jdk.management.jfr jdk.naming.dns jdk.naming.rmi jdk.net jdk.nio.mapmode jdk.sctp jdk.security.auth jdk.security.jgss jdk.unsupported jdk.unsupported.desktop jdk.xml.dom\"\nOS_ARCH=\"aarch64\"\nOS_NAME=\"Linux\"\nSOURCE=\".:git:520406d87195\"\nBUILD_SOURCE=\"git:e6ba7dec3d07654074559310376a3ae89da5f4ac\"\nBUILD_SOURCE_REPO=\"https://github.com/adoptium/temurin-build.git\"\nSOURCE_REPO=\"https://github.com/adoptium/jdk25u.git\"\nFULL_VERSION=\"25.0.4.1+1-LTS\"\nSEMANTIC_VERSION=\"25.0.4.1+1\"\nBUILD_INFO=\"OS: Linux Version: 6.8.0-71-generic\"\nJVM_VARIANT=\"Hotspot\"\nJVM_VERSION=\"25.0.4.1+1-LTS\"\nIMAGE_TYPE=\"JDK\"\n",
+      "releaseSha256": "5d5e02af20088898661ea03a17304b2e10c028cb0471820f344c4576c1c59424",
+      "treeSha256": "b3cc501021753578ad473ebf90efed8cb34e37435dd4ba1b8b36589577863ca2"
+    },
+    "manifest": {
+      "path": ".pi-lab/inplace08-qualified/lab.json",
+      "sha256": "8c9931025651145d410e05c070df362a5e905c553d5307c7d806236cb6b4db45"
+    },
+    "root": ".pi-lab/inplace08-qualified",
+    "schedulerDistributionSha256": "c456c580d5efc1401c70664144e8257cb00860fb28ea722e079248e424e769d7",
+    "sourceHashes": {
+      "agent": "4328cab8e9cccafc0b6695355f43ff26aecfe3aae1d9a6b9c9d8a7a881463b21",
+      "helper": "da069ff44924ae6baba7a71a58409eb41091c5fa95373a7aea60c386aed612e6"
+    },
+    "token": "b2847e0eb6fba952"
+  },
+  "limits": [
+    "Trusted process profile only; no general Thermos compatibility or cgroup/container isolation.",
+    "Agent history bounded to 128 attempts/1024 command results; no automatic compaction.",
+    "No production multi-scheduler HA/failover, namespace-loss adoption, stale-backup adoption, power/storage-loss qualification.",
+    "Pi TSAN cannot run Go race detector with 47-bit VMA; normal unit/fuzz tests and vet passed."
+  ],
+  "qualification": "Incremental local build of the working tree, with unchanged dependency/build outputs reused. Artifact build.properties names the preceding Git commit and dirty tree. Source inputs and artifacts are hashed; CI separately qualifies committed source.",
+  "qualifiedStatus": {
+    "path": ".cache/inplace08-qualified-status.json",
+    "sha256": "dbc26da56ad804bbd584a9211349d42e14e07464f2c13e1d4c27a57d61fe3aff"
+  },
+  "retirement": {
+    "countsByCategory": {
+      "ported-go-build-tools-and-tests": 15,
+      "replaced-by-declarative-json-examples": 5,
+      "retired-external-review-automation": 4,
+      "retired-mesos-java-backend": 60,
+      "retired-mesos-thermos-deployment-and-e2e": 45,
+      "retired-mesos-thermos-image-build": 3,
+      "retired-pants-pex-python-packaging": 15,
+      "retired-python-runtime-client-and-tests": 308,
+      "retired-unused-vendored-test-infra": 6
+    },
+    "files": 461,
+    "path": "docs/reimagining/inplace08-retirements.json",
+    "pythonFiles": 275,
+    "sha256": "f59971eb811ec6e1c28bca044391bf105253681f4d643f103fb3767c7d7bf781"
+  },
+  "schema": 1,
+  "sourceInputs": {
+    "path": "docs/reimagining/inplace08-inputs.json",
+    "sha256": "bb3ce5948eafd40dd8e8bddaa2cd44416924efa65ec8d5479c9207fcb3b700d6"
+  },
+  "suiteLedger": {
+    "path": "docs/reimagining/inplace08-tests.jsonl",
+    "sha256": "7052883b0864c4146c5b389e96876191fa6c9c402f5f9c523af43ef38e2a071e"
+  },
+  "ui": {
+    "failures": 0,
+    "source": {
+      "path": ".cache/inplace08-maintenance-final.log",
+      "sha256": "dde086120a1f2680471bf7ad2b79cf0c40d3723e88591b3be2149a1ac3847d4d"
+    },
+    "suites": 33,
+    "tests": 144
+  },
+  "upstreamMaster": "11ebaeeb071cb182c388a40755e84f60dda32260",
+  "validationSequence": "Full gates passed for fb3c1d6d0. Live smoke found signal exitCode=-1 was rejected by inbound watch validation. Narrow fix received 30 focused transport/driver/JSON tests, affected main/test quality checks, then full behavior/UI/distribution gates and final live reruns. The initial SDK offline-environment fix then passed all Go tools tests and vet, including eight fake-curl cold-cache cases; the standalone client was rebuilt. Mixed-soak then exposed supervisor IPC timeout causing an unconditional bulk drain; a typed per-attempt retry and explicit-shutdown-only drain fix received real-supervisor and bind-error regressions. Maintenance attribute changes now invalidate only affected static offer bans. Final Java gates and Go tests/vet passed before a fresh owned lab reran all phases."
+}
