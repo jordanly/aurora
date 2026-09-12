@@ -122,6 +122,10 @@ class HostOffers {
   synchronized void updateHostAttributes(IHostAttributes attributes) {
     HostOffer offer = offersByHost.remove(attributes.getHost());
     if (offer != null) {
+      // Static vetoes depend on host attributes, including maintenance mode.
+      // The offer ID survives this update, so its cached group bans must not.
+      staticallyBannedOffers.asMap().keySet()
+          .removeIf(key -> key.getFirst().equals(offer.getOfferId()));
       // Remove and re-add a host's offer to re-sort based on its new hostStatus
       remove(offer.getOfferId());
       addInternal(new HostOffer(offer.getOffer(), attributes));

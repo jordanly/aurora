@@ -45,11 +45,13 @@ import org.apache.aurora.scheduler.offers.Deferment.Noop;
 import org.apache.aurora.scheduler.resources.ResourceType;
 import org.apache.aurora.scheduler.storage.entities.IHostAttributes;
 import org.apache.aurora.scheduler.storage.entities.IScheduledTask;
+import org.apache.aurora.scheduler.storage.entities.ITaskConfig;
 import org.apache.aurora.scheduler.testing.FakeScheduledExecutor;
 import org.apache.aurora.scheduler.testing.FakeStatsProvider;
 import org.junit.Before;
 import org.junit.Test;
 
+import static org.apache.aurora.gen.MaintenanceMode.DRAINED;
 import static org.apache.aurora.gen.MaintenanceMode.DRAINING;
 import static org.apache.aurora.gen.MaintenanceMode.NONE;
 import static org.apache.aurora.scheduler.base.TaskTestUtil.JOB;
@@ -194,6 +196,40 @@ public class OfferManagerImplTest extends EasyMockTest {
     offerManager.hostAttributesChanged(new HostAttributesChanged(offerA.getAttributes()));
     offerManager.hostAttributesChanged(new HostAttributesChanged(offerB.getAttributes()));
     assertEquals(ImmutableSet.of(OFFER_A, OFFER_B), ImmutableSet.copyOf(offerManager.getAll()));
+  }
+
+  @Test
+  public void hostAttributeChangeInvalidatesOnlyAffectedStaticBans() {
+    HostOffer drained = setMode(OFFER_A, DRAINED);
+    TaskGroupKey otherGroup = TaskGroupKey.from(ITaskConfig.build(
+        TASK.getAssignedTask().getTask().newBuilder().setPriority(2)));
+    expect(schedulingFilter.filter(new UnusedResource(drained, false), EMPTY_REQUEST))
+        .andReturn(ImmutableSet.of(SchedulingFilter.Veto.maintenance("drained")));
+    expect(schedulingFilter.filter(new UnusedResource(OFFER_A, false), EMPTY_REQUEST))
+        .andReturn(ImmutableSet.of());
+
+    control.replay();
+    offerManager.add(drained);
+    offerManager.add(OFFER_B);
+    offerManager.banForTaskGroup(OFFER_B.getOfferId(), GROUP_KEY);
+    offerManager.banForTaskGroup(OFFER_A_ID, otherGroup);
+    assertTrue(Iterables.isEmpty(offerManager.getAllMatching(GROUP_KEY, EMPTY_REQUEST)));
+    assertEquals(3, offerManager.getStaticBans().size());
+
+    // An unchanged banned offer remains cached, and an unknown host affects no bans.
+    offerManager.hostAttributesChanged(new HostAttributesChanged(OFFER_C.getAttributes()));
+    assertTrue(Iterables.isEmpty(offerManager.getAllMatching(GROUP_KEY, EMPTY_REQUEST)));
+    assertEquals(3, offerManager.getStaticBans().size());
+
+    // End maintenance without replacing the underlying offer or waiting for its expiry.
+    offerManager.hostAttributesChanged(new HostAttributesChanged(HOST_ATTRIBUTES_A));
+    HostOffer eligible = Iterables.getOnlyElement(
+        offerManager.getAllMatching(GROUP_KEY, EMPTY_REQUEST));
+    assertEquals(OFFER_A_ID, eligible.getOfferId());
+    assertEquals(NONE, eligible.getAttributes().getMode());
+    assertEquals(ImmutableSet.of(Pair.of(OFFER_B.getOfferId(), GROUP_KEY)),
+        offerManager.getStaticBans());
+    assertEquals(2, statsProvider.getLongValue(VETO_EVALUATED_OFFERS));
   }
 
   @Test
