@@ -40,6 +40,31 @@ public class WireJsonTest {
   }
 
   @Test
+  public void watchDiagnosticExceptionDoesNotChangeCanonicalCommands() throws Exception {
+    JsonNode value = WireJson.parse(("{\"state\":{\"attempts\":{\"a\":{\"execution\":{"
+        + "\"exitCode\":-1,\"signal\":15}}}}}").getBytes(StandardCharsets.US_ASCII));
+    WireJson.validateWatchFrame(value);
+    assertEquals(-1, value.path("state").path("attempts").path("a")
+        .path("execution").path("exitCode").asInt());
+    assertThrowsIllegalArgument(() -> WireJson.bytes(value));
+    for (String invalid : new String[] {"-1", "-2", "0.5", "9007199254740992"}) {
+      JsonNode command = WireJson.parse(("{\"graceMillis\":" + invalid + "}")
+          .getBytes(StandardCharsets.US_ASCII));
+      assertThrowsIllegalArgument(() -> WireJson.bytes(command));
+    }
+  }
+
+  @Test
+  public void watchValidationRetainsAsciiAndDepthChecks() throws Exception {
+    JsonNode nonAscii = WireJson.parse("{\"name\":\"café\"}"
+        .getBytes(StandardCharsets.UTF_8));
+    assertThrowsIllegalArgument(() -> WireJson.validateWatchFrame(nonAscii));
+    JsonNode tooDeep = WireJson.parse(("[".repeat(65) + "0" + "]".repeat(65))
+        .getBytes(StandardCharsets.US_ASCII));
+    assertThrowsIllegalArgument(() -> WireJson.validateWatchFrame(tooDeep));
+  }
+
+  @Test
   public void canonicalEncodingAndHashMatchFixture() throws Exception {
     JsonNode value = WireJson.parse(
         "{\"z\":[3,2],\"a\":{\"z\":2,\"y\":1}}"

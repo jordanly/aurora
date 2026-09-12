@@ -56,6 +56,33 @@ final class WireJson {
     }
   }
 
+  static void validateWatchFrame(JsonNode frame) {
+    checkDepth(frame, 0);
+    JsonNode normalized = frame.deepCopy();
+    JsonNode attempts = normalized.path("state").path("attempts");
+    if (attempts.isObject()) {
+      for (JsonNode attempt : attempts) {
+        JsonNode execution = attempt.path("execution");
+        JsonNode exitCode = execution.path("exitCode");
+        if (execution.isObject() && exitCode.isIntegralNumber()
+            && exitCode.canConvertToLong() && exitCode.asLong() == -1) {
+          // Go reports -1 when a signal terminates a process. Only this diagnostic
+          // location permits it; command canonicalization remains nonnegative.
+          // Validate a copy so the returned frame preserves the actual exit code.
+          ((ObjectNode) execution).put("exitCode", 0);
+        }
+      }
+    }
+    bytes(normalized);
+  }
+
+  private static void checkDepth(JsonNode value, int depth) {
+    require(depth <= 64, "JSON nesting limit");
+    if (value.isContainerNode()) {
+      value.forEach(child -> checkDepth(child, depth + 1));
+    }
+  }
+
   private static JsonNode sorted(JsonNode value, int depth) {
     require(depth <= 64, "JSON nesting limit");
     if (value.isObject()) {

@@ -24,6 +24,10 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+
+import com.fasterxml.jackson.databind.JsonNode;
 
 import com.sun.net.httpserver.HttpServer;
 
@@ -158,6 +162,81 @@ public class GoAgentClientTest {
       assertEquals("snapshot", watch.next().path("kind").asText());
       assertEquals("heartbeat", watch.next().path("kind").asText());
     }
+  }
+
+  @Test
+  public void testWatchPreservesSignalExitInDeltaAndReconnectSnapshot() throws Exception {
+    AtomicInteger connections = new AtomicInteger();
+    server.createContext("/v1/watch", exchange -> {
+      try (exchange) {
+        assertEquals("afterCursor=18&limit=128", exchange.getRequestURI().getQuery());
+        String body = connections.getAndIncrement() == 0
+            ? "{\"kind\":\"snapshot\"}\n" + terminalFrame("delta", "-1")
+            : terminalFrame("snapshot", "-1");
+        exchange.getResponseHeaders().set("Content-Type", "application/x-ndjson");
+        exchange.sendResponseHeaders(200, 0);
+        exchange.getResponseBody().write((body + "\n").getBytes(StandardCharsets.US_ASCII));
+      }
+    });
+    server.start();
+    try (AgentTransport.Watch watch = client.watch(node, 18, "1", "session")) {
+      assertEquals("snapshot", watch.next().path("kind").asText());
+      JsonNode delta = watch.next();
+      assertEquals("delta", delta.path("kind").asText());
+      assertSignalExit(delta);
+    }
+    // The cursor may still be uncommitted when a stream disconnects. A fresh
+    // snapshot containing the same terminal diagnostic must remain readable.
+    try (AgentTransport.Watch watch = client.watch(node, 18, "1", "session")) {
+      JsonNode snapshot = watch.next();
+      assertEquals("snapshot", snapshot.path("kind").asText());
+      assertSignalExit(snapshot);
+    }
+    assertEquals(2, connections.get());
+  }
+
+  @Test
+  public void testWatchRejectsOtherNegativeAndInvalidNumbers() throws Exception {
+    AtomicReference<String> frame = new AtomicReference<>();
+    server.createContext("/v1/watch", exchange -> {
+      try (exchange) {
+        exchange.getResponseHeaders().set("Content-Type", "application/x-ndjson");
+        exchange.sendResponseHeaders(200, 0);
+        exchange.getResponseBody().write((frame.get() + "\n")
+            .getBytes(StandardCharsets.US_ASCII));
+      }
+    });
+    server.start();
+    for (String invalid : new String[] {terminalFrame("delta", "-2"),
+        terminalFrame("delta", "-1.0"), terminalFrame("snapshot", "9007199254740992"),
+        terminalFrame("delta", "-1").replace("\"signal\":15", "\"signal\":-1"),
+        "{\"exitCode\":-1}", "{\"state\":{\"observations\":[{\"exitCode\":-1}]}}"}) {
+      frame.set(invalid);
+      try (AgentTransport.Watch watch = client.watch(node, 18, "1", "session")) {
+        try {
+          watch.next();
+          fail("Invalid watch numeric value accepted: " + invalid);
+        } catch (IOException expected) {
+          assertTrue(expected.getMessage().contains("IllegalArgumentException"));
+          assertTrue(expected.getCause().getCause().getMessage()
+              .contains("safe nonnegative integers"));
+        }
+      }
+    }
+  }
+
+  private static String terminalFrame(String kind, String exitCode) {
+    return "{\"kind\":\"" + kind + "\",\"nextCursor\":\"19\",\"hasMore\":false,"
+        + "\"state\":{\"attempts\":{\"attempt\":{\"reserved\":false,\"execution\":{"
+        + "\"phase\":\"terminal\",\"outcome\":\"stopped\",\"cleanup\":\"complete\","
+        + "\"exitCode\":" + exitCode + ",\"signal\":15}}},\"observations\":[]}}";
+  }
+
+  private static void assertSignalExit(JsonNode frame) {
+    JsonNode execution = frame.path("state").path("attempts").path("attempt").path("execution");
+    assertEquals(-1, execution.path("exitCode").asInt());
+    assertEquals(15, execution.path("signal").asInt());
+    assertEquals("complete", execution.path("cleanup").asText());
   }
 
   @Test

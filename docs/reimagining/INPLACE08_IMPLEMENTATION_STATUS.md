@@ -42,6 +42,12 @@ produce a feedback loop. Full snapshots also occur on initial connection and
 reconnection. Frames and observation pages are bounded; cursor gaps, changed
 authority and inconsistent reservations fail closed.
 
+Signal-terminated processes report `exitCode: -1` in diagnostic inventory. Watch
+validation accepts that value only in the execution exit-code field, including
+reconnect snapshots. Command canonicalization keeps its nonnegative-number
+contract. Rejecting that legitimate diagnostic would otherwise prevent a
+committed terminal observation from advancing the original task state machine.
+
 The scheduler merges these observations into its existing state and resource
 model. It retains reservations and withdraws offers when an agent cannot be
 reconciled. Independent virtual threads and bounded exchanges prevent one

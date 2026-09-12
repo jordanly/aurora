@@ -147,7 +147,7 @@ final class GoAgentClient implements AgentTransport {
             for (int value; (value = input.read()) != -1;) {
               if (value == '\n') {
                 JsonNode frame = WireJson.parse(line.toByteArray());
-                WireJson.bytes(frame);
+                WireJson.validateWatchFrame(frame);
                 return frame;
               }
               if (line.size() == WireJson.MAX_BYTES) {
@@ -162,7 +162,10 @@ final class GoAgentClient implements AgentTransport {
           } catch (TimeoutException | ExecutionException e) {
             close();
             read.cancel(true);
-            throw new IOException("Agent watch frame failed", e);
+            Throwable cause = e.getCause() == null ? e : e.getCause();
+            // Parser messages can contain process arguments or environment values.
+            throw new IOException("Agent watch frame failed: "
+                + cause.getClass().getSimpleName(), e);
           } catch (InterruptedException e) {
             close();
             read.cancel(true);
