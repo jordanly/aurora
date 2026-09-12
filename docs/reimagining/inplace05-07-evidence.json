@@ -1,0 +1,1513 @@
+{
+  "acceptance": {
+    "policy": {
+      "cases": [
+        {
+          "executorRestored": true,
+          "name": "automatic-rollback",
+          "tasks": [
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789189688-policy-service-0-13f203e6-68b2-407c-8374-f673d272ab59",
+              "status": 2
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789189688-policy-service-0-53960945-8cf7-4a7d-bac7-e759f0b237fa",
+              "status": 4
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789189688-policy-service-0-d54a0283-dff4-407f-bb98-27a0d57b2006",
+              "status": 5
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789189688-policy-service-1-f4f4a2fc-e19e-4fda-b816-b0abff6f6069",
+              "status": 2
+            }
+          ],
+          "updateStatus": 5
+        },
+        {
+          "drainedTasks": [
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789189688-policy-service-0-13f203e6-68b2-407c-8374-f673d272ab59",
+              "status": 5
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789189688-policy-service-0-53960945-8cf7-4a7d-bac7-e759f0b237fa",
+              "status": 4
+            },
+            {
+              "host": null,
+              "id": "fixtures-test-check-1789189688-policy-service-0-691fb7d6-86b1-4189-bc36-7eea38de9f20",
+              "status": 0
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789189688-policy-service-0-d54a0283-dff4-407f-bb98-27a0d57b2006",
+              "status": 5
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789189688-policy-service-1-f4f4a2fc-e19e-4fda-b816-b0abff6f6069",
+              "status": 2
+            }
+          ],
+          "host": "agent-a",
+          "name": "active-drain-replacement",
+          "replacedTasks": [
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789189688-policy-service-0-13f203e6-68b2-407c-8374-f673d272ab59",
+              "status": 5
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789189688-policy-service-0-53960945-8cf7-4a7d-bac7-e759f0b237fa",
+              "status": 4
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789189688-policy-service-0-691fb7d6-86b1-4189-bc36-7eea38de9f20",
+              "status": 2
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789189688-policy-service-0-d54a0283-dff4-407f-bb98-27a0d57b2006",
+              "status": 5
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789189688-policy-service-1-f4f4a2fc-e19e-4fda-b816-b0abff6f6069",
+              "status": 2
+            }
+          ]
+        },
+        {
+          "name": "manual-cron-finished",
+          "tasks": [
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789189688-policy-cron-0-743d01e5-90af-4032-b24e-406571a03ae0",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789189688-policy-cron-1-7b135f6e-6751-45c0-a8f2-bfad53f08f85",
+              "status": 3
+            }
+          ]
+        }
+      ],
+      "methods": {
+        "createJob": 1,
+        "descheduleCronJob": 1,
+        "drainHosts": 1,
+        "endMaintenance": 1,
+        "getJobUpdateDetails": 8,
+        "getTasksStatus": 19,
+        "killTasks": 1,
+        "maintenanceStatus": 4,
+        "scheduleCronJob": 1,
+        "setQuota": 1,
+        "startCronJob": 1,
+        "startJobUpdate": 1
+      },
+      "ok": true,
+      "path": ".pi-lab/original-qualified/check-policy-1789189688454533431.json",
+      "rpcCalls": 40,
+      "sha256": "d84d024bc1b1818316abdf40907ceb018463dc83708cc3e0c87cc943e9019781"
+    },
+    "recovery": {
+      "cases": [
+        {
+          "afterGeneration": 2,
+          "beforeGeneration": 1,
+          "name": "restart-scheduler",
+          "node": "scheduler",
+          "physical": {
+            "agent-a": [
+              "1652369             /bin/sleep 3600"
+            ],
+            "agent-b": [
+              "1652400             /bin/sleep 3600"
+            ]
+          },
+          "round": 1,
+          "tasks": [
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789188976-recovery-0-aa892382-634f-4185-80ba-81f5488ccc27",
+              "status": 2
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789188976-recovery-1-a04b5723-6bf7-46cf-b544-6df7583c2f3c",
+              "status": 2
+            }
+          ]
+        },
+        {
+          "afterGeneration": 3,
+          "beforeGeneration": 2,
+          "name": "crash-scheduler",
+          "node": "scheduler",
+          "physical": {
+            "agent-a": [
+              "1652369             /bin/sleep 3600"
+            ],
+            "agent-b": [
+              "1652400             /bin/sleep 3600"
+            ]
+          },
+          "round": 1,
+          "tasks": [
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789188976-recovery-0-aa892382-634f-4185-80ba-81f5488ccc27",
+              "status": 2
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789188976-recovery-1-a04b5723-6bf7-46cf-b544-6df7583c2f3c",
+              "status": 2
+            }
+          ]
+        },
+        {
+          "afterGeneration": 2,
+          "beforeGeneration": 1,
+          "name": "crash-agent",
+          "node": "agent-a",
+          "physical": {
+            "agent-a": [
+              "1652369             /bin/sleep 3600"
+            ],
+            "agent-b": [
+              "1652400             /bin/sleep 3600"
+            ]
+          },
+          "round": 1,
+          "tasks": [
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789188976-recovery-0-aa892382-634f-4185-80ba-81f5488ccc27",
+              "status": 2
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789188976-recovery-1-a04b5723-6bf7-46cf-b544-6df7583c2f3c",
+              "status": 2
+            }
+          ]
+        },
+        {
+          "afterGeneration": 4,
+          "beforeGeneration": 3,
+          "name": "restart-scheduler",
+          "node": "scheduler",
+          "physical": {
+            "agent-a": [
+              "1652369             /bin/sleep 3600"
+            ],
+            "agent-b": [
+              "1652400             /bin/sleep 3600"
+            ]
+          },
+          "round": 2,
+          "tasks": [
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789188976-recovery-0-aa892382-634f-4185-80ba-81f5488ccc27",
+              "status": 2
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789188976-recovery-1-a04b5723-6bf7-46cf-b544-6df7583c2f3c",
+              "status": 2
+            }
+          ]
+        },
+        {
+          "afterGeneration": 5,
+          "beforeGeneration": 4,
+          "name": "crash-scheduler",
+          "node": "scheduler",
+          "physical": {
+            "agent-a": [
+              "1652369             /bin/sleep 3600"
+            ],
+            "agent-b": [
+              "1652400             /bin/sleep 3600"
+            ]
+          },
+          "round": 2,
+          "tasks": [
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789188976-recovery-0-aa892382-634f-4185-80ba-81f5488ccc27",
+              "status": 2
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789188976-recovery-1-a04b5723-6bf7-46cf-b544-6df7583c2f3c",
+              "status": 2
+            }
+          ]
+        },
+        {
+          "afterGeneration": 2,
+          "beforeGeneration": 1,
+          "name": "crash-agent",
+          "node": "agent-b",
+          "physical": {
+            "agent-a": [
+              "1652369             /bin/sleep 3600"
+            ],
+            "agent-b": [
+              "1652400             /bin/sleep 3600"
+            ]
+          },
+          "round": 2,
+          "tasks": [
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789188976-recovery-0-aa892382-634f-4185-80ba-81f5488ccc27",
+              "status": 2
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789188976-recovery-1-a04b5723-6bf7-46cf-b544-6df7583c2f3c",
+              "status": 2
+            }
+          ]
+        },
+        {
+          "afterGeneration": 6,
+          "beforeGeneration": 5,
+          "name": "restart-scheduler",
+          "node": "scheduler",
+          "physical": {
+            "agent-a": [
+              "1652369             /bin/sleep 3600"
+            ],
+            "agent-b": [
+              "1652400             /bin/sleep 3600"
+            ]
+          },
+          "round": 3,
+          "tasks": [
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789188976-recovery-0-aa892382-634f-4185-80ba-81f5488ccc27",
+              "status": 2
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789188976-recovery-1-a04b5723-6bf7-46cf-b544-6df7583c2f3c",
+              "status": 2
+            }
+          ]
+        },
+        {
+          "afterGeneration": 7,
+          "beforeGeneration": 6,
+          "name": "crash-scheduler",
+          "node": "scheduler",
+          "physical": {
+            "agent-a": [
+              "1652369             /bin/sleep 3600"
+            ],
+            "agent-b": [
+              "1652400             /bin/sleep 3600"
+            ]
+          },
+          "round": 3,
+          "tasks": [
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789188976-recovery-0-aa892382-634f-4185-80ba-81f5488ccc27",
+              "status": 2
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789188976-recovery-1-a04b5723-6bf7-46cf-b544-6df7583c2f3c",
+              "status": 2
+            }
+          ]
+        },
+        {
+          "afterGeneration": 3,
+          "beforeGeneration": 2,
+          "name": "crash-agent",
+          "node": "agent-a",
+          "physical": {
+            "agent-a": [
+              "1652369             /bin/sleep 3600"
+            ],
+            "agent-b": [
+              "1652400             /bin/sleep 3600"
+            ]
+          },
+          "round": 3,
+          "tasks": [
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789188976-recovery-0-aa892382-634f-4185-80ba-81f5488ccc27",
+              "status": 2
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789188976-recovery-1-a04b5723-6bf7-46cf-b544-6df7583c2f3c",
+              "status": 2
+            }
+          ]
+        }
+      ],
+      "methods": {
+        "createJob": 1,
+        "getTasksStatus": 16,
+        "killTasks": 1,
+        "setQuota": 1
+      },
+      "ok": true,
+      "path": ".pi-lab/original-qualified/check-recovery-1789188976048790660.json",
+      "rpcCalls": 19,
+      "sha256": "63ebcc71b9845cb91dfede22bc9b29afac9d033e6818126f94a56c3e1d3f8ba4"
+    },
+    "smoke": {
+      "cases": [
+        {
+          "name": "batch-finished",
+          "tasks": [
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789188879-batch-0-ae458932-452d-44f8-aa7c-524b15c784d9",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789188879-batch-1-1c464d4c-d934-4c5c-bc74-646a554c90b6",
+              "status": 3
+            }
+          ]
+        },
+        {
+          "name": "two-agent-service",
+          "physical": {
+            "agent-a": [
+              "1650697             /bin/sleep 300"
+            ],
+            "agent-b": [
+              "1650710             /bin/sleep 300"
+            ]
+          },
+          "tasks": [
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789188879-service-0-7eacd6b1-02f5-44c8-b1f5-dd9ff3982159",
+              "status": 2
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789188879-service-1-7c5bce99-8e99-443f-b849-1bda667b45ec",
+              "status": 2
+            }
+          ]
+        },
+        {
+          "name": "rolling-update",
+          "tasks": [
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789188879-service-0-7eacd6b1-02f5-44c8-b1f5-dd9ff3982159",
+              "status": 5
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789188879-service-0-c0b9b436-85e8-47ef-96df-674573696c7a",
+              "status": 2
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789188879-service-1-6e751f94-864d-4862-9b82-9e402cc71cc8",
+              "status": 2
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789188879-service-1-7c5bce99-8e99-443f-b849-1bda667b45ec",
+              "status": 5
+            }
+          ],
+          "updateStatus": 4
+        },
+        {
+          "name": "service-killed"
+        },
+        {
+          "name": "quota-and-cron-api"
+        },
+        {
+          "name": "drain-empty-hosts-api"
+        }
+      ],
+      "methods": {
+        "createJob": 2,
+        "descheduleCronJob": 1,
+        "drainHosts": 1,
+        "endMaintenance": 1,
+        "getJobUpdateDetails": 2,
+        "getQuota": 1,
+        "getTasksStatus": 34,
+        "killTasks": 1,
+        "scheduleCronJob": 1,
+        "setQuota": 2,
+        "startJobUpdate": 1
+      },
+      "ok": true,
+      "path": ".pi-lab/original-qualified/check-smoke-1789188879410137791.json",
+      "rpcCalls": 47,
+      "sha256": "5f11b06eb979308868683b5e1c1a029b652e01f68f8d76aa041fa73037d3cb68"
+    },
+    "soak": {
+      "cases": [
+        {
+          "batches": 20,
+          "elapsedSeconds": 600.1105744539527,
+          "finishedTasks": [
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789189041-soak-batch-0-0-3aeb58e0-38ac-4003-8656-f98ebc64dba3",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789189041-soak-batch-0-1-201afe10-1361-476b-b526-59513374df90",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789189041-soak-batch-1-0-539f0e1d-0702-4b2d-a8db-21171bcf837d",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789189041-soak-batch-1-1-4716673e-448c-4548-80fd-c4a76c713e7b",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789189041-soak-batch-2-0-53f11f6b-9f27-416a-82be-5f422bc66712",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789189041-soak-batch-2-1-fd375e89-9275-43e0-91bf-715b4105a600",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789189041-soak-batch-3-0-61a7e0dd-7496-4615-a09d-ed7211acf4f5",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789189041-soak-batch-3-1-add741ad-9082-41f2-87f8-8f921564a7a1",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789189041-soak-batch-4-0-9e389eb6-b540-48ee-a422-0e6c98dfe6d0",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789189041-soak-batch-4-1-6e7d6bc8-1690-41d8-a3d3-7345b4eb4096",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789189041-soak-batch-5-0-7f0a36d2-67c3-4daf-a4b2-d955c5084fe2",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789189041-soak-batch-5-1-7719e12b-cc3b-4b3b-b895-c9e6cf2f9af3",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789189041-soak-batch-6-0-68557a46-7ee7-4650-8088-c51d1329bb25",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789189041-soak-batch-6-1-4e6b04e0-ab9e-4099-a929-f079fce42e0d",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789189041-soak-batch-7-0-d9a93fbb-a895-420b-abd1-7aa594722915",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789189041-soak-batch-7-1-3e01c106-c428-4679-9fab-f36e9a60da29",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789189041-soak-batch-8-0-029884cf-3361-4a66-a86f-f9ca4a366746",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789189041-soak-batch-8-1-db8537c8-18f0-43ae-b69b-b9aa6991b3ee",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789189041-soak-batch-9-0-d196f592-fe89-4b53-9ff9-5b072f046f9c",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789189041-soak-batch-9-1-18a174cf-ec1a-429d-ae96-c2b5920d45d0",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789189041-soak-batch-10-0-7261ae5f-2746-4f7c-bb40-563ae822b529",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789189041-soak-batch-10-1-8aa7f35e-9acd-40e9-a93e-b86495151f8c",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789189041-soak-batch-11-0-67ee4c9c-2825-46b4-9d9f-40d2a7b80393",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789189041-soak-batch-11-1-d79ee9c3-26e9-4be7-95dd-51fecfb1fd57",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789189041-soak-batch-12-0-81cce82e-0772-47c3-8944-ef0aa5a62467",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789189041-soak-batch-12-1-35ca5430-d4f5-4d89-a3f4-746692001b2b",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789189041-soak-batch-13-0-26c813cf-1d71-4e3a-826d-708bb7eed973",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789189041-soak-batch-13-1-8b119014-99fa-4836-b76d-92dbb5de4321",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789189041-soak-batch-14-0-d1b1451b-3c9a-48bf-8da3-fad51ede82cf",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789189041-soak-batch-14-1-fa1f6ec6-9e51-494c-9a09-9c89fe9786cc",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789189041-soak-batch-15-0-531fb69f-31da-4969-ac95-5a8555f881b4",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789189041-soak-batch-15-1-157ee378-ca6b-4f24-839c-1d044a17ca2c",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789189041-soak-batch-16-0-99243d87-a761-4310-b8c3-a8852c20830f",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789189041-soak-batch-16-1-4baaaff0-2cd5-4c84-8935-1dcffa982203",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789189041-soak-batch-17-0-17aa7b99-c4a4-4393-8aec-ee3300c4c4d0",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789189041-soak-batch-17-1-847bfc78-d90c-4cb4-8bce-de9aba4e794a",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789189041-soak-batch-18-0-9c07b190-53c3-40c2-a037-201f65edbbda",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789189041-soak-batch-18-1-d6f0ae97-87bc-4f1b-93f3-e74bb7ef3528",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789189041-soak-batch-19-0-57cd7374-f93e-429d-8f2e-fc135c3305d8",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789189041-soak-batch-19-1-8e9a2983-bec3-402c-8aab-d01312cf0be8",
+              "status": 3
+            }
+          ],
+          "name": "mixed-soak",
+          "physical": {
+            "agent-a": [
+              "1654341             /bin/sleep 3601"
+            ],
+            "agent-b": [
+              "1654354             /bin/sleep 3601"
+            ]
+          },
+          "samples": 140,
+          "serviceTasks": [
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789189041-soak-service-0-359cdf9d-4a26-45d3-af4a-1d12e72257f8",
+              "status": 2
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789189041-soak-service-1-4a255ba4-c617-44cc-8595-45d30dcef682",
+              "status": 2
+            }
+          ]
+        }
+      ],
+      "methods": {
+        "createJob": 21,
+        "getTasksStatus": 219,
+        "killTasks": 1,
+        "setQuota": 1
+      },
+      "ok": true,
+      "path": ".pi-lab/original-qualified/check-soak-1789189041389767343.json",
+      "rpcCalls": 242,
+      "sha256": "ddf5b0a5412fcb891ce7e7849dbf8c785a270fe8a39f3a4a9ab94ebfe84ad420"
+    }
+  },
+  "branch": "codex/in-place-java25",
+  "buildMode": "Incremental original workspace qualification, committed as implementationCommit after local checks. Unchanged Gradle/dependency outputs reused. GitHub CI independently checks committed source. The staged build.properties records the preceding commit plus dirty state; hashes below bind the actual source inputs and installed artifacts.",
+  "ci": {
+    "commit": "02850c964eb37c23a76ddfb24aa160bb7cb12e67",
+    "conclusion": "success",
+    "jobs": [
+      {
+        "conclusion": "success",
+        "html_url": "https://github.com/jordanly/aurora/actions/runs/34674334138/job/103501357937",
+        "name": "Java 25 / quality",
+        "status": "completed"
+      },
+      {
+        "conclusion": "success",
+        "html_url": "https://github.com/jordanly/aurora/actions/runs/34674334138/job/103501357955",
+        "name": "Go agent / tests and provenance",
+        "status": "completed"
+      },
+      {
+        "conclusion": "success",
+        "html_url": "https://github.com/jordanly/aurora/actions/runs/34674334138/job/103501357998",
+        "name": "Java 25 / behavior-and-distribution",
+        "status": "completed"
+      }
+    ],
+    "status": "completed",
+    "url": "https://github.com/jordanly/aurora/actions/runs/34674334138"
+  },
+  "cluster": {
+    "artifactsSha256": "6841cee8c56f04060362983d4930e242524595a8baf88b4110be7658a975d68d",
+    "binaries": {
+      "agent": {
+        "binarySha256": "09e6ac891a18c34aa1ec7ac2fc5c30682cb2e8d06ffc0640cc7bfed6edc72e8c",
+        "build": [
+          "CGO_ENABLED=0",
+          "GOOS=linux",
+          "GOARCH=arm64",
+          "GOTOOLCHAIN=local",
+          "-trimpath",
+          "-buildvcs=false",
+          "-ldflags=-s -w"
+        ],
+        "goVersion": "go version go1.27.1 linux/arm64",
+        "schema": 1,
+        "sourceSha256": "e5621bc76ab9df380cfae2071db130083a770d20ee81649b036c9547db945431"
+      },
+      "helper": {
+        "binarySha256": "4f4a288467fea2689871497eb5a4e32312e968b80db08c2a514a8a2bd58459ec",
+        "build": [
+          "CGO_ENABLED=0",
+          "GOOS=linux",
+          "GOARCH=arm64",
+          "GOTOOLCHAIN=local",
+          "-trimpath",
+          "-buildvcs=false",
+          "-ldflags=-s -w"
+        ],
+        "goVersion": "go version go1.27.1 linux/arm64",
+        "schema": 1,
+        "sourceSha256": "da069ff44924ae6baba7a71a58409eb41091c5fa95373a7aea60c386aed612e6"
+      }
+    },
+    "image": "sha256:32d322b19846336d25f755f73618a448e3621982d52c48064e95af8b3dcbc2d9",
+    "jdk": {
+      "release": "IMPLEMENTOR=\"Eclipse Adoptium\"\nIMPLEMENTOR_VERSION=\"Temurin-25.0.4.1+1\"\nJAVA_RUNTIME_VERSION=\"25.0.4.1+1-LTS\"\nJAVA_VERSION=\"25.0.4.1\"\nJAVA_VERSION_DATE=\"2026-08-18\"\nLIBC=\"gnu\"\nMODULES=\"java.base java.compiler java.datatransfer java.xml java.prefs java.desktop java.instrument java.logging java.management java.security.sasl java.naming java.rmi java.management.rmi java.net.http java.scripting java.security.jgss java.transaction.xa java.sql java.sql.rowset java.xml.crypto java.se java.smartcardio jdk.accessibility jdk.internal.jvmstat jdk.attach jdk.charsets jdk.internal.opt jdk.zipfs jdk.compiler jdk.crypto.cryptoki jdk.crypto.ec jdk.dynalink jdk.internal.ed jdk.editpad jdk.internal.vm.ci jdk.graal.compiler jdk.graal.compiler.management jdk.hotspot.agent jdk.httpserver jdk.incubator.vector jdk.internal.le jdk.internal.md jdk.jartool jdk.javadoc jdk.jcmd jdk.management jdk.management.agent jdk.jconsole jdk.jdeps jdk.jdwp.agent jdk.jdi jdk.jfr jdk.jlink jdk.jpackage jdk.jshell jdk.jsobject jdk.jstatd jdk.localedata jdk.management.jfr jdk.naming.dns jdk.naming.rmi jdk.net jdk.nio.mapmode jdk.sctp jdk.security.auth jdk.security.jgss jdk.unsupported jdk.unsupported.desktop jdk.xml.dom\"\nOS_ARCH=\"aarch64\"\nOS_NAME=\"Linux\"\nSOURCE=\".:git:520406d87195\"\nBUILD_SOURCE=\"git:e6ba7dec3d07654074559310376a3ae89da5f4ac\"\nBUILD_SOURCE_REPO=\"https://github.com/adoptium/temurin-build.git\"\nSOURCE_REPO=\"https://github.com/adoptium/jdk25u.git\"\nFULL_VERSION=\"25.0.4.1+1-LTS\"\nSEMANTIC_VERSION=\"25.0.4.1+1\"\nBUILD_INFO=\"OS: Linux Version: 6.8.0-71-generic\"\nJVM_VARIANT=\"Hotspot\"\nJVM_VERSION=\"25.0.4.1+1-LTS\"\nIMAGE_TYPE=\"JDK\"\n",
+      "releaseSha256": "5d5e02af20088898661ea03a17304b2e10c028cb0471820f344c4576c1c59424",
+      "treeSha256": "e43475d00697616d14e9987d3a5fa86563e6668f7487c9c6db02870863e2992b"
+    },
+    "schedulerDistributionSha256": "4cc51ad034c08598094af2b285230f6b26e49c3ab43afae530c90f3ce07c0343",
+    "sourceHashes": {
+      "agent": "e5621bc76ab9df380cfae2071db130083a770d20ee81649b036c9547db945431",
+      "helper": "da069ff44924ae6baba7a71a58409eb41091c5fa95373a7aea60c386aed612e6"
+    },
+    "token": "5b61de5d3012c506"
+  },
+  "codeDeltaAtImplementationCommit": {
+    "allFiles": {
+      "addedLines": 61053,
+      "changed": 461,
+      "deletedLines": 2713
+    },
+    "javaIncludingTests": {
+      "addedLines": 11796,
+      "deletedLines": 2005,
+      "netLines": 9791
+    },
+    "note": "Includes reused Go agent code, tests, fixtures, build assets and documentation; this is not a source retirement slice.",
+    "relativeTo": "upstream/master",
+    "thisSlice": {
+      "addedLines": 16816,
+      "changedFiles": 133,
+      "deletedLines": 37
+    }
+  },
+  "commands": [
+    "./gradlew -PthriftCompiler=<verified-compiler> -Pq verifyOriginalBehavior :ui:build verifyInstalledDistribution verifyOriginalQuality --continue",
+    "python3 -m unittest discover -s build-support/java -p 'test_*.py'",
+    "build-support/lab/build-agents --offline --check",
+    "build-support/lab/inplace-cluster up --root <private-absolute-new-root>",
+    "build-support/lab/inplace-check --root <root> --phase smoke",
+    "build-support/lab/inplace-check --root <root> --phase recovery --rounds 3",
+    "build-support/lab/inplace-check --root <root> --phase soak",
+    "build-support/lab/inplace-check --root <root> --phase policy"
+  ],
+  "coverage": {
+    "BRANCH": {
+      "covered": 2710,
+      "missed": 663,
+      "ratio": 0.8034390750074119
+    },
+    "CLASS": {
+      "covered": 634,
+      "missed": 47,
+      "ratio": 0.9309838472834068
+    },
+    "COMPLEXITY": {
+      "covered": 4135,
+      "missed": 950,
+      "ratio": 0.8131760078662733
+    },
+    "INSTRUCTION": {
+      "covered": 54542,
+      "missed": 6453,
+      "ratio": 0.8942044429871301
+    },
+    "LINE": {
+      "covered": 12336,
+      "missed": 1518,
+      "ratio": 0.8904287570376787
+    },
+    "METHOD": {
+      "covered": 2982,
+      "missed": 365,
+      "ratio": 0.8909471168210338
+    }
+  },
+  "coverageReport": {
+    "path": ".cache/inplace-build/build/scheduler/reports/jacoco/behaviorCoverageReport/behaviorCoverageReport.xml",
+    "sha256": "6e061f5b69546f2f2c1c8c91ead670196bccfc6dcd26459602efa5664eff6fee"
+  },
+  "coverageThresholdsUnchanged": {
+    "BRANCH": 0.79,
+    "INSTRUCTION": 0.87
+  },
+  "distribution": {
+    "artifacts": {
+      "activation-1.1.1.jar": {
+        "sha256": "ae475120e9fcd99b4b00b38329bd61cdc5eb754eee03fe66c01f50e137724f99",
+        "size": 69409
+      },
+      "annotations-3.0.0.jar": {
+        "sha256": "9dc756a03800f000781c5e2feddb67e5d4174b2e3f7f78c2021bf4e95c64adf1",
+        "size": 77209
+      },
+      "antlr-2.7.7.jar": {
+        "sha256": "88fbda4b912596b9f56e8e12e580cc954bacfb51776ecfddd3e18fc1cf56dc4c",
+        "size": 445288
+      },
+      "aopalliance-1.0.jar": {
+        "sha256": "0addec670fedcd3f113c5c8091d783280d23f75e3acb841b61a9cdb079376a08",
+        "size": 4467
+      },
+      "asm-9.8.jar": {
+        "sha256": "876eab6a83daecad5ca67eb9fcabb063c97b5aeb8cf1fca7a989ecde17522051",
+        "size": 126113
+      },
+      "async-http-client-2.0.37.jar": {
+        "sha256": "cb1c6583c18b7e180e59584c8ef1d5c8064939af861a4c898661ba6e3014df3f",
+        "size": 433590
+      },
+      "async-http-client-netty-utils-2.0.37.jar": {
+        "sha256": "6c9e79cf4f3eac56fa01ca4a31d18b2a95c5636142760a517e74bff4fe58925d",
+        "size": 7287
+      },
+      "aurora-0.23.0-SNAPSHOT.jar": {
+        "auroraClassCount": 847,
+        "bytecodeMajor": 69,
+        "requiredEntries": [
+          "org/apache/aurora/scheduler/storage/durability/RecoveryTool.class",
+          "scheduler/assets/scheduler/index.html",
+          "scheduler/assets/js/bundle.js",
+          "scheduler/assets/js/bundle.js.map",
+          "scheduler/assets/js/thrift.js",
+          "scheduler/assets/bower_components/jquery/dist/jquery.min.js"
+        ],
+        "sha256": "edb81ae9fd7b357bd01800dce7480988cebabc79ceda55c6a555eb0bdd1d7d74",
+        "size": 3754055
+      },
+      "aurora-api-0.23.0-SNAPSHOT.jar": {
+        "auroraClassCount": 1547,
+        "bytecodeMajor": 69,
+        "requiredEntries": [
+          "org/apache/aurora/gen/AuroraAdmin.class",
+          "org/apache/aurora/scheduler/storage/entities/IScheduledTask.class",
+          "org/apache/aurora/scheduler/gen/client/ReadOnlyScheduler.js",
+          "org/apache/aurora/scheduler/gen/client/AuroraAdmin.js",
+          "org/apache/aurora/scheduler/gen/client/api_types.js",
+          "org/apache/aurora/scheduler/gen/client/api.html"
+        ],
+        "sha256": "93103b86b45d8d5e91f71c04fbf4e6ee73360d74a296d6476410a2ef217515f9",
+        "size": 2989975
+      },
+      "byte-buddy-1.17.5.jar": {
+        "sha256": "71568c9f8396677219f650268fbf6493ded484edcdbdf2dae6129ca5be81e8db",
+        "size": 8953594
+      },
+      "c3p0-0.9.1.1.jar": {
+        "sha256": "a3c772033d43c85f2635596e2421496d55840abbde64ad64b8d0298cacbba466",
+        "size": 608376
+      },
+      "checker-qual-3.12.0.jar": {
+        "sha256": "ff10785ac2a357ec5de9c293cb982a2cbb605c0309ea4cc1cb9b9bc6dbe7f3cb",
+        "size": 208835
+      },
+      "commons-0.23.0-SNAPSHOT.jar": {
+        "auroraClassCount": 150,
+        "bytecodeMajor": 69,
+        "sha256": "3929feb7463455f6744eadb307044bd078703f69f294a3ee5436ce26053b5033",
+        "size": 160231
+      },
+      "commons-beanutils-1.9.3.jar": {
+        "sha256": "c058e39c7c64203d3a448f3adb588cb03d6378ed808485618f26e137f29dae73",
+        "size": 246174
+      },
+      "commons-codec-1.9.jar": {
+        "sha256": "ad19d2601c3abf0b946b5c3a4113e226a8c1e3305e395b90013b78dd94a723ce",
+        "size": 263965
+      },
+      "commons-collections-3.2.2.jar": {
+        "sha256": "eeeae917917144a68a741d4c0dff66aa5c5c5fd85593ff217bced3fc8ca783b8",
+        "size": 588337
+      },
+      "commons-io-2.5.jar": {
+        "sha256": "a10418348d234968600ccb1d988efcbbd08716e1d96936ccc1880e7d22513474",
+        "size": 208700
+      },
+      "commons-lang-2.6.jar": {
+        "sha256": "50f11b09f877c294d56f24463f47d28f929cf5044f648661c0f0cfbae9a2f49c",
+        "size": 284220
+      },
+      "commons-logging-1.2.jar": {
+        "sha256": "daddea1ea0be0f56978ab3006b8ac92834afeefbd9b7e4e6316fca57df0fa636",
+        "size": 61829
+      },
+      "curator-client-2.12.0.jar": {
+        "sha256": "683c5410fba7fe622f2aec6cfaff335838204d5bcd569157a548e3c1506c16aa",
+        "size": 2423138
+      },
+      "curator-framework-2.12.0.jar": {
+        "sha256": "8c5e2ccdd94088f7db3669b8183345d88c6d3dca931542a39fe15304a3c1b278",
+        "size": 201953
+      },
+      "curator-recipes-2.12.0.jar": {
+        "sha256": "4166d93e88c3a7bbc890e21cb927108d6efc9435c57fb5ceac9665e17fbccec2",
+        "size": 283598
+      },
+      "easymock-5.6.0.jar": {
+        "sha256": "63efc00da99774fb0253330ef9b5788b261022ba73f36bf76889ce7edf3d2b31",
+        "size": 148389
+      },
+      "error_prone_annotations-2.18.0.jar": {
+        "sha256": "9e6814cb71816988a4fd1b07a993a8f21bb7058d522c162b1de849e19bea54ae",
+        "size": 16017
+      },
+      "failureaccess-1.0.1.jar": {
+        "sha256": "a171ee4c734dd2da837e4b16be9df4661afab72a41adaf31eb84dfdaf936ca26",
+        "size": 4617
+      },
+      "gson-2.3.1.jar": {
+        "sha256": "13f44a2f6ead058da80a91ee650c073871942468e684a9bf6a0d0319138924ce",
+        "size": 210856
+      },
+      "guava-31.0.1-jre.jar": {
+        "sha256": "d5be94d65e87bd219fb3193ad1517baa55a3b88fc91d21cf735826ab5af087b9",
+        "size": 2974216
+      },
+      "guice-6.0.0.jar": {
+        "sha256": "b4d4f7ec5e8fc17b4f98dee9d3f6cf6ae3ae13e2e5ed4b2f7bbf09bc4bb675d5",
+        "size": 805724
+      },
+      "guice-assistedinject-6.0.0.jar": {
+        "sha256": "f4d264534f213af7beb493273f72f02ef9eb4b229d71a0a80f003b7349dee6f9",
+        "size": 51293
+      },
+      "guice-servlet-6.0.0.jar": {
+        "sha256": "0450043d0770b816957856ff9d08209c31f801a31e820e53e45ac29468514002",
+        "size": 82123
+      },
+      "hamcrest-core-1.3.jar": {
+        "sha256": "66fdef91e9739348df7a096aa384a5685f4e875584cce89386a7a47251c4d8e9",
+        "size": 45024
+      },
+      "httpclient-4.5.2.jar": {
+        "sha256": "0dffc621400d6c632f55787d996b8aeca36b30746a716e079a985f24d8074057",
+        "size": 736658
+      },
+      "httpcore-4.4.4.jar": {
+        "sha256": "f7bc09dc8a7003822d109634ffd3845d579d12e725ae54673e323a7ce7f5e325",
+        "size": 326724
+      },
+      "j2objc-annotations-1.3.jar": {
+        "sha256": "21af30c92267bd6122c0e0b4d20cccb6641a37eaf956c6540ec471d584e64a7b",
+        "size": 8781
+      },
+      "jackson-annotations-2.5.1.jar": {
+        "sha256": "836a18d49b1cc515dde8b14cb7ea2b3ac3fd26b1c914b5a399bca0ecc9fbf4bc",
+        "size": 39817
+      },
+      "jackson-core-2.5.1.jar": {
+        "sha256": "ba80bd8304bc268a573ac424b692f465a7c087db2207daa50979d7ab2751baf6",
+        "size": 229860
+      },
+      "jackson-core-asl-1.9.13.jar": {
+        "sha256": "440a9cb5ca95b215f953d3a20a6b1a10da1f09b529a9ddea5f8a4905ddab4f5a",
+        "size": 232248
+      },
+      "jackson-databind-2.5.1.jar": {
+        "sha256": "0d817bad8b533a61fe0e50b53303d89a1f71b2f92b237d9fe2e314bc4a9b0f90",
+        "size": 1138921
+      },
+      "jackson-datatype-protobuf-0.9.3.jar": {
+        "sha256": "ab96e40dbb2494665750a876bd297f7d21a9913626e7fe31dbcda1933d2850e9",
+        "size": 23107
+      },
+      "jackson-jaxrs-1.9.13.jar": {
+        "sha256": "1770570a6ba5c87a4795c0aeb40ee7c5fe5e31df64ef1d4795a0d427796b84bb",
+        "size": 18336
+      },
+      "jackson-mapper-asl-1.9.13.jar": {
+        "sha256": "74e7a07a76f2edbade29312a5a2ebccfa019128bc021ece3856d76197e9be0c2",
+        "size": 780664
+      },
+      "jackson-xc-1.9.13.jar": {
+        "sha256": "2d2905fcec7d1c55b775995617685dbb03672350704d9e40b492eab5b54d0be7",
+        "size": 27084
+      },
+      "jakarta.inject-api-2.0.1.jar": {
+        "sha256": "f7dc98062fccf14126abb751b64fab12c312566e8cbdc8483598bffcea93af7c",
+        "size": 10681
+      },
+      "javax.activation-api-1.2.0.jar": {
+        "sha256": "43fdef0b5b6ceb31b0424b208b930c74ab58fac2ceeb7b3f6fd3aeb8b5ca4393",
+        "size": 56674
+      },
+      "javax.annotation-api-1.3.2.jar": {
+        "sha256": "e04ba5195bcd555dc95650f7cc614d151e4bcd52d29a10b8aa2197f3ab89ab9b",
+        "size": 26586
+      },
+      "javax.inject-1.jar": {
+        "sha256": "91c77044a50c481636c32d916fd89c9118a72195390452c81065080f957de7ff",
+        "size": 2497
+      },
+      "javax.servlet-api-3.1.0.jar": {
+        "sha256": "af456b2dd41c4e82cf54f3e743bc678973d9fe35bd4d3071fa05c7e5333b8482",
+        "size": 95806
+      },
+      "javax.ws.rs-api-2.0.jar": {
+        "sha256": "ca88fcb9ce85aac4f77e42eac486aa7fde6ead6a545d74ccef6089241c84db53",
+        "size": 112758
+      },
+      "jaxb-api-2.3.1.jar": {
+        "sha256": "88b955a0df57880a26a74708bc34f74dcaf8ebf4e78843a28b50eae945732b06",
+        "size": 128076
+      },
+      "jboss-annotations-api_1.2_spec-1.0.0.Final.jar": {
+        "sha256": "bb979cac95ef2748bc85d4b8151bef88b9a203d03068fbe799c6e6162c950780",
+        "size": 19197
+      },
+      "jboss-jaxrs-api_2.0_spec-1.0.1.Beta1.jar": {
+        "sha256": "1218fa20acae20a0cfb618b452e01c9bf2bfa9cb12fadb308a7a3adbdc45d2b5",
+        "size": 120531
+      },
+      "jboss-logging-3.3.0.Final.jar": {
+        "sha256": "e0e0595e7f70c464609095aef9e47a8484e05f2f621c0aa5081c18e3db2d498c",
+        "size": 66802
+      },
+      "jcip-annotations-1.0.jar": {
+        "sha256": "be5805392060c71474bf6c9a67a099471274d30b83eef84bfc4e0889a4f1dcc0",
+        "size": 2254
+      },
+      "jcommander-1.72.jar": {
+        "sha256": "e0de160b129b2414087e01fe845609cd55caec6820cfd4d0c90fabcc7bdb8c1e",
+        "size": 69254
+      },
+      "jetty-client-9.3.11.v20160721.jar": {
+        "sha256": "6ead2ce0e191e105b036db9a44abc99edc78c165077a21bbab73a150cd1d9424",
+        "size": 260660
+      },
+      "jetty-continuation-9.3.11.v20160721.jar": {
+        "sha256": "fe3297049fc1bed6800cf50793645ef035be157b7207655e70131a2dcaf5fa1b",
+        "size": 15769
+      },
+      "jetty-http-9.3.11.v20160721.jar": {
+        "sha256": "067808638b6129cfbd7445d100344eb05d4f375be8bfa547bd4e35cce316fe77",
+        "size": 148566
+      },
+      "jetty-io-9.3.11.v20160721.jar": {
+        "sha256": "33c7429413ea999fcd8fdf8f4590eaf2437e3189a8799478001928b8848491f9",
+        "size": 112071
+      },
+      "jetty-rewrite-9.3.11.v20160721.jar": {
+        "sha256": "4219807d37b2268df09eff6b7eb7ba5ca1a5b14df150526764300fe0a407fe4f",
+        "size": 34019
+      },
+      "jetty-security-9.3.11.v20160721.jar": {
+        "sha256": "6ad79d7edc8205ab0a8e95fcb205b60d8ac0d818c6e6afa05ba1b1bbb22299c9",
+        "size": 94503
+      },
+      "jetty-server-9.3.11.v20160721.jar": {
+        "sha256": "dc8f2e0e1f167aa6aa9b077c26f6147f0c634a8cc87a3144dd3f62bac82d1ab7",
+        "size": 494012
+      },
+      "jetty-servlet-9.3.11.v20160721.jar": {
+        "sha256": "03409dcf7b0d85d29f7d7603e5fe8900462df80496b9f6cd11bf1da6d52e9997",
+        "size": 116571
+      },
+      "jetty-servlets-9.3.11.v20160721.jar": {
+        "sha256": "8d9df4d916d9a602b20c6182d056ae934a636877b7560598f7124d3dd754c2da",
+        "size": 86413
+      },
+      "jetty-util-9.3.11.v20160721.jar": {
+        "sha256": "d5bda0c878cf2b36f74fa000535abdbcfec6a6704ae6791ed6b34a0be0d0c728",
+        "size": 431954
+      },
+      "jline-0.9.94.jar": {
+        "sha256": "d8df0ffb12d87ca876271cda4d59b3feb94123882c1be1763b7faf2e0a0b0cbb",
+        "size": 87325
+      },
+      "jsr305-3.0.2.jar": {
+        "sha256": "766ad2a0783f2687962c8ad74ceecc38a28b9f72a2d085ee438b7813e928d0c7",
+        "size": 19936
+      },
+      "junit-4.12.jar": {
+        "sha256": "59721f0805e223d84b90677887d9ff567dc534d7c502ca903c0c2b17f05c116a",
+        "size": 314932
+      },
+      "libthrift-0.10.0.jar": {
+        "sha256": "8591718c1884ac8001b4c5ca80f349c0a6deec691de0af720c5e3bc3a581dada",
+        "size": 236865
+      },
+      "listenablefuture-9999.0-empty-to-avoid-conflict-with-guava.jar": {
+        "sha256": "b372a037d4230aa57fbeffdef30fd6123f9c0c2db85d0aced00c91b974f33f99",
+        "size": 2199
+      },
+      "logback-classic-1.2.3.jar": {
+        "sha256": "fb53f8539e7fcb8f093a56e138112056ec1dc809ebb020b59d8a36a5ebac37e0",
+        "size": 290339
+      },
+      "logback-core-1.2.3.jar": {
+        "sha256": "5946d837fe6f960c02a53eda7a6926ecc3c758bbdd69aa453ee429f858217f22",
+        "size": 471901
+      },
+      "mesos-1.6.1.jar": {
+        "sha256": "ee7d776b6b1ea2ad772f53368514bfbbc9a7b742d6cfc918a14450ff71b2aa60",
+        "size": 6860298
+      },
+      "netty-3.7.0.Final.jar": {
+        "sha256": "aa44be64442b9cbc5edd521476b9f1c272eec6a53dca104cf3032f42ad20ff89",
+        "size": 1208356
+      },
+      "netty-buffer-4.0.52.Final.jar": {
+        "sha256": "ff765973f863cbfc7137ff2ca0d3765224b6d5370ed421a4f3c4c66b24626e11",
+        "size": 234592
+      },
+      "netty-codec-4.0.52.Final.jar": {
+        "sha256": "55825f3e34b20f9fb0e78dc2e2c9f7d00e13d14657418e88e5431562d0386dd2",
+        "size": 151008
+      },
+      "netty-codec-dns-2.0.37.jar": {
+        "sha256": "39c3b61c546444b33690500da1203ee60294ef9a7c5b5f567cfb2cc717ccd9be",
+        "size": 55155
+      },
+      "netty-codec-http-4.0.52.Final.jar": {
+        "sha256": "99e3a087d0347e30c30d5a8d829abba5f8fdc9e66c43a17a70e4d25a5cbf9526",
+        "size": 460925
+      },
+      "netty-common-4.0.52.Final.jar": {
+        "sha256": "5b154c5424807b62a51f3278530c5eaf2c6dfa9c1a4417c2fb8e4e7ceda0bfbc",
+        "size": 398158
+      },
+      "netty-handler-4.0.52.Final.jar": {
+        "sha256": "9695d34837da27d307e860b445b0c922c8eb5cf1837a0f7f0077cb050c830ab7",
+        "size": 358962
+      },
+      "netty-reactive-streams-1.0.8.jar": {
+        "sha256": "a368c024079971086d83c89ff7fbd6a028e6a8185faafd6ab8339e760f0f7aa2",
+        "size": 20938
+      },
+      "netty-resolver-2.0.37.jar": {
+        "sha256": "90c1271f0fc80ea785334c2d04598f305c9cd0871fd41e32bc9ca60c52043be7",
+        "size": 36585
+      },
+      "netty-resolver-dns-2.0.37.jar": {
+        "sha256": "e8320966446ada2ffaee05b38f138cba1ef9c22e33b944d3efb13a566dcd01b4",
+        "size": 89181
+      },
+      "netty-transport-4.0.52.Final.jar": {
+        "sha256": "7a3aed2ae297318eba6d713cc867313220fe1d41608ce6a9627871f58ed7a989",
+        "size": 387718
+      },
+      "netty-transport-native-epoll-4.0.52.Final-linux-x86_64.jar": {
+        "sha256": "0b9ea2848c2cec2c72453d425bb2f96dc744027aba2b8ecf64e343c21b6fbad1",
+        "size": 151894
+      },
+      "objenesis-3.4.jar": {
+        "sha256": "95488102feaf2e2858adf6b299353677dac6c15294006f8ed1c5556f8e3cd251",
+        "size": 49076
+      },
+      "protobuf-java-3.5.1.jar": {
+        "sha256": "b5e2d91812d183c9f053ffeebcbcda034d4de6679521940a19064714966c2cd4",
+        "size": 1411071
+      },
+      "quartz-2.2.2.jar": {
+        "sha256": "739b70bc472f91cbaa8e3e4ce5ec5c8354a43b0d4b16516319f3ffcd7b05920a",
+        "size": 660382
+      },
+      "reactive-streams-1.0.0.jar": {
+        "sha256": "ef867702a614b96eb6c64fb65a8f5e14bdfcabbc1ae056f78a1643f7b79ca0eb",
+        "size": 2042
+      },
+      "resteasy-client-3.1.4.Final.jar": {
+        "sha256": "51a608a464697a68ebcbdd382c2bf46428b5942de4ae1ebc3c9d2ae45b0d8bd7",
+        "size": 175335
+      },
+      "resteasy-guice-3.1.4.Final.jar": {
+        "sha256": "3efac44fa687778c526213fbd7f6afe1e4502a619060932af1b95cf7f2775d92",
+        "size": 20841
+      },
+      "resteasy-jackson-provider-3.1.4.Final.jar": {
+        "sha256": "e9649ce493378e741da9639a47be360547196a4ccdab34f3a67b7ef716148ba0",
+        "size": 7996
+      },
+      "resteasy-jaxrs-3.1.4.Final.jar": {
+        "sha256": "3da64ce6622d037dbb1cb4ae0098429f5b9930199794c42a9e49cd4b9f37e102",
+        "size": 698875
+      },
+      "resteasy-jaxrs-services-3.1.4.Final.jar": {
+        "sha256": "e8512a73bf5d5f911c1d38a8367ffb1b92d604aff3b67914c9c62c895797f461",
+        "size": 2564
+      },
+      "shiro-cache-1.4.0.jar": {
+        "sha256": "abab87532d6139cea5a48aee34a20daa15757917a65c7032976fdc014dd4c46a",
+        "size": 13601
+      },
+      "shiro-config-core-1.4.0.jar": {
+        "sha256": "77e2cf1d210f334cba0e8902d01fd2acbf61b599c39c6cf023241fc6784a82a0",
+        "size": 18037
+      },
+      "shiro-config-ogdl-1.4.0.jar": {
+        "sha256": "d21bf04b78c69748db2fcf0315df00347bda43b65ef0aa83a7e496070c8e34f9",
+        "size": 43303
+      },
+      "shiro-core-1.4.0.jar": {
+        "sha256": "1c1aa41af7a3314678154ff0456d7592bbd00f298ce3a94a417a1bd4bcfd1104",
+        "size": 410541
+      },
+      "shiro-crypto-cipher-1.4.0.jar": {
+        "sha256": "67f8bc6f9dfa11a9c4959284f2f591dbd238ca20e1fbd1964d0c2daa69cf9ec0",
+        "size": 24024
+      },
+      "shiro-crypto-core-1.4.0.jar": {
+        "sha256": "1cba00a55eb65858ba0fd76e515d2177e6b834f37277a76afecd1cad0957d36c",
+        "size": 10873
+      },
+      "shiro-crypto-hash-1.4.0.jar": {
+        "sha256": "3a40fb67aa4c118cb3e47ca339a3094707778f0ea0c9fedca2147c9bfdb8647f",
+        "size": 34298
+      },
+      "shiro-event-1.4.0.jar": {
+        "sha256": "eed623e101d2bc5b29be2c93679504d411eedb2261b95a478cd5140d82734e7c",
+        "size": 19210
+      },
+      "shiro-guice-1.4.0.jar": {
+        "sha256": "a742efd9355202c07987893a28a82b4c7f0044e3cb76634b30e36db1ba669392",
+        "size": 52382
+      },
+      "shiro-lang-1.4.0.jar": {
+        "sha256": "8d78850ff764f72803568bbe0789eee513e2dcee990f465adbfdf0916a10ea9d",
+        "size": 51122
+      },
+      "shiro-web-1.4.0.jar": {
+        "sha256": "92f3fbb4f3425d6aa7cdd5f5fc3160cfeb561ada968b360c86c6fd7afb168364",
+        "size": 150341
+      },
+      "slf4j-api-1.7.25.jar": {
+        "sha256": "18c4a0095d5c1da6b817592e767bb23d29dd2f560ad74df75ff3961dbde25b79",
+        "size": 41203
+      },
+      "sqlite-jdbc-3.53.4.0.jar": {
+        "sha256": "bcb1f51e36f940867e83342f9efbf5968ac44a6bef4d397bb4af7b17b45cd2fb",
+        "size": 12002370
+      },
+      "stringtemplate-3.2.1.jar": {
+        "sha256": "f66ce72e965e5301cb0f020e54d2ba6ad76feb91b3cbfc30dbbf00c06a6df6d7",
+        "size": 148627
+      },
+      "zookeeper-3.4.8.jar": {
+        "sha256": "d47d35b9a10af53b7967ff4851bff832778539eed1e43fae6bfcb1f13576bdf5",
+        "size": 804601
+      }
+    },
+    "path": ".cache/inplace-build/build/scheduler/distribution-verification.json",
+    "sha256": "ababb6cb7b3dc9bfb4f51265adbd62921c482d88067f63da960411c6e2ffc0a7",
+    "status": "passed"
+  },
+  "go": {
+    "log": {
+      "path": ".cache/inplace05-go.log",
+      "sha256": "efa111ad5ba02f850b821f6cefbce493579fae5b69e6cb3469f6985cbede2028"
+    },
+    "packagesTestedUncached": 5,
+    "vet": "passed"
+  },
+  "implementationCommit": "02850c964eb37c23a76ddfb24aa160bb7cb12e67",
+  "inputs": {
+    "files": 1670,
+    "path": "docs/reimagining/inplace05-07-inputs.json",
+    "sha256": "af9a17c81918469669ef265b41b0e52bda85ede4c11b451d9729fefca5441743"
+  },
+  "javaTests": {
+    "commons": 124,
+    "errors": 0,
+    "failures": 0,
+    "ledger": {
+      "path": "docs/reimagining/inplace05-07-tests.jsonl",
+      "sha256": "98d3788e57800176091daf6d82346ffdffd12e36ab4b3eb34468ea4ef5aae623"
+    },
+    "scheduler": 1465,
+    "skipped": 0
+  },
+  "limits": [
+    "No production HA or distributed failover qualification",
+    "Trusted process reservations; no hostile-tenant resource isolation",
+    "No images, volumes, fetcher, ports, GPU, revocable CPU or partition rescheduling in this cohort",
+    "No general Thermos/Pystachio executor compatibility or migration claim",
+    "Agent history remains bounded at 128 attempts and 1024 command results; no compaction qualification",
+    "No full-database restore/agent fencing, power-loss, media-loss or active-update restart qualification",
+    "Test runner runs on the Pi host; only scheduler and agents are containerized",
+    "In-process ZooKeeper is for this isolated lab; Mesos compatibility code remains"
+  ],
+  "liveDemo": {
+    "cases": [
+      {
+        "job": "fixtures/test/mvp-demo",
+        "name": "persistent-demo",
+        "physical": {
+          "agent-a": [
+            "1664900             /bin/sleep infinity"
+          ],
+          "agent-b": [
+            "1664912             /bin/sleep infinity"
+          ]
+        },
+        "tasks": [
+          {
+            "host": "agent-b",
+            "id": "fixtures-test-mvp-demo-0-d9e9f3cb-89c0-4e18-9023-bba3fea4e41c",
+            "status": 2
+          },
+          {
+            "host": "agent-a",
+            "id": "fixtures-test-mvp-demo-1-94abe402-e426-49c2-8612-b12fad60e2b5",
+            "status": 2
+          }
+        ]
+      }
+    ],
+    "report": {
+      "path": ".pi-lab/original-qualified/check-demo-1789189797139224209.json",
+      "sha256": "b69f4712030b74f9c9780036322c0c1abbc130f9b2b119631c9bbb83c0e510bb"
+    }
+  },
+  "logs": [
+    {
+      "path": ".cache/inplace05-full.log",
+      "sha256": "9d7879ccc5446a89f45c8e481fdc5a7fe1129de164b2a89bb00c42d065378cdd"
+    },
+    {
+      "path": ".cache/inplace05-python.log",
+      "sha256": "02a39d112528e9c34addbd65fffe9282d96e4707f400550a75b324f0acb21656"
+    },
+    {
+      "path": ".cache/inplace05-go.log",
+      "sha256": "efa111ad5ba02f850b821f6cefbce493579fae5b69e6cb3469f6985cbede2028"
+    }
+  ],
+  "pythonHelpers": {
+    "failures": 0,
+    "tests": 38
+  },
+  "qualificationHarnessCommit": "3a8a8fa3a91fa722371d114591b82d2d73e02d4d",
+  "quality": {
+    "checkstyle:jmh": {
+      "findings": 0,
+      "path": ".cache/inplace-build/build/scheduler/reports/checkstyle/jmh.xml",
+      "sha256": "79e5f5f9f15cb68dffc154c6c27823818a0becc6f19c0bd38c9f57a6584b3c0e"
+    },
+    "checkstyle:main": {
+      "findings": 0,
+      "path": ".cache/inplace-build/build/scheduler/reports/checkstyle/main.xml",
+      "sha256": "fb9534be5c3569135708e82b0e988ed89f0edb44a2089e6334e7add8509f135a"
+    },
+    "checkstyle:test": {
+      "findings": 0,
+      "path": ".cache/inplace-build/build/scheduler/reports/checkstyle/test.xml",
+      "sha256": "9bbfa5cc441730a1b49ce3fcbf1c63d2d70b5eb49b5e4ff374c5f95dcd6441a4"
+    },
+    "pmd:jmh": {
+      "findings": 0,
+      "path": ".cache/inplace-build/build/scheduler/reports/pmd/jmh.xml",
+      "sha256": "26ccacb9711605233018494b8115b100d8f5cb991581087664b3166caafcfff1"
+    },
+    "pmd:main": {
+      "findings": 0,
+      "path": ".cache/inplace-build/build/scheduler/reports/pmd/main.xml",
+      "sha256": "4056d5e12f73756c2afb87c2430d480b66b0e15c8b4e03e93a375441378ebdc0"
+    },
+    "pmd:test": {
+      "findings": 0,
+      "path": ".cache/inplace-build/build/scheduler/reports/pmd/test.xml",
+      "sha256": "9e710415ffa911f66ad566f24ab4977b0665186148cc4df8ac06aa2e8fe8c2ad"
+    },
+    "spotbugs:jmh": {
+      "findings": 0,
+      "path": ".cache/inplace-build/build/scheduler/reports/spotbugs/jmh.xml",
+      "sha256": "a8f48a8ee034b44a18dc1d56bdf2a6657a17abab846a5a7dc8c17eb85172b3ba"
+    },
+    "spotbugs:main": {
+      "findings": 0,
+      "path": ".cache/inplace-build/build/scheduler/reports/spotbugs/main.xml",
+      "sha256": "e079bfbc452453d41be43f14e40610ae48e29c0c4ea06fff540bcbfc80fe6d54"
+    },
+    "spotbugs:test": {
+      "findings": 0,
+      "path": ".cache/inplace-build/build/scheduler/reports/spotbugs/test.xml",
+      "sha256": "b69de336843334bdee72d02eec01de796eca03cdfb92c07375a1db2d960cc79b"
+    }
+  },
+  "qualityMigrationFixtures": {
+    "pmd": 106,
+    "spotbugs": 76
+  },
+  "recordedAt": "2026-09-12T05:09:24.445477+00:00",
+  "runtime": {
+    "containers": {
+      "agent-a": "7a9e13c5fe84e7eeed47812be544ccc4fe3f3bf2d283ef0f2c1f8e421092723b",
+      "agent-b": "eacc7ce0ac7992b065c044db137c0dab0901d14efb66f87fe05725bf02ec8303",
+      "scheduler": "0a40a7aa1c8ea30209b656deffe5aaa86fd6f668411c5d8819fc359506456dea"
+    },
+    "database": ".pi-lab/original-qualified/scheduler/state/adapter.db",
+    "network": "fb4ce51309a3f14d9f1950ff28bde7d5adacea29b40d4962f11015cc8ee4a35d",
+    "root": ".pi-lab/original-qualified",
+    "schedulerHttpFromPi": "http://172.19.0.4:8081"
+  },
+  "schema": 1,
+  "scope": "Original SchedulerMain, single SQLite owner, two enrolled Go process agents; no replacement scheduler",
+  "sqliteAfterAcceptance": {
+    "committedAgentCursors": [
+      [
+        "agent-a",
+        "recovery-5b61de5d3012c506/journal-agent-a",
+        187
+      ],
+      [
+        "agent-b",
+        "recovery-5b61de5d3012c506/journal-agent-b",
+        167
+      ]
+    ],
+    "integrityCheck": [
+      [
+        "ok"
+      ]
+    ],
+    "outbox": [
+      [
+        "Run",
+        1,
+        57
+      ],
+      [
+        "Stop",
+        1,
+        12
+      ]
+    ],
+    "ownerEpoch": 7
+  },
+  "uiTests": {
+    "failures": 0,
+    "suites": 33,
+    "tests": 144
+  },
+  "upstreamAndForkMaster": "11ebaeeb071cb182c388a40755e84f60dda32260"
+}

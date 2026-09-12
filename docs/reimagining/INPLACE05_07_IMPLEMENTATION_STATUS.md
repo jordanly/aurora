@@ -73,8 +73,65 @@ compiler fix `390fe6b25` are green:
 
 <https://github.com/jordanly/aurora/actions/runs/34672906447>
 
-The final working-tree CI result is **pending**. Live scheduler/agent lab
-qualification is **pending**. Parent-level test totals, coverage, and
-acceptance evidence are **pending** and must be filled from the final clean
-checkout and isolated-lab runs; this document does not infer completion from
-local compilation or fixture tests.
+The implementation commit is
+[`02850c964`](https://github.com/jordanly/aurora/commit/02850c964eb37c23a76ddfb24aa160bb7cb12e67).
+All three [implementation CI jobs passed](https://github.com/jordanly/aurora/actions/runs/34674334138):
+original Java behavior/distribution, original quality gates, and Go tests/vet/provenance.
+The policy acceptance extension is committed separately as `3a8a8fa3a`.
+
+Local qualification passed:
+
+- 1,465 scheduler and 124 commons Java tests, with no failures, errors or skips.
+- 144 UI tests in 33 suites, frontend lint/build, and original installed launchers.
+- 38 Python build-helper tests; uncached tests and vet for all five Go packages.
+- Checkstyle, PMD and SpotBugs for main, test and JMH; 106 PMD and 76 SpotBugs
+  migration fixtures; original license gates.
+- Instruction coverage 89.42%, branch coverage 80.34%. The existing 87%/79%
+  thresholds remain unchanged and include the original production classes.
+
+The Java build used the implementation working tree before its commit and reused
+unchanged Gradle/dependency outputs. Its `build.properties` therefore names the
+preceding commit with a dirty marker. This is an incremental local qualification,
+not a claim of a fresh local checkout. CI separately checked the committed source.
+The [input manifest](inplace05-07-inputs.json), [Java suite ledger](inplace05-07-tests.jsonl),
+and [qualification evidence](inplace05-07-evidence.json) bind source, report and
+installed artifact hashes. Earlier receipts have not been rewritten.
+
+## Live original cluster
+
+The final owned Pi lab is `.pi-lab/original-qualified`. It runs the original
+`SchedulerMain` on Java 25, a single SQLite owner, and two supervised Go agents
+in separate Docker containers. Its private UI is available from the Pi at
+`http://172.19.0.4:8081/scheduler`; `/leaderhealth` returns HTTP 200. No host port
+is published. In-process ZooKeeper supports the original lab lifecycle. The
+acceptance runner runs on the Pi host, rather than in a fourth container.
+
+Executed acceptance through the original `/api` Thrift interface:
+
+- Two-agent placement, completed batch work, service execution, successful
+  rolling update, termination, quota and cron/maintenance API operations.
+- Three rounds of graceful scheduler restart, scheduler SIGKILL and agent daemon
+  SIGKILL: nine faults total. Original task IDs, host assignments and physical
+  workload PIDs survived. Agent containers/namespaces remained stable.
+- A 600.11-second mixed workload: two continuously running services, twenty
+  two-instance batches (40 completed tasks), and 140 checks of service identity
+  and physical PIDs.
+- A failing service update automatically rolled back, restoring the exact
+  original executor configuration. An occupied host reached DRAINED; its
+  replacement stayed pending until maintenance ended, then ran. A manual cron
+  trigger executed two tasks to completion through the original cron controller.
+
+After acceptance, SQLite integrity reported `ok` and every command was
+acknowledged. The two small `fixtures/test/mvp-demo` instances are left running,
+one per agent, for inspection. They reserve 100 millicores and 32 MiB each and
+run `/bin/sleep infinity`. Stop them through the original Aurora API/UI, or remove
+only this lab with its ownership-checked `inplace-cluster down` action.
+
+The old experimental lab and Home Assistant were left intact. Superseded debug
+containers created for this integration were removed; their local evidence remains.
+
+This completes the corrected cluster MVP for the declared process cohort. It
+closes neither the full executor compatibility ledger nor every INPLACE-07
+matrix row. Container/namespace-loss adoption, active-update restart, network
+partition/fencing, storage fault/power-loss recovery, full restore/migration,
+production HA and remaining Mesos removal still need their own qualification.
