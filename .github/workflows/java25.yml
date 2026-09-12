@@ -34,7 +34,15 @@ jobs:
       - name: Build the pinned Thrift compiler
         id: thrift
         run: |
-          compiler="$(python3 build-support/java/bootstrap-thrift.py)"
+          mkdir -p .cache/inplace-thrift
+          if ! compiler="$(python3 build-support/java/bootstrap-thrift.py 2>.cache/inplace-thrift/bootstrap.log)"; then
+            python3 - <<'PYTHON'
+          from pathlib import Path
+          message = Path('.cache/inplace-thrift/bootstrap.log').read_text()[-8000:]
+          print('::error title=Thrift bootstrap failed::' + message.replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A'))
+          PYTHON
+            exit 1
+          fi
           echo "compiler=$compiler" >> "$GITHUB_OUTPUT"
       - name: Verify build helpers and code generation contracts
         run: python3 -m unittest discover -s build-support/java -p 'test_*.py'
@@ -60,6 +68,8 @@ jobs:
           include-hidden-files: true
           if-no-files-found: error
           path: |
+            .cache/inplace-thrift/bootstrap.log
+            .cache/inplace-thrift/compiler-receipt.json
             .cache/inplace-build/build/**/reports/**
             .cache/inplace-build/build/**/test-results/**
             .cache/inplace-build/build/**/distribution-verification.json
