@@ -13,6 +13,8 @@
  */
 package org.apache.aurora.scheduler.app;
 
+import java.util.Locale;
+
 import com.beust.jcommander.ParameterException;
 import com.beust.jcommander.converters.BaseConverter;
 import com.google.common.base.Joiner;
@@ -43,7 +45,7 @@ public class VolumeConverter extends BaseConverter<Volume> {
 
     Mode mode;
     try {
-      mode = Mode.valueOf(split[2].toUpperCase());
+      mode = Mode.valueOf(split[2].toUpperCase(Locale.ROOT));
     } catch (IllegalArgumentException e) {
       throw new ParameterException(
           getErrorString(raw, "Read/Write spec must be in " + Joiner.on(", ").join(Mode.values())),

@@ -42,8 +42,6 @@ public final class MoreModules {
    * @param options Options to provide the module.
    * @return An instance of the module class.
    */
-  // Preserve default-constructor exception behavior until the original baseline is qualified.
-  @SuppressWarnings("deprecation")
   public static Module instantiate(Class<?> moduleClass, CliOptions options) {
     try {
       // If it exists, use the constructor accepting CliOptions.
@@ -52,7 +50,7 @@ public final class MoreModules {
         return (Module) constructor.newInstance(options);
       } catch (NoSuchMethodException e) {
         // Fall back to default constructor.
-        return (Module) moduleClass.newInstance();
+        return (Module) instantiateDefault(moduleClass);
       } catch (InvocationTargetException e) {
         throw new IllegalArgumentException(
             String.format("Failed to invoke %s(CliOption)", moduleClass.getName()),
@@ -72,6 +70,24 @@ public final class MoreModules {
               moduleClass.getName()),
           e);
     }
+  }
+
+  private static Object instantiateDefault(Class<?> moduleClass)
+      throws InstantiationException, IllegalAccessException {
+
+    try {
+      return moduleClass.getDeclaredConstructor().newInstance();
+    } catch (NoSuchMethodException e) {
+      throw (InstantiationException) new InstantiationException(moduleClass.getName()).initCause(e);
+    } catch (InvocationTargetException e) {
+      return rethrowConstructorFailure(e.getCause());
+    }
+  }
+
+  // Class.newInstance propagated even checked constructor exceptions without wrapping them.
+  @SuppressWarnings("unchecked")
+  private static <T, E extends Throwable> T rethrowConstructorFailure(Throwable failure) throws E {
+    throw (E) failure;
   }
 
   /**

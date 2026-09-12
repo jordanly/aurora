@@ -17,8 +17,6 @@ import java.net.InetSocketAddress;
 
 import com.google.common.base.Preconditions;
 
-import org.apache.commons.lang.StringUtils;
-
 /**
  * A utility that can parse [host]:[port] pairs or :[port] designators into instances of
  * {@link java.net.InetSocketAddress}. The literal '*' can be specified for port as an alternative
@@ -47,7 +45,7 @@ public final class InetSocketAddressHelper {
     String host = spec[0];
     int port = asPort(spec[1]);
 
-    return StringUtils.isEmpty(host)
+    return host.isEmpty()
         ? new InetSocketAddress(port)
         : InetSocketAddress.createUnresolved(host, port);
   }

@@ -152,20 +152,19 @@ public final class ThriftBinaryCodec {
     // copy the intermediate compressed output to outBytes.
     // See http://bugs.java.com/bugdatabase/view_bug.do?bug_id=4986239
     ByteArrayOutputStream outBytes = new ByteArrayOutputStream();
-    TTransport transport = new TIOStreamTransport(
-        new BufferedOutputStream(
-            new DeflaterOutputStream(outBytes, new Deflater(DEFLATE_LEVEL), DEFLATER_BUFFER_SIZE),
-            DEFLATER_BUFFER_SIZE));
-    try {
+    try (Deflater deflater = new Deflater(DEFLATE_LEVEL);
+        TTransport transport = new TIOStreamTransport(
+            new BufferedOutputStream(
+                new DeflaterOutputStream(outBytes, deflater, DEFLATER_BUFFER_SIZE),
+                DEFLATER_BUFFER_SIZE))) {
+
       TProtocol protocol = PROTOCOL_FACTORY.getProtocol(transport);
       tBase.write(protocol);
-      transport.close(); // calls finish() on the underlying stream, completing the compression
-      return outBytes.toByteArray();
     } catch (TException e) {
       throw new CodingException("Failed to serialize: " + tBase, e);
-    } finally {
-      transport.close();
     }
+    // Closing the transport finishes compression before the caller can observe the bytes.
+    return outBytes.toByteArray();
   }
 
   /**

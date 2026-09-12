@@ -17,7 +17,11 @@ import java.io.IOException;
 import java.net.URLEncoder;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
@@ -76,6 +80,7 @@ import static org.apache.aurora.scheduler.base.TaskTestUtil.TIER_MANAGER;
 import static org.easymock.EasyMock.expect;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class SlaManagerTest extends EasyMockTest {
@@ -97,6 +102,8 @@ public class SlaManagerTest extends EasyMockTest {
               .setCount(2)
               .setDurationSecs(1800)));
 
+  private ExecutorService callers;
+  private ScheduledExecutorService coordinatorExecutor;
   private AsyncHttpClient httpClient;
   private SlaManager slaManager;
   private StorageTestUtil storageUtil;
@@ -112,6 +119,17 @@ public class SlaManagerTest extends EasyMockTest {
     storageUtil.expectOperations();
     stateManager = createMock(StateManager.class);
     httpClient = new DefaultAsyncHttpClient();
+    addTearDown(() -> httpClient.close());
+    callers = Executors.newFixedThreadPool(2);
+    addTearDown(() -> {
+      callers.shutdownNow();
+      assertTrue(callers.awaitTermination(30, TimeUnit.SECONDS));
+    });
+    coordinatorExecutor = AsyncUtil.loggingScheduledExecutor(10, "SlaManagerTest-%d", LOG);
+    addTearDown(() -> {
+      coordinatorExecutor.shutdownNow();
+      assertTrue(coordinatorExecutor.awaitTermination(30, TimeUnit.SECONDS));
+    });
     coordinatorResponded = new CountDownLatch(1);
 
     serverInfo = IServerInfo.build(
@@ -145,8 +163,7 @@ public class SlaManagerTest extends EasyMockTest {
 
             bind(ScheduledExecutorService.class)
                 .annotatedWith(SlaManager.SlaManagerExecutor.class)
-                .toInstance(AsyncUtil.loggingScheduledExecutor(
-                    10, "SlaManagerTest-%d", LOG));
+                .toInstance(coordinatorExecutor);
 
             bind(IServerInfo.class).toInstance(serverInfo);
           }
@@ -754,8 +771,8 @@ public class SlaManagerTest extends EasyMockTest {
     }
 
     // wait until we are sure that the server has responded
-    coordinatorResponded.await();
-    workCalled.await();
+    assertTrue(coordinatorResponded.await(30, TimeUnit.SECONDS));
+    assertTrue(workCalled.await(30, TimeUnit.SECONDS));
 
     assertEquals(0, coordinatorResponded.getCount());
     // check the work was called
@@ -799,8 +816,8 @@ public class SlaManagerTest extends EasyMockTest {
     }
 
     // wait until we are sure that the server has responded
-    coordinatorResponded.await();
-    workCalled.await();
+    assertTrue(coordinatorResponded.await(30, TimeUnit.SECONDS));
+    assertTrue(workCalled.await(30, TimeUnit.SECONDS));
 
     assertEquals(0, coordinatorResponded.getCount());
     // check the work was called
@@ -842,7 +859,7 @@ public class SlaManagerTest extends EasyMockTest {
           false);
     }
 
-    workCalled.await();
+    assertTrue(workCalled.await(30, TimeUnit.SECONDS));
 
     assertEquals(0, coordinatorResponded.getCount());
     // check the work was called
@@ -923,7 +940,7 @@ public class SlaManagerTest extends EasyMockTest {
         ImmutableMap.of(),
         true);
 
-    workCalled.await();
+    assertTrue(workCalled.await(30, TimeUnit.SECONDS));
 
     // coordinator is not contacted
     assertEquals(1, coordinatorResponded.getCount());
@@ -1041,91 +1058,118 @@ public class SlaManagerTest extends EasyMockTest {
 
     control.replay();
 
-    // kick off a new thread to attempt starting action1
-    new Thread(() -> {
-      try {
-        // wait until action1 enters the lock
-        while (!action1.await(100, TimeUnit.MILLISECONDS)) {
-          // start action1
-          slaManager.checkSlaThenAct(
-              task1,
-              createCoordinatorSlaPolicy(),
-              storeProvider -> {
-                LOG.info("Starting action1 for task:{}", slaManager.getTaskKey(task1));
-                // set the marker to indicate that we started the work
-                action1.countDown();
-                storeProvider
-                    .getUnsafeTaskStore()
-                    .fetchTask(task1.getAssignedTask().getTaskId());
-                // we will block here to make sure that the lock is held
-                blocked1.await();
-                finishAction1.countDown();
-                LOG.info("Finished action1 for task:{}", slaManager.getTaskKey(task1));
-                return null;
-              },
-              ImmutableMap.of(),
-              false);
+    CompletableFuture<Void> work1 = new CompletableFuture<>();
+    CompletableFuture<Void> work2 = new CompletableFuture<>();
+
+    try {
+      // kick off a new thread to attempt starting action1
+      Future<?> caller1 = callers.submit(() -> {
+        try {
+          // wait until action1 enters the lock
+          while (!action1.await(100, TimeUnit.MILLISECONDS)) {
+            // start action1
+            slaManager.checkSlaThenAct(
+                task1,
+                createCoordinatorSlaPolicy(),
+                storeProvider -> {
+                  try {
+                    LOG.info("Starting action1 for task:{}", slaManager.getTaskKey(task1));
+                    // set the marker to indicate that we started the work
+                    action1.countDown();
+                    storeProvider
+                        .getUnsafeTaskStore()
+                        .fetchTask(task1.getAssignedTask().getTaskId());
+                    // we will block here to make sure that the lock is held
+                    blocked1.await();
+                    finishAction1.countDown();
+                    LOG.info("Finished action1 for task:{}", slaManager.getTaskKey(task1));
+                    work1.complete(null);
+                    return null;
+                  } catch (InterruptedException | RuntimeException | Error e) {
+                    work1.completeExceptionally(e);
+                    throw e;
+                  }
+                },
+                ImmutableMap.of(),
+                false);
+          }
+        } catch (InterruptedException e) {
+          Thread.currentThread().interrupt();
+          throw new AssertionError(e);
         }
-      } catch (InterruptedException e) {
-        fail();
-      }
-    }).start();
+      });
 
-    // wait for action to ge the lock
-    action1.await();
+      // wait for action to ge the lock
+      assertTrue(action1.await(30, TimeUnit.SECONDS));
 
-    // kick off a new thread to attempt starting action2
-    new Thread(() -> {
-      try {
-        // wait until action2 enters the lock
-        while (!action2.await(100, TimeUnit.MILLISECONDS)) {
-          // start action2
-          slaManager.checkSlaThenAct(
-              task2,
-              createCoordinatorSlaPolicy(),
-              storeProvider -> {
-                LOG.info("Starting action2 for task:{}", slaManager.getTaskKey(task2));
-                // set the marker to indicate that we started the work
-                action2.countDown();
-                storeProvider
-                    .getUnsafeTaskStore()
-                    .fetchTask(task2.getAssignedTask().getTaskId());
-                // we will block here to make sure that the lock is held
-                blocked2.await();
-                finishAction2.countDown();
-                LOG.info("Finished action2 for task:{}", slaManager.getTaskKey(task2));
-                return null;
-              },
-              ImmutableMap.of(),
-              false);
+      // kick off a new thread to attempt starting action2
+      Future<?> caller2 = callers.submit(() -> {
+        try {
+          // wait until action2 enters the lock
+          while (!action2.await(100, TimeUnit.MILLISECONDS)) {
+            // start action2
+            slaManager.checkSlaThenAct(
+                task2,
+                createCoordinatorSlaPolicy(),
+                storeProvider -> {
+                  try {
+                    LOG.info("Starting action2 for task:{}", slaManager.getTaskKey(task2));
+                    // set the marker to indicate that we started the work
+                    action2.countDown();
+                    storeProvider
+                        .getUnsafeTaskStore()
+                        .fetchTask(task2.getAssignedTask().getTaskId());
+                    // we will block here to make sure that the lock is held
+                    blocked2.await();
+                    finishAction2.countDown();
+                    LOG.info("Finished action2 for task:{}", slaManager.getTaskKey(task2));
+                    work2.complete(null);
+                    return null;
+                  } catch (InterruptedException | RuntimeException | Error e) {
+                    work2.completeExceptionally(e);
+                    throw e;
+                  }
+                },
+                ImmutableMap.of(),
+                false);
+          }
+        } catch (InterruptedException e) {
+          Thread.currentThread().interrupt();
+          throw new AssertionError(e);
         }
-      } catch (InterruptedException e) {
-        fail();
-      }
-    }).start();
+      });
 
-    // both actions should not have entered critical section
-    assertNotEquals(action1.getCount(), action2.getCount());
-    // action1 should have entered the lock
-    assertEquals(0, action1.getCount());
-    // action2 should not have entered the lock
-    assertEquals(1, action2.getCount());
+      // both actions should not have entered critical section
+      assertNotEquals(action1.getCount(), action2.getCount());
+      // action1 should have entered the lock
+      assertEquals(0, action1.getCount());
+      // action2 should not have entered the lock
+      assertEquals(1, action2.getCount());
 
-    // unblock blocked action1
-    blocked1.countDown();
-    // wait for both of the actions to finish
-    finishAction1.await();
+      // unblock blocked action1
+      blocked1.countDown();
+      // wait for both of the actions to finish
+      assertTrue(finishAction1.await(30, TimeUnit.SECONDS));
 
-    // wait for the second action to enter the lock
-    action2.await();
+      // wait for the second action to enter the lock
+      assertTrue(action2.await(30, TimeUnit.SECONDS));
 
-    // action2 should have entered the lock
-    assertEquals(0, action2.getCount());
+      // action2 should have entered the lock
+      assertEquals(0, action2.getCount());
 
-    // unblock blocked action2
-    blocked2.countDown();
+      // unblock blocked action2
+      blocked2.countDown();
 
-    finishAction2.await();
+      assertTrue(finishAction2.await(30, TimeUnit.SECONDS));
+      caller1.get(30, TimeUnit.SECONDS);
+      caller2.get(30, TimeUnit.SECONDS);
+      work1.get(30, TimeUnit.SECONDS);
+      work2.get(30, TimeUnit.SECONDS);
+    } finally {
+      blocked1.countDown();
+      blocked2.countDown();
+      callers.shutdownNow();
+    }
   }
 
   /**
@@ -1156,91 +1200,117 @@ public class SlaManagerTest extends EasyMockTest {
 
     control.replay();
 
-    // kick off a new thread to attempt starting action1
-    new Thread(() -> {
-      try {
-        // wait until action1 enters the lock
-        while (!action1.await(100, TimeUnit.MILLISECONDS)) {
-          // start action1
-          slaManager.checkSlaThenAct(
-              task1,
-              ISlaPolicy.build(SlaPolicy.coordinatorSlaPolicy(
-                  new CoordinatorSlaPolicy()
-                      .setCoordinatorUrl(
-                          // Note that the url is different although referring to the same server
-                          String.format("http://localhost:%d", jettyServer.getURI().getPort())))),
-              storeProvider -> {
-                LOG.info("Starting action for task:{}", slaManager.getTaskKey(task1));
-                // set the marker to indicate that we started the work
-                action1.countDown();
-                storeProvider
-                    .getUnsafeTaskStore()
-                    .fetchTask(task1.getAssignedTask().getTaskId());
-                // we will block here to make sure that the lock is held
-                blocked.acquire();
-                finished.countDown();
-                LOG.info("Finished action for task:{}", slaManager.getTaskKey(task1));
-                return null;
-              },
-              ImmutableMap.of(),
-              false);
+    CompletableFuture<Void> work1 = new CompletableFuture<>();
+    CompletableFuture<Void> work2 = new CompletableFuture<>();
+
+    try {
+      // kick off a new thread to attempt starting action1
+      Future<?> caller1 = callers.submit(() -> {
+        try {
+          // wait until action1 enters the lock
+          while (!action1.await(100, TimeUnit.MILLISECONDS)) {
+            // start action1
+            slaManager.checkSlaThenAct(
+                task1,
+                ISlaPolicy.build(SlaPolicy.coordinatorSlaPolicy(
+                    new CoordinatorSlaPolicy()
+                        .setCoordinatorUrl(
+                            // Note that the url is different although referring to the same server
+                            String.format("http://localhost:%d", jettyServer.getURI().getPort())))),
+                storeProvider -> {
+                  try {
+                    LOG.info("Starting action for task:{}", slaManager.getTaskKey(task1));
+                    // set the marker to indicate that we started the work
+                    action1.countDown();
+                    storeProvider
+                        .getUnsafeTaskStore()
+                        .fetchTask(task1.getAssignedTask().getTaskId());
+                    // we will block here to make sure that the lock is held
+                    blocked.acquire();
+                    finished.countDown();
+                    LOG.info("Finished action for task:{}", slaManager.getTaskKey(task1));
+                    work1.complete(null);
+                    return null;
+                  } catch (InterruptedException | RuntimeException | Error e) {
+                    work1.completeExceptionally(e);
+                    throw e;
+                  }
+                },
+                ImmutableMap.of(),
+                false);
+          }
+        } catch (InterruptedException e) {
+          Thread.currentThread().interrupt();
+          throw new AssertionError(e);
         }
-      } catch (InterruptedException e) {
-        fail();
-      }
-    }).start();
+      });
 
-    // kick off a new thread to attempt starting action2
-    new Thread(() -> {
-      try {
-        // wait until action2 enters the lock
-        while (!action2.await(100, TimeUnit.MILLISECONDS)) {
-          // start action2
-          slaManager.checkSlaThenAct(
-              task2,
-              ISlaPolicy.build(SlaPolicy.coordinatorSlaPolicy(
-                  new CoordinatorSlaPolicy()
-                      .setCoordinatorUrl(
-                          // Note that the url is different although referring to the same server
-                          String.format("http://0.0.0.0:%d", jettyServer.getURI().getPort())))),
-              storeProvider -> {
-                LOG.info("Starting action for task:{}", slaManager.getTaskKey(task2));
-                // set the marker to indicate that we started the work
-                action2.countDown();
-                storeProvider
-                    .getUnsafeTaskStore()
-                    .fetchTask(task2.getAssignedTask().getTaskId());
-                // we will block here to make sure that the lock is held
-                blocked.acquire();
-                finished.countDown();
-                LOG.info("Finished action for task:{}", slaManager.getTaskKey(task2));
-                return null;
-              },
-              ImmutableMap.of(),
-              false);
+      // kick off a new thread to attempt starting action2
+      Future<?> caller2 = callers.submit(() -> {
+        try {
+          // wait until action2 enters the lock
+          while (!action2.await(100, TimeUnit.MILLISECONDS)) {
+            // start action2
+            slaManager.checkSlaThenAct(
+                task2,
+                ISlaPolicy.build(SlaPolicy.coordinatorSlaPolicy(
+                    new CoordinatorSlaPolicy()
+                        .setCoordinatorUrl(
+                            // Note that the url is different although referring to the same server
+                            String.format("http://0.0.0.0:%d", jettyServer.getURI().getPort())))),
+                storeProvider -> {
+                  try {
+                    LOG.info("Starting action for task:{}", slaManager.getTaskKey(task2));
+                    // set the marker to indicate that we started the work
+                    action2.countDown();
+                    storeProvider
+                        .getUnsafeTaskStore()
+                        .fetchTask(task2.getAssignedTask().getTaskId());
+                    // we will block here to make sure that the lock is held
+                    blocked.acquire();
+                    finished.countDown();
+                    LOG.info("Finished action for task:{}", slaManager.getTaskKey(task2));
+                    work2.complete(null);
+                    return null;
+                  } catch (InterruptedException | RuntimeException | Error e) {
+                    work2.completeExceptionally(e);
+                    throw e;
+                  }
+                },
+                ImmutableMap.of(),
+                false);
+          }
+        } catch (InterruptedException e) {
+          Thread.currentThread().interrupt();
+          throw new AssertionError(e);
         }
-      } catch (InterruptedException e) {
-        fail();
-      }
-    }).start();
+      });
 
-    // wait for both of the actions to get the lock
-    action1.await();
-    action2.await();
+      // wait for both of the actions to get the lock
+      assertTrue(action1.await(30, TimeUnit.SECONDS));
+      assertTrue(action2.await(30, TimeUnit.SECONDS));
 
-    assertEquals(0, action1.getCount());
-    assertEquals(0, action2.getCount());
+      assertEquals(0, action1.getCount());
+      assertEquals(0, action2.getCount());
 
-    // only 1 action has fully completed
-    assertEquals(1, finished.getCount());
+      // only 1 action has fully completed
+      assertEquals(1, finished.getCount());
 
-    // unblock the blocked action
-    blocked.release();
+      // unblock the blocked action
+      blocked.release();
 
-    finished.await();
+      assertTrue(finished.await(30, TimeUnit.SECONDS));
 
-    // both actions have fully completed
-    assertEquals(0, finished.getCount());
+      // both actions have fully completed
+      assertEquals(0, finished.getCount());
+      caller1.get(30, TimeUnit.SECONDS);
+      caller2.get(30, TimeUnit.SECONDS);
+      work1.get(30, TimeUnit.SECONDS);
+      work2.get(30, TimeUnit.SECONDS);
+    } finally {
+      blocked.release(2);
+      callers.shutdownNow();
+    }
   }
 
   private ISlaPolicy createCoordinatorSlaPolicy() {

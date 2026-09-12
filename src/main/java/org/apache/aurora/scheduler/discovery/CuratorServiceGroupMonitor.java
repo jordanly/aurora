@@ -89,8 +89,7 @@ class CuratorServiceGroupMonitor implements ServiceGroupMonitor {
     return groupCache.getCurrentData().stream()
         .filter(cd -> memberSelector.test(ZKPaths.getNodeFromPath(cd.getPath())))
         .map(this::extractServiceInstance)
-        .filter(Optional::isPresent)
-        .map(Optional::get)
+        .flatMap(Optional::stream)
         .collect(GuavaUtils.toImmutableSet());
   }
 

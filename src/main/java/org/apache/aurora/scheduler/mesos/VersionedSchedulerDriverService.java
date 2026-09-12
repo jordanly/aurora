@@ -243,6 +243,7 @@ class VersionedSchedulerDriverService extends AbstractIdleService
     try {
       terminationLatch.await();
     } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
       throw new RuntimeException(e);
     }
   }
@@ -265,6 +266,7 @@ class VersionedSchedulerDriverService extends AbstractIdleService
     try {
       registrationLatch.await();
     } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
       throw new RuntimeException(e);
     }
     c.execute();

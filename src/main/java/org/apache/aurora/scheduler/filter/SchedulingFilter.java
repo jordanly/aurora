@@ -226,11 +226,9 @@ public interface SchedulingFilter {
 
     @Override
     public boolean equals(Object o) {
-      if (!(o instanceof Veto)) {
+      if (!(o instanceof Veto other)) {
         return false;
       }
-
-      Veto other = (Veto) o;
       return Objects.equals(vetoType, other.vetoType)
           && Objects.equals(reason, other.reason)
           && Objects.equals(score, other.score);
@@ -288,11 +286,9 @@ public interface SchedulingFilter {
 
     @Override
     public boolean equals(Object o) {
-      if (!(o instanceof UnusedResource)) {
+      if (!(o instanceof UnusedResource other)) {
         return false;
       }
-
-      UnusedResource other = (UnusedResource) o;
       return Objects.equals(offer, other.offer)
           && Objects.equals(attributes, other.attributes)
           && Objects.equals(unavailabilityStart, other.unavailabilityStart);
@@ -360,11 +356,9 @@ public interface SchedulingFilter {
 
     @Override
     public boolean equals(Object o) {
-      if (!(o instanceof ResourceRequest)) {
+      if (!(o instanceof ResourceRequest other)) {
         return false;
       }
-
-      ResourceRequest other = (ResourceRequest) o;
       return Objects.equals(task, other.task)
           && Objects.equals(request, other.request)
           && Objects.equals(jobState, other.jobState)

@@ -13,6 +13,8 @@
  */
 package org.apache.aurora.scheduler.thrift.aop;
 
+import java.io.IOException;
+
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
@@ -26,6 +28,7 @@ import org.apache.aurora.gen.GetJobsResult;
 import org.apache.aurora.gen.JobConfiguration;
 import org.apache.aurora.gen.Response;
 import org.apache.aurora.gen.Result;
+import org.apache.aurora.scheduler.thrift.aop.ThriftWorkload.ThriftWorkloadCounter;
 import org.apache.aurora.scheduler.thrift.auth.DecoratedThrift;
 import org.junit.Before;
 import org.junit.Test;
@@ -146,7 +149,114 @@ public class ThriftStatsExporterInterceptorTest extends EasyMockTest {
     assertNull(Stats.getVariable(workloadStatName("measuredMethod")));
   }
 
+  @Test
+  public void testFreshCounterPerInvocation() throws Throwable {
+    MethodInvocation invocation = expectInvocation("statefulCounter", 2);
+    control.replay();
+
+    statsInterceptor.invoke(invocation);
+    statsInterceptor.invoke(invocation);
+    assertEquals(2L, Stats.getVariable(workloadStatName("statefulCounter")).read());
+    assertEquals(2L, Stats.getVariable(timingStatName("statefulCounter") + "_events").read());
+  }
+
+  @Test
+  public void testInaccessibleCounter() throws Throwable {
+    MethodInvocation invocation = expectInvocation("inaccessibleCounter", 1);
+    control.replay();
+
+    try {
+      statsInterceptor.invoke(invocation);
+      fail("Expected inaccessible constructor failure");
+    } catch (IllegalAccessException e) {
+      assertEquals(1L, Stats.getVariable(timingStatName("inaccessibleCounter") + "_events")
+          .read());
+      assertNull(Stats.getVariable(workloadStatName("inaccessibleCounter")));
+    }
+  }
+
+  @Test
+  public void testMissingCounterConstructor() throws Throwable {
+    MethodInvocation invocation = expectInvocation("missingCounterConstructor", 1);
+    control.replay();
+
+    try {
+      statsInterceptor.invoke(invocation);
+      fail("Expected missing constructor failure");
+    } catch (InstantiationException e) {
+      assertEquals(MissingCounter.class.getName(), e.getMessage());
+    }
+  }
+
+  @Test
+  public void testThrowingCounterPropagatesDirectly() throws Throwable {
+    MethodInvocation invocation = expectInvocation("throwingCounter", 1);
+    control.replay();
+
+    try {
+      statsInterceptor.invoke(invocation);
+      fail("Expected constructor failure");
+    } catch (IOException e) {
+      assertSame(ThrowingCounter.FAILURE, e);
+      assertEquals(1L, Stats.getVariable(timingStatName("throwingCounter") + "_events").read());
+      assertNull(Stats.getVariable(workloadStatName("throwingCounter")));
+    }
+  }
+
+  private MethodInvocation expectInvocation(String method, int calls) throws Throwable {
+    MethodInvocation invocation = createMock(MethodInvocation.class);
+    expect(invocation.getMethod())
+        .andReturn(InterceptedClass.class.getDeclaredMethod(method)).times(calls);
+    expect(invocation.proceed()).andReturn(ok()).times(calls);
+    return invocation;
+  }
+
+  public static class StatefulCounter implements ThriftWorkloadCounter {
+    private int calls;
+
+    @Override
+    public Integer apply(Result result) {
+      return ++calls;
+    }
+  }
+
+  public static class InaccessibleCounter extends StatefulCounter {
+    private InaccessibleCounter() { }
+  }
+
+  public static class MissingCounter extends StatefulCounter {
+    public MissingCounter(String ignored) { }
+  }
+
+  public static class ThrowingCounter extends StatefulCounter {
+    static final IOException FAILURE = new IOException("counter constructor failed");
+
+    public ThrowingCounter() throws IOException {
+      throw FAILURE;
+    }
+  }
+
   private static class InterceptedClass {
+    @ThriftWorkload(StatefulCounter.class)
+    public Response statefulCounter() {
+      throw new UnsupportedOperationException("Should not be called.");
+    }
+
+    @ThriftWorkload(InaccessibleCounter.class)
+    public Response inaccessibleCounter() {
+      throw new UnsupportedOperationException("Should not be called.");
+    }
+
+    @ThriftWorkload(MissingCounter.class)
+    public Response missingCounterConstructor() {
+      throw new UnsupportedOperationException("Should not be called.");
+    }
+
+    @ThriftWorkload(ThrowingCounter.class)
+    public Response throwingCounter() {
+      throw new UnsupportedOperationException("Should not be called.");
+    }
+
     @ThriftWorkload
     public Response measuredMethod() {
       throw new UnsupportedOperationException("Should not be called.");

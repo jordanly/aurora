@@ -193,7 +193,7 @@ public class CuratorSingletonServiceTest extends BaseCuratorDiscoveryTest {
     assertEquals(ImmutableSet.of(), getGroupMonitor().get());
 
     // Eventually host1 should notice its been defeated.
-    host1Defeated.await();
+    assertTrue(host1Defeated.await(30, TimeUnit.SECONDS));
   }
 
   @Test
@@ -225,20 +225,22 @@ public class CuratorSingletonServiceTest extends BaseCuratorDiscoveryTest {
 
     CuratorFramework client = getClient();
     newLeader(client, "host1", listener);
-    leading.await();
+    assertTrue(leading.await(30, TimeUnit.SECONDS));
 
     causeDisconnection();
     assertTrue(leader.get());
 
     expireSession(client);
-    defeated.await();
+    assertTrue(defeated.await(30, TimeUnit.SECONDS));
 
     assertFalse(leader.get());
   }
 
   private void awaitCapture(Capture<?> capture) throws InterruptedException {
-    while (!capture.hasCaptured()) {
+    long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(30);
+    while (!capture.hasCaptured() && System.nanoTime() < deadline) {
       Thread.sleep(1L);
     }
+    assertTrue("Timed out waiting for callback", capture.hasCaptured());
   }
 }

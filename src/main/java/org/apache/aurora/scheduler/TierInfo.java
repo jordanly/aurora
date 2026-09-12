@@ -89,11 +89,9 @@ public final class TierInfo {
 
   @Override
   public boolean equals(Object obj) {
-    if (!(obj instanceof TierInfo)) {
+    if (!(obj instanceof TierInfo other)) {
       return false;
     }
-
-    TierInfo other = (TierInfo) obj;
     return Objects.equals(preemptible, other.preemptible)
         && Objects.equals(revocable, other.revocable);
   }

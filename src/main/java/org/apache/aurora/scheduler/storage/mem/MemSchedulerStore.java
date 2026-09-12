@@ -16,15 +16,13 @@ package org.apache.aurora.scheduler.storage.mem;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
-import com.google.common.util.concurrent.Atomics;
-
 import org.apache.aurora.scheduler.storage.SchedulerStore;
 
 /**
  * An in-memory scheduler store.
  */
 class MemSchedulerStore implements SchedulerStore.Mutable {
-  private final AtomicReference<String> frameworkId = Atomics.newReference();
+  private final AtomicReference<String> frameworkId = new AtomicReference<>();
 
   @Override
   public void saveFrameworkId(String newFrameworkId) {

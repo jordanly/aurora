@@ -75,23 +75,22 @@ public class TaskHistoryPruner implements EventSubscriber {
     @Override
     public boolean apply(IScheduledTask task) {
       return Tasks.getLatestEvent(task).getTimestamp()
-          <= clock.nowMillis() - settings.minRetentionThresholdMillis;
+          <= clock.nowMillis() - settings.minRetentionThresholdMillis();
     }
   };
 
-  static class HistoryPrunerSettings {
-    private final long pruneThresholdMillis;
-    private final long minRetentionThresholdMillis;
-    private final int perJobHistoryGoal;
-
+  static record HistoryPrunerSettings(
+      long pruneThresholdMillis,
+      long minRetentionThresholdMillis,
+      int perJobHistoryGoal) {
     HistoryPrunerSettings(
         Amount<Long, Time> inactivePruneThreshold,
         Amount<Long, Time> minRetentionThreshold,
         int perJobHistoryGoal) {
-
-      this.pruneThresholdMillis = inactivePruneThreshold.as(Time.MILLISECONDS);
-      this.minRetentionThresholdMillis = minRetentionThreshold.as(Time.MILLISECONDS);
-      this.perJobHistoryGoal = perJobHistoryGoal;
+      this(
+          inactivePruneThreshold.as(Time.MILLISECONDS),
+          minRetentionThreshold.as(Time.MILLISECONDS),
+          perJobHistoryGoal);
     }
   }
 
@@ -119,8 +118,8 @@ public class TaskHistoryPruner implements EventSubscriber {
   @VisibleForTesting
   long calculateTimeout(long taskEventTimestampMillis) {
     return Math.max(
-        settings.minRetentionThresholdMillis,
-        settings.pruneThresholdMillis - Math.max(0, clock.nowMillis() - taskEventTimestampMillis));
+        settings.minRetentionThresholdMillis(),
+        settings.pruneThresholdMillis() - Math.max(0, clock.nowMillis() - taskEventTimestampMillis));
   }
 
   /**
@@ -183,8 +182,8 @@ public class TaskHistoryPruner implements EventSubscriber {
               Iterable<IScheduledTask> inactiveTasks =
                   Storage.Util.fetchTasks(storage, jobHistoryQuery(jobKey));
               int numInactiveTasks = Iterables.size(inactiveTasks);
-              int tasksToPrune = numInactiveTasks - settings.perJobHistoryGoal;
-              if (tasksToPrune > 0 && numInactiveTasks > settings.perJobHistoryGoal) {
+              int tasksToPrune = numInactiveTasks - settings.perJobHistoryGoal();
+              if (tasksToPrune > 0 && numInactiveTasks > settings.perJobHistoryGoal()) {
                 Set<String> toPrune = FluentIterable
                     .from(Tasks.LATEST_ACTIVITY.sortedCopy(inactiveTasks))
                     .filter(safeToDelete)

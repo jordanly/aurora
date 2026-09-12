@@ -16,8 +16,6 @@ package org.apache.aurora.common.base;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Iterables;
 
-import org.apache.commons.lang.StringUtils;
-
 /**
  * A utility helpful in concisely checking preconditions on arguments.  This utility is a complement
  * to {@link com.google.common.base.Preconditions}.
@@ -55,7 +53,7 @@ public final class MorePreconditions {
    */
   public static String checkNotBlank(String argument, String message, Object... args) {
     Preconditions.checkNotNull(argument, message, args);
-    Preconditions.checkArgument(!StringUtils.isBlank(argument), message, args);
+    Preconditions.checkArgument(!argument.isBlank(), message, args);
     return argument;
   }
 

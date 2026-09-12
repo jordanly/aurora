@@ -162,11 +162,9 @@ public class TaskVars extends AbstractIdleService implements EventSubscriber {
     rack.ifPresent(s -> counters.getUnchecked(rackStatName(s)));
 
     if (newState == ScheduleStatus.LOST) {
-      if (rack.isPresent()) {
-        counters.getUnchecked(rackStatName(rack.get())).increment();
-      } else {
-        LOG.warn("Failed to find rack attribute associated with host " + host);
-      }
+      rack.ifPresentOrElse(
+          s -> counters.getUnchecked(rackStatName(s)).increment(),
+          () -> LOG.warn("Failed to find rack attribute associated with host " + host));
     }
   }
 

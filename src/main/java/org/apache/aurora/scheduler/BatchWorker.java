@@ -13,12 +13,15 @@
  */
 package org.apache.aurora.scheduler;
 
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -26,7 +29,9 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import javax.inject.Inject;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.AbstractExecutionThreadService;
+import com.google.common.util.concurrent.MoreExecutors;
 
 import org.apache.aurora.common.stats.SlidingStats;
 import org.apache.aurora.common.stats.StatsProvider;
@@ -44,6 +49,8 @@ import static com.google.common.base.Preconditions.checkState;
 /**
  * Generic helper that allows bundling multiple work items into a single {@link Storage}
  * transaction aiming to reduce the write lock contention.
+ * Completion callbacks can run inline on the worker or stopping thread; they must not block
+ * waiting for other results from this worker.
  *
  * @param <T> Expected result type.
  */
@@ -64,7 +71,11 @@ public class BatchWorker<T> extends AbstractExecutionThreadService {
   private final SlidingStats batchUnlocked;
   private final SlidingStats batchLocked;
   private final BlockingQueue<WorkItem<T>> workQueue = new LinkedBlockingQueue<>();
-  private final ScheduledExecutorService scheduledExecutor;
+  @VisibleForTesting
+  final ScheduledExecutorService scheduledExecutor;
+  private final Object enrollmentLock = new Object();
+  private final Set<CompletableFuture<T>> pendingResults = new HashSet<>();
+  private boolean closed;
   private final AtomicInteger lastBatchSize = new AtomicInteger(0);
   private final AtomicLong itemsProcessed;
   private final AtomicLong batchesProcessed;
@@ -147,17 +158,31 @@ public class BatchWorker<T> extends AbstractExecutionThreadService {
     batchLocked = new SlidingStats(serviceName() + "_batch_locked", "nanos");
     itemsProcessed = statsProvider.makeCounter(serviceName() + "_items_processed");
     batchesProcessed = statsProvider.makeCounter(serviceName() + "_batches_processed");
+    // shutDown() is not called for every failure or for stopAsync() before startAsync().
+    addListener(new Listener() {
+      @Override
+      public void terminated(State from) {
+        finishPending(Optional.empty());
+      }
+
+      @Override
+      public void failed(State from, Throwable failure) {
+        finishPending(Optional.of(failure));
+      }
+    }, MoreExecutors.directExecutor());
   }
 
   /**
    * Executes a non-repeatable {@link Work} and returns {@link CompletableFuture} to wait on.
    *
    * @param work A non-repeatable {@link Work} to execute.
-   * @return {@link CompletableFuture} to wait on.
+   * @return {@link CompletableFuture} to wait on. Unfinished work is cancelled on normal service
+   *     termination, or failed with the service failure.
+   * @throws RejectedExecutionException If the service is stopping or has stopped.
    */
   public CompletableFuture<T> execute(Work<T> work) {
     CompletableFuture<T> result = new CompletableFuture<>();
-    workQueue.add(new WorkItem<>(
+    enroll(new WorkItem<>(
         work,
         result,
         Optional.empty(),
@@ -172,19 +197,64 @@ public class BatchWorker<T> extends AbstractExecutionThreadService {
    *
    * @param backoffStrategy A {@link BackoffStrategy} instance to backoff subsequent runs.
    * @param work A {@link RepeatableWork} to execute.
+   * @throws RejectedExecutionException If the service is stopping or has stopped.
    */
   public CompletableFuture<T> executeWithReplay(
       BackoffStrategy backoffStrategy,
       RepeatableWork<T> work) {
 
     CompletableFuture<T> result = new CompletableFuture<>();
-    workQueue.add(new WorkItem<>(
+    enroll(new WorkItem<>(
         work,
         result,
         Optional.of(backoffStrategy),
         Optional.of(0L)));
 
     return result;
+  }
+
+  private void enroll(WorkItem<T> item) {
+    synchronized (enrollmentLock) {
+      State current = state();
+      if (closed || current == State.STOPPING || current == State.TERMINATED
+          || current == State.FAILED) {
+        throw new RejectedExecutionException(serviceName() + " is " + current);
+      }
+      pendingResults.add(item.result);
+      workQueue.add(item);
+    }
+    item.result.whenComplete((value, failure) -> {
+      synchronized (enrollmentLock) {
+        pendingResults.remove(item.result);
+      }
+    });
+  }
+
+  private void finishPending(Optional<Throwable> failure) {
+    List<CompletableFuture<T>> unfinished;
+    synchronized (enrollmentLock) {
+      closed = true;
+      unfinished = new LinkedList<>(pendingResults);
+      pendingResults.clear();
+      workQueue.clear();
+    }
+    scheduledExecutor.shutdownNow();
+    // Completion may execute arbitrary caller callbacks, including another submission.
+    for (CompletableFuture<T> result : unfinished) {
+      if (failure.isPresent()) {
+        result.completeExceptionally(failure.get());
+      } else {
+        result.cancel(false);
+      }
+    }
+  }
+
+  private void requeue(WorkItem<T> item) {
+    synchronized (enrollmentLock) {
+      if (!closed && isRunning() && !item.result.isDone()) {
+        workQueue.add(item);
+      }
+    }
   }
 
   @Override
@@ -198,7 +268,11 @@ public class BatchWorker<T> extends AbstractExecutionThreadService {
       if (head.isPresent()) {
         workQueue.add(head.get());
         workQueue.drainTo(batch, maxBatchSize - batch.size());
-        processBatch(batch);
+        // A stop during poll must not start another batch. Once admitted here, the batch
+        // completes normally; stopAsync() does not interrupt an active storage transaction.
+        if (isRunning()) {
+          processBatch(batch);
+        }
       }
     }
   }
@@ -216,7 +290,7 @@ public class BatchWorker<T> extends AbstractExecutionThreadService {
             // Work not finished yet - re-queue for a followup later.
             long backoffMsec = backoffFor(item);
             scheduledExecutor.schedule(
-                () -> workQueue.add(new WorkItem<>(
+                () -> requeue(new WorkItem<>(
                     item.work,
                     item.result,
                     item.backoffStrategy,

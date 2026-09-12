@@ -13,12 +13,8 @@
  */
 package org.apache.aurora.scheduler;
 
-import java.util.Objects;
 import java.util.UUID;
 
-import javax.inject.Inject;
-
-import org.apache.aurora.common.util.Clock;
 import org.apache.aurora.scheduler.storage.entities.ITaskConfig;
 
 /**
@@ -37,27 +33,14 @@ public interface TaskIdGenerator {
   String generate(ITaskConfig task, int instanceId);
 
   class TaskIdGeneratorImpl implements TaskIdGenerator {
-    private final Clock clock;
-
-    @Inject
-    TaskIdGeneratorImpl(Clock clock) {
-      this.clock = Objects.requireNonNull(clock);
-    }
-
     @Override
     public String generate(ITaskConfig task, int instanceId) {
       String sep = "-";
-      return new StringBuilder()
-          .append(task.getJob().getRole())
-          .append(sep)
-          .append(task.getJob().getEnvironment())
-          .append(sep)
-          .append(task.getJob().getName())
-          .append(sep)
-          .append(instanceId)
-          .append(sep)
-          .append(UUID.randomUUID())
-          .toString().replaceAll("[^\\w-]", sep);  // Constrain character set.
+      return (task.getJob().getRole() + sep
+          + task.getJob().getEnvironment() + sep
+          + task.getJob().getName() + sep
+          + instanceId + sep
+          + UUID.randomUUID()).replaceAll("[^\\w-]", sep);  // Constrain character set.
     }
   }
 }

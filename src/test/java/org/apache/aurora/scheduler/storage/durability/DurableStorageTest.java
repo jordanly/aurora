@@ -109,6 +109,7 @@ import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.expectLastCall;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 public class DurableStorageTest extends EasyMockTest {
@@ -121,6 +122,7 @@ public class DurableStorageTest extends EasyMockTest {
   private Persistence persistence;
   private StorageTestUtil storageUtil;
   private EventSink eventSink;
+  private AtomicBoolean recoveryClosed;
 
   @Before
   public void setUp() {
@@ -153,6 +155,7 @@ public class DurableStorageTest extends EasyMockTest {
     // Our start should recover persistence and then forward to the underlying storage start of the
     // supplied initialization logic.
     AtomicBoolean initialized = new AtomicBoolean(false);
+    recoveryClosed = new AtomicBoolean(false);
     MutateWork.NoResult.Quiet initializationLogic = provider -> {
       // Creating a mock and expecting apply(storeProvider) does not work here for whatever
       // reason.
@@ -183,6 +186,31 @@ public class DurableStorageTest extends EasyMockTest {
     durableStorage.prepare();
     durableStorage.start(initializationLogic);
     assertTrue(initialized.get());
+    assertTrue(recoveryClosed.get());
+  }
+
+  @Test
+  public void testRecoverClosesStreamAndPreservesReplayFailure() throws Exception {
+    RuntimeException replayFailure = new RuntimeException("replay failure");
+    RuntimeException closeFailure = new RuntimeException("close failure");
+    Stream<Edit> edits = Stream.of(Edit.deleteAll())
+        .peek(edit -> { throw replayFailure; })
+        .onClose(() -> { throw closeFailure; });
+    persistence.prepare();
+    expect(persistence.recover()).andReturn(edits);
+
+    control.replay();
+    durableStorage.prepare();
+
+    try {
+      durableStorage.recover(storageUtil.mutableStoreProvider);
+    } catch (RuntimeException e) {
+      assertSame(replayFailure, e);
+      assertEquals(1, e.getSuppressed().length);
+      assertSame(closeFailure, e.getSuppressed()[0]);
+      return;
+    }
+    throw new AssertionError("Expected replay failure");
   }
 
   private void buildReplayOps() throws Exception {
@@ -294,7 +322,8 @@ public class DurableStorageTest extends EasyMockTest {
         new RemoveJobUpdates().setKeys(ImmutableSet.of(UPDATE_ID.newBuilder())))));
     storageUtil.jobUpdateStore.removeJobUpdates(ImmutableSet.of(UPDATE_ID));
 
-    expect(persistence.recover()).andReturn(builder.build().stream());
+    expect(persistence.recover()).andReturn(
+        builder.build().stream().onClose(() -> recoveryClosed.set(true)));
   }
 
   private TaskConfig nonBackfilledConfig() {

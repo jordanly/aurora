@@ -14,6 +14,7 @@
 package org.apache.aurora.scheduler.stats;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicLong;
 
 import com.google.common.collect.ImmutableList;
@@ -189,6 +190,25 @@ public class SlotSizeCounterTest extends EasyMockTest {
     assertEquals(0, largeDedicatedCounter.get());
     assertEquals(1, largeRevocableCounter.get());
     assertEquals(1, largeDedicatedRevocableCounter.get());
+  }
+
+  @Test
+  public void testMachineResourceValueSemantics() {
+    control.replay();
+    MachineResource resource = new MachineResource(SMALL, true, false);
+    MachineResource equal = new MachineResource(SMALL, true, false);
+
+    assertEquals(SMALL, resource.getSize());
+    assertEquals(true, resource.isDedicated());
+    assertEquals(false, resource.isRevocable());
+    assertEquals(resource, equal);
+    assertEquals(Objects.hash(SMALL, true, false), resource.hashCode());
+  }
+
+  @Test(expected = NullPointerException.class)
+  public void testMachineResourceRejectsNullSize() {
+    control.replay();
+    new MachineResource(null, false, false);
   }
 
   private static ResourceBag bag(double cpus, double ram, double disk) {

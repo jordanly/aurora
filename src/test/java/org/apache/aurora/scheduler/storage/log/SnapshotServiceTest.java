@@ -58,6 +58,7 @@ import org.junit.Test;
 import static org.easymock.EasyMock.anyObject;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.expectLastCall;
+import static org.junit.Assert.assertTrue;
 
 public class SnapshotServiceTest extends EasyMockTest {
 
@@ -140,7 +141,7 @@ public class SnapshotServiceTest extends EasyMockTest {
     storage.start(stores -> { });
     serviceManager.startAsync().awaitHealthy();
 
-    snapshotCalled.await();
+    assertTrue(snapshotCalled.await(30, TimeUnit.SECONDS));
 
     serviceManager.stopAsync().awaitStopped(10, TimeUnit.SECONDS);
   }

@@ -44,11 +44,8 @@ public class TimeAmountConverter extends BaseConverter<TimeAmount> {
     Optional<Time> unit = Stream.of(Time.values())
         .filter(value -> value.toString().equals(matcher.group(2)))
         .findFirst();
-    if (unit.isPresent()) {
-      return new TimeAmount(Long.parseLong(matcher.group(1)), unit.get());
-    } else {
-      throw new ParameterException(
-          getErrorString(raw, "one of " + ImmutableList.copyOf(Time.values())));
-    }
+    return unit.map(value -> new TimeAmount(Long.parseLong(matcher.group(1)), value))
+        .orElseThrow(() -> new ParameterException(
+            getErrorString(raw, "one of " + ImmutableList.copyOf(Time.values()))));
   }
 }

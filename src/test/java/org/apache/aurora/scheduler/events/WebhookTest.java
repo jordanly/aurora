@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import javax.servlet.ServletException;
@@ -112,9 +113,12 @@ public class WebhookTest {
 
     void waitForOnThrowableToFinish() {
       try {
-        latch.await();
+        if (!latch.await(30, TimeUnit.SECONDS)) {
+          throw new AssertionError("Timed out waiting for onThrowable callback");
+        }
       } catch (InterruptedException e) {
-        // No-op
+        Thread.currentThread().interrupt();
+        throw new AssertionError("Interrupted while waiting for onThrowable callback", e);
       }
     }
 

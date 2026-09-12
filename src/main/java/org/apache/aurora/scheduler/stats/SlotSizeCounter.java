@@ -71,44 +71,26 @@ class SlotSizeCounter implements Runnable {
     this.cachedCounters = requireNonNull(cachedCounters);
   }
 
-  static class MachineResource {
-    private final ResourceBag size;
-    private final boolean dedicated;
-    private final boolean revocable;
-
-    MachineResource(ResourceBag size, boolean dedicated, boolean revocable) {
-      this.size = requireNonNull(size);
-      this.dedicated = dedicated;
-      this.revocable = revocable;
+  static record MachineResource(ResourceBag size, boolean dedicated, boolean revocable) {
+    MachineResource {
+      requireNonNull(size);
     }
 
     public ResourceBag getSize() {
-      return size;
+      return size();
     }
 
     public boolean isDedicated() {
-      return dedicated;
+      return dedicated();
     }
 
     public boolean isRevocable() {
-      return revocable;
+      return revocable();
     }
 
     @Override
     public int hashCode() {
       return Objects.hash(size, dedicated, revocable);
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-      if (!(obj instanceof MachineResource)) {
-        return false;
-      }
-
-      MachineResource other = (MachineResource) obj;
-      return Objects.equals(size, other.size)
-          && Objects.equals(dedicated, other.dedicated)
-          && Objects.equals(revocable, other.revocable);
     }
   }
 

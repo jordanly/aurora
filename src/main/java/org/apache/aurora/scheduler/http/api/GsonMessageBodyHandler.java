@@ -20,6 +20,7 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
@@ -78,10 +79,8 @@ public class GsonMessageBodyHandler
       MultivaluedMap<String, String> httpHeaders,
       InputStream entityStream) throws IOException {
 
-    // For some reason try-with-resources syntax trips a findbugs error here.
-    InputStreamReader streamReader = null;
-    try {
-      streamReader = new InputStreamReader(entityStream, StandardCharsets.UTF_8);
+    try (InputStreamReader streamReader =
+        new InputStreamReader(entityStream, StandardCharsets.UTF_8)) {
       Type jsonType;
       if (type.equals(genericType)) {
         jsonType = type;
@@ -89,10 +88,6 @@ public class GsonMessageBodyHandler
         jsonType = genericType;
       }
       return GSON.fromJson(streamReader, jsonType);
-    } finally {
-      if (streamReader != null) {
-        streamReader.close();
-      }
     }
   }
 
@@ -163,16 +158,28 @@ public class GsonMessageBodyHandler
     }
   };
 
-  // Preserve union-constructor exception handling until its API baseline is qualified.
-  @SuppressWarnings({"unchecked", "rawtypes", "deprecation"})
+  @SuppressWarnings({"unchecked", "rawtypes"})
   private static TUnion<?, ?> createUnion(
       Class<?> unionType,
       TFieldIdEnum setField,
       Object fieldValue) throws IllegalAccessException, InstantiationException {
 
-    TUnion union = (TUnion) unionType.newInstance();
+    TUnion union;
+    try {
+      union = (TUnion) unionType.getDeclaredConstructor().newInstance();
+    } catch (NoSuchMethodException e) {
+      throw (InstantiationException) new InstantiationException(unionType.getName()).initCause(e);
+    } catch (InvocationTargetException e) {
+      return rethrowConstructorFailure(e.getCause());
+    }
     union.setFieldValue(setField, fieldValue);
     return union;
+  }
+
+  // Retain Class.newInstance's direct propagation of constructor exceptions.
+  @SuppressWarnings("unchecked")
+  private static <T, E extends Throwable> T rethrowConstructorFailure(Throwable failure) throws E {
+    throw (E) failure;
   }
 
   public static final Gson GSON = new GsonBuilder()
@@ -190,8 +197,7 @@ public class GsonMessageBodyHandler
                   typeOfT.getClass().getName() + " must have exactly one element");
             }
 
-            if (typeOfT instanceof Class) {
-              Class<?> clazz = (Class<?>) typeOfT;
+            if (typeOfT instanceof Class<?> clazz) {
               Entry<String, JsonElement> item = Iterables.getOnlyElement(jsonObject.entrySet());
 
               try {
@@ -208,20 +214,12 @@ public class GsonMessageBodyHandler
                       result = context.deserialize(item.getValue(), valueMeta.structClass);
                     } else {
                       FieldValueMetaData valueMeta = entry.getValue().valueMetaData;
-                      Type type;
-                      switch (valueMeta.type) {
-                        case TType.DOUBLE:
-                          type = Double.TYPE;
-                          break;
-                        case TType.I64:
-                          type = Long.TYPE;
-                          break;
-                        case TType.STRING:
-                          type = String.class;
-                          break;
-                        default:
-                          throw new RuntimeException("Unmapped type: " + valueMeta.type);
-                      }
+                      Type type = switch (valueMeta.type) {
+                        case TType.DOUBLE -> Double.TYPE;
+                        case TType.I64 -> Long.TYPE;
+                        case TType.STRING -> String.class;
+                        default -> throw new RuntimeException("Unmapped type: " + valueMeta.type);
+                      };
                       result = context.deserialize(item.getValue(), type);
                     }
                     return createUnion(clazz, entry.getKey(), result);

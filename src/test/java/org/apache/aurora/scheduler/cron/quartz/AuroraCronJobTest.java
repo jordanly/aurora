@@ -16,6 +16,7 @@ package org.apache.aurora.scheduler.cron.quartz;
 import java.util.HashMap;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 import com.google.common.collect.ImmutableSet;
 
@@ -51,7 +52,9 @@ import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.expectLastCall;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class AuroraCronJobTest extends EasyMockTest {
   private static final String TASK_ID = "A";
@@ -89,6 +92,49 @@ public class AuroraCronJobTest extends EasyMockTest {
     control.replay();
 
     auroraCronJob.doExecute(context);
+  }
+
+  @Test
+  public void testFailedScheduleDoesNotInterruptCaller() throws Exception {
+    RuntimeException failure = new RuntimeException("schedule failed");
+    useScheduleResult(CompletableFuture.failedFuture(failure));
+    control.replay();
+
+    assertFalse(Thread.currentThread().isInterrupted());
+    try {
+      auroraCronJob.doExecute(context);
+      fail("Expected failed schedule");
+    } catch (JobExecutionException e) {
+      assertTrue(e.getCause() instanceof ExecutionException);
+      assertSame(failure, e.getCause().getCause());
+      assertFalse(Thread.currentThread().isInterrupted());
+    } finally {
+      Thread.interrupted();
+    }
+  }
+
+  @Test
+  public void testInterruptedSchedulePreservesInterrupt() throws Exception {
+    useScheduleResult(new CompletableFuture<>());
+    control.replay();
+
+    Thread.currentThread().interrupt();
+    try {
+      auroraCronJob.doExecute(context);
+      fail("Expected interrupted schedule");
+    } catch (JobExecutionException e) {
+      assertTrue(e.getCause() instanceof InterruptedException);
+      assertTrue(Thread.currentThread().isInterrupted());
+    } finally {
+      Thread.interrupted();
+    }
+  }
+
+  private void useScheduleResult(CompletableFuture<BatchWorker.NoResult> result) {
+    CronBatchWorker worker = createMock(CronBatchWorker.class);
+    expect(worker.execute(anyObject())).andReturn(result);
+    auroraCronJob = new AuroraCronJob(
+        new AuroraCronJob.Config(backoffHelper), stateManager, worker);
   }
 
   @Test

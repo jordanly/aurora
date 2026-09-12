@@ -239,7 +239,10 @@ class AuroraCronJob implements Job, EventSubscriber {
 
     try {
       scheduleResult.get();
-    } catch (ExecutionException | InterruptedException e) {
+    } catch (ExecutionException e) {
+      LOG.warn("Failed while trying to launch cron " + path, e);
+      throw new JobExecutionException(e);
+    } catch (InterruptedException e) {
       LOG.warn("Interrupted while trying to launch cron " + path, e);
       Thread.currentThread().interrupt();
       throw new JobExecutionException(e);

@@ -17,7 +17,6 @@ import java.util.List;
 import java.util.Map;
 
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
@@ -34,7 +33,7 @@ class TransactionRecorder {
   private final List<Op> ops = Lists.newArrayList();
 
   void add(Op op) {
-    Op prior = Iterables.getLast(ops, null);
+    Op prior = ops.isEmpty() ? null : ops.getLast();
     if (prior == null || !coalesce(prior, op)) {
       ops.add(op);
     }

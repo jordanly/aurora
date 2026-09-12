@@ -145,7 +145,10 @@ public class ServiceDiscoveryModule extends AbstractModule {
     public Iterable<InetSocketAddress> get() {
       try {
         testServer.startNetwork();
-      } catch (IOException | InterruptedException e) {
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
         throw new RuntimeException(e);
       }
       return ImmutableList.of(

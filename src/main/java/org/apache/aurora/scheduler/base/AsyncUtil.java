@@ -147,9 +147,8 @@ public final class AsyncUtil {
     // See java.util.concurrent.ThreadPoolExecutor#afterExecute(Runnable, Throwable)
     // for more details and an implementation example.
     if (throwable == null) {
-      if (runnable instanceof Future) {
+      if (runnable instanceof Future<?> future) {
         try {
-          Future<?> future = (Future<?>) runnable;
           if (future.isDone()) {
             future.get();
           }

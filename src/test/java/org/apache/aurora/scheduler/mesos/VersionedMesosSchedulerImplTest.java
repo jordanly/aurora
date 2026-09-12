@@ -15,6 +15,7 @@ package org.apache.aurora.scheduler.mesos;
 
 import java.util.Optional;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.net.InetAddresses;
@@ -268,9 +269,11 @@ public class VersionedMesosSchedulerImplTest extends EasyMockTest {
   }
 
   private static void waitUntilCaptured(Capture<?> capture) throws Exception {
-    while (!capture.hasCaptured()) {
-      Thread.sleep(1000);
+    long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(30);
+    while (!capture.hasCaptured() && System.nanoTime() < deadline) {
+      Thread.sleep(10L);
     }
+    assertTrue("Timed out waiting for subscription callback", capture.hasCaptured());
   }
 
   @Test

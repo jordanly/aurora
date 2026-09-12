@@ -134,6 +134,7 @@ public class VersionedMesosSchedulerImpl implements Scheduler {
           return true;
         });
       } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
         throw new RuntimeException(e);
       }
     });

@@ -16,6 +16,7 @@ package org.apache.aurora.scheduler.sla;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -51,6 +52,7 @@ import static org.apache.aurora.scheduler.sla.MetricCalculator.MetricCategory.PL
 import static org.easymock.EasyMock.expect;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 public class SlaModuleTest extends EasyMockTest {
 
@@ -129,6 +131,6 @@ public class SlaModuleTest extends EasyMockTest {
     control.replay();
 
     injector.getInstance(SlaUpdater.class).startAsync().awaitRunning();
-    latch.await();
+    assertTrue(latch.await(30, TimeUnit.SECONDS));
   }
 }

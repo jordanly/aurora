@@ -52,12 +52,9 @@ public final class SanitizedCronJob {
     }
 
     Optional<CrontabEntry> entry = CrontabEntry.tryParse(job.getCronSchedule());
-    if (!entry.isPresent()) {
-      throw new CronException("Invalid cron schedule: " + job.getCronSchedule());
-    }
-
+    this.crontabEntry = entry.orElseThrow(
+        () -> new CronException("Invalid cron schedule: " + job.getCronSchedule()));
     this.config = config;
-    this.crontabEntry = entry.get();
   }
 
   /**

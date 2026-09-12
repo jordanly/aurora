@@ -14,8 +14,8 @@
 package org.apache.aurora.scheduler.discovery;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
-import com.google.common.base.Charsets;
 import com.google.gson.Gson;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonSyntaxException;
@@ -38,7 +38,7 @@ public final class Encoding {
    * @return byte array that contains a serialized Thrift service instance
    */
   public static byte[] encode(ServiceInstance serviceInstance) throws IOException {
-    return GSON.toJson(serviceInstance).getBytes(Charsets.UTF_8);
+    return GSON.toJson(serviceInstance).getBytes(StandardCharsets.UTF_8);
   }
 
   /**
@@ -48,7 +48,7 @@ public final class Encoding {
    */
   public static ServiceInstance decode(byte[] data) throws JsonSyntaxException {
     ServiceInstance instance =
-        GSON.fromJson(new String(data, Charsets.UTF_8), ServiceInstance.class);
+        GSON.fromJson(new String(data, StandardCharsets.UTF_8), ServiceInstance.class);
     assertRequiredField("serviceInstance", instance);
     assertRequiredField("serviceEndpoint", instance.getServiceEndpoint());
     assertRequiredFields(instance.getServiceEndpoint());

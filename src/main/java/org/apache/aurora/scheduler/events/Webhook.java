@@ -70,8 +70,9 @@ public class Webhook extends AbstractIdleService implements EventSubscriber {
     this.successCounter = statsProvider.makeCounter(SUCCESS_STAT_NAME);
     this.errorsCounter = statsProvider.makeCounter(ERRORS_STAT_NAME);
     this.userErrorsCounter = statsProvider.makeCounter(USER_ERRORS_STAT_NAME);
-    this.isWhitelisted = status -> !webhookInfo.getWhitelistedStatuses().isPresent()
-        || webhookInfo.getWhitelistedStatuses().get().contains(status);
+    this.isWhitelisted = status -> webhookInfo.getWhitelistedStatuses()
+        .map(statuses -> statuses.contains(status))
+        .orElse(true);
     LOG.info("Webhook enabled with info" + this.webhookInfo);
   }
 

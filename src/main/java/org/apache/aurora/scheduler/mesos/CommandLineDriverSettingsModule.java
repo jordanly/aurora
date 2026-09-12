@@ -152,10 +152,13 @@ public class CommandLineDriverSettingsModule extends AbstractModule {
       return Optional.empty();
     } else {
       Properties properties;
-      try {
-        properties = parseCredentials(new FileInputStream(opts.frameworkAuthenticationFile));
+      try (InputStream credentialsStream = new FileInputStream(opts.frameworkAuthenticationFile)) {
+        properties = parseCredentials(credentialsStream);
       } catch (FileNotFoundException e) {
         LOG.error("Authentication File not Found");
+        throw new RuntimeException(e);
+      } catch (IOException e) {
+        LOG.error("Unable to load authentication file");
         throw new RuntimeException(e);
       }
 

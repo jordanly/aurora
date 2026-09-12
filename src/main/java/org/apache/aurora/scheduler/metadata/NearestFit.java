@@ -13,7 +13,6 @@
  */
 package org.apache.aurora.scheduler.metadata;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -132,7 +131,7 @@ public class NearestFit implements EventSubscriber {
     return StreamSupport.stream(taskGroups.spliterator(), false).map(t -> {
       List<String> reasons = getNearestFit(t.getKey()).stream()
           .map(Veto::getReason).collect(Collectors.toList());
-      return new HashMap.SimpleEntry<>(t.getKey(), reasons);
+      return Map.entry(t.getKey(), reasons);
     }).collect(GuavaUtils.toImmutableMap(Map.Entry::getKey, Map.Entry::getValue));
   }
 

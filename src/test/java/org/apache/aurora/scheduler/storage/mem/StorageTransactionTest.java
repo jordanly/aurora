@@ -38,6 +38,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
@@ -74,12 +75,16 @@ public class StorageTransactionTest extends TearDownTestCase {
       return "slowResult";
     }));
 
-    slowReadStarted.await();
-
-    String fastResult = storage.read(storeProvider -> "fastResult");
-    assertEquals("fastResult", fastResult);
-    slowReadFinished.countDown();
-    assertEquals("slowResult", future.get());
+    try {
+      assertTrue("Slow reader did not start", slowReadStarted.await(30, TimeUnit.SECONDS));
+      Future<String> fastResult = executor.submit(() -> storage.read(
+          storeProvider -> "fastResult"));
+      // Keep the slow reader blocked until the independent read actually finishes.
+      assertEquals("fastResult", fastResult.get(30, TimeUnit.SECONDS));
+    } finally {
+      slowReadFinished.countDown();
+    }
+    assertEquals("slowResult", future.get(30, TimeUnit.SECONDS));
   }
 
   private IScheduledTask makeTask(String taskId) {

@@ -40,8 +40,9 @@ class ThriftFieldGetter<T extends TBase<T, F>, F extends TFieldIdEnum, V extends
         .get(fieldId)
         .valueMetaData;
 
-    checkArgument(fieldValueMetaData instanceof StructMetaData);
-    StructMetaData structMetaData = (StructMetaData) fieldValueMetaData;
+    if (!(fieldValueMetaData instanceof StructMetaData structMetaData)) {
+      throw new IllegalArgumentException();
+    }
     checkArgument(
         valueClass.equals(structMetaData.structClass),
         "Value class %s does not match field metadata for %s (expected %s)",

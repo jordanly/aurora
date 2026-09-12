@@ -13,13 +13,21 @@
  */
 package org.apache.aurora.codec;
 
+import java.util.HexFormat;
+
 import org.apache.aurora.codec.ThriftBinaryCodec.CodingException;
+import org.apache.aurora.gen.JobKey;
 import org.apache.aurora.gen.ScheduledTask;
 import org.apache.aurora.scheduler.base.TaskTestUtil;
+import org.apache.thrift.TException;
+import org.apache.thrift.protocol.TProtocol;
 import org.junit.Test;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.fail;
 
 public class ThriftBinaryCodecTest {
 
@@ -63,5 +71,40 @@ public class ThriftBinaryCodecTest {
     ScheduledTask inflated = ThriftBinaryCodec.inflateNonNull(ScheduledTask.class, deflated);
 
     assertEquals(original, inflated);
+  }
+
+  @Test
+  public void testHistoricalCompressedFixture() {
+    // Captured from the original codec at 6cf7f0ea0 with the pinned Java 25 toolchain.
+    byte[] compressed = HexFormat.of().parseHex(
+        "785ee366606460606029cacf49e5666002329953f3cab8199841acacfc240600402c0468");
+    JobKey key = new JobKey("role", "env", "job");
+
+    assertArrayEquals(compressed, ThriftBinaryCodec.deflateNonNull(key));
+    assertEquals(key, ThriftBinaryCodec.inflateNonNull(JobKey.class, compressed));
+  }
+
+  @Test
+  public void testCompressionPreservesWriteFailure() {
+    TException failure = new TException("failed after writing the fields");
+    JobKey key = new JobKey("role", "env", "job") {
+      @Override
+      public void write(TProtocol protocol) throws TException {
+        super.write(protocol);
+        throw failure;
+      }
+    };
+
+    try {
+      ThriftBinaryCodec.deflateNonNull(key);
+      fail("Expected failed serialization");
+    } catch (CodingException e) {
+      assertSame(failure, e.getCause());
+    }
+  }
+
+  @Test(expected = CodingException.class)
+  public void testMalformedCompressedInput() {
+    ThriftBinaryCodec.inflateNonNull(JobKey.class, new byte[] {3, 4, 5});
   }
 }

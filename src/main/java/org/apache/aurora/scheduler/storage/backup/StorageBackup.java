@@ -21,9 +21,9 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.Executor;
@@ -108,7 +108,7 @@ public interface StorageBackup {
     private final Clock clock;
     private final long backupIntervalMs;
     private volatile long lastBackupMs;
-    private final DateFormat backupDateFormat;
+    private final DateTimeFormatter backupDateFormat;
     private final Executor executor;
 
     private final AtomicLong successes = Stats.exportLong("scheduler_backup_success");
@@ -136,7 +136,8 @@ public interface StorageBackup {
       this.clock = requireNonNull(clock);
       this.config = requireNonNull(config);
       this.executor = requireNonNull(executor);
-      backupDateFormat = new SimpleDateFormat("yyyy-MM-dd-HH-mm", Locale.ENGLISH);
+      backupDateFormat = DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm", Locale.ENGLISH)
+          .withZone(ZoneId.systemDefault());
       backupIntervalMs = config.interval.as(Time.MILLISECONDS);
       lastBackupMs = clock.nowMillis();
     }
@@ -157,7 +158,7 @@ public interface StorageBackup {
 
     @VisibleForTesting
     String createBackupName() {
-      return FILE_PREFIX + backupDateFormat.format(new Date(clock.nowMillis()));
+      return FILE_PREFIX + backupDateFormat.format(Instant.ofEpochMilli(clock.nowMillis()));
     }
 
     private void save(Snapshot snapshot) {

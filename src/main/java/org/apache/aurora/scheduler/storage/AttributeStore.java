@@ -105,12 +105,8 @@ public interface AttributeStore {
         String host,
         MaintenanceMode mode) {
 
-      Optional<IHostAttributes> stored = store.getHostAttributes(host);
-      if (stored.isPresent()) {
-        return Optional.of(IHostAttributes.build(stored.get().newBuilder().setMode(mode)));
-      } else {
-        return Optional.empty();
-      }
+      return store.getHostAttributes(host)
+          .map(attributes -> IHostAttributes.build(attributes.newBuilder().setMode(mode)));
     }
 
     /**

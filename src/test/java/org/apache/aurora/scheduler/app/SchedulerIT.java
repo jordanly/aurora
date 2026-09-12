@@ -223,7 +223,7 @@ public class SchedulerIT extends BaseZooKeeperTest {
             ImmutableList.of(
                 InetSocketAddress.createUnresolved("localhost", getServer().getPort())))
             .withCredentials(Credentials.digestCredentials("mesos", "mesos"));
-    SchedulerMain main = SchedulerMain.class.newInstance();
+    SchedulerMain main = new SchedulerMain();
     Injector injector = Guice.createInjector(
         ImmutableList.<Module>builder()
             .add(SchedulerMain.getUniversalModule(new CliOptions()))

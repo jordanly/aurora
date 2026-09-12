@@ -14,15 +14,17 @@
 package org.apache.aurora.scheduler.http.api.security;
 
 import java.io.File;
+import java.util.concurrent.CompletionException;
 
+import javax.security.auth.Subject;
 import javax.security.auth.kerberos.KerberosPrincipal;
 
 import com.google.inject.Guice;
-import com.google.inject.Module;
 
 import org.apache.aurora.common.testing.easymock.EasyMockTest;
 import org.easymock.EasyMock;
 import org.ietf.jgss.GSSCredential;
+import org.ietf.jgss.GSSException;
 import org.ietf.jgss.GSSManager;
 import org.ietf.jgss.Oid;
 import org.junit.Before;
@@ -31,6 +33,10 @@ import org.junit.Test;
 import static org.easymock.EasyMock.anyObject;
 import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class Kerberos5ShiroRealmModuleTest extends EasyMockTest {
   private static final KerberosPrincipal SERVER_PRINCIPAL =
@@ -41,7 +47,7 @@ public class Kerberos5ShiroRealmModuleTest extends EasyMockTest {
 
   private GSSCredential gssCredential;
 
-  private Module module;
+  private Kerberos5ShiroRealmModule module;
 
   @Before
   public void setUp() {
@@ -61,10 +67,70 @@ public class Kerberos5ShiroRealmModuleTest extends EasyMockTest {
             eq(GSSCredential.INDEFINITE_LIFETIME),
             anyObject(Oid[].class),
             eq(GSSCredential.ACCEPT_ONLY)))
-        .andReturn(gssCredential);
+        .andAnswer(() -> {
+          assertTrue(Subject.current().getPrincipals().contains(SERVER_PRINCIPAL));
+          return gssCredential;
+        });
 
     control.replay();
 
     Guice.createInjector(module).getInstance(Kerberos5Realm.class);
+  }
+
+  @Test
+  public void testCredentialSubjectIsScopedToAction() throws Exception {
+    Subject subject = new Subject();
+    Subject previous = Subject.current();
+    expect(gssManager.createCredential(
+        EasyMock.isNull(),
+        eq(GSSCredential.INDEFINITE_LIFETIME),
+        anyObject(Oid[].class),
+        eq(GSSCredential.ACCEPT_ONLY))).andAnswer(() -> {
+          assertSame(subject, Subject.current());
+          return gssCredential;
+        });
+    control.replay();
+
+    assertSame(gssCredential, module.createServerCredential(subject));
+    assertSame(previous, Subject.current());
+  }
+
+  @Test
+  public void testGssFailureRetainsRuntimeWrapper() throws Exception {
+    GSSException failure = new GSSException(GSSException.NO_CRED);
+    expect(gssManager.createCredential(
+        EasyMock.isNull(),
+        eq(GSSCredential.INDEFINITE_LIFETIME),
+        anyObject(Oid[].class),
+        eq(GSSCredential.ACCEPT_ONLY))).andThrow(failure);
+    control.replay();
+
+    Subject previous = Subject.current();
+    try {
+      module.createServerCredential(new Subject());
+      fail("Expected credential failure");
+    } catch (RuntimeException e) {
+      assertEquals(RuntimeException.class, e.getClass());
+      assertSame(failure, e.getCause());
+    }
+    assertSame(previous, Subject.current());
+  }
+
+  @Test
+  public void testActionCompletionExceptionIsNotUnwrapped() throws Exception {
+    CompletionException failure = new CompletionException(new IllegalStateException("failure"));
+    expect(gssManager.createCredential(
+        EasyMock.isNull(),
+        eq(GSSCredential.INDEFINITE_LIFETIME),
+        anyObject(Oid[].class),
+        eq(GSSCredential.ACCEPT_ONLY))).andThrow(failure);
+    control.replay();
+
+    try {
+      module.createServerCredential(new Subject());
+      fail("Expected credential failure");
+    } catch (CompletionException e) {
+      assertSame(failure, e);
+    }
   }
 }

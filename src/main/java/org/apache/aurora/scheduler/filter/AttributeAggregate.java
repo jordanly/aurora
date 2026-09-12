@@ -157,11 +157,9 @@ public final class AttributeAggregate {
 
   @Override
   public boolean equals(Object o) {
-    if (!(o instanceof AttributeAggregate)) {
+    if (!(o instanceof AttributeAggregate other)) {
       return false;
     }
-
-    AttributeAggregate other = (AttributeAggregate) o;
     return getAggregates().equals(other.getAggregates());
   }
 

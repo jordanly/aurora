@@ -15,7 +15,9 @@ package org.apache.aurora.scheduler.storage.backup;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.Instant;
 import java.util.List;
+import java.util.TimeZone;
 import java.util.concurrent.ScheduledExecutorService;
 
 import javax.annotation.Nullable;
@@ -85,6 +87,45 @@ public class StorageBackupTest extends EasyMockTest {
   private void triggerSnapshot(Snapshot expectedResult) {
     storage.write((NoResult.Quiet) stores ->
         assertEquals(expectedResult, storageBackup.from(stores)));
+  }
+
+  @Test
+  public void testBackupNameCapturesTimeZoneAndMinutePrecision() {
+    control.replay();
+    TimeZone originalZone = TimeZone.getDefault();
+    try {
+      TimeZone.setDefault(TimeZone.getTimeZone("America/New_York"));
+      FakeClock namingClock = new FakeClock();
+      StorageBackupImpl backup = new StorageBackupImpl(
+          storage, delegate, namingClock, config, Runnable::run);
+      namingClock.setNowMillis(Instant.parse("2025-01-01T00:00:59Z").toEpochMilli());
+      assertEquals("scheduler-backup-2024-12-31-19-00", backup.createBackupName());
+
+      TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
+      assertEquals("scheduler-backup-2024-12-31-19-00", backup.createBackupName());
+      namingClock.advance(Amount.of(1L, Time.SECONDS));
+      assertEquals("scheduler-backup-2024-12-31-19-01", backup.createBackupName());
+    } finally {
+      TimeZone.setDefault(originalZone);
+    }
+  }
+
+  @Test
+  public void testBackupNameRetainsDaylightSavingOverlap() {
+    control.replay();
+    TimeZone originalZone = TimeZone.getDefault();
+    try {
+      TimeZone.setDefault(TimeZone.getTimeZone("America/New_York"));
+      FakeClock namingClock = new FakeClock();
+      StorageBackupImpl backup = new StorageBackupImpl(
+          storage, delegate, namingClock, config, Runnable::run);
+      namingClock.setNowMillis(Instant.parse("2025-11-02T05:30:00Z").toEpochMilli());
+      assertEquals("scheduler-backup-2025-11-02-01-30", backup.createBackupName());
+      namingClock.setNowMillis(Instant.parse("2025-11-02T06:30:00Z").toEpochMilli());
+      assertEquals("scheduler-backup-2025-11-02-01-30", backup.createBackupName());
+    } finally {
+      TimeZone.setDefault(originalZone);
+    }
   }
 
   @Test

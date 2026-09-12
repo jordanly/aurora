@@ -19,7 +19,6 @@ import java.util.Set;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
-import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
@@ -53,7 +52,7 @@ class MemAttributeStore implements AttributeStore.Mutable {
   @Override
   public boolean saveHostAttributes(IHostAttributes attributes) {
     Preconditions.checkArgument(
-        FluentIterable.from(attributes.getAttributes()).allMatch(a -> !a.getValues().isEmpty()));
+        attributes.getAttributes().stream().allMatch(a -> !a.getValues().isEmpty()));
     Preconditions.checkArgument(attributes.isSetMode());
 
     IHostAttributes previous = hostAttributes.put(

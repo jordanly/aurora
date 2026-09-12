@@ -57,11 +57,9 @@ public class ServiceInstance {
 
   @Override
   public boolean equals(Object obj) {
-    if (!(obj instanceof ServiceInstance)) {
+    if (!(obj instanceof ServiceInstance other)) {
       return false;
     }
-
-    ServiceInstance other = (ServiceInstance) obj;
     return Objects.equals(serviceEndpoint, other.serviceEndpoint)
         && Objects.equals(additionalEndpoints, other.additionalEndpoints)
         && status.equals(other.status);
@@ -100,11 +98,9 @@ public class ServiceInstance {
 
     @Override
     public boolean equals(Object obj) {
-      if (!(obj instanceof Endpoint)) {
+      if (!(obj instanceof Endpoint other)) {
         return false;
       }
-
-      Endpoint other = (Endpoint) obj;
       return Objects.equals(host, other.host)
           && port == other.port;
     }

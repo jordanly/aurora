@@ -18,6 +18,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableSet;
@@ -40,6 +41,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
@@ -75,12 +77,16 @@ public class MemStorageTest extends TearDownTestCase {
       return "slowResult";
     }));
 
-    slowReadStarted.await();
-
-    String fastResult = storage.read((Quiet<String>) storeProvider -> "fastResult");
-    assertEquals("fastResult", fastResult);
-    slowReadFinished.countDown();
-    assertEquals("slowResult", future.get());
+    try {
+      assertTrue("Slow reader did not start", slowReadStarted.await(30, TimeUnit.SECONDS));
+      Future<String> fastResult = executor.submit(() -> storage.read(
+          (Quiet<String>) storeProvider -> "fastResult"));
+      // Keep the slow reader blocked until the independent read actually finishes.
+      assertEquals("fastResult", fastResult.get(30, TimeUnit.SECONDS));
+    } finally {
+      slowReadFinished.countDown();
+    }
+    assertEquals("slowResult", future.get(30, TimeUnit.SECONDS));
   }
 
   private IScheduledTask makeTask(String taskId) {

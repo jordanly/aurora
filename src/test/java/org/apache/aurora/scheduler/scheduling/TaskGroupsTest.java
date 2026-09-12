@@ -14,6 +14,8 @@
 package org.apache.aurora.scheduler.scheduling;
 
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 
 import com.google.common.collect.ImmutableSet;
@@ -48,6 +50,10 @@ import static org.easymock.EasyMock.anyObject;
 import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class TaskGroupsTest extends EasyMockTest {
   private static final Amount<Long, Time> FIRST_SCHEDULE_DELAY = Amount.of(1L, Time.MILLISECONDS);
@@ -100,6 +106,46 @@ public class TaskGroupsTest extends EasyMockTest {
     taskGroups.taskChangedState(TaskStateChange.transition(makeTask(TASK_A_ID), INIT));
     clock.advance(FIRST_SCHEDULE_DELAY);
     assertEquals(0L, statsProvider.getLongValue(TaskGroups.SCHEDULE_ATTEMPTS_BLOCKS));
+  }
+
+  @Test
+  public void testFailedBatchDoesNotInterruptCaller() {
+    RuntimeException failure = new RuntimeException("batch failed");
+    expect(rateLimiter.acquire()).andReturn(0D);
+    expect(batchWorker.execute(anyObject())).andReturn(CompletableFuture.failedFuture(failure));
+    control.replay();
+
+    taskGroups.taskChangedState(TaskStateChange.transition(makeTask(TASK_A_ID), INIT));
+    assertFalse(Thread.currentThread().isInterrupted());
+    try {
+      clock.advance(FIRST_SCHEDULE_DELAY);
+      fail("Expected failed batch");
+    } catch (RuntimeException e) {
+      assertTrue(e.getCause() instanceof ExecutionException);
+      assertSame(failure, e.getCause().getCause());
+      assertFalse(Thread.currentThread().isInterrupted());
+    } finally {
+      Thread.interrupted();
+    }
+  }
+
+  @Test
+  public void testInterruptedBatchPreservesInterrupt() {
+    expect(rateLimiter.acquire()).andReturn(0D);
+    expect(batchWorker.execute(anyObject())).andReturn(new CompletableFuture<>());
+    control.replay();
+
+    taskGroups.taskChangedState(TaskStateChange.transition(makeTask(TASK_A_ID), INIT));
+    Thread.currentThread().interrupt();
+    try {
+      clock.advance(FIRST_SCHEDULE_DELAY);
+      fail("Expected interrupted batch");
+    } catch (RuntimeException e) {
+      assertTrue(e.getCause() instanceof InterruptedException);
+      assertTrue(Thread.currentThread().isInterrupted());
+    } finally {
+      Thread.interrupted();
+    }
   }
 
   @Test

@@ -13,6 +13,8 @@
  */
 package org.apache.aurora.scheduler.app;
 
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Set;
 
 import com.google.common.collect.ImmutableList;
@@ -27,6 +29,9 @@ import org.apache.aurora.scheduler.config.CliOptions;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class MoreModulesTest {
   private static final String STRING = "string";
@@ -42,6 +47,113 @@ public class MoreModulesTest {
     assertEquals(
         ImmutableSet.of(options.main.clusterName),
         injector.getInstance(Key.get(new TypeLiteral<Set<String>>() { })));
+  }
+
+  @Test
+  public void testOptionsConstructorPreferred() {
+    CliOptions options = new CliOptions();
+    BothConstructors module = (BothConstructors) MoreModules.instantiate(
+        BothConstructors.class, options);
+    assertSame(options, module.options);
+  }
+
+  @Test
+  public void testMissingConstructor() {
+    try {
+      MoreModules.instantiate(MissingConstructor.class, new CliOptions());
+      fail("Expected missing constructor failure");
+    } catch (IllegalArgumentException e) {
+      assertTrue(e.getCause() instanceof InstantiationException);
+      assertEquals("Failed to instantiate module " + MissingConstructor.class.getName()
+          + ".Dynamic modules must have a default constructor or accept CliOptions", e.getMessage());
+    }
+  }
+
+  @Test
+  public void testInaccessibleConstructor() {
+    try {
+      MoreModules.instantiate(InaccessibleConstructor.class, new CliOptions());
+      fail("Expected inaccessible constructor failure");
+    } catch (IllegalArgumentException e) {
+      assertTrue(e.getCause() instanceof IllegalAccessException);
+      assertEquals("Failed to instantiate module " + InaccessibleConstructor.class.getName()
+          + ". Are you sure it's public?", e.getMessage());
+    }
+  }
+
+  @Test
+  public void testDefaultConstructorFailurePropagatesDirectly() {
+    try {
+      MoreModules.instantiate(ThrowingConstructor.class, new CliOptions());
+      fail("Expected constructor failure");
+    } catch (Exception e) {
+      assertSame(ThrowingConstructor.FAILURE, e);
+    }
+  }
+
+  @Test
+  public void testOptionsConstructorFailureWrapped() {
+    try {
+      MoreModules.instantiate(ThrowingOptionsConstructor.class, new CliOptions());
+      fail("Expected constructor failure");
+    } catch (IllegalArgumentException e) {
+      assertTrue(e.getCause() instanceof InvocationTargetException);
+      assertSame(ThrowingConstructor.FAILURE, e.getCause().getCause());
+    }
+  }
+
+  @Test(expected = ClassCastException.class)
+  public void testWrongType() {
+    MoreModules.instantiate(Object.class, new CliOptions());
+  }
+
+  public static class BothConstructors extends AbstractModule {
+    private final CliOptions options;
+
+    public BothConstructors() {
+      throw new AssertionError("Options constructor must be preferred");
+    }
+
+    public BothConstructors(CliOptions options) {
+      this.options = options;
+    }
+
+    @Override
+    protected void configure() { }
+  }
+
+  public static class MissingConstructor extends AbstractModule {
+    public MissingConstructor(String ignored) { }
+
+    @Override
+    protected void configure() { }
+  }
+
+  public static class InaccessibleConstructor extends AbstractModule {
+    private InaccessibleConstructor() { }
+
+    @Override
+    protected void configure() { }
+  }
+
+  public static class ThrowingConstructor extends AbstractModule {
+    static final IOException FAILURE = new IOException("constructor failed");
+
+    public ThrowingConstructor() throws IOException {
+      throw FAILURE;
+    }
+
+    @Override
+    protected void configure() { }
+  }
+
+  public static class ThrowingOptionsConstructor extends AbstractModule {
+    public ThrowingOptionsConstructor(CliOptions options) throws IOException {
+      throw ThrowingConstructor.FAILURE;
+    }
+
+    @Override
+    protected void configure() { }
   }
 
   static class StringInstaller extends AbstractModule {

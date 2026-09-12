@@ -73,11 +73,7 @@ public final class GuavaUtils {
    * Collector to create a Guava ImmutableList.
    */
   public static <T> Collector<T, ?, ImmutableList<T>> toImmutableList() {
-    return Collector.of(
-        ImmutableList.Builder<T>::new,
-        ImmutableList.Builder::add,
-        (l, r) -> l.addAll(r.build()),
-        ImmutableList.Builder::build);
+    return ImmutableList.toImmutableList();
   }
 
   /**

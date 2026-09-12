@@ -14,6 +14,8 @@
 package org.apache.aurora.scheduler.mesos;
 
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.google.common.collect.ImmutableList;
 
@@ -32,6 +34,7 @@ import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.expectLastCall;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class VersionedSchedulerDriverServiceTest extends EasyMockTest {
@@ -99,17 +102,30 @@ public class VersionedSchedulerDriverServiceTest extends EasyMockTest {
     control.replay();
     driverService.startAsync().awaitRunning();
 
+    AtomicBoolean interrupted = new AtomicBoolean();
     Thread killRunner = new Thread(() -> {
-      driverService.killTask("task-id");
+      try {
+        driverService.killTask("task-id");
+      } catch (RuntimeException e) {
+        interrupted.set(Thread.currentThread().isInterrupted());
+        Thread.interrupted();
+      }
     });
 
+    killRunner.setDaemon(true);
     killRunner.start();
 
     // A hack to ensure the thread actually executes the method
-    Thread.sleep(1000L);
+    long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
+    while (killRunner.getState() != Thread.State.WAITING && System.nanoTime() < deadline) {
+      Thread.sleep(1L);
+    }
     assertEquals(Thread.State.WAITING, killRunner.getState());
 
     killRunner.interrupt();
+    killRunner.join(5000);
+    assertFalse(killRunner.isAlive());
+    assertTrue(interrupted.get());
   }
 
   @Test

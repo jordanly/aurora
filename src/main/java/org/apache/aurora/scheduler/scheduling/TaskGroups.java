@@ -176,7 +176,9 @@ public class TaskGroups implements EventSubscriber {
           Set<String> scheduled = null;
           try {
             scheduled = result.get();
-          } catch (ExecutionException | InterruptedException e) {
+          } catch (ExecutionException e) {
+            throw new RuntimeException(e);
+          } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);
           }

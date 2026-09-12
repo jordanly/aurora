@@ -65,6 +65,39 @@ class Kerberos5Realm implements Realm {
     GSSContext context;
     try {
       context = gssManager.createContext(serverCredential);
+    } catch (GSSException e) {
+      throw new AuthenticationException(e);
+    }
+
+    Throwable failure = null;
+    try {
+      return authenticate(context, tokenFromInitiator);
+    } catch (RuntimeException | Error e) {
+      failure = e;
+      throw e;
+    } finally {
+      try {
+        context.dispose();
+      } catch (GSSException e) {
+        if (failure != null) {
+          failure.addSuppressed(e);
+        } else {
+          // Do not report successful authentication when request-context cleanup failed.
+          throw new AuthenticationException(e);
+        }
+      } catch (RuntimeException | Error e) {
+        if (failure == null) {
+          throw e;
+        }
+        if (failure != e) {
+          failure.addSuppressed(e);
+        }
+      }
+    }
+  }
+
+  private AuthenticationInfo authenticate(GSSContext context, byte[] tokenFromInitiator) {
+    try {
       context.acceptSecContext(tokenFromInitiator, 0, tokenFromInitiator.length);
     } catch (GSSException e) {
       throw new AuthenticationException(e);

@@ -16,8 +16,8 @@ package org.apache.aurora.scheduler.http.api.security;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.security.PrivilegedAction;
 import java.util.Optional;
+import java.util.concurrent.CompletionException;
 
 import javax.inject.Singleton;
 import javax.security.auth.Subject;
@@ -125,8 +125,6 @@ public class Kerberos5ShiroRealmModule extends AbstractModule {
   }
 
   @Override
-  // Preserve credential/exception behavior for the baseline; qualify Subject.callAs separately.
-  @SuppressWarnings("removal")
   protected void configure() {
     if (!serverKeyTab.isPresent()) {
       addError("No -" + Options.SERVER_KEYTAB_ARGNAME + " specified.");
@@ -165,19 +163,7 @@ public class Kerberos5ShiroRealmModule extends AbstractModule {
           null /* callbackHandler */,
           new ConfigFile(jaasConfFile.toURI()));
       loginContext.login();
-      serverCredential = Subject.doAs(
-          loginContext.getSubject(),
-          (PrivilegedAction<GSSCredential>) () -> {
-            try {
-              return gssManager.createCredential(
-                  null /* Use the service principal name defined in jaas.conf */,
-                  GSSCredential.INDEFINITE_LIFETIME,
-                  new Oid[] {new Oid(GSS_SPNEGO_MECH_OID), new Oid(GSS_KRB5_MECH_OID)},
-                  GSSCredential.ACCEPT_ONLY);
-            } catch (GSSException e) {
-              throw new RuntimeException(e);
-            }
-          });
+      serverCredential = createServerCredential(loginContext.getSubject());
     } catch (LoginException e) {
       addError(e);
       return;
@@ -194,5 +180,28 @@ public class Kerberos5ShiroRealmModule extends AbstractModule {
       }
     });
     ShiroUtils.addRealmBinding(binder()).to(Kerberos5Realm.class);
+  }
+
+  @VisibleForTesting
+  GSSCredential createServerCredential(Subject subject) {
+    try {
+      return Subject.callAs(subject, () -> {
+        try {
+          return gssManager.createCredential(
+              null /* Use the service principal name defined in jaas.conf */,
+              GSSCredential.INDEFINITE_LIFETIME,
+              new Oid[] {new Oid(GSS_SPNEGO_MECH_OID), new Oid(GSS_KRB5_MECH_OID)},
+              GSSCredential.ACCEPT_ONLY);
+        } catch (GSSException e) {
+          throw new RuntimeException(e);
+        }
+      });
+    } catch (CompletionException e) {
+      // doAs propagated the action's unchecked failure directly. Remove only callAs's wrapper.
+      if (e.getCause() instanceof RuntimeException cause) {
+        throw cause;
+      }
+      throw e;
+    }
   }
 }

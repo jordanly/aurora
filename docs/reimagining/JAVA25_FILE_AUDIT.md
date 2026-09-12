@@ -1,5 +1,9 @@
 # Java 25 source audit
 
+Subsequent code changes and executed validation are tracked in the
+[implementation status](JAVA25_IMPLEMENTATION_STATUS.md); this document retains
+the original audit baseline.
+
 Audited on 2026-09-11 against source commit
 [`6cf7f0ea07c6355af62ceafb029fe086f55b8c65`](https://github.com/jordanly/aurora/tree/6cf7f0ea07c6355af62ceafb029fe086f55b8c65).
 This is an implementation plan and file-by-file review of the **existing Aurora

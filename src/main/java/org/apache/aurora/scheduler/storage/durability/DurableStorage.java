@@ -15,6 +15,7 @@ package org.apache.aurora.scheduler.storage.durability;
 
 import java.util.List;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.stream.Stream;
 
 import javax.inject.Inject;
 
@@ -174,8 +175,8 @@ public class DurableStorage implements NonVolatileStorage {
 
   @Timed("scheduler_storage_recover")
   void recover(MutableStoreProvider stores) throws RecoveryFailedException {
-    try {
-      Loader.load(stores, thriftBackfill, persistence.recover());
+    try (Stream<Persistence.Edit> edits = persistence.recover()) {
+      Loader.load(stores, thriftBackfill, edits);
     } catch (PersistenceException e) {
       throw new RecoveryFailedException(e);
     }

@@ -57,11 +57,9 @@ public interface PubsubEvent {
 
     @Override
     public boolean equals(Object o) {
-      if (!(o instanceof TasksDeleted)) {
+      if (!(o instanceof TasksDeleted other)) {
         return false;
       }
-
-      TasksDeleted other = (TasksDeleted) o;
       return Objects.equals(tasks, other.tasks);
     }
 
@@ -135,11 +133,9 @@ public interface PubsubEvent {
 
     @Override
     public boolean equals(Object o) {
-      if (!(o instanceof TaskStateChange)) {
+      if (!(o instanceof TaskStateChange other)) {
         return false;
       }
-
-      TaskStateChange other = (TaskStateChange) o;
       return Objects.equals(task, other.task)
           && Objects.equals(oldState, other.oldState);
     }
@@ -192,11 +188,9 @@ public interface PubsubEvent {
 
     @Override
     public boolean equals(Object o) {
-      if (!(o instanceof HostAttributesChanged)) {
+      if (!(o instanceof HostAttributesChanged other)) {
         return false;
       }
-
-      HostAttributesChanged other = (HostAttributesChanged) o;
       return Objects.equals(attributes, other.getAttributes());
     }
 
@@ -268,11 +262,9 @@ public interface PubsubEvent {
 
     @Override
     public boolean equals(Object o) {
-      if (!(o instanceof TaskStatusReceived)) {
+      if (!(o instanceof TaskStatusReceived other)) {
         return false;
       }
-
-      TaskStatusReceived other = (TaskStatusReceived) o;
       return Objects.equals(state, other.state)
           && Objects.equals(source, other.source)
           && Objects.equals(reason, other.reason)

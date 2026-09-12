@@ -17,6 +17,7 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -205,10 +206,9 @@ public interface Recovery {
       throw new RecoveryException("Backup " + backupFile + " does not exist.");
     }
 
-    try {
+    try (InputStream input = new BufferedInputStream(new FileInputStream(backupFile))) {
       Snapshot snapshot = new Snapshot();
-      TBinaryProtocol prot = new TBinaryProtocol(
-          new TIOStreamTransport(new BufferedInputStream(new FileInputStream(backupFile))));
+      TBinaryProtocol prot = new TBinaryProtocol(new TIOStreamTransport(input));
       snapshot.read(prot);
       return snapshot;
     } catch (TException e) {

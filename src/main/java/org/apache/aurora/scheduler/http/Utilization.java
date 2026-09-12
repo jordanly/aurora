@@ -97,11 +97,9 @@ public class Utilization {
 
     @Override
     public boolean equals(Object o) {
-      if (!(o instanceof  Display)) {
+      if (!(o instanceof Display other)) {
         return false;
       }
-
-      Display other = (Display) o;
       return Objects.equals(title, other.title) && Objects.equals(link, other.link);
     }
   }

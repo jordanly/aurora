@@ -28,6 +28,7 @@ import org.slf4j.Logger;
 
 import static org.easymock.EasyMock.contains;
 import static org.easymock.EasyMock.expectLastCall;
+import static org.junit.Assert.assertTrue;
 
 public class AsyncUtilTest extends EasyMockTest {
   private static final String NAME_FORMAT = "Test-%d";
@@ -50,7 +51,7 @@ public class AsyncUtilTest extends EasyMockTest {
       throw new IllegalArgumentException("Expected exception.");
     }, 0, TimeUnit.MILLISECONDS);
 
-    latch.await();
+    assertTrue(latch.await(30, TimeUnit.SECONDS));
   }
 
   @Test
@@ -66,7 +67,7 @@ public class AsyncUtilTest extends EasyMockTest {
       }
     });
 
-    latch.await();
+    assertTrue(latch.await(30, TimeUnit.SECONDS));
   }
 
   @Test
@@ -81,7 +82,7 @@ public class AsyncUtilTest extends EasyMockTest {
       throw new IllegalArgumentException("Expected exception.");
     });
 
-    latch.await();
+    assertTrue(latch.await(30, TimeUnit.SECONDS));
   }
 
   private void expectLogging() {

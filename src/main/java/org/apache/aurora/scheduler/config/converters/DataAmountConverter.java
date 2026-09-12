@@ -44,11 +44,8 @@ public class DataAmountConverter extends BaseConverter<DataAmount> {
     Optional<Data> unit = Stream.of(Data.values())
         .filter(value -> value.toString().equals(matcher.group(2)))
         .findFirst();
-    if (unit.isPresent()) {
-      return new DataAmount(Integer.parseInt(matcher.group(1)), unit.get());
-    } else {
-      throw new ParameterException(
-          getErrorString(raw, "one of " + ImmutableList.copyOf(Data.values())));
-    }
+    return unit.map(value -> new DataAmount(Integer.parseInt(matcher.group(1)), value))
+        .orElseThrow(() -> new ParameterException(
+            getErrorString(raw, "one of " + ImmutableList.copyOf(Data.values()))));
   }
 }

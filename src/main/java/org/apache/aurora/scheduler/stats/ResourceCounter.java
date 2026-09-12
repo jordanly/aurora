@@ -193,11 +193,9 @@ public class ResourceCounter {
 
     @Override
     public boolean equals(Object o) {
-      if (!(o instanceof Metric)) {
+      if (!(o instanceof Metric other)) {
         return false;
       }
-
-      Metric other = (Metric) o;
       return Objects.equals(other.type, this.type)
           && Objects.equals(other.bag, this.bag);
     }

@@ -45,6 +45,18 @@ public class MorePreconditionsTest {
     MorePreconditions.checkNotBlank("\t\r\n ");
   }
 
+  @Test(expected = IllegalArgumentException.class)
+  public void testCheckNotBlankUnicodeWhitespace() {
+    MorePreconditions.checkNotBlank("\u2003\u2028\u3000");
+  }
+
+  @Test
+  public void testNonbreakingSpacesAndSupplementaryCharactersAreNotBlank() {
+    for (String value : new String[] {"\u00a0", "\u2007", "\u202f", "\ud83d\ude00"}) {
+      assertSame(value, MorePreconditions.checkNotBlank(value));
+    }
+  }
+
   @Test
   public void testCheckNotBlankStringValid() {
     String argument = new String("foo");

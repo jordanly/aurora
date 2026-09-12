@@ -13,6 +13,7 @@
  */
 package org.apache.aurora.scheduler.thrift.aop;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -59,8 +60,6 @@ class ThriftStatsExporterInterceptor implements MethodInterceptor {
       });
 
   @Override
-  // Preserve counter-constructor failure propagation while restoring the original test baseline.
-  @SuppressWarnings("deprecation")
   public Object invoke(MethodInvocation invocation) throws Throwable {
     Method method = invocation.getMethod();
     SlidingStats stat = timingStats.getUnchecked(method);
@@ -74,9 +73,17 @@ class ThriftStatsExporterInterceptor implements MethodInterceptor {
           && response.getResponseCode() == ResponseCode.OK
           && method.isAnnotationPresent(ThriftWorkload.class)) {
 
-        ThriftWorkloadCounter counter = method.getAnnotation(ThriftWorkload.class)
-            .value()
-            .newInstance();
+        Class<? extends ThriftWorkloadCounter> counterClass =
+            method.getAnnotation(ThriftWorkload.class).value();
+        ThriftWorkloadCounter counter;
+        try {
+          counter = counterClass.getDeclaredConstructor().newInstance();
+        } catch (NoSuchMethodException e) {
+          throw (InstantiationException) new InstantiationException(counterClass.getName())
+              .initCause(e);
+        } catch (InvocationTargetException e) {
+          throw e.getCause();
+        }
         workloadStats.getUnchecked(method).addAndGet(counter.apply(response.getResult()));
       }
     }

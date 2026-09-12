@@ -287,11 +287,9 @@ class OneWayJobUpdater<K, T> {
 
     @Override
     public boolean equals(Object obj) {
-      if (!(obj instanceof EvaluationResult)) {
+      if (!(obj instanceof EvaluationResult<?> other)) {
         return false;
       }
-      @SuppressWarnings("unchecked")
-      EvaluationResult<K> other = (EvaluationResult<K>) obj;
       return other.getStatus().equals(this.getStatus())
           && other.getSideEffects().equals(this.getSideEffects());
     }

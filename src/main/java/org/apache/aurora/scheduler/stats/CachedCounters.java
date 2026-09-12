@@ -34,13 +34,7 @@ public class CachedCounters {
   @Inject
   public CachedCounters(final StatsProvider stats) {
     cache = CacheBuilder.newBuilder().build(
-        new CacheLoader<String, AtomicLong>() {
-          @Override
-          public AtomicLong load(String key) {
-            return stats.makeCounter(key);
-          }
-        }
-    );
+        CacheLoader.from(stats::makeCounter));
   }
 
   public AtomicLong get(String name) {

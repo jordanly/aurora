@@ -62,19 +62,13 @@ class JobUpdateHistoryPruner extends AbstractScheduledService {
   private final HistoryPrunerSettings settings;
   private final AtomicLong prunedUpdatesCount;
 
-  static class HistoryPrunerSettings {
-    private final Amount<Long, Time> pruneInterval;
-    private final Amount<Long, Time> maxHistorySize;
-    private final int maxUpdatesPerJob;
-
-    HistoryPrunerSettings(
-        Amount<Long, Time> pruneInterval,
-        Amount<Long, Time> maxHistorySize,
-        int maxUpdatesPerJob) {
-
-      this.pruneInterval = requireNonNull(pruneInterval);
-      this.maxHistorySize = requireNonNull(maxHistorySize);
-      this.maxUpdatesPerJob = maxUpdatesPerJob;
+  static record HistoryPrunerSettings(
+      Amount<Long, Time> pruneInterval,
+      Amount<Long, Time> maxHistorySize,
+      int maxUpdatesPerJob) {
+    HistoryPrunerSettings {
+      requireNonNull(pruneInterval);
+      requireNonNull(maxHistorySize);
     }
   }
 
@@ -94,8 +88,8 @@ class JobUpdateHistoryPruner extends AbstractScheduledService {
   @Override
   protected Scheduler scheduler() {
     return Scheduler.newFixedDelaySchedule(
-        settings.pruneInterval.as(Time.MILLISECONDS),
-        settings.pruneInterval.as(Time.MILLISECONDS),
+        settings.pruneInterval().as(Time.MILLISECONDS),
+        settings.pruneInterval().as(Time.MILLISECONDS),
         TimeUnit.MILLISECONDS);
   }
 
@@ -115,7 +109,7 @@ class JobUpdateHistoryPruner extends AbstractScheduledService {
           .map(u -> u.getUpdate().getSummary())
           .collect(Collectors.toList());
 
-      long cutoff = clock.nowMillis() - settings.maxHistorySize.as(Time.MILLISECONDS);
+      long cutoff = clock.nowMillis() - settings.maxHistorySize().as(Time.MILLISECONDS);
       Predicate<IJobUpdateSummary> expiredFilter =
           s -> s.getState().getCreatedTimestampMs() < cutoff;
 
@@ -138,11 +132,11 @@ class JobUpdateHistoryPruner extends AbstractScheduledService {
           s -> s.getKey().getJob());
 
       updatesByJob.asMap().values().forEach(updates -> {
-        if (updates.size() > settings.maxUpdatesPerJob) {
+        if (updates.size() > settings.maxUpdatesPerJob()) {
           Ordering<IJobUpdateSummary> creationOrder = Ordering.natural()
               .onResultOf(s -> s.getState().getCreatedTimestampMs());
           pruneBuilder.addAll(creationOrder
-              .leastOf(updates, updates.size() - settings.maxUpdatesPerJob)
+              .leastOf(updates, updates.size() - settings.maxUpdatesPerJob())
               .stream()
               .map(IJobUpdateSummary::getKey)
               .iterator());

@@ -17,7 +17,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -573,7 +572,7 @@ public abstract class AbstractTaskStoreTest extends TearDownTestCase {
         getJobKeys());
   }
 
-  @Ignore
+  @Ignore("Existing secondary-index concurrency test; requires separate storage qualification")
   @Test
   public void testReadSecondaryIndexMultipleThreads() throws Exception {
     ExecutorService executor = Executors.newFixedThreadPool(4,
@@ -590,17 +589,18 @@ public abstract class AbstractTaskStoreTest extends TearDownTestCase {
       }
       saveTasks(builder.build());
 
-      final CountDownLatch read = new CountDownLatch(numJobs);
+      List<Future<?>> operations = Lists.newArrayList();
       for (int j = 0; j < numJobs; j++) {
         final int id = j;
-        executor.submit(() -> {
-          assertNotNull(fetchTasks(Query.jobScoped(JobKeys.from("role", "env", "name" + id))));
-          read.countDown();
-        });
-        executor.submit(() -> saveTasks(createTask("TaskNew1" + id)));
+        operations.add(executor.submit(() -> assertEquals(numTasks, Iterables.size(
+            fetchTasks(Query.jobScoped(JobKeys.from("role", "env", "name" + id)))))));
+        operations.add(executor.submit(() -> saveTasks(createTask("TaskNew1" + id))));
       }
 
-      read.await();
+      long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(30);
+      for (Future<?> operation : operations) {
+        operation.get(Math.max(0L, deadline - System.nanoTime()), TimeUnit.NANOSECONDS);
+      }
     } finally {
       MoreExecutors.shutdownAndAwaitTermination(executor, 1, TimeUnit.SECONDS);
     }

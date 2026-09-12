@@ -13,7 +13,9 @@
  */
 package org.apache.aurora.scheduler.cron.quartz;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import com.google.common.util.concurrent.Service;
 import com.google.inject.AbstractModule;
@@ -112,9 +114,10 @@ public class CronIT extends EasyMockTest {
     return config;
   }
 
-  private Service boot() {
+  private Service boot() throws Exception {
     Service service = injector.getInstance(CronLifecycle.class);
-    service.startAsync().awaitRunning();
+    addTearDown(() -> service.stopAsync().awaitTerminated(30, TimeUnit.SECONDS));
+    service.startAsync().awaitRunning(30, TimeUnit.SECONDS);
     return service;
   }
 
@@ -130,7 +133,7 @@ public class CronIT extends EasyMockTest {
     assertTrue(cronLifecycle.isRunning());
     assertTrue(scheduler.isStarted());
 
-    cronLifecycle.stopAsync().awaitTerminated();
+    cronLifecycle.stopAsync().awaitTerminated(30, TimeUnit.SECONDS);
 
     assertFalse(cronLifecycle.isRunning());
     assertTrue(scheduler.isShutdown());
@@ -150,9 +153,9 @@ public class CronIT extends EasyMockTest {
     scheduler.getListenerManager().addTriggerListener(new CountDownWhenComplete(cronRan));
     Service service = boot();
 
-    cronRan.await();
+    assertTrue(cronRan.await(90, TimeUnit.SECONDS));
 
-    service.stopAsync().awaitTerminated();
+    service.stopAsync().awaitTerminated(30, TimeUnit.SECONDS);
   }
 
   @Test
@@ -165,33 +168,55 @@ public class CronIT extends EasyMockTest {
     final CountDownLatch secondExecutionTriggered = new CountDownLatch(1);
     final CountDownLatch secondExecutionCompleted = new CountDownLatch(1);
 
+    CompletableFuture<Void> firstFinished = new CompletableFuture<>();
+    CompletableFuture<Void> secondFinished = new CompletableFuture<>();
+
     auroraCronJob.execute(isA(JobExecutionContext.class));
     expectLastCall().andAnswer(() -> {
-      firstExecutionTriggered.countDown();
-      firstExecutionCompleted.await();
+      awaitExecution(firstExecutionTriggered, firstExecutionCompleted, firstFinished);
       return null;
     });
     auroraCronJob.execute(isA(JobExecutionContext.class));
     expectLastCall().andAnswer(() -> {
-      secondExecutionTriggered.countDown();
-      secondExecutionCompleted.await();
+      awaitExecution(secondExecutionTriggered, secondExecutionCompleted, secondFinished);
       return null;
     });
 
     control.replay();
 
-    boot();
+    try {
+      boot();
 
-    cronJobManager.createJob(SanitizedCronJob.fromUnsanitized(
-        TaskTestUtil.CONFIGURATION_MANAGER,
-        CRON_JOB));
-    cronJobManager.startJobNow(JOB_KEY);
-    firstExecutionTriggered.await();
-    cronJobManager.startJobNow(JOB_KEY);
-    assertEquals(1, secondExecutionTriggered.getCount());
-    firstExecutionCompleted.countDown();
-    secondExecutionTriggered.await();
-    secondExecutionTriggered.countDown();
+      cronJobManager.createJob(SanitizedCronJob.fromUnsanitized(
+          TaskTestUtil.CONFIGURATION_MANAGER,
+          CRON_JOB));
+      cronJobManager.startJobNow(JOB_KEY);
+      assertTrue(firstExecutionTriggered.await(30, TimeUnit.SECONDS));
+      cronJobManager.startJobNow(JOB_KEY);
+      assertEquals(1, secondExecutionTriggered.getCount());
+      firstExecutionCompleted.countDown();
+      assertTrue(secondExecutionTriggered.await(30, TimeUnit.SECONDS));
+      secondExecutionCompleted.countDown();
+      firstFinished.get(30, TimeUnit.SECONDS);
+      secondFinished.get(30, TimeUnit.SECONDS);
+    } finally {
+      firstExecutionCompleted.countDown();
+      secondExecutionCompleted.countDown();
+    }
+  }
+
+  private static void awaitExecution(
+      CountDownLatch triggered,
+      CountDownLatch released,
+      CompletableFuture<Void> finished) throws InterruptedException {
+    try {
+      triggered.countDown();
+      released.await();
+      finished.complete(null);
+    } catch (InterruptedException | RuntimeException | Error e) {
+      finished.completeExceptionally(e);
+      throw e;
+    }
   }
 
   private static class CountDownWhenComplete implements TriggerListener {

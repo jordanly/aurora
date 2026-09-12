@@ -14,6 +14,7 @@
 package org.apache.aurora.scheduler.storage.durability;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -26,6 +27,7 @@ import org.apache.aurora.scheduler.storage.durability.Persistence.Edit;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class RecoveryTest {
@@ -40,6 +42,7 @@ public class RecoveryTest {
     Recovery.copy(from, to, 100);
 
     assertEquals(from.edits, to.edits);
+    assertTrue(from.closed.get());
   }
 
   @Test
@@ -82,11 +85,13 @@ public class RecoveryTest {
     } catch (IllegalStateException e) {
       // expected
     }
+    assertTrue(from.closed.get());
   }
 
   private static class ListPersistence implements Persistence {
 
     private final List<Edit> edits;
+    private final AtomicBoolean closed = new AtomicBoolean();
 
     ListPersistence(Edit... edits) {
       this.edits = Lists.newArrayList(edits);
@@ -99,7 +104,7 @@ public class RecoveryTest {
 
     @Override
     public Stream<Edit> recover() {
-      return edits.stream();
+      return edits.stream().onClose(() -> closed.set(true));
     }
 
     @Override

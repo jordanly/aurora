@@ -13,6 +13,8 @@
  */
 package org.apache.aurora.scheduler.stats;
 
+import java.util.Locale;
+
 import javax.inject.Inject;
 
 import com.google.common.base.Joiner;
@@ -46,7 +48,8 @@ class TaskStatCalculator implements Runnable {
     metric.getBag().streamResourceVectors().forEach(r -> {
       ResourceType type = r.getKey();
       String metricName =
-          Joiner.on("_").join(prefix, type.getAuroraName(), type.getAuroraStatUnit()).toLowerCase();
+          Joiner.on("_").join(prefix, type.getAuroraName(), type.getAuroraStatUnit())
+              .toLowerCase(Locale.ROOT);
       counters.get(metricName).set((long) metric.getBag().valueOf(type));
     });
   }

@@ -13,10 +13,10 @@
  */
 package org.apache.aurora.scheduler.configuration;
 
+import java.util.Objects;
 import java.util.Set;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Objects;
 import com.google.common.collect.ContiguousSet;
 import com.google.common.collect.DiscreteDomain;
 import com.google.common.collect.Range;
@@ -79,13 +79,10 @@ public final class SanitizedConfiguration {
 
   @Override
   public boolean equals(Object o) {
-    if (!(o instanceof SanitizedConfiguration)) {
+    if (!(o instanceof SanitizedConfiguration other)) {
       return false;
     }
-
-    SanitizedConfiguration other = (SanitizedConfiguration) o;
-
-    return Objects.equal(sanitized, other.sanitized);
+    return Objects.equals(sanitized, other.sanitized);
   }
 
   @Override

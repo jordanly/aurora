@@ -150,7 +150,7 @@ public final class Query {
 
     @Override
     public boolean equals(Object that) {
-      return that instanceof Builder && get().equals(((Builder) that).get());
+      return that instanceof Builder builder && get().equals(builder.get());
     }
 
     @Override

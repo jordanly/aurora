@@ -38,12 +38,7 @@ final class FieldGetters {
 
       @Override
       public Optional<G> apply(P input) {
-        Optional<C> parentValue = parent.apply(input);
-        if (parentValue.isPresent()) {
-          return child.apply(parentValue.get());
-        } else {
-          return Optional.empty();
-        }
+        return parent.apply(input).flatMap(child::apply);
       }
     };
   }

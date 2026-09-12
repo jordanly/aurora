@@ -66,8 +66,8 @@ final class Recovery {
     };
 
     AtomicBoolean dataBegin = new AtomicBoolean(false);
-    try {
-      from.recover()
+    try (Stream<Edit> edits = from.recover()) {
+      edits
           .filter(edit -> {
             if (edit.isDeleteAll()) {
               // Suppress any storage reset instructions.

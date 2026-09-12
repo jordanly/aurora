@@ -20,7 +20,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.MoreObjects;
@@ -80,8 +79,7 @@ public class WebhookInfo {
   }
 
   private static final Predicate<List<String>> IS_ALL_WHITELISTED = statuses ->
-      !Optional.ofNullable(statuses).isPresent()
-          || Optional.ofNullable(statuses).get().stream().anyMatch(status -> "*".equals(status));
+      statuses == null || statuses.contains("*");
 
   @JsonCreator
   public WebhookInfo(
@@ -95,9 +93,7 @@ public class WebhookInfo {
     this.connectTimeoutMsec = requireNonNull(timeout);
     this.whitelistedStatuses = IS_ALL_WHITELISTED.apply(statuses) ? Optional.empty()
         : Optional.ofNullable(statuses).map(
-            s -> ImmutableList.copyOf(s.stream()
-                .map(ScheduleStatus::valueOf)
-                .collect(Collectors.toList())));
+            s -> s.stream().map(ScheduleStatus::valueOf).collect(ImmutableList.toImmutableList()));
   }
 
   WebhookInfo(WebhookInfoBuilder builder) throws URISyntaxException {

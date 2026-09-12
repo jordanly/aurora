@@ -82,15 +82,7 @@ import static com.google.common.base.Preconditions.checkState;
  */
 class ShiroAuthorizingParamInterceptor implements MethodInterceptor {
 
-  private static class JobKeyGetter {
-    private final int index;
-    private final Function<Object, Optional<JobKey>> func;
-
-    JobKeyGetter(int index, Function<Object, Optional<JobKey>> func) {
-      this.index = index;
-      this.func = func;
-    }
-  }
+  private record JobKeyGetter(int index, Function<Object, Optional<JobKey>> func) { }
 
   private static final FieldGetter<JobUpdateRequest, TaskConfig> UPDATE_REQUEST_GETTER =
       new ThriftFieldGetter<>(
@@ -226,7 +218,7 @@ class ShiroAuthorizingParamInterceptor implements MethodInterceptor {
           Iterable<JobKeyGetter> getters = annotatedParameterGetters(method);
           return arguments -> {
             Iterable<JobKeyGetter> nonNullArgGetters =
-                Iterables.filter(getters, getter -> arguments[getter.index] != null);
+                Iterables.filter(getters, getter -> arguments[getter.index()] != null);
             if (Iterables.isEmpty(nonNullArgGetters)) {
               return Optional.empty();
             } else {
@@ -241,7 +233,7 @@ class ShiroAuthorizingParamInterceptor implements MethodInterceptor {
               }
 
               JobKeyGetter getter = Iterables.getOnlyElement(nonNullArgGetters);
-              return getter.func.apply(arguments[getter.index]);
+              return getter.func().apply(arguments[getter.index()]);
             }
           };
         }

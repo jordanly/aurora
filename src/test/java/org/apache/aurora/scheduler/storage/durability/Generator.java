@@ -13,6 +13,7 @@
  */
 package org.apache.aurora.scheduler.storage.durability;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -114,7 +115,7 @@ final class Generator {
   static <T extends TBase<?, ?>> T newStruct(Class<T> structClass) {
     T struct;
     try {
-      struct = structClass.newInstance();
+      struct = instantiateStruct(structClass);
     } catch (ReflectiveOperationException e) {
       throw new RuntimeException(e);
     }
@@ -138,5 +139,23 @@ final class Generator {
     });
 
     return struct;
+  }
+
+  private static <T> T instantiateStruct(Class<T> structClass)
+      throws ReflectiveOperationException {
+
+    try {
+      return structClass.getDeclaredConstructor().newInstance();
+    } catch (NoSuchMethodException e) {
+      throw (InstantiationException) new InstantiationException(structClass.getName()).initCause(e);
+    } catch (InvocationTargetException e) {
+      return rethrowConstructorFailure(e.getCause());
+    }
+  }
+
+  // Keep the surrounding ReflectiveOperationException handling for constructor-thrown failures.
+  @SuppressWarnings("unchecked")
+  private static <T, E extends Throwable> T rethrowConstructorFailure(Throwable failure) throws E {
+    throw (E) failure;
   }
 }
