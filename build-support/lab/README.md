@@ -71,8 +71,9 @@ externally removed resources or changed ownership fail closed; they may require
 manual review rather than automatic cleanup. `down` retains local evidence and
 configuration. Never point this tool at an existing lab root.
 
-This script has syntax checks; successful physical cluster startup and the
-original scheduler API/task behavior still require integration qualification.
+Executed qualification and exact artifact hashes are recorded in
+[the integration evidence](../../docs/reimagining/INPLACE05_07_IMPLEMENTATION_STATUS.md).
+A successful Docker status command alone does not establish API readiness.
 
 ## API acceptance runner
 
@@ -80,7 +81,9 @@ Once the original scheduler and adapter are ready:
 
 ```
 build-support/lab/inplace-check --root "$PWD/.pi-lab/original-integration-new" --phase smoke
-build-support/lab/inplace-check --root "$PWD/.pi-lab/original-integration-new" --phase recovery
+build-support/lab/inplace-check --root "$PWD/.pi-lab/original-integration-new" --phase recovery --rounds 3
+build-support/lab/inplace-check --root "$PWD/.pi-lab/original-integration-new" --phase soak
+build-support/lab/inplace-check --root "$PWD/.pi-lab/original-integration-new" --phase policy
 ```
 
 The runner uses original `/api` Thrift JSON fields from `api.thrift`, with no
@@ -93,10 +96,17 @@ Smoke checks two batch completions, two 600mCPU services assigned to different
 agents, physical sleep processes, a rolling update, and termination. Quota,
 cron schedule/deschedule and drain/end-maintenance are API acceptance checks;
 the drain call operates on empty hosts and does not claim active-task migration.
-Recovery checks keeper generation changes for scheduler restart and agent crash,
-then verifies stable scheduler task IDs/hosts and physical workload PIDs.
-Failures retain evidence and may leave fixture state requiring review. Both
-phases currently require live integration qualification; syntax is verified.
+Recovery performs three rounds of scheduler restart, scheduler crash and agent
+daemon crash. It checks keeper generations, stable original task IDs/hosts and
+physical workload PIDs. Soak keeps two services running for at least ten minutes
+while twenty two-instance batch jobs finish. Policy checks an automatic rollback
+from a failing update, exact executor restoration, active-host draining and
+replacement, and manual execution of a scheduled cron job.
+
+Run these phases sequentially: maintenance and failure injection affect the
+whole owned lab. Failures retain evidence and may leave fixture state requiring
+review. The API runner executes on the Pi host; the scheduler and agents are
+containerized.
 
 `refresh-scheduler --root ABS [--distribution ABS]` updates only the original
 scheduler distribution. It checks the current staged tree, validates and stages
@@ -107,3 +117,22 @@ history, then requests `resume` and waits for a newer daemon generation. Agent
 containers and namespaces remain untouched. This is a crash/recovery integration
 action, not a graceful production upgrade. A failure preserves evidence and may
 leave the scheduler paused; inspect `refreshPending` before taking further action.
+
+## Supported task profile
+
+Submit original Aurora `TaskConfig` objects with `ExecutorConfig.name` set to
+`go-process` and `ExecutorConfig.data` containing JSON such as:
+
+```json
+{"version":"aurora-process-v1","argv":["/bin/sleep","300"],"env":{},"graceMillis":1000}
+```
+
+Set `partitionPolicy.reschedule` to false. CPU reservations use whole millicores;
+RAM and disk remain original resource fields. The profile rejects ports, GPU,
+revocable CPU, images, volumes and fetcher URIs before assignment. Job-key parts
+match `[a-z][a-z0-9-]{0,63}`. This is a trusted process cohort with reservations;
+full Thermos behavior and production isolation are separate compatibility work.
+
+Agents retain bounded history (128 attempts, 1,024 command results). Reaching the
+inventory limit requires an operator lifecycle/retention decision; this lab does
+not claim indefinite production operation or automatic history compaction.

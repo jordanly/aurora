@@ -183,6 +183,79 @@ class Check:
                         'tasks': current, 'physical': physical})
         finally: self.kill(name)
 
+    def policy(self):
+        # api.thrift: ROLLED_BACK=5, RUNNING=2, PENDING=0, DRAINED=4.
+        name = self.prefix + '-policy-service'
+        baseline = task(name, True, 3602)
+        self.rpc('createJob', {'1': field('rec', job(name, True, 3602))})
+        hosts = None
+        try:
+            original = self.wait(name, lambda xs: len(xs) == 2 and all(x['status'] == 2 for x in xs))
+            lab.need(len({x['host'] for x in original}) == 2, 'Policy service must use both agents')
+            failing = task(name, True, 3602)
+            executor = get(failing, 25)
+            process = json.loads(get(executor, 2))
+            process['argv'] = ['/bin/false']
+            executor['2'] = field('str', json.dumps(process))
+            settings = {'1': field('i32', 1), '2': field('i32', 0), '3': field('i32', 0),
+                        '5': field('i32', 1000), '6': field('tf', 1),
+                        '7': field('set', ['rec', 0]), '8': field('tf', 1)}
+            request = {'1': field('rec', failing), '2': field('i32', 2), '3': field('rec', settings)}
+            started = self.rpc('startJobUpdate', {'1': field('rec', request), '3': field('str', 'intentional failing update for rollback')})
+            update_key = get(get(get(started, 3), 22), 1)
+            deadline = time.monotonic() + 120
+            while True:
+                response = self.rpc('getJobUpdateDetails', {'1': field('rec', update_key)})
+                details = get(get(get(response, 3), 24), 1)
+                status = get(get(get(get(details, 1), 1), 4), 1)
+                if status == 5: break
+                lab.need(status not in (4, 6, 7, 8), 'Unexpected failing-update terminal status ' + str(status))
+                lab.need(time.monotonic() < deadline, 'Automatic rollback did not finish')
+                time.sleep(1)
+            restored = self.wait(name, lambda xs: len([x for x in xs if x['status'] == 2]) == 2)
+            response = self.rpc('getTasksStatus', {'1': field('rec', {'11': field('set', ['rec', 1, key(name)])})})
+            scheduled = get(get(get(response, 3), 3), 1)[2:]
+            running = [v for v in scheduled if get(v, 2) == 2]
+            expected = json.loads(get(get(baseline, 25), 2))
+            lab.need(len(running) == 2 and all(json.loads(get(get(get(get(v, 1), 4), 25), 2)) == expected for v in running),
+                     'Rollback did not restore exact original executor configuration')
+            lab.need(any(get(v, 2) == 4 for v in scheduled), 'Failing update did not produce an observed FAILED task')
+            self.report['cases'].append({'name': 'automatic-rollback', 'updateStatus': status, 'tasks': restored, 'executorRestored': True})
+
+            # Drain exactly one occupied host; the other600mservice prevents replacement there.
+            live = [x for x in restored if x['status'] == 2]
+            target = live[0]
+            hosts = {'1': field('set', ['str', 1, target['host']])}
+            self.rpc('drainHosts', {'1': field('rec', hosts)})
+            deadline = time.monotonic() + 120
+            while True:
+                response = self.rpc('maintenanceStatus', {'1': field('rec', hosts)})
+                statuses = get(get(get(response, 3), 10), 1)[2:]
+                if len(statuses) == 1 and get(statuses[0], 1) == target['host'] and get(statuses[0], 2) == 4: break
+                lab.need(time.monotonic() < deadline, 'Occupied host did not become DRAINED')
+                time.sleep(1)
+            drained = self.wait(name, lambda xs: len([x for x in xs if x['status'] == 2]) == 1
+                                and any(x['status'] == 0 for x in xs)
+                                and not any(x['id'] == target['id'] and x['status'] == 2 for x in xs))
+            self.rpc('endMaintenance', {'1': field('rec', hosts)})
+            hosts = None
+            replaced = self.wait(name, lambda xs: len([x for x in xs if x['status'] == 2]) == 2
+                                 and not any(x['id'] == target['id'] and x['status'] == 2 for x in xs))
+            self.report['cases'].append({'name': 'active-drain-replacement', 'host': target['host'],
+                                        'drainedTasks': drained, 'replacedTasks': replaced})
+        finally:
+            try:
+                if hosts is not None: self.rpc('endMaintenance', {'1': field('rec', hosts)})
+            finally: self.kill(name)
+
+        cron = self.prefix + '-policy-cron'
+        self.rpc('scheduleCronJob', {'1': field('rec', job(cron, cron='0 0 1 1 *'))})
+        try:
+            self.rpc('startCronJob', {'4': field('rec', key(cron))})
+            finished = self.wait(cron, lambda xs: len(xs) == 2 and all(x['status'] == 3 for x in xs))
+            self.report['cases'].append({'name': 'manual-cron-finished', 'tasks': finished})
+        finally: self.rpc('descheduleCronJob', {'4': field('rec', key(cron))})
+
     def soak(self):
         name = self.prefix + '-soak-service'
         duration = 3601
@@ -226,7 +299,7 @@ class Check:
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--root', type=Path, required=True)
-    parser.add_argument('--phase', choices=('smoke', 'recovery', 'soak'), required=True)
+    parser.add_argument('--phase', choices=('smoke', 'recovery', 'soak', 'policy'), required=True)
     parser.add_argument('--rounds', type=int, choices=range(1, 4), default=3)
     args = parser.parse_args(); check = Check(args.root, args.phase)
     check.rounds = args.rounds
