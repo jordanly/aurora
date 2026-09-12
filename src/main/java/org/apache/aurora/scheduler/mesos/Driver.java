@@ -17,6 +17,8 @@ import java.util.Collection;
 
 import com.google.common.util.concurrent.Service;
 
+import org.apache.aurora.scheduler.execution.ExecutionControl;
+import org.apache.aurora.scheduler.execution.TaskKiller;
 import org.apache.mesos.v1.Protos.Filters;
 import org.apache.mesos.v1.Protos.Offer.Operation;
 import org.apache.mesos.v1.Protos.OfferID;
@@ -30,7 +32,7 @@ import org.apache.mesos.v1.Protos.TaskStatus;
  *
  * Also ensures the driver is only asked for when needed.
  */
-public interface Driver extends Service {
+public interface Driver extends Service, TaskKiller, ExecutionControl {
 
   /**
    * Performs operations eg launching a task or reserving an offer.

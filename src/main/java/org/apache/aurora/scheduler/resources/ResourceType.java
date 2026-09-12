@@ -25,7 +25,6 @@ import org.apache.aurora.common.quantity.Amount;
 import org.apache.aurora.gen.Resource._Fields;
 import org.apache.aurora.scheduler.config.CommandLine;
 import org.apache.aurora.scheduler.storage.entities.IResource;
-import org.apache.mesos.v1.Protos.Resource;
 import org.apache.thrift.TEnum;
 
 import static java.util.Objects.requireNonNull;
@@ -35,13 +34,11 @@ import static org.apache.aurora.common.quantity.Data.MB;
 import static org.apache.aurora.scheduler.resources.AuroraResourceConverter.DOUBLE;
 import static org.apache.aurora.scheduler.resources.AuroraResourceConverter.LONG;
 import static org.apache.aurora.scheduler.resources.AuroraResourceConverter.STRING;
-import static org.apache.aurora.scheduler.resources.MesosResourceConverter.RANGES;
-import static org.apache.aurora.scheduler.resources.MesosResourceConverter.SCALAR;
 import static org.apache.aurora.scheduler.resources.ResourceMapper.PORT_MAPPER;
 import static org.apache.aurora.scheduler.resources.ResourceSettings.NOT_REVOCABLE;
 
 /**
- * Describes Mesos resource types and their Aurora traits.
+ * Describes backend-neutral Aurora resource types and their scheduling traits.
  */
 @VisibleForTesting
 public enum ResourceType implements TEnum {
@@ -51,8 +48,6 @@ public enum ResourceType implements TEnum {
    */
   CPUS(
       _Fields.NUM_CPUS,
-      SCALAR,
-      "cpus",
       DOUBLE,
       Optional.empty(),
       "CPU",
@@ -67,8 +62,6 @@ public enum ResourceType implements TEnum {
    */
   RAM_MB(
       _Fields.RAM_MB,
-      SCALAR,
-      "mem",
       LONG,
       Optional.empty(),
       "RAM",
@@ -82,8 +75,6 @@ public enum ResourceType implements TEnum {
    */
   DISK_MB(
       _Fields.DISK_MB,
-      SCALAR,
-      "disk",
       LONG,
       Optional.empty(),
       "disk",
@@ -97,8 +88,6 @@ public enum ResourceType implements TEnum {
    */
   PORTS(
       _Fields.NAMED_PORT,
-      RANGES,
-      "ports",
       STRING,
       Optional.of(PORT_MAPPER),
       "ports",
@@ -112,8 +101,6 @@ public enum ResourceType implements TEnum {
    */
   GPUS(
       _Fields.NUM_GPUS,
-      SCALAR,
-      "gpus",
       LONG,
       Optional.empty(),
       "GPU",
@@ -130,16 +117,6 @@ public enum ResourceType implements TEnum {
    * Correspondent thrift {@link org.apache.aurora.gen.Resource} enum value.
    */
   private final _Fields value;
-
-  /**
-   * Mesos resource converter.
-   */
-  private final MesosResourceConverter mesosResourceConverter;
-
-  /**
-   * Mesos resource name.
-   */
-  private final String mesosName;
 
   /**
    * Type converter for resource values.
@@ -169,55 +146,46 @@ public enum ResourceType implements TEnum {
   /**
    * Indicates if multiple resource types are allowed in a task.
    */
-  private final boolean isMultipleAllowed;
+  private final boolean multipleAllowed;
 
   /**
-   * Indicates if a resource can be Mesos-revocable.
+   * Indicates if a resource can be revocable.
    */
-  private final Supplier<Boolean> isMesosRevocable;
+  private final Supplier<Boolean> revocable;
 
   private static ImmutableMap<Integer, ResourceType> byField =
       Maps.uniqueIndex(EnumSet.allOf(ResourceType.class),  ResourceType::getValue);
-
-  public static final ImmutableMap<String, ResourceType> BY_MESOS_NAME =
-      Maps.uniqueIndex(EnumSet.allOf(ResourceType.class), ResourceType::getMesosName);
 
   /**
    * Describes a Resource type.
    *
    * @param value Correspondent {@link _Fields} value.
-   * @param mesosResourceConverter See {@link #getMesosResourceConverter()} for more details.
-   * @param mesosName See {@link #getMesosName()} for more details.
    * @param auroraResourceConverter See {@link #getAuroraResourceConverter()} for more details.
    * @param mapper See {@link #getMapper()} for more details.
    * @param auroraName See {@link #getAuroraName()} for more details.
    * @param auroraUnit See {@link #getAuroraUnit()} for more details.
    * @param scalingRange See {@link #getScalingRange()} for more details.
    * @param isMultipleAllowed See {@link #isMultipleAllowed()} for more details.
-   * @param isMesosRevocable See {@link #isMesosRevocable()} for more details.
+   * @param isRevocable See {@link #isRevocable()} for more details.
    */
   ResourceType(
       _Fields value,
-      MesosResourceConverter mesosResourceConverter,
-      String mesosName,
       AuroraResourceConverter<?> auroraResourceConverter,
       Optional<ResourceMapper<?>> mapper,
       String auroraName,
       String auroraUnit,
       int scalingRange,
       boolean isMultipleAllowed,
-      Supplier<Boolean> isMesosRevocable) {
+      Supplier<Boolean> isRevocable) {
 
     this.value = value;
-    this.mesosResourceConverter = requireNonNull(mesosResourceConverter);
-    this.mesosName = requireNonNull(mesosName);
     this.auroraResourceConverter = requireNonNull(auroraResourceConverter);
     this.mapper = requireNonNull(mapper);
     this.auroraName = requireNonNull(auroraName);
     this.auroraUnit = requireNonNull(auroraUnit);
     this.scalingRange = scalingRange;
-    this.isMultipleAllowed = isMultipleAllowed;
-    this.isMesosRevocable = isMesosRevocable;
+    this.multipleAllowed = isMultipleAllowed;
+    this.revocable = isRevocable;
   }
 
   /**
@@ -228,27 +196,6 @@ public enum ResourceType implements TEnum {
   @Override
   public int getValue() {
     return value.getThriftFieldId();
-  }
-
-  /**
-   * Gets {@link MesosResourceConverter} to convert Mesos resource values.
-   *
-   * @return {@link MesosResourceConverter} instance.
-   */
-  public MesosResourceConverter getMesosResourceConverter() {
-    return mesosResourceConverter;
-  }
-
-  /**
-   * Gets Mesos resource name.
-   * <p>
-   * @see <a href="https://github.com/apache/mesos/blob/master/include/mesos/mesos.proto/">Mesos
-   * protobuf for more details</a>
-   *
-   * @return Mesos resource name.
-   */
-  public String getMesosName() {
-    return mesosName;
   }
 
   /**
@@ -315,19 +262,16 @@ public enum ResourceType implements TEnum {
    * @return True if multiple resources of the same type are allowed, false otherwise.
    */
   public boolean isMultipleAllowed() {
-    return isMultipleAllowed;
+    return multipleAllowed;
   }
 
   /**
-   * Returns a flag indicating if a resource can be Mesos-revocable.
-   * <p>
-   * @see <a href="https://github.com/apache/mesos/blob/master/include/mesos/mesos.proto/">Mesos
-   * protobuf for more details</a>
+   * Returns a flag indicating if a resource can be revocable.
    *
-   * @return True if a resource can be Mesos-revocable, false otherwise.
+   * @return True if a resource can be revocable, false otherwise.
    */
-  public boolean isMesosRevocable() {
-    return isMesosRevocable.get();
+  public boolean isRevocable() {
+    return revocable.get();
   }
 
   /**
@@ -358,17 +302,4 @@ public enum ResourceType implements TEnum {
     return resourceType;
   }
 
-  /**
-   * Returns a {@link ResourceType} for the given Mesos resource.
-   *
-   * @param resource {@link Resource} to search by.
-   * @return {@link ResourceType}.
-   */
-  public static ResourceType fromResource(Resource resource) {
-    ResourceType resourceType = BY_MESOS_NAME.get(resource.getName());
-    if (resourceType == null) {
-      throw new NullPointerException("Unknown Mesos resource: " + resource);
-    }
-    return resourceType;
-  }
 }

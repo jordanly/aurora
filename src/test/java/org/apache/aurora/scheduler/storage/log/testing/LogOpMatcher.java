@@ -82,7 +82,7 @@ public class LogOpMatcher implements IArgumentMatcher {
      * @param ops Operations to expect in the transaction.
      * @return An expectation setter.
      */
-    public IExpectationSetters<Position> expectTransaction(Op...ops) {
+    public IExpectationSetters<Position> expectTransaction(Op... ops) {
       LogEntry entry = LogEntry.transaction(
           new Transaction(ImmutableList.copyOf(ops), storageConstants.CURRENT_SCHEMA_VERSION));
       return expect(stream.append(sameEntry(entry)));

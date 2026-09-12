@@ -28,6 +28,7 @@ import org.apache.aurora.gen.TaskConfig;
 import org.apache.aurora.gen.TaskEvent;
 import org.apache.aurora.scheduler.base.TaskGroupKey;
 import org.apache.aurora.scheduler.base.Tasks;
+import org.apache.aurora.scheduler.mesos.MesosOffer;
 import org.apache.aurora.scheduler.offers.HostOffer;
 import org.apache.aurora.scheduler.offers.OfferManager;
 import org.apache.aurora.scheduler.preemptor.Preemptor.PreemptorImpl;
@@ -73,7 +74,8 @@ public class PreemptorImplTest extends EasyMockTest {
   private static final Set<PreemptionProposal> NO_SLOTS = ImmutableSet.of();
   private static final Optional<String> EMPTY_RESULT = Optional.empty();
   private static final HostOffer OFFER =
-      new HostOffer(Protos.Offer.getDefaultInstance(), IHostAttributes.build(new HostAttributes()));
+      new HostOffer(new MesosOffer(Protos.Offer.getDefaultInstance()),
+          IHostAttributes.build(new HostAttributes()));
 
   private StateManager stateManager;
   private FakeStatsProvider statsProvider;
@@ -90,7 +92,7 @@ public class PreemptorImplTest extends EasyMockTest {
     slotCache = createMock(new Clazz<BiCache<PreemptionProposal, TaskGroupKey>>() { });
     statsProvider = new FakeStatsProvider();
     OfferManager offerManager = createMock(OfferManager.class);
-    expect(offerManager.get(anyObject(Protos.AgentID.class)))
+    expect(offerManager.get(anyObject(String.class)))
         .andReturn(Optional.of(OFFER))
         .anyTimes();
 

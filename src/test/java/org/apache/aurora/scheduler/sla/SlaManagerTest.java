@@ -198,7 +198,7 @@ public class SlaManagerTest extends EasyMockTest {
         TaskTestUtil.makeTask(taskId, TaskTestUtil.JOB, instanceId, prod),
         status,
         runningSince).newBuilder();
-    builder.getAssignedTask().setSlaveHost(SlaManagerTest.HOST_A);
+    builder.getAssignedTask().setSlaveHost(HOST_A);
     return IScheduledTask.build(builder);
   }
 

@@ -33,7 +33,7 @@ public class LibMesosLoadingModule extends AbstractModule {
 
   @Override
   protected void configure() {
-    switch(kind) {
+    switch (kind) {
       case SCHEDULER_DRIVER:
         bind(DriverFactory.class).to(DriverFactoryImpl.class);
         break;

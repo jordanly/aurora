@@ -16,6 +16,7 @@ package org.apache.aurora.scheduler.http;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
+
 import javax.inject.Inject;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -29,6 +30,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.hubspot.jackson.datatype.protobuf.ProtobufModule;
 
+import org.apache.aurora.scheduler.mesos.MesosOffer;
 import org.apache.aurora.scheduler.offers.OfferManager;
 
 /**
@@ -60,7 +62,7 @@ public class Offers {
     return Response.ok(
         mapper.writeValueAsString(
             StreamSupport.stream(offerManager.getAll().spliterator(), false)
-                .map(o -> o.getOffer())
+                .map(o -> MesosOffer.toMesos(o.getOffer()))
                 .collect(Collectors.toList())))
         .build();
   }

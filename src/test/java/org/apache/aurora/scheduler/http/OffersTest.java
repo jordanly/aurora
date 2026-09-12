@@ -14,6 +14,7 @@
 package org.apache.aurora.scheduler.http;
 
 import java.util.List;
+
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.Response;
 
@@ -25,6 +26,7 @@ import com.hubspot.jackson.datatype.protobuf.ProtobufModule;
 
 import org.apache.aurora.common.testing.easymock.EasyMockTest;
 import org.apache.aurora.gen.HostAttributes;
+import org.apache.aurora.scheduler.mesos.MesosOffer;
 import org.apache.aurora.scheduler.offers.HostOffer;
 import org.apache.aurora.scheduler.offers.OfferManager;
 import org.apache.aurora.scheduler.storage.entities.IHostAttributes;
@@ -61,7 +63,7 @@ public class OffersTest extends EasyMockTest {
   @Test
   public void testOneOffer() throws Exception {
     HostOffer offer = new HostOffer(
-        Protos.Offer.newBuilder()
+        new MesosOffer(Protos.Offer.newBuilder()
             .setId(Protos.OfferID.newBuilder().setValue("offer_id"))
             .setFrameworkId(Protos.FrameworkID.newBuilder().setValue("framework_id"))
             .setAgentId(Protos.AgentID.newBuilder().setValue("slave_id"))
@@ -131,7 +133,7 @@ public class OffersTest extends EasyMockTest {
                         .build())
                     .build())
                 .build())
-            .build(),
+            .build()),
         IHostAttributes.build(new HostAttributes().setMode(NONE)));
 
     expect(offerManager.getAll()).andReturn(ImmutableSet.of(offer));
@@ -145,7 +147,7 @@ public class OffersTest extends EasyMockTest {
         .setPropertyNamingStrategy(
             PropertyNamingStrategy.CAMEL_CASE_TO_LOWER_CASE_WITH_UNDERSCORES);
     assertEquals(
-        offer.getOffer(),
+        MesosOffer.toMesos(offer.getOffer()),
         mapper.readValue(response.getEntity().toString(), Protos.Offer.class));
   }
 

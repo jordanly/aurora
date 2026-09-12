@@ -54,6 +54,8 @@ public interface Persistence {
    * An edit to apply when recovering from persistence.
    */
   class Edit {
+    // The factory and stored operation deliberately use the same domain name.
+    @SuppressWarnings("PMD.AvoidFieldNameMatchingMethodName")
     @Nullable private final Op op;
 
     private Edit(@Nullable Op op) {

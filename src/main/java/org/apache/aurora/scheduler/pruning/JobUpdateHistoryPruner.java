@@ -62,7 +62,7 @@ class JobUpdateHistoryPruner extends AbstractScheduledService {
   private final HistoryPrunerSettings settings;
   private final AtomicLong prunedUpdatesCount;
 
-  static record HistoryPrunerSettings(
+  record HistoryPrunerSettings(
       Amount<Long, Time> pruneInterval,
       Amount<Long, Time> maxHistorySize,
       int maxUpdatesPerJob) {

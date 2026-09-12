@@ -183,6 +183,8 @@ public class Kerberos5ShiroRealmModule extends AbstractModule {
   }
 
   @VisibleForTesting
+  // Preserve the original unchecked cause object when unwrapping Subject.callAs.
+  @SuppressWarnings("PMD.PreserveStackTrace")
   GSSCredential createServerCredential(Subject subject) {
     try {
       return Subject.callAs(subject, () -> {

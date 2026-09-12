@@ -71,7 +71,7 @@ public class ResourceBag {
       entry -> entry.getValue() > 0;
 
   public static final Predicate<Map.Entry<ResourceType, Double>> IS_MESOS_REVOCABLE =
-      entry -> entry.getKey().isMesosRevocable();
+      entry -> entry.getKey().isRevocable();
 
   private final Map<ResourceType, Double> resourceVectors;
 
@@ -109,7 +109,8 @@ public class ResourceBag {
    * @return Resource value or 0.0 if no mapping for {@code type} is found.
    */
   public double valueOf(ResourceType type) {
-    return resourceVectors.getOrDefault(type, 0.0);
+    Double value = resourceVectors.get(type);
+    return value == null ? 0.0 : value;
   }
 
   /**

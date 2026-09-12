@@ -125,7 +125,7 @@ public class MesosLog implements org.apache.aurora.scheduler.log.Log {
     this.writerFactory = requireNonNull(writerFactory);
     this.writeTimeout = requireNonNull(writeTimeout);
 
-    this.noopEntry = requireNonNull(noopEntry);
+    this.noopEntry = requireNonNull(noopEntry).clone();
 
     this.lifecycle = requireNonNull(lifecycle);
   }

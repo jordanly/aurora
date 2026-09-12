@@ -51,12 +51,12 @@ public final class TestExecutorSettings {
                   .setCache(false).build())))
       .addAllResources(ImmutableList.of(
           Resource.newBuilder()
-              .setName(ResourceType.CPUS.getMesosName())
+              .setName(MesosResourceType.getMesosName(ResourceType.CPUS))
               .setType(Type.SCALAR)
               .setScalar(Scalar.newBuilder().setValue(0.25))
               .build(),
           Resource.newBuilder()
-              .setName(ResourceType.RAM_MB.getMesosName())
+              .setName(MesosResourceType.getMesosName(ResourceType.RAM_MB))
               .setType(Type.SCALAR)
               .setScalar(Scalar.newBuilder().setValue(128))
               .build()

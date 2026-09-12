@@ -61,75 +61,77 @@ public class TaskStatusStatsTest extends EasyMockTest {
   @Test
   public void testAccumulateEvents() {
     RequestTimer masterDeliveryDelay = createMock(RequestTimer.class);
-    expect(statsProvider.makeRequestTimer(latencyTimerName(Source.SOURCE_MASTER)))
+    expect(statsProvider.makeRequestTimer(latencyTimerName(Source.SOURCE_MASTER.name())))
         .andReturn(masterDeliveryDelay);
     masterDeliveryDelay.requestComplete(ONE_SECOND.as(Time.MICROSECONDS));
     expectLastCall().times(4);
 
     AtomicLong masterLostCounter = new AtomicLong();
-    expect(statsProvider.makeCounter(lostCounterName(Source.SOURCE_MASTER)))
+    expect(statsProvider.makeCounter(lostCounterName(Source.SOURCE_MASTER.name())))
         .andReturn(masterLostCounter);
 
     AtomicLong slaveDisconnectedCounter = new AtomicLong();
-    expect(statsProvider.makeCounter(reasonCounterName(Reason.REASON_AGENT_DISCONNECTED)))
+    expect(statsProvider.makeCounter(reasonCounterName(Reason.REASON_AGENT_DISCONNECTED.name())))
         .andReturn(slaveDisconnectedCounter);
 
     AtomicLong memoryLimitCounter = new AtomicLong();
-    expect(statsProvider.makeCounter(reasonCounterName(Reason.REASON_CONTAINER_LIMITATION_MEMORY)))
+    expect(statsProvider.makeCounter(
+        reasonCounterName(Reason.REASON_CONTAINER_LIMITATION_MEMORY.name())))
         .andReturn(memoryLimitCounter);
 
     AtomicLong diskLimitCounter = new AtomicLong();
-    expect(statsProvider.makeCounter(reasonCounterName(Reason.REASON_CONTAINER_LIMITATION_DISK)))
+    expect(statsProvider.makeCounter(
+        reasonCounterName(Reason.REASON_CONTAINER_LIMITATION_DISK.name())))
         .andReturn(diskLimitCounter);
 
     control.replay();
 
     clock.advance(Amount.of(1L, Time.HOURS));
     eventBus.post(new TaskStatusReceived(
-        TaskState.TASK_RUNNING,
-        Optional.of(Source.SOURCE_MASTER),
+        TaskState.TASK_RUNNING.name(),
+        Optional.of(Source.SOURCE_MASTER.name()),
         Optional.empty(),
         Optional.of(agoMicros(ONE_SECOND))));
 
     clock.advance(ONE_SECOND);
     eventBus.post(new TaskStatusReceived(
-        TaskState.TASK_LOST,
-        Optional.of(Source.SOURCE_MASTER),
-        Optional.of(Reason.REASON_AGENT_DISCONNECTED),
+        TaskState.TASK_LOST.name(),
+        Optional.of(Source.SOURCE_MASTER.name()),
+        Optional.of(Reason.REASON_AGENT_DISCONNECTED.name()),
         Optional.of(agoMicros(ONE_SECOND))));
     eventBus.post(new TaskStatusReceived(
-        TaskState.TASK_FAILED,
-        Optional.of(Source.SOURCE_MASTER),
-        Optional.of(Reason.REASON_CONTAINER_LIMITATION_MEMORY),
+        TaskState.TASK_FAILED.name(),
+        Optional.of(Source.SOURCE_MASTER.name()),
+        Optional.of(Reason.REASON_CONTAINER_LIMITATION_MEMORY.name()),
         Optional.of(agoMicros(ONE_SECOND))));
     eventBus.post(new TaskStatusReceived(
-        TaskState.TASK_FAILED,
-        Optional.of(Source.SOURCE_MASTER),
-        Optional.of(Reason.REASON_CONTAINER_LIMITATION_DISK),
+        TaskState.TASK_FAILED.name(),
+        Optional.of(Source.SOURCE_MASTER.name()),
+        Optional.of(Reason.REASON_CONTAINER_LIMITATION_DISK.name()),
         Optional.of(agoMicros(ONE_SECOND))));
 
     // No counting for these since they do not have both a source and timestamp.
     eventBus.post(new TaskStatusReceived(
-        TaskState.TASK_LOST,
+        TaskState.TASK_LOST.name(),
         Optional.empty(),
         Optional.empty(),
         Optional.empty()));
     eventBus.post(new TaskStatusReceived(
-        TaskState.TASK_LOST,
+        TaskState.TASK_LOST.name(),
         Optional.empty(),
         Optional.empty(),
         Optional.of(agoMicros(ONE_SECOND))));
     eventBus.post(new TaskStatusReceived(
-        TaskState.TASK_LOST,
-        Optional.of(Source.SOURCE_MASTER),
-        Optional.of(Reason.REASON_AGENT_DISCONNECTED),
+        TaskState.TASK_LOST.name(),
+        Optional.of(Source.SOURCE_MASTER.name()),
+        Optional.of(Reason.REASON_AGENT_DISCONNECTED.name()),
         Optional.empty()));
 
     // No time tracking for this since the timestamp is the current time.
     eventBus.post(new TaskStatusReceived(
-        TaskState.TASK_LOST,
-        Optional.of(Source.SOURCE_MASTER),
-        Optional.of(Reason.REASON_AGENT_DISCONNECTED),
+        TaskState.TASK_LOST.name(),
+        Optional.of(Source.SOURCE_MASTER.name()),
+        Optional.of(Reason.REASON_AGENT_DISCONNECTED.name()),
         Optional.of(clock.nowMillis() * 1000)
     ));
 

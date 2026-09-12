@@ -106,7 +106,7 @@ public interface EntrySerializer {
 
           i++;
           return result;
-        };
+        }
       };
     }
 

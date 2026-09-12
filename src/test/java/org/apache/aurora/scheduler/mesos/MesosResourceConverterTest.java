@@ -11,7 +11,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.aurora.scheduler.resources;
+package org.apache.aurora.scheduler.mesos;
 
 import java.util.List;
 import java.util.Optional;
@@ -19,11 +19,12 @@ import java.util.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 
+import org.apache.aurora.scheduler.resources.ResourceManager;
 import org.apache.mesos.v1.Protos.Resource;
 import org.junit.Test;
 
-import static org.apache.aurora.scheduler.resources.MesosResourceConverter.RANGES;
-import static org.apache.aurora.scheduler.resources.MesosResourceConverter.SCALAR;
+import static org.apache.aurora.scheduler.mesos.MesosResourceConverter.RANGES;
+import static org.apache.aurora.scheduler.mesos.MesosResourceConverter.SCALAR;
 import static org.apache.aurora.scheduler.resources.ResourceTestUtil.mesosRange;
 import static org.apache.aurora.scheduler.resources.ResourceTestUtil.mesosScalar;
 import static org.apache.aurora.scheduler.resources.ResourceType.CPUS;

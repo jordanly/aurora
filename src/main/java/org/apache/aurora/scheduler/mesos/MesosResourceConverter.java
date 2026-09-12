@@ -11,7 +11,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.aurora.scheduler.resources;
+package org.apache.aurora.scheduler.mesos;
 
 import java.util.Set;
 import java.util.function.Supplier;
@@ -21,6 +21,7 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
 
 import org.apache.aurora.scheduler.base.Numbers;
+import org.apache.aurora.scheduler.resources.ResourceManager;
 import org.apache.mesos.v1.Protos;
 import org.apache.mesos.v1.Protos.Resource;
 

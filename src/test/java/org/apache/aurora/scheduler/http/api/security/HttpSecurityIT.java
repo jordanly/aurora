@@ -166,7 +166,7 @@ public class HttpSecurityIT extends AbstractJettyTest {
   protected Function<ServletContext, Module> getChildServletModule() {
     Key<? extends Filter> afterAuthBinding =
         Key.get(CountingFilter.class, SHIRO_AFTER_AUTH_FILTER_ANNOTATION);
-    return (servletContext) -> Modules.combine(
+    return servletContext -> Modules.combine(
         new ApiModule(new ApiModule.Options()),
         new HttpSecurityModule(
             new IniShiroRealmModule(ini, credentialsMatcher),

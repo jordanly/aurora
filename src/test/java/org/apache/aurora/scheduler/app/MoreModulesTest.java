@@ -64,8 +64,10 @@ public class MoreModulesTest {
       fail("Expected missing constructor failure");
     } catch (IllegalArgumentException e) {
       assertTrue(e.getCause() instanceof InstantiationException);
-      assertEquals("Failed to instantiate module " + MissingConstructor.class.getName()
-          + ".Dynamic modules must have a default constructor or accept CliOptions", e.getMessage());
+      assertEquals(
+          "Failed to instantiate module " + MissingConstructor.class.getName()
+              + ".Dynamic modules must have a default constructor or accept CliOptions",
+          e.getMessage());
     }
   }
 
@@ -119,21 +121,29 @@ public class MoreModulesTest {
     }
 
     @Override
-    protected void configure() { }
+    protected void configure() {
+      // No bindings.
+    }
   }
 
   public static class MissingConstructor extends AbstractModule {
-    public MissingConstructor(String ignored) { }
+    public MissingConstructor(String ignored) {
+      // Constructor intentionally has no side effects.
+    }
 
     @Override
-    protected void configure() { }
+    protected void configure() {
+      // No bindings.
+    }
   }
 
-  public static class InaccessibleConstructor extends AbstractModule {
+  public static final class InaccessibleConstructor extends AbstractModule {
     private InaccessibleConstructor() { }
 
     @Override
-    protected void configure() { }
+    protected void configure() {
+      // No bindings.
+    }
   }
 
   public static class ThrowingConstructor extends AbstractModule {
@@ -144,7 +154,9 @@ public class MoreModulesTest {
     }
 
     @Override
-    protected void configure() { }
+    protected void configure() {
+      // No bindings.
+    }
   }
 
   public static class ThrowingOptionsConstructor extends AbstractModule {
@@ -153,7 +165,9 @@ public class MoreModulesTest {
     }
 
     @Override
-    protected void configure() { }
+    protected void configure() {
+      // No bindings.
+    }
   }
 
   static class StringInstaller extends AbstractModule {

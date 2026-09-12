@@ -48,8 +48,6 @@ import static java.util.Objects.requireNonNull;
 
 import static org.apache.aurora.scheduler.resources.ResourceBag.EMPTY;
 import static org.apache.aurora.scheduler.resources.ResourceBag.IS_MESOS_REVOCABLE;
-import static org.apache.aurora.scheduler.resources.ResourceManager.bagFromMesosResources;
-import static org.apache.aurora.scheduler.resources.ResourceManager.getNonRevocableOfferResources;
 
 /**
  * Filters active tasks (victims) and available offer (slack) resources that can accommodate a
@@ -104,7 +102,7 @@ public interface PreemptionVictimFilter {
     }
 
     private static final Function<HostOffer, String> OFFER_TO_HOST =
-        offer -> offer.getOffer().getHostname();
+        HostOffer::getHost;
 
     private static final Function<PreemptionVictim, String> VICTIM_TO_HOST =
         PreemptionVictim::getSlaveHost;
@@ -174,7 +172,7 @@ public interface PreemptionVictimFilter {
           .build();
 
       ResourceBag slackResources = offer
-          .map(o -> bagFromMesosResources(getNonRevocableOfferResources(o.getOffer())))
+          .map(o -> o.getResourceBag(false))
           .orElse(EMPTY);
 
       Optional<IHostAttributes> attributes =
@@ -224,11 +222,8 @@ public interface PreemptionVictimFilter {
           return true;
         } else if (pendingIsPreemptible == victimIsPreemptible) {
           // If preemptible flags are equal, preemption is based on priority within the same role.
-          if (pendingTask.getJob().getRole().equals(possibleVictim.getRole())) {
-            return pendingTask.getPriority() > possibleVictim.getPriority();
-          } else {
-            return false;
-          }
+          return pendingTask.getJob().getRole().equals(possibleVictim.getRole())
+              && pendingTask.getPriority() > possibleVictim.getPriority();
         } else {
           return false;
         }

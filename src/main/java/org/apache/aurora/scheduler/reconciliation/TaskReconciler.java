@@ -17,12 +17,11 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.stream.Collectors;
+import java.util.function.Function;
 
 import javax.inject.Inject;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Function;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.AbstractIdleService;
@@ -32,12 +31,11 @@ import org.apache.aurora.common.quantity.Time;
 import org.apache.aurora.common.stats.StatsProvider;
 import org.apache.aurora.scheduler.base.Query;
 import org.apache.aurora.scheduler.base.Tasks;
-import org.apache.aurora.scheduler.mesos.Driver;
+import org.apache.aurora.scheduler.execution.ReconciliationTarget;
+import org.apache.aurora.scheduler.execution.TaskReconciliation;
 import org.apache.aurora.scheduler.reconciliation.ReconciliationModule.BackgroundWorker;
 import org.apache.aurora.scheduler.storage.Storage;
 import org.apache.aurora.scheduler.storage.entities.IScheduledTask;
-import org.apache.mesos.v1.Protos;
-import org.apache.mesos.v1.Protos.TaskStatus;
 
 import static java.util.Objects.requireNonNull;
 
@@ -61,7 +59,7 @@ public class TaskReconciler extends AbstractIdleService {
 
   private final TaskReconcilerSettings settings;
   private final Storage storage;
-  private final Driver driver;
+  private final TaskReconciliation taskReconciliation;
   private final ScheduledExecutorService executor;
   private final AtomicLong explicitRuns;
   private final AtomicLong implicitRuns;
@@ -107,13 +105,13 @@ public class TaskReconciler extends AbstractIdleService {
   TaskReconciler(
       TaskReconcilerSettings settings,
       Storage storage,
-      Driver driver,
+      TaskReconciliation taskReconciliation,
       @BackgroundWorker ScheduledExecutorService executor,
       StatsProvider stats) {
 
     this.settings = requireNonNull(settings);
     this.storage = requireNonNull(storage);
-    this.driver = requireNonNull(driver);
+    this.taskReconciliation = requireNonNull(taskReconciliation);
     this.executor = requireNonNull(executor);
     this.explicitRuns = stats.makeCounter(EXPLICIT_STAT_NAME);
     this.implicitRuns = stats.makeCounter(IMPLICIT_STAT_NAME);
@@ -150,7 +148,7 @@ public class TaskReconciler extends AbstractIdleService {
   }
 
   private void doImplicitReconcile() {
-    driver.reconcileTasks(ImmutableSet.of());
+    taskReconciliation.reconcileTasks(ImmutableSet.of());
     implicitRuns.incrementAndGet();
   }
 
@@ -161,8 +159,8 @@ public class TaskReconciler extends AbstractIdleService {
 
     long delay = 0;
     for (List<IScheduledTask> batch : activeBatches) {
-      executor.schedule(() -> driver.reconcileTasks(
-          batch.stream().map(TASK_TO_PROTO::apply).collect(Collectors.toList())),
+      executor.schedule(() -> taskReconciliation.reconcileTasks(
+          batch.stream().map(TASK_TO_TARGET).toList()),
           delay,
           SECONDS.getTimeUnit());
       delay += settings.explicitBatchDelaySeconds;
@@ -176,14 +174,8 @@ public class TaskReconciler extends AbstractIdleService {
   }
 
   @VisibleForTesting
-  static final Function<IScheduledTask, TaskStatus> TASK_TO_PROTO = t -> TaskStatus.newBuilder()
-      // TODO(maxim): State is required by protobuf but ignored by Mesos for reconciliation
-      // purposes. This is the artifact of the native API. The new HTTP Mesos API will be
-      // accepting task IDs instead. AURORA-1326 tracks solution on the scheduler side.
-      // Setting TASK_RUNNING as a safe dummy value here.
-      .setState(Protos.TaskState.TASK_RUNNING)
-      .setAgentId(
-          Protos.AgentID.newBuilder().setValue(t.getAssignedTask().getSlaveId()).build())
-      .setTaskId(Protos.TaskID.newBuilder().setValue(t.getAssignedTask().getTaskId()).build())
-      .build();
+  static final Function<IScheduledTask, ReconciliationTarget> TASK_TO_TARGET = t ->
+      new ReconciliationTarget(
+          t.getAssignedTask().getTaskId(),
+          t.getAssignedTask().getSlaveId());
 }

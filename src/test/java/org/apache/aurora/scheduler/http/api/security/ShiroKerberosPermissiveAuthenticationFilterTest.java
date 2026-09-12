@@ -55,7 +55,7 @@ public class ShiroKerberosPermissiveAuthenticationFilterTest extends AbstractJet
 
   @Override
   public Function<ServletContext, Module> getChildServletModule() {
-    return (servletContext) -> new ServletModule() {
+    return servletContext -> new ServletModule() {
       @Override
       protected void configureServlets() {
         filter(PATH).through(filter);

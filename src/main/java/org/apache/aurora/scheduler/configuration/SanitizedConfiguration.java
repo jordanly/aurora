@@ -79,10 +79,8 @@ public final class SanitizedConfiguration {
 
   @Override
   public boolean equals(Object o) {
-    if (!(o instanceof SanitizedConfiguration other)) {
-      return false;
-    }
-    return Objects.equals(sanitized, other.sanitized);
+    return o instanceof SanitizedConfiguration other
+        && Objects.equals(sanitized, other.sanitized);
   }
 
   @Override

@@ -140,6 +140,8 @@ public final class RecoveryTool {
 
     @Parameter(names = "-batch-size",
         description = "Write in batches of this may ops.")
+    // JCommander writes this field reflectively after construction.
+    @SuppressWarnings("PMD.ImmutableField")
     int batchSize = 50;
 
     @Parameter(names = "--help", description = "Print usage", help = true)
@@ -149,7 +151,7 @@ public final class RecoveryTool {
   private static JCommander configure(Options options, String... args) {
     JCommander.Builder builder = JCommander.newBuilder().programName(RecoveryTool.class.getName());
     builder.addConverterFactory(new IStringConverterFactory() {
-      private Map<Class<?>, Class<? extends IStringConverter<?>>> classConverters =
+      private final Map<Class<?>, Class<? extends IStringConverter<?>>> classConverters =
           ImmutableMap.<Class<?>, Class<? extends IStringConverter<?>>>builder()
               .put(DataAmount.class, DataAmountConverter.class)
               .put(InetSocketAddress.class, InetSocketAddressConverter.class)

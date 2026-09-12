@@ -20,7 +20,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import javax.inject.Inject;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.ImmutableList;
 import com.google.common.eventbus.Subscribe;
 
 import org.apache.aurora.common.collections.Pair;
@@ -28,10 +27,10 @@ import org.apache.aurora.common.quantity.Time;
 import org.apache.aurora.common.stats.StatsProvider;
 import org.apache.aurora.scheduler.base.TaskGroupKey;
 import org.apache.aurora.scheduler.events.PubsubEvent;
+import org.apache.aurora.scheduler.execution.OfferTransport;
+import org.apache.aurora.scheduler.execution.PreparedTask;
 import org.apache.aurora.scheduler.filter.SchedulingFilter;
 import org.apache.aurora.scheduler.filter.SchedulingFilter.ResourceRequest;
-import org.apache.aurora.scheduler.mesos.Driver;
-import org.apache.mesos.v1.Protos;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,7 +40,7 @@ import static org.apache.aurora.common.inject.TimedInterceptor.Timed;
 
 public class OfferManagerImpl implements OfferManager {
   private static final Logger LOG =
-      LoggerFactory.getLogger(org.apache.aurora.scheduler.offers.OfferManagerImpl.class);
+      LoggerFactory.getLogger(OfferManagerImpl.class);
 
   @VisibleForTesting
   static final String OFFER_ACCEPT_RACES = "offer_accept_races";
@@ -62,20 +61,20 @@ public class OfferManagerImpl implements OfferManager {
   private final AtomicLong offerRaces;
   private final AtomicLong offerCancelFailures;
 
-  private final Driver driver;
+  private final OfferTransport transport;
   private final OfferSettings offerSettings;
   private final Deferment offerDecline;
 
   @Inject
   @VisibleForTesting
   public OfferManagerImpl(
-      Driver driver,
+      OfferTransport transport,
       OfferSettings offerSettings,
       StatsProvider statsProvider,
       Deferment offerDecline,
       SchedulingFilter schedulingFilter) {
 
-    this.driver = requireNonNull(driver);
+    this.transport = requireNonNull(transport);
     this.offerSettings = requireNonNull(offerSettings);
     this.hostOffers = new HostOffers(statsProvider, offerSettings, schedulingFilter);
     this.offerRaces = statsProvider.makeCounter(OFFER_ACCEPT_RACES);
@@ -89,46 +88,44 @@ public class OfferManagerImpl implements OfferManager {
     if (sameAgent.isPresent()) {
       // We have an existing offer for the same agent.  We choose to return both offers so that
       // they may be combined into a single offer.
-      LOG.info("Returning offers for " + offer.getOffer().getAgentId().getValue()
+      LOG.info("Returning offers for " + offer.getAgentId()
           + " for compaction.");
-      decline(offer.getOffer().getId());
-      decline(sameAgent.get().getOffer().getId());
+      decline(offer.getOfferId());
+      decline(sameAgent.get().getOfferId());
     } else {
-      offerDecline.defer(() -> removeAndDecline(offer.getOffer().getId()));
+      offerDecline.defer(() -> removeAndDecline(offer.getOfferId()));
     }
   }
 
-  private void removeAndDecline(Protos.OfferID id) {
+  private void removeAndDecline(String id) {
     if (removeFromHostOffers(id)) {
       decline(id);
     }
   }
 
-  private void decline(Protos.OfferID id) {
+  private void decline(String id) {
     LOG.debug("Declining offer {}", id);
-    driver.declineOffer(id, getOfferFilter());
+    transport.decline(id, getRefuseSeconds());
   }
 
-  private Protos.Filters getOfferFilter() {
-    return Protos.Filters.newBuilder()
-        .setRefuseSeconds(offerSettings.getFilterDuration().as(Time.SECONDS))
-        .build();
+  private double getRefuseSeconds() {
+    return offerSettings.getFilterDuration().as(Time.SECONDS);
   }
 
   @Override
-  public boolean cancel(final Protos.OfferID offerId) {
+  public boolean cancel(final String offerId) {
     boolean success = removeFromHostOffers(offerId);
     if (!success) {
       // This will happen rarely when we race to process this rescind against accepting the offer
       // to launch a task.
       // If it happens frequently, we are likely processing rescinds before the offer itself.
-      LOG.warn("Failed to cancel offer: {}.", offerId.getValue());
+      LOG.warn("Failed to cancel offer: {}.", offerId);
       this.offerCancelFailures.incrementAndGet();
     }
     return success;
   }
 
-  private boolean removeFromHostOffers(final Protos.OfferID offerId) {
+  private boolean removeFromHostOffers(final String offerId) {
     requireNonNull(offerId);
 
     // The small risk of inconsistency is acceptable here - if we have an accept/remove race
@@ -137,7 +134,7 @@ public class OfferManagerImpl implements OfferManager {
   }
 
   @Override
-  public void ban(Protos.OfferID offerId) {
+  public void ban(String offerId) {
     hostOffers.addGlobalBan(offerId);
   }
 
@@ -152,8 +149,8 @@ public class OfferManagerImpl implements OfferManager {
   }
 
   @Override
-  public Optional<HostOffer> get(Protos.AgentID slaveId) {
-    return hostOffers.get(slaveId);
+  public Optional<HostOffer> get(String agentId) {
+    return hostOffers.get(agentId);
   }
 
   @Override
@@ -162,8 +159,8 @@ public class OfferManagerImpl implements OfferManager {
   }
 
   @Override
-  public Optional<HostOffer> getMatching(Protos.AgentID slaveId, ResourceRequest resourceRequest) {
-    return hostOffers.getMatching(slaveId, resourceRequest);
+  public Optional<HostOffer> getMatching(String agentId, ResourceRequest resourceRequest) {
+    return hostOffers.getMatching(agentId, resourceRequest);
   }
 
   @Override
@@ -189,7 +186,7 @@ public class OfferManagerImpl implements OfferManager {
 
   @Timed("offer_manager_launch_task")
   @Override
-  public void launchTask(Protos.OfferID offerId, Protos.TaskInfo task) throws LaunchException {
+  public void launchTask(String offerId, PreparedTask task) throws LaunchException {
     // Guard against an offer being removed after we grabbed it from the iterator.
     // If that happens, the offer will not exist in hostOffers, and we can immediately
     // send it back to LOST for quick reschedule.
@@ -197,11 +194,7 @@ public class OfferManagerImpl implements OfferManager {
     // which is a feature of ConcurrentSkipListSet.
     if (hostOffers.remove(offerId)) {
       try {
-        Protos.Offer.Operation launch = Protos.Offer.Operation.newBuilder()
-            .setType(Protos.Offer.Operation.Type.LAUNCH)
-            .setLaunch(Protos.Offer.Operation.Launch.newBuilder().addTaskInfos(task))
-            .build();
-        driver.acceptOffers(offerId, ImmutableList.of(launch), getOfferFilter());
+        transport.launch(offerId, task, getRefuseSeconds());
       } catch (IllegalStateException e) {
         // TODO(William Farner): Catch only the checked exception produced by Driver
         // once it changes from throwing IllegalStateException when the driver is not yet
@@ -218,7 +211,7 @@ public class OfferManagerImpl implements OfferManager {
    * Get all static bans.
    */
   @VisibleForTesting
-  Set<Pair<Protos.OfferID, TaskGroupKey>> getStaticBans() {
+  Set<Pair<String, TaskGroupKey>> getStaticBans() {
     return hostOffers.getStaticBans();
   }
 
@@ -227,7 +220,7 @@ public class OfferManagerImpl implements OfferManager {
    * tasks from the same group.
    */
   @VisibleForTesting
-  void banForTaskGroup(Protos.OfferID offerId, TaskGroupKey groupKey) {
+  void banForTaskGroup(String offerId, TaskGroupKey groupKey) {
     hostOffers.addStaticGroupBan(offerId, groupKey);
   }
 

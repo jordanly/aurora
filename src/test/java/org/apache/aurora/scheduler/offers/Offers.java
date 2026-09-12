@@ -34,7 +34,7 @@ public final class Offers {
   public static final String DEFAULT_HOST = "hostname";
 
   public static Offer makeOffer(String offerId) {
-    return Offers.makeOffer(offerId, DEFAULT_HOST);
+    return makeOffer(offerId, DEFAULT_HOST);
   }
 
   public static Offer makeOffer(String offerId, String hostName) {

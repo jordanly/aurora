@@ -164,41 +164,40 @@ public class TaskGroups implements EventSubscriber {
     Runnable monitor = new Runnable() {
       @Override
       public void run() {
-        final Set<String> taskIds = group.peek(settings.maxTasksPerSchedule);
-        long penaltyMs = 0;
-        if (!taskIds.isEmpty()) {
-          if (settings.rateLimiter.acquire() > 0) {
-            scheduleAttemptsBlocks.incrementAndGet();
-          }
-          CompletableFuture<Set<String>> result = batchWorker.execute(storeProvider ->
-              taskScheduler.schedule(storeProvider, taskIds));
-
-          Set<String> scheduled = null;
-          try {
-            scheduled = result.get();
-          } catch (ExecutionException e) {
-            throw new RuntimeException(e);
-          } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new RuntimeException(e);
-          }
-
-          scheduledTaskPenalties.accumulate(group.getPenaltyMs());
-          if (scheduled.isEmpty()) {
-            penaltyMs = settings.taskGroupBackoff.calculateBackoffMs(group.getPenaltyMs());
-          } else {
-            group.remove(scheduled);
-            if (group.hasMore()) {
-              penaltyMs = settings.firstScheduleDelay.as(Time.MILLISECONDS);
-            }
-          }
-        }
-
-        group.setPenaltyMs(penaltyMs);
+        group.setPenaltyMs(scheduleGroup(group));
         evaluateGroupLater(this, group);
       }
     };
     evaluateGroupLater(monitor, group);
+  }
+
+  private long scheduleGroup(TaskGroup group) {
+    Set<String> taskIds = group.peek(settings.maxTasksPerSchedule);
+    if (taskIds.isEmpty()) {
+      return 0;
+    }
+    if (settings.rateLimiter.acquire() > 0) {
+      scheduleAttemptsBlocks.incrementAndGet();
+    }
+    CompletableFuture<Set<String>> result = batchWorker.execute(storeProvider ->
+        taskScheduler.schedule(storeProvider, taskIds));
+
+    Set<String> scheduled;
+    try {
+      scheduled = result.get();
+    } catch (ExecutionException e) {
+      throw new RuntimeException(e);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new RuntimeException(e);
+    }
+
+    scheduledTaskPenalties.accumulate(group.getPenaltyMs());
+    if (scheduled.isEmpty()) {
+      return settings.taskGroupBackoff.calculateBackoffMs(group.getPenaltyMs());
+    }
+    group.remove(scheduled);
+    return group.hasMore() ? settings.firstScheduleDelay.as(Time.MILLISECONDS) : 0;
   }
 
   /**
@@ -211,24 +210,22 @@ public class TaskGroups implements EventSubscriber {
    */
   @Subscribe
   public synchronized void taskChangedState(TaskStateChange stateChange) {
-    if (stateChange.getNewState() == PENDING) {
-      IScheduledTask task = stateChange.getTask();
-      TaskGroupKey key = TaskGroupKey.from(task.getAssignedTask().getTask());
-      TaskGroup newGroup = new TaskGroup(key, Tasks.id(task));
-      TaskGroup existing = groups.putIfAbsent(key, newGroup);
-      if (existing == null) {
-        long penaltyMs;
-        if (stateChange.isTransition()) {
-          penaltyMs = settings.firstScheduleDelay.as(Time.MILLISECONDS);
-        } else {
-          penaltyMs = rescheduleCalculator.getStartupScheduleDelayMs(task);
-        }
-        newGroup.setPenaltyMs(penaltyMs);
-        startGroup(newGroup);
-      } else {
-        existing.offer(Tasks.id(task));
-      }
+    if (stateChange.getNewState() != PENDING) {
+      return;
     }
+    IScheduledTask task = stateChange.getTask();
+    TaskGroupKey key = TaskGroupKey.from(task.getAssignedTask().getTask());
+    TaskGroup newGroup = new TaskGroup(key, Tasks.id(task));
+    TaskGroup existing = groups.putIfAbsent(key, newGroup);
+    if (existing != null) {
+      existing.offer(Tasks.id(task));
+      return;
+    }
+    long penaltyMs = stateChange.isTransition()
+        ? settings.firstScheduleDelay.as(Time.MILLISECONDS)
+        : rescheduleCalculator.getStartupScheduleDelayMs(task);
+    newGroup.setPenaltyMs(penaltyMs);
+    startGroup(newGroup);
   }
 
   /**

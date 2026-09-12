@@ -57,7 +57,11 @@ public class StorageEntityUtilTest {
   }
 
   private static class RequiredFields {
+    // Read reflectively by the existing serialization/field-inspection contract.
+    @SuppressWarnings("PMD.UnusedPrivateField")
     private final String name;
+    // Read reflectively by the existing serialization/field-inspection contract.
+    @SuppressWarnings("PMD.UnusedPrivateField")
     private final long count;
 
     RequiredFields(String name, long count) {

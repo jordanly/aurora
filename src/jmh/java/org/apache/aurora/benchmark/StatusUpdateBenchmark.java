@@ -57,6 +57,9 @@ import org.apache.aurora.scheduler.config.CliOptions;
 import org.apache.aurora.scheduler.configuration.executor.ExecutorSettings;
 import org.apache.aurora.scheduler.events.EventSink;
 import org.apache.aurora.scheduler.events.PubsubEvent;
+import org.apache.aurora.scheduler.execution.ExecutionControl;
+import org.apache.aurora.scheduler.execution.TaskKiller;
+import org.apache.aurora.scheduler.execution.TaskUpdate;
 import org.apache.aurora.scheduler.filter.SchedulingFilter;
 import org.apache.aurora.scheduler.filter.SchedulingFilterImpl;
 import org.apache.aurora.scheduler.mesos.Driver;
@@ -186,6 +189,8 @@ public class StatusUpdateBenchmark {
           @Override
           protected void configure() {
             bind(Driver.class).toInstance(new FakeDriver());
+            bind(TaskKiller.class).to(Driver.class);
+            bind(ExecutionControl.class).to(Driver.class);
             bind(Scheduler.class).to(MesosSchedulerImpl.class);
             bind(MesosSchedulerImpl.class).in(Singleton.class);
             bind(MesosCallbackHandler.class).to(MesosCallbackHandlerImpl.class);
@@ -219,7 +224,7 @@ public class StatusUpdateBenchmark {
             bind(ExecutorSettings.class).toInstance(TestExecutorSettings.THERMOS_EXECUTOR);
             bind(StatsProvider.class).toInstance(new FakeStatsProvider());
             bind(EventSink.class).toInstance(eventBus::post);
-            bind(new TypeLiteral<BlockingQueue<Protos.TaskStatus>>() { })
+            bind(new TypeLiteral<BlockingQueue<TaskUpdate>>() { })
                 .annotatedWith(TaskStatusHandlerImpl.StatusUpdateQueue.class)
                 .toInstance(new LinkedBlockingQueue<>());
             bind(new TypeLiteral<Integer>() { })

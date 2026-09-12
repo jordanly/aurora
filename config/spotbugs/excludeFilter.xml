@@ -102,4 +102,51 @@ limitations under the License.
          https://github.com/google/guava/issues/2960 has been resolved -->
     <Bug pattern="RV_RETURN_VALUE_IGNORED" />
   </Match>
+  <!-- Java 25 tooling compatibility only; adoption tracked in SPOTBUGS_4_MIGRATION.md.
+       These four patterns are absent from the original SpotBugs 3.1.0 findbugs.xml. -->
+  <Match>
+    <Bug pattern="CT_CONSTRUCTOR_THROW,AT_NONATOMIC_64BIT_PRIMITIVE,JUA_DONT_ASSERT_INSTANCEOF_IN_TESTS,DCN_NULLPOINTER_EXCEPTION" />
+  </Match>
+
+  <!-- FindReturnRef in 3.1.0 checked arrays, Hashtable, util.Date, sql.Date and
+       sql.Timestamp only. Defer the following newly analyzed reference types;
+       leave arrays, those four classes, missing fields and unlisted types enabled.
+       This is scope compatibility, not a claim that every listed type is immutable. -->
+  <Match>
+    <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2,EI_EXPOSE_STATIC_REP2,MS_EXPOSE_REP" />
+    <Or>
+      <Field type="com.google.common.util.concurrent.RateLimiter" />
+      <Field type="java.util.List" />
+      <Field type="java.util.Map" />
+      <Field type="java.util.Set" />
+      <Field type="java.util.concurrent.ScheduledThreadPoolExecutor" />
+      <Field type="java.util.concurrent.atomic.AtomicInteger" />
+      <Field type="org.apache.aurora.gen.storage.LogEntry" />
+      <Field type="org.apache.aurora.scheduler.BatchWorker" />
+      <Field type="org.apache.aurora.scheduler.SchedulerModule$TaskEventBatchWorker" />
+      <Field type="org.apache.aurora.scheduler.offers.OfferManager" />
+      <Field type="org.apache.aurora.scheduler.offers.OfferSet" />
+      <Field type="org.apache.aurora.scheduler.sla.SlaManager" />
+      <Field type="org.apache.aurora.scheduler.state.StateManager" />
+      <Field type="org.apache.aurora.scheduler.storage.AttributeStore$Mutable" />
+      <Field type="org.apache.aurora.scheduler.storage.CronJobStore$Mutable" />
+      <Field type="org.apache.aurora.scheduler.storage.HostMaintenanceStore$Mutable" />
+      <Field type="org.apache.aurora.scheduler.storage.JobUpdateStore$Mutable" />
+      <Field type="org.apache.aurora.scheduler.storage.QuotaStore$Mutable" />
+      <Field type="org.apache.aurora.scheduler.storage.Storage" />
+      <Field type="org.apache.aurora.scheduler.storage.TaskStore$Mutable" />
+      <Field type="org.apache.aurora.scheduler.storage.sqlite.SqliteAttributeStore" />
+      <Field type="org.apache.aurora.scheduler.storage.sqlite.SqliteCronJobStore" />
+      <Field type="org.apache.aurora.scheduler.storage.sqlite.SqliteEffects" />
+      <Field type="org.apache.aurora.scheduler.storage.sqlite.SqliteHostMaintenanceStore" />
+      <Field type="org.apache.aurora.scheduler.storage.sqlite.SqliteJobUpdateStore" />
+      <Field type="org.apache.aurora.scheduler.storage.sqlite.SqliteQuotaStore" />
+      <Field type="org.apache.aurora.scheduler.storage.sqlite.SqliteTaskStore" />
+      <Field type="org.apache.mesos.v1.Protos$ExecutorInfo" />
+      <Field type="org.apache.mesos.v1.Protos$FrameworkInfo" />
+      <Field type="org.apache.mesos.v1.Protos$Offer" />
+      <Field type="org.apache.mesos.v1.Protos$TaskInfo" />
+      <Field type="org.apache.mesos.v1.Protos$TaskStatus" />
+    </Or>
+  </Match>
 </FindBugsFilter>

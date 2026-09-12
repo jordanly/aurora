@@ -11,7 +11,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.aurora.scheduler.resources;
+package org.apache.aurora.scheduler.mesos;
 
 import java.util.List;
 import java.util.function.Predicate;
@@ -20,6 +20,9 @@ import java.util.stream.StreamSupport;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 
+import org.apache.aurora.scheduler.resources.ResourceBag;
+import org.apache.aurora.scheduler.resources.ResourceManager;
+import org.apache.aurora.scheduler.resources.ResourceType;
 import org.apache.aurora.scheduler.storage.entities.IAssignedTask;
 import org.apache.mesos.v1.Protos.Offer;
 import org.apache.mesos.v1.Protos.Resource;
@@ -27,7 +30,7 @@ import org.apache.mesos.v1.Protos.Resource;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 
-import static org.apache.aurora.scheduler.resources.ResourceManager.getOfferResources;
+import static org.apache.aurora.scheduler.mesos.MesosResourceManager.getOfferResources;
 
 /**
  * Allocate resources from an accepted Mesos Offer to TaskInfo and ExecutorInfo.
@@ -41,7 +44,7 @@ public final class AcceptedOffer {
   // The role field has been deprecated. We'll need to migrate to the roles field instead
   // and enable it via the MULTI_ROLES capability.
   @SuppressWarnings("deprecation")
-  static final Predicate<Resource> RESERVED = e -> e.hasRole() && !e.getRole().equals("*");
+  static final Predicate<Resource> RESERVED = e -> e.hasRole() && !"*".equals(e.getRole());
 
   /**
    * Get proper value for {@link org.apache.mesos.Protos.TaskInfo}'s resources.
@@ -82,9 +85,9 @@ public final class AcceptedOffer {
               .map(Resource::toBuilder)
               .collect(toList());
 
-          boolean isRevocable = type.isMesosRevocable() && revocable;
+          boolean isRevocable = type.isRevocable() && revocable;
 
-          taskResources.addAll(type.getMesosResourceConverter().toMesosResource(
+          taskResources.addAll(MesosResourceType.getMesosResourceConverter(type).toMesosResource(
               offerResources,
               type.getMapper().isPresent()
                   ? () -> type.getMapper().get().getAssigned(task)
@@ -92,10 +95,11 @@ public final class AcceptedOffer {
               isRevocable));
 
           if (executorOverhead.getResourceVectors().containsKey(type)) {
-            executorResources.addAll(type.getMesosResourceConverter().toMesosResource(
-                offerResources,
-                () -> executorOverhead.getResourceVectors().get(type),
-                isRevocable));
+            executorResources.addAll(
+                MesosResourceType.getMesosResourceConverter(type).toMesosResource(
+                    offerResources,
+                    () -> executorOverhead.getResourceVectors().get(type),
+                    isRevocable));
           }
         });
 

@@ -21,22 +21,18 @@ import java.util.function.Supplier;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Suppliers;
 
-import org.apache.aurora.scheduler.base.Conversions;
+import org.apache.aurora.scheduler.execution.ExecutionOffer;
 import org.apache.aurora.scheduler.resources.ResourceBag;
 import org.apache.aurora.scheduler.resources.ResourceType;
 import org.apache.aurora.scheduler.storage.entities.IHostAttributes;
 
 import static java.util.Objects.requireNonNull;
 
-import static org.apache.aurora.scheduler.resources.ResourceManager.bagFromMesosResources;
-import static org.apache.aurora.scheduler.resources.ResourceManager.getOfferResources;
-import static org.apache.mesos.v1.Protos.Offer;
-
 /**
  * An available resource in the cluster.
  */
 public class HostOffer {
-  private final Offer offer;
+  private final ExecutionOffer offer;
   private final IHostAttributes hostAttributes;
   private final Supplier<ResourceBag> revocableResources;
   private final Supplier<ResourceBag> nonRevocableResources;
@@ -48,24 +44,36 @@ public class HostOffer {
   // of whether the resource is revocable.
   private final boolean nonZeroCpuAndMem;
 
-  public HostOffer(Offer offer, IHostAttributes hostAttributes) {
+  public HostOffer(ExecutionOffer offer, IHostAttributes hostAttributes) {
     this.offer = requireNonNull(offer);
     this.hostAttributes = requireNonNull(hostAttributes);
     this.nonZeroCpuAndMem = offerHasCpuAndMem(offer);
     this.revocableResources =
-        Suppliers.memoize(() -> bagFromMesosResources(getOfferResources(offer, true)));
+        Suppliers.memoize(() -> offer.getResources(true));
     this.nonRevocableResources =
-        Suppliers.memoize(() -> bagFromMesosResources(getOfferResources(offer, false)));
+        Suppliers.memoize(() -> offer.getResources(false));
   }
 
-  private static boolean offerHasCpuAndMem(Offer offer) {
-    ResourceBag resources = bagFromMesosResources(offer.getResourcesList());
+  private static boolean offerHasCpuAndMem(ExecutionOffer offer) {
+    ResourceBag resources = offer.getTotalResources();
     return resources.valueOf(ResourceType.CPUS) > 0.0
         && resources.valueOf(ResourceType.RAM_MB) > 0.0;
   }
 
-  public Offer getOffer() {
+  public ExecutionOffer getOffer() {
     return offer;
+  }
+
+  public String getOfferId() {
+    return offer.getOfferId();
+  }
+
+  public String getAgentId() {
+    return offer.getAgentId();
+  }
+
+  public String getHost() {
+    return offer.getHostname();
   }
 
   public IHostAttributes getAttributes() {
@@ -81,11 +89,7 @@ public class HostOffer {
   }
 
   public Optional<Instant> getUnavailabilityStart() {
-    if (offer.hasUnavailability()) {
-      return Optional.of(Conversions.getStart(offer.getUnavailability()));
-    } else {
-      return Optional.empty();
-    }
+    return offer.getUnavailabilityStart();
   }
 
   @Override

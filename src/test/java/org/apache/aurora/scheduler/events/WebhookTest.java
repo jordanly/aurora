@@ -399,7 +399,7 @@ public class WebhookTest {
   /** Validate that the request is what we are expecting to send out (ex. POST, headers). */
   private boolean validateRequest(HttpServletRequest request) {
     // Validate general fields are what we expect (POST, headers).
-    if (!request.getMethod().equals("POST")) {
+    if (!"POST".equals(request.getMethod())) {
       return false;
     }
 

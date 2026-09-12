@@ -17,9 +17,7 @@ import org.apache.aurora.gen.Resource;
 import org.apache.aurora.scheduler.storage.entities.IResource;
 import org.junit.Test;
 
-import static org.apache.aurora.scheduler.resources.ResourceTestUtil.mesosScalar;
 import static org.apache.aurora.scheduler.resources.ResourceType.CPUS;
-import static org.apache.aurora.scheduler.resources.ResourceType.RAM_MB;
 import static org.apache.aurora.scheduler.resources.ResourceType.fromIdValue;
 import static org.apache.aurora.scheduler.resources.ResourceType.fromResource;
 import static org.junit.Assert.assertEquals;
@@ -33,11 +31,6 @@ public class ResourceTypeTest {
   @Test
   public void testFindByResource() {
     assertEquals(CPUS, fromResource(IResource.build(Resource.numCpus(1.0))));
-  }
-
-  @Test
-  public void testFindByMesosResource() {
-    assertEquals(RAM_MB, fromResource(mesosScalar(RAM_MB, 1.0)));
   }
 
   @Test

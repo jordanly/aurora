@@ -75,7 +75,7 @@ public class TaskSchedulerImpl implements TaskScheduler {
   public @interface ReservationDuration { }
 
   private static final Logger LOG =
-      LoggerFactory.getLogger(org.apache.aurora.scheduler.scheduling.TaskSchedulerImpl.class);
+      LoggerFactory.getLogger(TaskSchedulerImpl.class);
 
   private final TaskAssigner assigner;
   private final Preemptor preemptor;

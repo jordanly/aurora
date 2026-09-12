@@ -56,10 +56,8 @@ public final class TaskGroupKey {
 
   @Override
   public boolean equals(Object o) {
-    if (!(o instanceof TaskGroupKey other)) {
-      return false;
-    }
-    return Objects.equals(canonicalTask, other.canonicalTask);
+    return o instanceof TaskGroupKey other
+        && Objects.equals(canonicalTask, other.canonicalTask);
   }
 
   @Override

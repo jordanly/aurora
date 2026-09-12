@@ -35,6 +35,7 @@ import com.google.common.primitives.Ints;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import com.google.inject.Module;
 
 import org.apache.aurora.common.application.Lifecycle;
 import org.apache.aurora.common.base.Command;
@@ -79,7 +80,7 @@ import org.apache.aurora.scheduler.base.Tasks;
 import org.apache.aurora.scheduler.config.types.TimeAmount;
 import org.apache.aurora.scheduler.events.EventSink;
 import org.apache.aurora.scheduler.events.PubsubEvent;
-import org.apache.aurora.scheduler.mesos.Driver;
+import org.apache.aurora.scheduler.execution.TaskKiller;
 import org.apache.aurora.scheduler.scheduling.RescheduleCalculator;
 import org.apache.aurora.scheduler.scheduling.RescheduleCalculator.RescheduleCalculatorImpl;
 import org.apache.aurora.scheduler.sla.SlaModule;
@@ -166,7 +167,7 @@ public class JobUpdaterIT extends EasyMockTest {
 
   private FakeScheduledExecutor clock;
   private JobUpdateController updater;
-  private Driver driver;
+  private TaskKiller taskKiller;
   private EventBus eventBus;
   private Storage storage;
   private StateManager stateManager;
@@ -186,13 +187,17 @@ public class JobUpdaterIT extends EasyMockTest {
     return ITaskConfig.build(builder);
   }
 
+  protected Module createStorageModule() {
+    return new MemStorageModule();
+  }
+
   @Before
   public void setUp() throws Exception {
     // Avoid console spam due to stats registered multiple times.
     Stats.flush();
     ScheduledExecutorService executor = createMock(ScheduledExecutorService.class);
     clock = FakeScheduledExecutor.scheduleExecutor(executor);
-    driver = createMock(Driver.class);
+    taskKiller = createMock(TaskKiller.class);
     shutdownCommand = createMock(Command.class);
     eventBus = new EventBus();
     TaskEventBatchWorker taskEventBatchWorker = createMock(TaskEventBatchWorker.class);
@@ -213,14 +218,14 @@ public class JobUpdaterIT extends EasyMockTest {
         new UpdaterModule(executor, Optional.of(updateActionBatchWorker), updaterOptions),
         new SlaModule(slaOptions),
         new TierModule(TaskTestUtil.TIER_CONFIG),
-        new MemStorageModule(),
+        createStorageModule(),
         new AbstractModule() {
           @Override
           protected void configure() {
             bind(StatsProvider.class).toInstance(new FakeStatsProvider());
             bind(Clock.class).toInstance(clock);
             bind(StateManager.class).to(StateManagerImpl.class);
-            bind(Driver.class).toInstance(driver);
+            bind(TaskKiller.class).toInstance(taskKiller);
             bind(TaskIdGenerator.class).to(TaskIdGeneratorImpl.class);
             bind(RescheduleCalculator.class).to(RescheduleCalculatorImpl.class);
             bind(RescheduleCalculatorImpl.RescheduleCalculatorSettings.class)
@@ -328,7 +333,7 @@ public class JobUpdaterIT extends EasyMockTest {
   }
 
   private IExpectationSetters<String> expectTaskKilled() {
-    driver.killTask(EasyMock.anyObject());
+    taskKiller.killTask(EasyMock.anyObject());
     return expectLastCall();
   }
 

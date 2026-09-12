@@ -358,7 +358,7 @@ public final class CrontabEntry {
     }
 
     CrontabEntry get() throws IllegalArgumentException {
-      return CrontabEntry.from(
+      return from(
           parseMinute(),
           parseHour(),
           parseDayOfMonth(),

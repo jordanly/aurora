@@ -269,7 +269,7 @@ public class ConfigurationManager {
             "Current PercentageSlaPolicy: percentage=%f will not allow any instances to be killed. "
                 + "Must be less than %f.",
             slaPolicy.getPercentage(),
-            ((double) (instanceCount - 1)) / instanceCount * 100.0));
+            (double) (instanceCount - 1) / instanceCount * 100.0));
       }
     }
 
@@ -407,23 +407,7 @@ public class ConfigurationManager {
     if (config.isSetContainer()) {
       IContainer containerConfig = config.getContainer();
       containerType = Optional.of(containerConfig.getSetField());
-      if (containerConfig.isSetDocker()) {
-        if (!containerConfig.getDocker().isSetImage()) {
-          throw new TaskDescriptionException("A container must specify an image.");
-        }
-        if (containerConfig.getDocker().getParameters().isEmpty()) {
-          builder.getContainer().getDocker()
-              .setParameters(ImmutableList.copyOf(settings.defaultDockerParameters));
-        } else {
-          if (!settings.allowDockerParameters) {
-            throw new TaskDescriptionException(NO_DOCKER_PARAMETERS);
-          }
-        }
-
-        if (settings.requireDockerUseExecutor && !config.isSetExecutorConfig()) {
-          throw new TaskDescriptionException(EXECUTOR_REQUIRED_WITH_DOCKER);
-        }
-      }
+      populateDocker(config, builder, containerConfig);
     } else {
       // Default to mesos container type if unset.
       containerType = Optional.of(Container._Fields.MESOS);
@@ -498,13 +482,32 @@ public class ConfigurationManager {
     return constraint -> constraint.getName().equals(name);
   }
 
+  private void populateDocker(ITaskConfig config, TaskConfig builder, IContainer containerConfig)
+      throws TaskDescriptionException {
+    if (!containerConfig.isSetDocker()) {
+      return;
+    }
+    if (!containerConfig.getDocker().isSetImage()) {
+      throw new TaskDescriptionException("A container must specify an image.");
+    }
+    if (containerConfig.getDocker().getParameters().isEmpty()) {
+      builder.getContainer().getDocker()
+          .setParameters(ImmutableList.copyOf(settings.defaultDockerParameters));
+    } else if (!settings.allowDockerParameters) {
+      throw new TaskDescriptionException(NO_DOCKER_PARAMETERS);
+    }
+    if (settings.requireDockerUseExecutor && !config.isSetExecutorConfig()) {
+      throw new TaskDescriptionException(EXECUTOR_REQUIRED_WITH_DOCKER);
+    }
+  }
+
   private static void maybeFillLinks(TaskConfig task) {
     if (task.getTaskLinksSize() == 0) {
       ImmutableMap.Builder<String, String> links = ImmutableMap.builder();
       for (IResource resource : ResourceManager.getTaskResources(ITaskConfig.build(task), PORTS)) {
-        if (resource.getNamedPort().equals("health")) {
+        if ("health".equals(resource.getNamedPort())) {
           links.put("health", "http://%host%:%port:health%");
-        } else if (resource.getNamedPort().equals("http")) {
+        } else if ("http".equals(resource.getNamedPort())) {
           links.put("http", "http://%host%:%port:http%");
         }
       }

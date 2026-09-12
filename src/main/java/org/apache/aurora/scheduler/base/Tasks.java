@@ -105,7 +105,7 @@ public final class Tasks {
   }
 
   public static boolean isKillable(ScheduleStatus status) {
-    return Tasks.isActive(status) && status != KILLING;
+    return isActive(status) && status != KILLING;
   }
 
   public static boolean isTerminated(ScheduleStatus status) {

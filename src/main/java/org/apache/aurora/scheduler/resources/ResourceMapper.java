@@ -13,6 +13,7 @@
  */
 package org.apache.aurora.scheduler.resources;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -20,19 +21,16 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import com.google.common.collect.ContiguousSet;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Range;
 
 import org.apache.aurora.gen.AssignedTask;
+import org.apache.aurora.scheduler.execution.ExecutionOffer;
 import org.apache.aurora.scheduler.storage.entities.IAssignedTask;
-import org.apache.mesos.v1.Protos.Offer;
 
 import static java.util.stream.StreamSupport.stream;
 
 import static com.google.common.base.Preconditions.checkState;
-import static com.google.common.collect.DiscreteDomain.integers;
 
 import static org.apache.aurora.scheduler.resources.ResourceType.PORTS;
 
@@ -48,7 +46,7 @@ public interface ResourceMapper<T> {
    * @param task Task with requested resources.
    * @return A new task with updated mapping.
    */
-  IAssignedTask mapAndAssign(Offer offer, IAssignedTask task);
+  IAssignedTask mapAndAssign(ExecutionOffer offer, IAssignedTask task);
 
   /**
    * Gets assigned resource values stored in {@code task}.
@@ -62,14 +60,8 @@ public interface ResourceMapper<T> {
 
   class PortMapper implements ResourceMapper<Set<Integer>> {
     @Override
-    public IAssignedTask mapAndAssign(Offer offer, IAssignedTask task) {
-      List<Integer> availablePorts =
-          stream(ResourceManager.getOfferResources(offer, PORTS).spliterator(), false)
-              .flatMap(resource -> resource.getRanges().getRangeList().stream())
-              .flatMap(range -> ContiguousSet.create(
-                  Range.closed((int) range.getBegin(), (int) range.getEnd()),
-                  integers()).stream())
-              .collect(Collectors.toList());
+    public IAssignedTask mapAndAssign(ExecutionOffer offer, IAssignedTask task) {
+      List<Integer> availablePorts = new ArrayList<>(offer.getAvailablePorts());
 
       Collections.shuffle(availablePorts);
 

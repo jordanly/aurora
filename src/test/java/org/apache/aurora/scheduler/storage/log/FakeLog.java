@@ -42,7 +42,7 @@ public class FakeLog implements Log {
     @Override
     public Position append(byte[] contents) throws StreamAccessException {
       long position = data.isEmpty() ? 1 : data.lastKey() + 1;
-      data.put(position, contents);
+      data.put(position, contents.clone());
       return new LongPosition(position);
     }
 
@@ -51,7 +51,7 @@ public class FakeLog implements Log {
       return Iterators.transform(data.values().iterator(), e -> new Entry() {
         @Override
         public byte[] contents() {
-          return e;
+          return e.clone();
         }
       });
     }

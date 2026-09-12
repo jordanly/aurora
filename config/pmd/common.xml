@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <!--
 Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this work except in compliance with the License.
-You may obtain a copy of the License in the LICENSE file, or at:
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at:
 
  http://www.apache.org/licenses/LICENSE-2.0
 
@@ -18,53 +18,82 @@ limitations under the License.
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0 http://pmd.sourceforge.net/ruleset_2_0_0.xsd">
 
-  <description>
-    Aurora PMD ruleset for all sources.
-  </description>
+  <description>Aurora PMD ruleset for all sources.</description>
 
-  <rule ref="rulesets/java/basic.xml"/>
-  <rule ref="rulesets/java/braces.xml"/>
-  <rule ref="rulesets/java/unnecessary.xml"/>
-  <rule ref="rulesets/java/unusedcode.xml"/>
-
-  <rule ref="rulesets/java/naming.xml">
-    <!-- Requiring longer variable names can be cumbersome when applied globally. -->
-    <exclude name="ShortVariable"/>
-    <!-- Requiring shorter variable names can be cumbersome when applied globally. -->
-    <exclude name="LongVariable"/>
-    <!-- Short method names are useful on occasion, such as with factory methods: Rate.of(...). -->
-    <exclude name="ShortMethodName"/>
-    <!-- TODO(wfarner): Enable this if/when we have automatic transaction management, rather than
-         the classes in org.apache.aurora.scheduler.storage.Storage (e.g. Work). -->
-    <exclude name="AbstractNaming"/>
-    <!-- There are rare, but valid, cases where short class names are useful. -->
-    <exclude name="ShortClassName"/>
-  </rule>
-
-  <rule ref="rulesets/java/empty.xml">
-    <!-- Configured below -->
-    <exclude name="EmptyCatchBlock"/>
-  </rule>
-
-  <rule ref="rulesets/java/empty.xml/EmptyCatchBlock">
+  <!-- Explicit PMD 7 category refs replace the former PMD 5 aggregate rulesets. -->
+  <rule ref="category/java/errorprone.xml/JumbledIncrementer"/>
+  <rule ref="category/java/codestyle.xml/ForLoopShouldBeWhileLoop"/>
+  <rule ref="category/java/errorprone.xml/OverrideBothEqualsAndHashcode">
     <properties>
-      <!-- Some APIs, like the Java Reflection API, use exceptions to indicate the absence of
-           a value and we legitimately want to ignore them. -->
-      <property name="allowCommentedBlocks" value="true"/>
+      <!-- A record retains compiler-generated component equality when hashCode is explicit. -->
+      <property name="violationSuppressXPath"
+                value="self::MethodDeclaration[@Name='hashCode']/parent::RecordBody/parent::RecordDeclaration"/>
     </properties>
   </rule>
-
-  <rule ref="rulesets/java/imports.xml">
-    <!-- We frequently use static imports for enum fields (making other code more concise), but
-         those trip this rule. -->
-    <exclude name="TooManyStaticImports"/>
+  <rule ref="category/java/multithreading.xml/DoubleCheckedLocking"/>
+  <rule ref="category/java/errorprone.xml/ReturnFromFinallyBlock"/>
+  <rule ref="category/java/errorprone.xml/UnconditionalIfStatement"/>
+  <rule ref="category/java/bestpractices.xml/PrimitiveWrapperInstantiation"/>
+  <rule ref="category/java/design.xml/CollapsibleIfStatements"/>
+  <rule ref="category/java/errorprone.xml/ClassCastExceptionWithToArray"/>
+  <rule ref="category/java/errorprone.xml/AvoidDecimalLiteralsInBigDecimalConstructor"/>
+  <rule ref="category/java/errorprone.xml/MisplacedNullCheck"/>
+  <rule ref="category/java/multithreading.xml/AvoidThreadGroup"/>
+  <rule ref="category/java/errorprone.xml/BrokenNullCheck"/>
+  <rule ref="category/java/performance.xml/BigIntegerInstantiation"/>
+  <rule ref="category/java/errorprone.xml/AvoidUsingOctalValues"/>
+  <rule ref="category/java/bestpractices.xml/AvoidUsingHardCodedIP"/>
+  <rule ref="category/java/bestpractices.xml/CheckResultSet">
+    <properties>
+      <!-- A direct JUnit assertion checks navigation; arbitrary boolean consumers do not. -->
+      <property name="violationSuppressXPath"
+                value="parent::ArgumentList/parent::MethodCall[pmd-java:matchesSig('org.junit.Assert#assertTrue(boolean)') or pmd-java:matchesSig('org.junit.Assert#assertTrue(java.lang.String,boolean)')]"/>
+    </properties>
   </rule>
+  <rule ref="category/java/errorprone.xml/AvoidMultipleUnaryOperators"/>
+  <rule ref="category/java/codestyle.xml/ExtendsObject"/>
+  <rule ref="category/java/errorprone.xml/CheckSkipResult"/>
+  <rule ref="category/java/errorprone.xml/AvoidBranchingStatementAsLastInLoop"/>
+  <rule ref="category/java/multithreading.xml/DontCallThreadRun"/>
+  <rule ref="category/java/errorprone.xml/DontUseFloatTypeForLoopIndices"/>
+  <rule ref="category/java/design.xml/SimplifiedTernary"/>
+  <rule ref="category/java/codestyle.xml/ControlStatementBraces"/>
+  <rule ref="category/java/errorprone.xml/UnnecessaryConversionTemporary"/>
+  <rule ref="category/java/codestyle.xml/UnnecessaryReturn"/>
+  <rule ref="category/java/codestyle.xml/UnnecessaryModifier"/>
+  <rule ref="category/java/design.xml/UselessOverridingMethod"/>
+  <rule ref="category/java/errorprone.xml/UselessOperationOnImmutable"/>
+  <rule ref="category/java/errorprone.xml/UnusedNullCheckInEquals"/>
+  <rule ref="category/java/codestyle.xml/UselessParentheses"/>
+  <rule ref="category/java/codestyle.xml/UselessQualifiedThis"/>
+  <rule ref="category/java/bestpractices.xml/UnusedPrivateField"/>
+  <rule ref="category/java/bestpractices.xml/UnusedLocalVariable"/>
+  <rule ref="category/java/bestpractices.xml/UnusedPrivateMethod"/>
+  <rule ref="category/java/bestpractices.xml/UnusedFormalParameter"/>
+  <rule ref="category/java/codestyle.xml/FieldNamingConventions"/>
+  <rule ref="category/java/codestyle.xml/LocalVariableNamingConventions"/>
+  <rule ref="category/java/codestyle.xml/FormalParameterNamingConventions"/>
+  <rule ref="category/java/codestyle.xml/MethodNamingConventions"/>
+  <rule ref="category/java/codestyle.xml/ClassNamingConventions"/>
+  <rule ref="category/java/codestyle.xml/AvoidDollarSigns"/>
+  <rule ref="category/java/errorprone.xml/MethodWithSameNameAsEnclosingClass"/>
+  <rule ref="category/java/errorprone.xml/SuspiciousHashcodeMethodName"/>
+  <rule ref="category/java/errorprone.xml/SuspiciousEqualsMethodName"/>
+  <rule ref="category/java/errorprone.xml/AvoidFieldNameMatchingTypeName"/>
+  <rule ref="category/java/errorprone.xml/AvoidFieldNameMatchingMethodName"/>
+  <rule ref="category/java/codestyle.xml/NoPackage"/>
+  <rule ref="category/java/codestyle.xml/PackageCase"/>
+  <rule ref="category/java/codestyle.xml/BooleanGetMethodName"/>
+  <rule ref="category/java/codestyle.xml/GenericsNaming"/>
+  <rule ref="category/java/codestyle.xml/EmptyControlStatement"/>
+  <rule ref="category/java/codestyle.xml/UnnecessarySemicolon"/>
+  <rule ref="category/java/codestyle.xml/UnnecessaryImport"/>
+  <rule ref="category/java/codestyle.xml/UnnecessaryFullyQualifiedName"/>
+  <rule ref="category/java/bestpractices.xml/SystemPrintln"/>
+  <rule ref="category/java/bestpractices.xml/AvoidPrintStackTrace"/>
+  <rule ref="category/java/errorprone.xml/InvalidLogMessageFormat"/>
 
-  <rule ref="rulesets/java/logging-java.xml">
-    <!-- It's valid to inject the logger, and in some cases preferable. -->
-    <exclude name="LoggerIsNotStaticFinal"/>
-    <!-- In practice, we don't have high enough log volume for this rule to be useful. -->
-    <exclude name="GuardLogStatementJavaUtil"/>
-    <exclude name="MoreThanOneLogger"/>
+  <rule ref="category/java/errorprone.xml/EmptyCatchBlock">
+    <properties><property name="allowCommentedBlocks" value="true"/></properties>
   </rule>
 </ruleset>

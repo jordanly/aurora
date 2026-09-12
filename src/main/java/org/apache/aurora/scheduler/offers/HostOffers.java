@@ -33,7 +33,6 @@ import org.apache.aurora.scheduler.filter.SchedulingFilter.ResourceRequest;
 import org.apache.aurora.scheduler.filter.SchedulingFilter.UnusedResource;
 import org.apache.aurora.scheduler.filter.SchedulingFilter.Veto;
 import org.apache.aurora.scheduler.storage.entities.IHostAttributes;
-import org.apache.mesos.v1.Protos;
 
 import static java.util.Objects.requireNonNull;
 
@@ -44,17 +43,17 @@ import static java.util.Objects.requireNonNull;
 class HostOffers {
   private final OfferSet offers;
 
-  private final Map<Protos.OfferID, HostOffer> offersById = Maps.newHashMap();
-  private final Map<Protos.AgentID, HostOffer> offersBySlave = Maps.newHashMap();
+  private final Map<String, HostOffer> offersById = Maps.newHashMap();
+  private final Map<String, HostOffer> offersByAgent = Maps.newHashMap();
   private final Map<String, HostOffer> offersByHost = Maps.newHashMap();
 
   // Keep track of offer->groupKey mappings that will never be matched to avoid redundant
   // scheduling attempts. See VetoGroup for more details on static ban.
-  private final Cache<Pair<Protos.OfferID, TaskGroupKey>, Boolean> staticallyBannedOffers;
+  private final Cache<Pair<String, TaskGroupKey>, Boolean> staticallyBannedOffers;
   private final SchedulingFilter schedulingFilter;
 
   // Keep track of globally banned offers that will never be matched to anything.
-  private final Set<Protos.OfferID> globallyBannedOffers = Sets.newHashSet();
+  private final Set<String> globallyBannedOffers = Sets.newHashSet();
 
   // Keep track of the number of offers evaluated for vetoes when getting matching offers
   private final AtomicLong vetoEvaluatedOffers;
@@ -88,9 +87,9 @@ class HostOffers {
    *         which will also be removed prior to returning.
    */
   synchronized Optional<HostOffer> addAndPreventAgentCollision(HostOffer offer) {
-    HostOffer sameAgent = offersBySlave.get(offer.getOffer().getAgentId());
+    HostOffer sameAgent = offersByAgent.get(offer.getAgentId());
     if (sameAgent != null) {
-      remove(sameAgent.getOffer().getId());
+      remove(sameAgent.getOfferId());
       return Optional.of(sameAgent);
     }
 
@@ -100,23 +99,23 @@ class HostOffers {
 
   private void addInternal(HostOffer offer) {
     offers.add(offer);
-    offersById.put(offer.getOffer().getId(), offer);
-    offersBySlave.put(offer.getOffer().getAgentId(), offer);
-    offersByHost.put(offer.getOffer().getHostname(), offer);
+    offersById.put(offer.getOfferId(), offer);
+    offersByAgent.put(offer.getAgentId(), offer);
+    offersByHost.put(offer.getHost(), offer);
   }
 
-  synchronized boolean remove(Protos.OfferID id) {
+  synchronized boolean remove(String id) {
     HostOffer removed = offersById.remove(id);
     if (removed != null) {
       offers.remove(removed);
-      offersBySlave.remove(removed.getOffer().getAgentId());
-      offersByHost.remove(removed.getOffer().getHostname());
+      offersByAgent.remove(removed.getAgentId());
+      offersByHost.remove(removed.getHost());
     }
     globallyBannedOffers.remove(id);
     return removed != null;
   }
 
-  synchronized void addGlobalBan(Protos.OfferID offerId) {
+  synchronized void addGlobalBan(String offerId) {
     globallyBannedOffers.add(offerId);
   }
 
@@ -124,14 +123,14 @@ class HostOffers {
     HostOffer offer = offersByHost.remove(attributes.getHost());
     if (offer != null) {
       // Remove and re-add a host's offer to re-sort based on its new hostStatus
-      remove(offer.getOffer().getId());
+      remove(offer.getOfferId());
       addInternal(new HostOffer(offer.getOffer(), attributes));
     }
   }
 
-  synchronized Optional<HostOffer> get(Protos.AgentID slaveId) {
-    HostOffer offer = offersBySlave.get(slaveId);
-    if (offer == null || globallyBannedOffers.contains(offer.getOffer().getId())) {
+  synchronized Optional<HostOffer> get(String agentId) {
+    HostOffer offer = offersByAgent.get(agentId);
+    if (offer == null || globallyBannedOffers.contains(offer.getOfferId())) {
       return Optional.empty();
     }
 
@@ -147,15 +146,15 @@ class HostOffers {
    */
   synchronized Iterable<HostOffer> getOffers() {
     return FluentIterable.from(offers.values())
-        .filter(offer -> !globallyBannedOffers.contains(offer.getOffer().getId()))
+        .filter(offer -> !globallyBannedOffers.contains(offer.getOfferId()))
         .toSet();
   }
 
   synchronized Optional<HostOffer> getMatching(
-      Protos.AgentID slaveId,
+      String agentId,
       ResourceRequest resourceRequest) {
 
-    return get(slaveId)
+    return get(agentId)
         .filter(offer -> !isGloballyBanned(offer))
         .filter(offer -> !isVetoed(offer, resourceRequest, Optional.empty()));
   }
@@ -181,11 +180,11 @@ class HostOffers {
   }
 
   private synchronized boolean isGloballyBanned(HostOffer offer) {
-    return globallyBannedOffers.contains(offer.getOffer().getId());
+    return globallyBannedOffers.contains(offer.getOfferId());
   }
 
   private synchronized boolean isStaticallyBanned(HostOffer offer, TaskGroupKey groupKey) {
-    return staticallyBannedOffers.getIfPresent(Pair.of(offer.getOffer().getId(), groupKey)) != null;
+    return staticallyBannedOffers.getIfPresent(Pair.of(offer.getOfferId(), groupKey)) != null;
   }
 
   /**
@@ -202,7 +201,7 @@ class HostOffers {
     Set<Veto> vetoes = schedulingFilter.filter(unusedResource, resourceRequest);
     if (!vetoes.isEmpty()) {
       if (groupKey.isPresent() && Veto.identifyGroup(vetoes) == SchedulingFilter.VetoGroup.STATIC) {
-        addStaticGroupBan(offer.getOffer().getId(), groupKey.get());
+        addStaticGroupBan(offer.getOfferId(), groupKey.get());
       }
 
       return true;
@@ -212,21 +211,21 @@ class HostOffers {
   }
 
   @VisibleForTesting
-  synchronized void addStaticGroupBan(Protos.OfferID offerId, TaskGroupKey groupKey) {
+  synchronized void addStaticGroupBan(String offerId, TaskGroupKey groupKey) {
     if (offersById.containsKey(offerId)) {
       staticallyBannedOffers.put(Pair.of(offerId, groupKey), true);
     }
   }
 
   @VisibleForTesting
-  synchronized Set<Pair<Protos.OfferID, TaskGroupKey>> getStaticBans() {
+  synchronized Set<Pair<String, TaskGroupKey>> getStaticBans() {
     return staticallyBannedOffers.asMap().keySet();
   }
 
   synchronized void clear() {
     offers.clear();
     offersById.clear();
-    offersBySlave.clear();
+    offersByAgent.clear();
     offersByHost.clear();
     staticallyBannedOffers.invalidateAll();
     globallyBannedOffers.clear();

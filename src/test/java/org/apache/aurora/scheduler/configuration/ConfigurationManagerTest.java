@@ -373,22 +373,22 @@ public class ConfigurationManagerTest {
     jobConfiguration.getKey().setEnvironment("foo");
     expectTaskDescriptionException("Job environment foo doesn't match: b.r");
     new ConfigurationManager(
-      new ConfigurationManagerSettings(
-          ALL_CONTAINER_TYPES,
-          true,
-          ImmutableList.of(new DockerParameter("foo", "bar")),
-          false,
-          true,
-          true,
-          true,
-          MIN_REQUIRED_INSTANCES,
-          MAX_SLA_DURATION_SECS,
-          "b.r",
-          false),
-      TaskTestUtil.TIER_MANAGER,
-      TaskTestUtil.THRIFT_BACKFILL,
-      TestExecutorSettings.THERMOS_EXECUTOR)
-            .validateAndPopulate(IJobConfiguration.build(jobConfiguration));
+        new ConfigurationManagerSettings(
+            ALL_CONTAINER_TYPES,
+            true,
+            ImmutableList.of(new DockerParameter("foo", "bar")),
+            false,
+            true,
+            true,
+            true,
+            MIN_REQUIRED_INSTANCES,
+            MAX_SLA_DURATION_SECS,
+            "b.r",
+            false),
+        TaskTestUtil.TIER_MANAGER,
+        TaskTestUtil.THRIFT_BACKFILL,
+        TestExecutorSettings.THERMOS_EXECUTOR)
+        .validateAndPopulate(IJobConfiguration.build(jobConfiguration));
   }
 
   @Test

@@ -116,13 +116,15 @@ class ThriftPlugin implements Plugin<Project> {
 
       configurations.create('thriftRuntime')
       configurations.thriftRuntime.extendsFrom(configurations.thriftCompile)
-      configurations.api.extendsFrom(configurations.thriftRuntime)
+      // Export library dependencies only. Generated classes are project output and
+      // travel in the API jar, not as directory dependencies in distributions.
+      configurations.api.extendsFrom(configurations.thriftCompile)
       dependencies {
         thriftRuntime files(thrift.genClassesDir).builtBy(classesThrift)
       }
 
       sourceSets.main {
-        output.dir(thrift.genClassesDir, builtBy: 'classesThrift')
+        output.classesDirs.from(files(thrift.genClassesDir).builtBy(classesThrift))
         output.dir(generateThriftResources)
       }
     }

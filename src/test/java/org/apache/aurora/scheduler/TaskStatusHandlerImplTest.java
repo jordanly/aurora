@@ -18,18 +18,24 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.aurora.common.testing.easymock.EasyMockTest;
+import org.apache.aurora.scheduler.execution.TaskObservation;
+import org.apache.aurora.scheduler.execution.TaskUpdate;
 import org.apache.aurora.scheduler.mesos.Driver;
+import org.apache.aurora.scheduler.mesos.MesosTaskUpdate;
 import org.apache.aurora.scheduler.state.StateChangeResult;
 import org.apache.aurora.scheduler.state.StateManager;
 import org.apache.aurora.scheduler.stats.CachedCounters;
+import org.apache.aurora.scheduler.storage.Storage;
 import org.apache.aurora.scheduler.storage.Storage.StorageException;
 import org.apache.aurora.scheduler.storage.testing.StorageTestUtil;
 import org.apache.aurora.scheduler.testing.FakeStatsProvider;
 import org.apache.mesos.v1.Protos.TaskID;
 import org.apache.mesos.v1.Protos.TaskState;
 import org.apache.mesos.v1.Protos.TaskStatus;
+import org.easymock.Capture;
 import org.easymock.EasyMock;
 import org.junit.After;
 import org.junit.Before;
@@ -39,9 +45,11 @@ import static org.apache.aurora.gen.ScheduleStatus.FAILED;
 import static org.apache.aurora.gen.ScheduleStatus.KILLED;
 import static org.apache.aurora.gen.ScheduleStatus.RUNNING;
 import static org.apache.aurora.scheduler.TaskStatusHandlerImpl.statName;
+import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.expectLastCall;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class TaskStatusHandlerImplTest extends EasyMockTest {
@@ -51,7 +59,6 @@ public class TaskStatusHandlerImplTest extends EasyMockTest {
   private StateManager stateManager;
   private StorageTestUtil storageUtil;
   private Driver driver;
-  private BlockingQueue<TaskStatus> queue;
   private FakeStatsProvider stats;
 
   private TaskStatusHandlerImpl statusHandler;
@@ -61,7 +68,7 @@ public class TaskStatusHandlerImplTest extends EasyMockTest {
     stateManager = createMock(StateManager.class);
     storageUtil = new StorageTestUtil(this);
     driver = createMock(Driver.class);
-    queue = new LinkedBlockingQueue<>();
+    BlockingQueue<TaskUpdate> queue = new LinkedBlockingQueue<>();
     stats = new FakeStatsProvider();
 
     statusHandler = new TaskStatusHandlerImpl(
@@ -107,9 +114,10 @@ public class TaskStatusHandlerImplTest extends EasyMockTest {
 
     control.replay();
 
-    statusHandler.statusUpdate(status);
+    statusHandler.statusUpdate(new MesosTaskUpdate(status, driver));
     assertTrue(latch.await(5L, TimeUnit.SECONDS));
-    assertEquals(1L, stats.getValue(statName(status, StateChangeResult.SUCCESS)));
+    assertEquals(1L, stats.getValue(statName(
+        new MesosTaskUpdate(status, driver).observe(), StateChangeResult.SUCCESS)));
   }
 
   @Test
@@ -137,7 +145,7 @@ public class TaskStatusHandlerImplTest extends EasyMockTest {
         .setMessage("fake message")
         .build();
 
-    statusHandler.statusUpdate(status);
+    statusHandler.statusUpdate(new MesosTaskUpdate(status, driver));
 
     assertTrue(latch.await(5L, TimeUnit.SECONDS));
   }
@@ -175,7 +183,7 @@ public class TaskStatusHandlerImplTest extends EasyMockTest {
 
     control.replay();
 
-    statusHandler.statusUpdate(status);
+    statusHandler.statusUpdate(new MesosTaskUpdate(status, driver));
 
     assertTrue(latch.await(5L, TimeUnit.SECONDS));
   }
@@ -195,7 +203,7 @@ public class TaskStatusHandlerImplTest extends EasyMockTest {
     assertResourceLimitBehavior(
         TaskStatus.Reason.REASON_CONTAINER_LIMITATION_MEMORY,
         Optional.empty(),
-        Optional.of(TaskStatusHandlerImpl.MEMORY_LIMIT_DISPLAY));
+        Optional.of(MesosTaskUpdate.MEMORY_LIMIT_DISPLAY));
   }
 
   @Test
@@ -213,7 +221,7 @@ public class TaskStatusHandlerImplTest extends EasyMockTest {
     assertResourceLimitBehavior(
         TaskStatus.Reason.REASON_CONTAINER_LIMITATION_DISK,
         Optional.empty(),
-        Optional.of(TaskStatusHandlerImpl.DISK_LIMIT_DISPLAY));
+        Optional.of(MesosTaskUpdate.DISK_LIMIT_DISPLAY));
   }
 
   @Test
@@ -242,7 +250,7 @@ public class TaskStatusHandlerImplTest extends EasyMockTest {
 
     control.replay();
 
-    statusHandler.statusUpdate(status);
+    statusHandler.statusUpdate(new MesosTaskUpdate(status, driver));
 
     assertTrue(latch.await(5L, TimeUnit.SECONDS));
   }
@@ -256,7 +264,7 @@ public class TaskStatusHandlerImplTest extends EasyMockTest {
     stateManager = createMock(StateManager.class);
     storageUtil = new StorageTestUtil(this);
     driver = createMock(Driver.class);
-    queue = createMock(new Clazz<BlockingQueue<TaskStatus>>() { });
+    BlockingQueue<TaskUpdate> queue = createMock(new Clazz<BlockingQueue<TaskUpdate>>() { });
 
     statusHandler = new TaskStatusHandlerImpl(
         storageUtil.storage,
@@ -288,9 +296,83 @@ public class TaskStatusHandlerImplTest extends EasyMockTest {
         .setMessage("fake message")
         .build();
 
-    statusHandler.statusUpdate(status);
+    statusHandler.statusUpdate(new MesosTaskUpdate(status, driver));
 
     assertTrue(latch.await(5L, TimeUnit.SECONDS));
+  }
+
+  @Test
+  public void testBatchAcknowledgesOnlyAfterCommitInArrivalOrder() throws Exception {
+    assertBatchAcknowledgement(false);
+  }
+
+  @Test
+  public void testFailedBatchAcknowledgesNeitherUpdate() throws Exception {
+    assertBatchAcknowledgement(true);
+  }
+
+  private void assertBatchAcknowledgement(boolean failSecond) throws Exception {
+    statusHandler.stopAsync().awaitTerminated();
+    BlockingQueue<TaskUpdate> queue = new LinkedBlockingQueue<>();
+    statusHandler = new TaskStatusHandlerImpl(storageUtil.storage, stateManager, stats,
+        driver, queue, 1000, new CachedCounters(stats));
+    TaskUpdate first = createMock(TaskUpdate.class);
+    TaskUpdate second = createMock(TaskUpdate.class);
+    queue.add(first);
+    queue.add(second);
+    AtomicBoolean inTransaction = new AtomicBoolean();
+    AtomicBoolean committed = new AtomicBoolean();
+    CountDownLatch completed = new CountDownLatch(1);
+    Capture<Storage.MutateWork<Void, RuntimeException>> work = createCapture();
+    control.checkOrder(true);
+    expect(storageUtil.storage.<Void, RuntimeException>write(capture(work))).andAnswer(() -> {
+      inTransaction.set(true);
+      try {
+        work.getValue().apply(storageUtil.mutableStoreProvider);
+        committed.set(true);
+        return null;
+      } finally {
+        inTransaction.set(false);
+        if (failSecond) {
+          completed.countDown();
+        }
+      }
+    });
+    expect(first.observe()).andAnswer(() -> {
+      assertTrue(inTransaction.get());
+      return new TaskObservation("first", RUNNING, Optional.empty(), Optional.empty());
+    });
+    expect(stateManager.changeState(storageUtil.mutableStoreProvider, "first", Optional.empty(),
+        RUNNING, Optional.empty())).andReturn(StateChangeResult.SUCCESS);
+    expect(second.observe()).andAnswer(() -> {
+      assertTrue(inTransaction.get());
+      if (failSecond) {
+        throw new IllegalArgumentException("unsupported observation");
+      }
+      return new TaskObservation("second", FAILED, Optional.empty(), Optional.empty());
+    });
+    if (!failSecond) {
+      expect(stateManager.changeState(storageUtil.mutableStoreProvider, "second", Optional.empty(),
+          FAILED, Optional.empty())).andReturn(StateChangeResult.SUCCESS);
+      first.acknowledge();
+      expectLastCall().andAnswer(() -> {
+        assertTrue(committed.get());
+        assertFalse(inTransaction.get());
+        return null;
+      });
+      second.acknowledge();
+      expectLastCall().andAnswer(() -> {
+        assertTrue(committed.get());
+        completed.countDown();
+        return null;
+      });
+    }
+
+    control.replay();
+    statusHandler.startAsync();
+    assertTrue(completed.await(5L, TimeUnit.SECONDS));
+    statusHandler.stopAsync().awaitTerminated();
+    assertEquals(!failSecond, committed.get());
   }
 
   private static void waitAndAnswer(CountDownLatch latch) {

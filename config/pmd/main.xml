@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <!--
 Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this work except in compliance with the License.
-You may obtain a copy of the License in the LICENSE file, or at:
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at:
 
  http://www.apache.org/licenses/LICENSE-2.0
 
@@ -18,85 +18,63 @@ limitations under the License.
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0 http://pmd.sourceforge.net/ruleset_2_0_0.xsd">
 
-  <description>
-    Aurora PMD ruleset.
-  </description>
+  <description>Aurora PMD ruleset.</description>
 
-  <rule ref="rulesets/java/design.xml">
-    <!-- We're not currently focusing on localization. -->
-    <exclude name="SimpleDateFormatNeedsLocale"/>
-    <exclude name="UseLocaleWithCaseConversions"/>
-    <!-- We deliberately use method-level synchronization for simplicity in many cases. -->
-    <exclude name="AvoidSynchronizedAtMethodLevel"/>
-    <!-- Empty methods in abstract classes can save implementers from boilerplate. -->
-    <exclude name="EmptyMethodInAbstractClassShouldBeAbstract"/>
-    <!-- We don't follow this practice, as we often prefer to keep like constants closest to where
-         they are used. -->
-    <exclude name="FieldDeclarationsShouldBeAtStartOfClass"/>
-    <!-- Unfortunately we have several large classes that trip this rule.
-         TODO(wfarner): Break apart god classes. -->
-    <exclude name="GodClass"/>
-  </rule>
-
-  <!-- Custom rules -->
-  <rule name="TimedAnnotationNonOverridableMethod"
-        language="java"
-        class="net.sourceforge.pmd.lang.rule.XPathRule"
-        message="A method must be overridable to have the @Timed annotation.">
-    <description>
-      A method must be overridable (non-static, non-final, public, protected or package-private)
-      in order to be used with the @Timed annotation. See: https://github.com/google/guice/wiki/AOP.
-    </description>
-    <priority>1</priority>
+  <!-- Explicit PMD 7 category refs preserve the former design rules and exclusions. -->
+  <rule ref="category/java/design.xml/InstantiableUtilityClass"/>
+  <rule ref="category/java/design.xml/SimplifyBooleanReturns"/>
+  <rule ref="category/java/design.xml/SimplifyBooleanExpressions"/>
+  <rule ref="category/java/bestpractices.xml/SwitchStmtsShouldHaveDefault"/>
+  <rule ref="category/java/design.xml/AvoidDeeplyNestedIfStmts"/>
+  <rule ref="category/java/bestpractices.xml/AvoidReassigningParameters"/>
+  <rule ref="category/java/design.xml/SwitchDensity"/>
+  <rule ref="category/java/errorprone.xml/ConstructorCallsOverridableMethod"/>
+  <rule ref="category/java/bestpractices.xml/AccessorClassGeneration"/>
+  <rule ref="category/java/design.xml/FinalFieldCouldBeStatic"/>
+  <!-- PMD 5.5.3 default scope; keep type resolution without adding every AutoCloseable. -->
+  <rule ref="category/java/errorprone.xml/CloseResource">
     <properties>
-      <property name="xpath">
-        <value>
-          <![CDATA[
-//ClassOrInterfaceBodyDeclaration[MethodDeclaration]
-[count(./Annotation//Name[@Image='Timed']) > 0]
-[count(./MethodDeclaration[(@Static = 'true') or (@Final = 'true') or (@Private = 'true')]) > 0]
-            ]]>
-        </value>
-      </property>
+      <property name="types" value="java.sql.Connection,java.sql.Statement,java.sql.ResultSet"/>
     </properties>
-    <example>
-      <![CDATA[
-  public class Foo {
-      @Timed
-      // Must be non-static, non-final, public, protected or package-private.
-      protected Foo() { }
-  }
-       ]]>
-    </example>
   </rule>
+  <rule ref="category/java/errorprone.xml/NonStaticInitializer"/>
+  <rule ref="category/java/bestpractices.xml/DefaultLabelNotLastInSwitchStmt"/>
+  <rule ref="category/java/errorprone.xml/NonCaseLabelInSwitchStatement"/>
+  <rule ref="category/java/performance.xml/OptimizableToArrayCall"/>
+  <rule ref="category/java/errorprone.xml/ComparisonWithNaN"/>
+  <rule ref="category/java/errorprone.xml/EqualsNull"/>
+  <rule ref="category/java/codestyle.xml/ConfusingTernary"/>
+  <rule ref="category/java/errorprone.xml/InstantiationToGetClass"/>
+  <rule ref="category/java/errorprone.xml/IdempotentOperations"/>
+  <rule ref="category/java/design.xml/ImmutableField"/>
+  <rule ref="category/java/codestyle.xml/AvoidProtectedFieldInFinalClass"/>
+  <rule ref="category/java/errorprone.xml/AssignmentToNonFinalStatic"/>
+  <rule ref="category/java/errorprone.xml/MissingStaticMethodInNonInstantiatableClass"/>
+  <rule ref="category/java/errorprone.xml/ImplicitSwitchFallThrough"/>
+  <rule ref="category/java/multithreading.xml/UseNotifyAllInsteadOfNotify"/>
+  <rule ref="category/java/errorprone.xml/AvoidInstanceofChecksInCatchClause"/>
+  <rule ref="category/java/bestpractices.xml/AbstractClassWithoutAbstractMethod"/>
+  <rule ref="category/java/design.xml/SimplifyConditional"/>
+  <rule ref="category/java/errorprone.xml/CompareObjectsWithEquals"/>
+  <rule ref="category/java/bestpractices.xml/LiteralsFirstInComparisons"/>
+  <rule ref="category/java/codestyle.xml/UnnecessaryLocalBeforeReturn"/>
+  <rule ref="category/java/multithreading.xml/NonThreadSafeSingleton"/>
+  <rule ref="category/java/errorprone.xml/SingleMethodSingleton"/>
+  <rule ref="category/java/errorprone.xml/SingletonClassReturningNewInstance"/>
+  <rule ref="category/java/documentation.xml/UncommentedEmptyMethodBody"/>
+  <rule ref="category/java/documentation.xml/UncommentedEmptyConstructor"/>
+  <rule ref="category/java/multithreading.xml/UnsynchronizedStaticFormatter"/>
+  <rule ref="category/java/bestpractices.xml/PreserveStackTrace"/>
+  <rule ref="category/java/bestpractices.xml/UseCollectionIsEmpty"/>
+  <rule ref="config/pmd/compatibility.xml/ClassWithOnlyPrivateConstructorsShouldBeFinal"/>
+  <rule ref="category/java/design.xml/SingularField"/>
+  <rule ref="category/java/design.xml/AbstractClassWithoutAnyMethod"/>
+  <rule ref="category/java/performance.xml/TooFewBranchesForASwitchStatement"/>
+  <rule ref="category/java/design.xml/LogicInversion"/>
+  <rule ref="category/java/bestpractices.xml/UseVarargs"/>
+  <rule ref="category/java/codestyle.xml/AvoidProtectedMethodInFinalClassNotExtending"/>
+  <rule ref="category/java/bestpractices.xml/ConstantsInInterface"/>
 
-  <rule name="TimedAnnotationNonOverridableClass"
-        language="java"
-        class="net.sourceforge.pmd.lang.rule.XPathRule"
-        message="A class must be non-final, public or package-private to have methods with the @Timed annotation.">
-    <description>
-      A class must be non-final, public or package-private to have methods with the @Timed
-      annotation. See: https://github.com/google/guice/wiki/AOP.
-    </description>
-    <priority>1</priority>
-    <properties>
-      <property name="xpath">
-        <value>
-          <![CDATA[
-//ClassOrInterfaceDeclaration[(@Final = 'true') or (@Private = 'true') or (@Protected = 'true')]
-/ClassOrInterfaceBody/ClassOrInterfaceBodyDeclaration/Annotation//Name[@Image='Timed']
-            ]]>
-        </value>
-      </property>
-    </properties>
-    <example>
-      <![CDATA[
-  // Must be non-final, public or package-private
-  class Foo {
-      @Timed
-      public Foo() { }
-  }
-       ]]>
-    </example>
-  </rule>
+  <rule ref="config/pmd/timed.xml"/>
+  <rule ref="config/pmd/compatibility.xml/ReturnEmptyArrayRatherThanNull"/>
 </ruleset>

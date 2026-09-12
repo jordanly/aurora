@@ -3,13 +3,13 @@
 Active as of 2026-09-11. This replaces the parallel application's backlog and
 cancels JAVA-11 source retirement. The [full plan](IN_PLACE_MODERNIZATION_PLAN.md)
 defines the architecture, detailed acceptance criteria and Docker testing ground.
-These are planned work items, not claims of created GitHub issues or completed
-implementation. INPLACE-00 is **complete**. INPLACE-01 has a passing original Java
-baseline; its full build gates remain open. INPLACE-02 has initial Java evidence;
-its broader compatibility qualification and subsequent slices remain open.
-See the [current build status](INPLACE01_BUILD_STATUS.md) for executed evidence.
-Subsequent coverage qualification, the first identity extraction, and storage
-contract preparation are tracked in [INPLACE-02 progress](INPLACE02_BEHAVIOR_STATUS.md).
+These are repository work items, not claims of created GitHub issues.
+INPLACE-00 is complete. INPLACE-01/02 have restored local Java, UI, packaging and
+quality gates; INPLACE-03 execution boundaries and INPLACE-04 local transactional
+storage are implemented. Native execution, real credentials, Python runtime and
+production HA qualification remain explicit gates. See the [current status and
+evidence](INPLACE02_04_IMPLEMENTATION_STATUS.md). INPLACE-05 is the next runtime
+integration boundary: durable effects and controller recovery.
 The [Java 25 file audit](JAVA25_FILE_AUDIT.md) assesses all 636 tracked Java files
 and orders concrete modernization batches. Small resource, failure-handling and
 test-reliability fixes can accompany the early baseline work; broad framework

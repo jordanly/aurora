@@ -194,8 +194,12 @@ public class DurableStorageTest extends EasyMockTest {
     RuntimeException replayFailure = new RuntimeException("replay failure");
     RuntimeException closeFailure = new RuntimeException("close failure");
     Stream<Edit> edits = Stream.of(Edit.deleteAll())
-        .peek(edit -> { throw replayFailure; })
-        .onClose(() -> { throw closeFailure; });
+        .peek(edit -> {
+          throw replayFailure;
+        })
+        .onClose(() -> {
+          throw closeFailure;
+        });
     persistence.prepare();
     expect(persistence.recover()).andReturn(edits);
 
@@ -399,7 +403,7 @@ public class DurableStorageTest extends EasyMockTest {
   abstract class AbstractMutationFixture extends AbstractStorageFixture {
     @Override
     protected void runTest() {
-      durableStorage.write((Quiet) AbstractMutationFixture.this::performMutations);
+      durableStorage.write((Quiet) this::performMutations);
     }
 
     protected abstract void performMutations(MutableStoreProvider storeProvider);

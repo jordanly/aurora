@@ -124,7 +124,7 @@ final class Generator {
         // Order methods by name for predictable behavior.  This is particularly useful for
         // deterministic behavior of picking a TUnion field.
         .sorted(Ordering.natural().onResultOf(Method::getName))
-        .filter(method -> !method.getName().equals("setFieldValue"))
+        .filter(method -> !"setFieldValue".equals(method.getName()))
         .filter(method -> method.getName().startsWith("set"))
         .filter(method -> !method.getName().endsWith("IsSet"));
 

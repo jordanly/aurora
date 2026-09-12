@@ -90,7 +90,7 @@ public abstract class AbstractJettyTest extends EasyMockTest {
    * @return A module used in the creation of the servlet container's child injector.
    */
   protected Function<ServletContext, Module> getChildServletModule() {
-    return (servletContext) -> Modules.EMPTY_MODULE;
+    return servletContext -> Modules.EMPTY_MODULE;
   }
 
   @Before

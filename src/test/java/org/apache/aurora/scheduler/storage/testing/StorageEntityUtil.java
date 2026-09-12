@@ -42,7 +42,7 @@ public final class StorageEntityUtil {
   private static void assertFullyPopulated(String name, Object object, Set<Field> ignoredFields) {
     if (object instanceof Collection) {
       Object[] values = ((Collection<?>) object).toArray();
-      assertFalse("Collection is empty: " + name, values.length == 0);
+      assertNotEquals("Collection is empty: " + name, 0, values.length);
       for (int i = 0; i < values.length; i++) {
         assertFullyPopulated(name + "[" + i + "]", values[i], ignoredFields);
       }
@@ -100,18 +100,19 @@ public final class StorageEntityUtil {
       if (mustBeSet) {
         assertNotNull(fullName + " is null", fieldValue);
       }
-      if (fieldValue != null) {
-        if (Primitives.isWrapperType(fieldValue.getClass())) {
+      if (fieldValue == null) {
+        return;
+      }
+      if (Primitives.isWrapperType(fieldValue.getClass())) {
+        if (mustBeSet && !fullName.endsWith("cachedHashCode")) {
           // Special-case the mutable hash code field.
-          if (mustBeSet && !fullName.endsWith("cachedHashCode")) {
-            assertNotEquals(
-                "Primitive value must not be default: " + fullName,
-                Defaults.defaultValue(Primitives.unwrap(fieldValue.getClass())),
-                fieldValue);
-          }
-        } else {
-          assertFullyPopulated(fullName, fieldValue, ignoredFields);
+          assertNotEquals(
+              "Primitive value must not be default: " + fullName,
+              Defaults.defaultValue(Primitives.unwrap(fieldValue.getClass())),
+              fieldValue);
         }
+      } else {
+        assertFullyPopulated(fullName, fieldValue, ignoredFields);
       }
     } catch (IllegalAccessException e) {
       throw Throwables.propagate(e);

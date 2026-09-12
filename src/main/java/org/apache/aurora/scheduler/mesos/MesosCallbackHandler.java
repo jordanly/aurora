@@ -39,6 +39,7 @@ import org.apache.aurora.scheduler.base.SchedulerException;
 import org.apache.aurora.scheduler.events.EventSink;
 import org.apache.aurora.scheduler.events.PubsubEvent;
 import org.apache.aurora.scheduler.events.PubsubEventModule;
+import org.apache.aurora.scheduler.execution.MaintenanceRequest;
 import org.apache.aurora.scheduler.maintenance.MaintenanceController;
 import org.apache.aurora.scheduler.offers.HostOffer;
 import org.apache.aurora.scheduler.offers.OfferManager;
@@ -227,7 +228,7 @@ public interface MesosCallbackHandler {
             storeProvider.getAttributeStore().saveHostAttributes(attributes);
             log.info("Received offer: {}", offer.getId().getValue());
             offersReceived.incrementAndGet();
-            offerManager.add(new HostOffer(offer, attributes));
+            offerManager.add(new HostOffer(new MesosOffer(offer), attributes));
           }
         });
       });
@@ -245,15 +246,16 @@ public interface MesosCallbackHandler {
       //      In this scenario, we want to ensure that we do not use it/accept it when the executor
       //      finally processes the offer. We will temporarily ban it and add a command for the
       //      executor to unban it so future offers can be processed normally.
-      boolean offerCancelled = offerManager.cancel(offerId);
+      String offerIdValue = offerId.getValue();
+      boolean offerCancelled = offerManager.cancel(offerIdValue);
       if (!offerCancelled) {
         log.info(
             "Received rescind before adding offer: {}, temporarily banning.",
             offerId.getValue());
-        offerManager.ban(offerId);
+        offerManager.ban(offerIdValue);
         executor.execute(() -> {
           log.info("Cancelling and unbanning offer: {}.", offerId.getValue());
-          offerManager.cancel(offerId);
+          offerManager.cancel(offerIdValue);
         });
       }
       offersRescinded.incrementAndGet();
@@ -321,15 +323,15 @@ public interface MesosCallbackHandler {
     public void handleUpdate(TaskStatus status) {
       logStatusUpdate(log, status);
       eventSink.post(new PubsubEvent.TaskStatusReceived(
-          status.getState(),
+          status.getState().name(),
           // Source and Reason are enums. They cannot be null so we we need to use `hasXXX`.
-          status.hasSource() ? Optional.of(status.getSource()) : Optional.empty(),
-          status.hasReason() ? Optional.of(status.getReason()) : Optional.empty(),
+          status.hasSource() ? Optional.of(status.getSource().name()) : Optional.empty(),
+          status.hasReason() ? Optional.of(status.getReason().name()) : Optional.empty(),
           Optional.ofNullable(status.getTimestamp()).map(SECONDS_TO_MICROS)));
 
       try {
         // The status handler is responsible for acknowledging the update.
-        taskStatusHandler.statusUpdate(status);
+        taskStatusHandler.statusUpdate(new MesosTaskUpdate(status, driver));
         statusUpdate.incrementAndGet();
       } catch (SchedulerException e) {
         log.error("Status update failed due to scheduler exception: " + e, e);
@@ -374,7 +376,12 @@ public interface MesosCallbackHandler {
               .minus(unavailabilityThreshold.as(Time.MILLISECONDS), ChronoUnit.MILLIS);
 
           if (clock.nowInstant().isAfter(drainTime)) {
-            maintenanceController.drainForInverseOffer(offer);
+            maintenanceController.drainForUnavailability(new MaintenanceRequest(
+                offer.getId().getValue(),
+                offer.getAgentId().getValue(),
+                offer.getUrl().getAddress().hasHostname()
+                    ? Optional.of(offer.getUrl().getAddress().getHostname()) : Optional.empty(),
+                start));
           }
         }
       });

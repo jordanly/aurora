@@ -13,6 +13,7 @@
  */
 package org.apache.aurora.scheduler.maintenance;
 
+import java.time.Instant;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Executor;
@@ -45,6 +46,7 @@ import org.apache.aurora.scheduler.config.types.TimeAmount;
 import org.apache.aurora.scheduler.events.EventSink;
 import org.apache.aurora.scheduler.events.PubsubEvent.TaskStateChange;
 import org.apache.aurora.scheduler.events.PubsubEventModule;
+import org.apache.aurora.scheduler.execution.MaintenanceRequest;
 import org.apache.aurora.scheduler.sla.SlaManager;
 import org.apache.aurora.scheduler.state.PubsubTestUtil;
 import org.apache.aurora.scheduler.state.StateManager;
@@ -56,7 +58,6 @@ import org.apache.aurora.scheduler.storage.entities.IScheduledTask;
 import org.apache.aurora.scheduler.storage.entities.ISlaPolicy;
 import org.apache.aurora.scheduler.storage.testing.StorageTestUtil;
 import org.apache.aurora.scheduler.testing.FakeStatsProvider;
-import org.apache.mesos.v1.Protos;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -76,35 +77,11 @@ public class MaintenanceControllerImplTest extends EasyMockTest {
 
   private static final String HOST_A = "a";
   private static final Set<String> A = ImmutableSet.of(HOST_A);
-  private static final Protos.OfferID OFFER_ID = Protos.OfferID.newBuilder()
-      .setValue("offer-id")
-      .build();
-  private static final Protos.AgentID AGENT_ID = Protos.AgentID.newBuilder()
-      .setValue("agent-id")
-      .build();
-  private static final Protos.FrameworkID FRAMEWORK_ID = Protos.FrameworkID.newBuilder()
-      .setValue("framework-id")
-      .build();
-  private static final Protos.URL AGENT_URL = Protos.URL.newBuilder()
-      .setAddress(Protos.Address.newBuilder()
-          .setHostname(HOST_A)
-          .setPort(5051))
-      .setScheme("http")
-      .build();
-  private static final Protos.Unavailability UNAVAILABILITY = Protos.Unavailability.newBuilder()
-      .setStart(Protos.TimeInfo.newBuilder()
-          .setNanoseconds(Amount.of(1L, Time.MINUTES).as(Time.NANOSECONDS)))
-      .build();
   private static final SlaPolicy SLA_POLICY = SlaPolicy.percentageSlaPolicy(
       new PercentageSlaPolicy(95, 1800));
 
-  private static final Protos.InverseOffer INVERSE_OFFER = Protos.InverseOffer.newBuilder()
-      .setId(OFFER_ID)
-      .setAgentId(AGENT_ID)
-      .setUrl(AGENT_URL)
-      .setFrameworkId(FRAMEWORK_ID)
-      .setUnavailability(UNAVAILABILITY)
-      .build();
+  private static final MaintenanceRequest MAINTENANCE_REQUEST = new MaintenanceRequest(
+      "offer-id", "agent-id", Optional.of(HOST_A), Instant.ofEpochSecond(60));
 
   private static final SlaPolicy COUNT_SLA_POLICY = SlaPolicy.countSlaPolicy(
       new CountSlaPolicy()
@@ -394,7 +371,14 @@ public class MaintenanceControllerImplTest extends EasyMockTest {
         .andReturn(Optional.of(maintenanceRequest)).times(1);
 
     control.replay();
-    maintenance.drainForInverseOffer(INVERSE_OFFER);
+    maintenance.drainForUnavailability(MAINTENANCE_REQUEST);
+  }
+
+  @Test
+  public void testUnavailabilityWithoutHostnameDoesNotDrain() {
+    control.replay();
+    maintenance.drainForUnavailability(new MaintenanceRequest(
+        "offer-id", "agent-id", Optional.empty(), Instant.ofEpochSecond(60)));
   }
 
   private void expectTaskDraining(IScheduledTask task) {

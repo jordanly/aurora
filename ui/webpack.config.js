@@ -1,10 +1,10 @@
 var path = require('path');
-var webpack = require('webpack');
 
 var SOURCE_PATH = path.resolve(__dirname, 'src/main/js');
 var EXTENSION_PATH = path.resolve(__dirname, 'plugin/js');
 
 module.exports = {
+  mode: 'production',
   devtool: 'source-map',
   entry: './src/main/js/index',
   output: {

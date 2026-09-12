@@ -33,12 +33,12 @@ import org.apache.aurora.gen.TaskEvent;
 import org.apache.aurora.scheduler.base.Query;
 import org.apache.aurora.scheduler.base.TaskTestUtil;
 import org.apache.aurora.scheduler.base.Tasks;
-import org.apache.aurora.scheduler.mesos.Driver;
+import org.apache.aurora.scheduler.execution.ReconciliationTarget;
+import org.apache.aurora.scheduler.execution.TaskReconciliation;
 import org.apache.aurora.scheduler.storage.entities.IScheduledTask;
 import org.apache.aurora.scheduler.storage.entities.ITaskConfig;
 import org.apache.aurora.scheduler.storage.testing.StorageTestUtil;
 import org.apache.aurora.scheduler.testing.FakeScheduledExecutor;
-import org.apache.mesos.v1.Protos;
 import org.easymock.EasyMock;
 import org.junit.Before;
 import org.junit.Test;
@@ -47,7 +47,7 @@ import static org.apache.aurora.common.quantity.Time.MINUTES;
 import static org.apache.aurora.common.quantity.Time.SECONDS;
 import static org.apache.aurora.scheduler.reconciliation.TaskReconciler.EXPLICIT_STAT_NAME;
 import static org.apache.aurora.scheduler.reconciliation.TaskReconciler.IMPLICIT_STAT_NAME;
-import static org.apache.aurora.scheduler.reconciliation.TaskReconciler.TASK_TO_PROTO;
+import static org.apache.aurora.scheduler.reconciliation.TaskReconciler.TASK_TO_TARGET;
 import static org.apache.aurora.scheduler.reconciliation.TaskReconciler.TaskReconcilerSettings;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.expectLastCall;
@@ -70,7 +70,7 @@ public class TaskReconcilerTest extends EasyMockTest {
 
   private StorageTestUtil storageUtil;
   private StatsProvider statsProvider;
-  private Driver driver;
+  private TaskReconciliation taskReconciliation;
   private ScheduledExecutorService executorService;
   private AtomicLong explicitRuns;
   private AtomicLong implicitRuns;
@@ -79,7 +79,7 @@ public class TaskReconcilerTest extends EasyMockTest {
   public void setUp() {
     storageUtil = new StorageTestUtil(this);
     statsProvider = createMock(StatsProvider.class);
-    driver = createMock(Driver.class);
+    taskReconciliation = createMock(TaskReconciliation.class);
     executorService = createMock(ScheduledExecutorService.class);
     explicitRuns = new AtomicLong();
     implicitRuns = new AtomicLong();
@@ -100,17 +100,17 @@ public class TaskReconcilerTest extends EasyMockTest {
         task1,
         task2).times(7);
 
-    List<List<Protos.TaskStatus>> batches = Lists.partition(ImmutableList.of(
-        TASK_TO_PROTO.apply(task1),
-        TASK_TO_PROTO.apply(task2)), BATCH_SIZE);
+    List<List<ReconciliationTarget>> batches = Lists.partition(ImmutableList.of(
+        TASK_TO_TARGET.apply(task1),
+        TASK_TO_TARGET.apply(task2)), BATCH_SIZE);
 
-    driver.reconcileTasks(batches.get(0));
+    taskReconciliation.reconcileTasks(batches.get(0));
     expectLastCall().times(7);
 
-    driver.reconcileTasks(batches.get(1));
+    taskReconciliation.reconcileTasks(batches.get(1));
     expectLastCall().times(7);
 
-    driver.reconcileTasks(EasyMock.anyObject());
+    taskReconciliation.reconcileTasks(EasyMock.anyObject());
     expectLastCall().times(3);
 
     control.replay();
@@ -118,7 +118,7 @@ public class TaskReconcilerTest extends EasyMockTest {
     TaskReconciler reconciler = new TaskReconciler(
         SETTINGS,
         storageUtil.storage,
-        driver,
+        taskReconciliation,
         executorService,
         statsProvider);
 

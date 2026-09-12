@@ -36,6 +36,8 @@ import static org.apache.aurora.scheduler.resources.ResourceType.PORTS;
 import static org.apache.aurora.scheduler.resources.ResourceType.RAM_MB;
 import static org.easymock.EasyMock.expect;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class SlotSizeCounterTest extends EasyMockTest {
   private static final ResourceBag LARGE = SMALL.scale(4);
@@ -199,8 +201,8 @@ public class SlotSizeCounterTest extends EasyMockTest {
     MachineResource equal = new MachineResource(SMALL, true, false);
 
     assertEquals(SMALL, resource.getSize());
-    assertEquals(true, resource.isDedicated());
-    assertEquals(false, resource.isRevocable());
+    assertTrue(resource.isDedicated());
+    assertFalse(resource.isRevocable());
     assertEquals(resource, equal);
     assertEquals(Objects.hash(SMALL, true, false), resource.hashCode());
   }

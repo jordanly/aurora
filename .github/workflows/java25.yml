@@ -1,0 +1,65 @@
+name: Original Aurora on Java 25
+
+on:
+  pull_request:
+  push:
+    branches: [master, codex/in-place-java25]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: java25-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Java 25 / ${{ matrix.gate }}
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        gate: [behavior-and-distribution, quality]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Install compiler build prerequisites
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y build-essential bison flex libboost-dev
+      - name: Build the pinned Thrift compiler
+        id: thrift
+        run: |
+          compiler="$(python3 build-support/java/bootstrap-thrift.py)"
+          echo "compiler=$compiler" >> "$GITHUB_OUTPUT"
+      - name: Verify build helpers and code generation contracts
+        run: python3 -m unittest discover -s build-support/java -p 'test_*.py'
+      - name: Verify original behavior, UI, and installed launchers
+        if: matrix.gate == 'behavior-and-distribution'
+        env:
+          THRIFT_COMPILER: ${{ steps.thrift.outputs.compiler }}
+        run: |
+          ./gradlew "-PthriftCompiler=$THRIFT_COMPILER" \
+            verifyOriginalBehavior :ui:build verifyInstalledDistribution --continue
+      - name: Run the original optional quality gates explicitly
+        if: matrix.gate == 'quality'
+        env:
+          THRIFT_COMPILER: ${{ steps.thrift.outputs.compiler }}
+        run: |
+          ./gradlew "-PthriftCompiler=$THRIFT_COMPILER" -Pq \
+            verifyOriginalQuality --continue
+      - name: Retain reports for passing and failing gates
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: java25-${{ matrix.gate }}
+          include-hidden-files: true
+          if-no-files-found: error
+          path: |
+            .cache/inplace-build/build/**/reports/**
+            .cache/inplace-build/build/**/test-results/**
+            .cache/inplace-build/build/**/distribution-verification.json

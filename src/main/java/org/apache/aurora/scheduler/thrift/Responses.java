@@ -62,7 +62,7 @@ public final class Responses {
    * @param code Response code to include.
    * @param message Message to include in the response.
    * @return {@code response} with {@code message} included.
-   * @see {@link #addMessage(Response, String)}
+   * @see #addMessage(Response, String)
    */
   public static Response addMessage(Response response, ResponseCode code, String message) {
     return addMessage(response.setResponseCode(code), message);

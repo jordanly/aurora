@@ -142,12 +142,14 @@ public class GsonMessageBodyHandlerTest {
     }
   }
 
-  public static class InaccessibleResource extends Resource {
+  public static final class InaccessibleResource extends Resource {
     private InaccessibleResource() { }
   }
 
   public static class MissingConstructorResource extends Resource {
-    public MissingConstructorResource(String ignored) { }
+    public MissingConstructorResource(String ignored) {
+      // Constructor intentionally has no side effects.
+    }
   }
 
   public static class ThrowingResource extends Resource {

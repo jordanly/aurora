@@ -65,14 +65,12 @@ import org.apache.aurora.scheduler.storage.entities.IScheduledTask;
 import org.apache.aurora.scheduler.storage.entities.ITaskConfig;
 import org.apache.aurora.scheduler.storage.testing.StorageEntityUtil;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import static org.apache.aurora.gen.ScheduleStatus.ASSIGNED;
 import static org.apache.aurora.gen.ScheduleStatus.RUNNING;
 import static org.apache.aurora.scheduler.base.TaskTestUtil.makeTask;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 
 public abstract class AbstractTaskStoreTest extends TearDownTestCase {
   protected static final IHostAttributes HOST_A = IHostAttributes.build(
@@ -572,12 +570,11 @@ public abstract class AbstractTaskStoreTest extends TearDownTestCase {
         getJobKeys());
   }
 
-  @Ignore("Existing secondary-index concurrency test; requires separate storage qualification")
   @Test
   public void testReadSecondaryIndexMultipleThreads() throws Exception {
     ExecutorService executor = Executors.newFixedThreadPool(4,
         new ThreadFactoryBuilder().setNameFormat("SlowRead-%d").setDaemon(true).build());
-
+    Throwable failure = null;
     try {
       ImmutableSet.Builder<IScheduledTask> builder = ImmutableSet.builder();
       final int numTasks = 100;
@@ -597,12 +594,23 @@ public abstract class AbstractTaskStoreTest extends TearDownTestCase {
         operations.add(executor.submit(() -> saveTasks(createTask("TaskNew1" + id))));
       }
 
-      long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(30);
+      // This checks concurrency correctness, not throughput. Instrumented SQLite reads decode
+      // a million records here; allow the Pi to run the same workload alongside analyzer workers.
+      long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(120);
       for (Future<?> operation : operations) {
         operation.get(Math.max(0L, deadline - System.nanoTime()), TimeUnit.NANOSECONDS);
       }
+    } catch (Exception | Error e) {
+      failure = e;
+      throw e;
     } finally {
-      MoreExecutors.shutdownAndAwaitTermination(executor, 1, TimeUnit.SECONDS);
+      if (!MoreExecutors.shutdownAndAwaitTermination(executor, 30, TimeUnit.SECONDS)) {
+        AssertionError cleanup = new AssertionError("Concurrent storage workers did not terminate");
+        if (failure == null) {
+          throw cleanup;
+        }
+        failure.addSuppressed(cleanup);
+      }
     }
   }
 

@@ -27,7 +27,6 @@ import com.google.inject.PrivateModule;
 import org.apache.aurora.common.quantity.Amount;
 import org.apache.aurora.common.quantity.Time;
 import org.apache.aurora.scheduler.SchedulerServicesModule;
-import org.apache.aurora.scheduler.base.Conversions;
 import org.apache.aurora.scheduler.config.types.TimeAmount;
 import org.apache.aurora.scheduler.offers.HostOffer;
 import org.apache.aurora.scheduler.offers.OfferManager;
@@ -39,9 +38,6 @@ import static java.util.Objects.requireNonNull;
 
 import static org.apache.aurora.scheduler.resources.ResourceBag.IS_MESOS_REVOCABLE;
 import static org.apache.aurora.scheduler.resources.ResourceBag.IS_POSITIVE;
-import static org.apache.aurora.scheduler.resources.ResourceManager.bagFromMesosResources;
-import static org.apache.aurora.scheduler.resources.ResourceManager.getNonRevocableOfferResources;
-import static org.apache.aurora.scheduler.resources.ResourceManager.getRevocableOfferResources;
 
 /**
  * Module to configure export of cluster-wide resource allocation and consumption statistics.
@@ -161,10 +157,10 @@ public class AsyncStatsModule extends AbstractModule {
 
       ImmutableList.Builder<MachineResource> builder = ImmutableList.builder();
       for (HostOffer offer : offers) {
-        ResourceBag revocable = bagFromMesosResources(getRevocableOfferResources(offer.getOffer()));
+        ResourceBag revocable = offer.getResourceBag(true);
         ResourceBag nonRevocable =
-            bagFromMesosResources(getNonRevocableOfferResources(offer.getOffer()));
-        boolean isDedicated = Conversions.isDedicated(offer.getOffer());
+            offer.getResourceBag(false);
+        boolean isDedicated = offer.getOffer().isDedicated();
 
         // It's insufficient to compare revocable against EMPTY here as RAM, DISK and PORTS
         // are always rolled in to revocable as non-compressible resources. Only if revocable

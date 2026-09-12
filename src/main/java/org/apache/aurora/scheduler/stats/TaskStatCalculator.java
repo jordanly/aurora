@@ -66,7 +66,7 @@ class TaskStatCalculator implements Runnable {
         resourceCounter.computeAggregates(
             Query.unscoped().active(),
             type.filter,
-            (taskConfig) -> type.name() + "_" + taskConfig.getJob().getRole())
+            taskConfig -> type.name() + "_" + taskConfig.getJob().getRole())
             .forEach((name, metric) -> update("resources_per_role_" + name, metric));
       }
 

@@ -128,38 +128,31 @@ class InstanceUpdater implements StateEvaluator<Optional<IScheduledTask>> {
     if (desiredState.get().equals(actualState.getAssignedTask().getTask())) {
       // The desired task is in the system.
       if (status == RUNNING) {
-        // The desired task is running.
-        if (appearsStable(actualState)) {
-          // Stably running, our work here is done.
-          return SUCCEEDED;
-        } else {
-          // Not running long enough to consider stable, check again later.
-          return EVALUATE_AFTER_MIN_RUNNING_MS;
-        }
-      } else if (Tasks.isTerminated(status)) {
+        // Wait until the desired task has run long enough to be considered stable.
+        return appearsStable(actualState) ? SUCCEEDED : EVALUATE_AFTER_MIN_RUNNING_MS;
+      }
+      if (Tasks.isTerminated(status)) {
         // The desired task has terminated, this is a failure.
         LOG.info("Task is in terminal state " + status);
         return addFailureAndCheckIfFailed() ? FAILED_TERMINATED : EVALUATE_ON_STATE_CHANGE;
-      } else {
-        // The task is in the process of being restarted, check back later.
-        return EVALUATE_ON_STATE_CHANGE;
       }
-    } else {
-      // This is not the configuration that we would like to run.
-      if (isKillable(status)) {
-        // Task is active, kill it.
-        if (resourceFits(desiredState.get(), actualState.getAssignedTask().getTask())
-            && constraintsMatch(desiredState.get(), actualState.getAssignedTask().getTask())) {
-          // If the desired task fits into the existing offer, we reserve the offer.
-          return KILL_TASK_WITH_RESERVATION_AND_EVALUATE_ON_STATE_CHANGE;
-        } else {
-          // The resource requirements have increased, force fresh scheduling attempt.
-          return KILL_TASK_AND_EVALUATE_ON_STATE_CHANGE;
-        }
-      } else if (Tasks.isTerminated(status) && isPermanentlyKilled(actualState)) {
-        // The old task has exited, it is now safe to add the new one.
-        return REPLACE_TASK_AND_EVALUATE_ON_STATE_CHANGE;
+      // The task is in the process of being restarted, check back later.
+      return EVALUATE_ON_STATE_CHANGE;
+    }
+
+    // This is not the configuration that we would like to run.
+    if (isKillable(status)) {
+      if (resourceFits(desiredState.get(), actualState.getAssignedTask().getTask())
+          && constraintsMatch(desiredState.get(), actualState.getAssignedTask().getTask())) {
+        // If the desired task fits into the existing offer, we reserve the offer.
+        return KILL_TASK_WITH_RESERVATION_AND_EVALUATE_ON_STATE_CHANGE;
       }
+      // The resource requirements have increased, force a fresh scheduling attempt.
+      return KILL_TASK_AND_EVALUATE_ON_STATE_CHANGE;
+    }
+    if (Tasks.isTerminated(status) && isPermanentlyKilled(actualState)) {
+      // The old task has exited, it is now safe to add the new one.
+      return REPLACE_TASK_AND_EVALUATE_ON_STATE_CHANGE;
     }
 
     return EVALUATE_ON_STATE_CHANGE;

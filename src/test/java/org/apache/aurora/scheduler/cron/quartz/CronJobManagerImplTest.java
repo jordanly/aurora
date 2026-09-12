@@ -99,7 +99,7 @@ public class CronJobManagerImplTest extends EasyMockTest {
 
     expect(scheduler.deleteJob(QuartzTestUtil.QUARTZ_JOB_KEY)).andReturn(true);
     expect(scheduler.scheduleJob(anyObject(JobDetail.class), anyObject(Trigger.class)))
-       .andReturn(null);
+        .andReturn(null);
 
     populateStorage();
 

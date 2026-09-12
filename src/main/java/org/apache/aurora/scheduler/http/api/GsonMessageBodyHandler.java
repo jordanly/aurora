@@ -43,6 +43,7 @@ import com.google.gson.ExclusionStrategy;
 import com.google.gson.FieldAttributes;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -197,42 +198,46 @@ public class GsonMessageBodyHandler
                   typeOfT.getClass().getName() + " must have exactly one element");
             }
 
-            if (typeOfT instanceof Class<?> clazz) {
-              Entry<String, JsonElement> item = Iterables.getOnlyElement(jsonObject.entrySet());
-
-              try {
-                Field metaDataMapField = clazz.getField("metaDataMap");
-                @SuppressWarnings("unchecked")
-                Map<TFieldIdEnum, FieldMetaData> metaDataMap =
-                    (Map<TFieldIdEnum, FieldMetaData>) metaDataMapField.get(null);
-
-                for (Entry<TFieldIdEnum, FieldMetaData> entry : metaDataMap.entrySet()) {
-                  if (entry.getKey().getFieldName().equals(item.getKey())) {
-                    Object result;
-                    if (entry.getValue().valueMetaData.isStruct()) {
-                      StructMetaData valueMeta = (StructMetaData) entry.getValue().valueMetaData;
-                      result = context.deserialize(item.getValue(), valueMeta.structClass);
-                    } else {
-                      FieldValueMetaData valueMeta = entry.getValue().valueMetaData;
-                      Type type = switch (valueMeta.type) {
-                        case TType.DOUBLE -> Double.TYPE;
-                        case TType.I64 -> Long.TYPE;
-                        case TType.STRING -> String.class;
-                        default -> throw new RuntimeException("Unmapped type: " + valueMeta.type);
-                      };
-                      result = context.deserialize(item.getValue(), type);
-                    }
-                    return createUnion(clazz, entry.getKey(), result);
-                  }
-                }
-
-                throw new RuntimeException("Failed to deserialize " + typeOfT);
-              } catch (NoSuchFieldException | IllegalAccessException | InstantiationException e) {
-                throw new RuntimeException(e);
-              }
-            } else {
+            if (!(typeOfT instanceof Class<?> clazz)) {
               throw new RuntimeException("Unable to deserialize " + typeOfT);
+            }
+            Entry<String, JsonElement> item = Iterables.getOnlyElement(jsonObject.entrySet());
+
+            try {
+              Field metaDataMapField = clazz.getField("metaDataMap");
+              @SuppressWarnings("unchecked")
+              Map<TFieldIdEnum, FieldMetaData> metaDataMap =
+                  (Map<TFieldIdEnum, FieldMetaData>) metaDataMapField.get(null);
+
+              for (Entry<TFieldIdEnum, FieldMetaData> entry : metaDataMap.entrySet()) {
+                if (entry.getKey().getFieldName().equals(item.getKey())) {
+                  Object result = deserializeField(
+                      entry.getValue().valueMetaData, item.getValue(), context);
+                  return createUnion(clazz, entry.getKey(), result);
+                }
+              }
+
+              throw new RuntimeException("Failed to deserialize " + typeOfT);
+            } catch (NoSuchFieldException | IllegalAccessException | InstantiationException e) {
+              throw new RuntimeException(e);
             }
           })
       .create();
+
+  private static Object deserializeField(
+      FieldValueMetaData metadata,
+      JsonElement value,
+      JsonDeserializationContext context) {
+
+    if (metadata.isStruct()) {
+      return context.deserialize(value, ((StructMetaData) metadata).structClass);
+    }
+    Type type = switch (metadata.type) {
+      case TType.DOUBLE -> Double.TYPE;
+      case TType.I64 -> Long.TYPE;
+      case TType.STRING -> String.class;
+      default -> throw new RuntimeException("Unmapped type: " + metadata.type);
+    };
+    return context.deserialize(value, type);
+  }
 }

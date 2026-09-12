@@ -26,6 +26,10 @@ import com.google.inject.AbstractModule;
 import org.apache.aurora.scheduler.app.SchedulerMain.Options.DriverKind;
 import org.apache.aurora.scheduler.base.AsyncUtil;
 import org.apache.aurora.scheduler.events.PubsubEventModule;
+import org.apache.aurora.scheduler.execution.ExecutionControl;
+import org.apache.aurora.scheduler.execution.OfferTransport;
+import org.apache.aurora.scheduler.execution.TaskKiller;
+import org.apache.aurora.scheduler.execution.TaskReconciliation;
 import org.apache.aurora.scheduler.mesos.MesosCallbackHandler.MesosCallbackHandlerImpl;
 import org.apache.mesos.Scheduler;
 import org.slf4j.Logger;
@@ -59,6 +63,11 @@ public class SchedulerDriverModule extends AbstractModule {
 
   @Override
   protected void configure() {
+    // Neutral policy consumers use the same lifecycle-owned Mesos driver instance.
+    bind(TaskKiller.class).to(Driver.class);
+    bind(ExecutionControl.class).to(Driver.class);
+    bind(OfferTransport.class).to(MesosOfferTransport.class);
+    bind(TaskReconciliation.class).to(MesosTaskReconciliation.class);
     bind(Scheduler.class).to(MesosSchedulerImpl.class);
     bind(org.apache.mesos.v1.scheduler.Scheduler.class).to(VersionedMesosSchedulerImpl.class);
     bind(MesosSchedulerImpl.class).in(Singleton.class);

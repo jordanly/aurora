@@ -428,5 +428,5 @@ public class SchedulerLifecycle implements EventSubscriber {
   @Qualifier
   @Retention(RetentionPolicy.RUNTIME)
   @Target({ElementType.FIELD, ElementType.METHOD, ElementType.PARAMETER})
-  public static @interface SchedulerActive { }
+  public @interface SchedulerActive { }
 }

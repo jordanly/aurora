@@ -25,11 +25,9 @@ import static org.junit.Assert.assertSame;
 
 public class SlaUtilTest {
 
-  private List<Long> samples;
-
   @Test
   public void testPercentileEmpty() {
-    samples = new LinkedList<>();
+    List<Long> samples = new LinkedList<>();
     Number actual = SlaUtil.percentile(samples, 75);
     assertEquals(0.0, actual);
 
@@ -48,7 +46,7 @@ public class SlaUtilTest {
 
   @Test
   public void testPercentileSingleValue() {
-    samples = new LinkedList<>(Collections.singletonList(10L));
+    List<Long> samples = new LinkedList<>(Collections.singletonList(10L));
     Number actual = SlaUtil.percentile(samples, 75);
     assertEquals(10.0, actual);
 
@@ -67,7 +65,7 @@ public class SlaUtilTest {
 
   @Test
   public void testPercentileConstant() {
-    samples = new LinkedList<>();
+    List<Long> samples = new LinkedList<>();
     for (int i = 0; i < 100; i++) {
       samples.add(10L);
     }
@@ -89,7 +87,7 @@ public class SlaUtilTest {
 
   @Test
   public void testPercentileLinearEven() {
-    samples = new LinkedList<>();
+    List<Long> samples = new LinkedList<>();
     for (int i = 0; i < 100; i += 4) {
       samples.add((long) i);
     }
@@ -118,7 +116,7 @@ public class SlaUtilTest {
 
   @Test
   public void testPercentileLinearOdd() {
-    samples = new LinkedList<>();
+    List<Long> samples = new LinkedList<>();
     for (int i = 0; i <= 100; i++) {
       samples.add((long) i);
     }
@@ -146,7 +144,7 @@ public class SlaUtilTest {
 
   @Test
   public void testPercentileInterpolate() {
-    samples = new LinkedList<>(Arrays.asList(30L, 70L, 90L, 60L));
+    List<Long> samples = new LinkedList<>(Arrays.asList(30L, 70L, 90L, 60L));
     Number actual = SlaUtil.percentile(samples, 75);
     assertEquals(52.5, actual);
 

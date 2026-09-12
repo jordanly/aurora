@@ -17,6 +17,7 @@ import com.google.common.collect.ImmutableList;
 
 import org.apache.aurora.common.testing.easymock.EasyMockTest;
 import org.apache.aurora.gen.HostAttributes;
+import org.apache.aurora.scheduler.mesos.MesosOffer;
 import org.apache.aurora.scheduler.offers.HostOffer;
 import org.apache.aurora.scheduler.offers.OfferManager;
 import org.apache.aurora.scheduler.resources.ResourceTestUtil;
@@ -46,7 +47,7 @@ public class AsyncStatsModuleTest extends EasyMockTest {
   public void testOfferAdapter() {
     OfferManager offerManager = createMock(OfferManager.class);
     expect(offerManager.getAll()).andReturn(ImmutableList.of(
-        new HostOffer(Protos.Offer.newBuilder()
+        new HostOffer(new MesosOffer(Protos.Offer.newBuilder()
             .setId(Protos.OfferID.newBuilder().setValue("offerId"))
             .setFrameworkId(Protos.FrameworkID.newBuilder().setValue("frameworkId"))
             .setAgentId(Protos.AgentID.newBuilder().setValue("slaveId"))
@@ -55,7 +56,7 @@ public class AsyncStatsModuleTest extends EasyMockTest {
             .addResources(mesosScalar(CPUS, 4.0, false))
             .addResources(mesosScalar(RAM_MB, 1024))
             .addResources(mesosScalar(DISK_MB, 2048))
-            .build(),
+            .build()),
             IHostAttributes.build(new HostAttributes()))));
 
     control.replay();

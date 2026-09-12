@@ -38,7 +38,7 @@ class ThriftEntitiesPlugin implements Plugin<Project>  {
       extensions.create('thriftEntities', ThriftEntitiesPluginExtension, project)
 
       configurations.create('thriftEntitiesCompile')
-      configurations.thriftEntitiesCompile.extendsFrom(configurations.thriftRuntime)
+      configurations.thriftEntitiesCompile.extendsFrom(configurations.thriftCompile)
 
       afterEvaluate {
         dependencies {
@@ -75,13 +75,17 @@ class ThriftEntitiesPlugin implements Plugin<Project>  {
       }
 
       configurations.create('thriftEntitiesRuntime')
-      configurations.thriftEntitiesRuntime.extendsFrom(configurations.thriftEntitiesCompile)
+      configurations.thriftEntitiesRuntime.extendsFrom(
+          configurations.thriftEntitiesCompile, configurations.thriftRuntime)
       dependencies {
         thriftEntitiesRuntime files(thriftEntities.genClassesDir).builtBy(classesThriftEntities)
       }
-      configurations.api.extendsFrom(configurations.thriftEntitiesRuntime)
+      // Keep generated class directories internal; source set outputs package them
+      // in the API jar while consumers receive only the required library dependencies.
+      configurations.api.extendsFrom(configurations.thriftEntitiesCompile)
       sourceSets.main {
-        output.dir(thriftEntities.genClassesDir, builtBy: 'classesThriftEntities')
+        output.classesDirs.from(
+            files(thriftEntities.genClassesDir).builtBy(classesThriftEntities))
         output.dir(thriftEntities.genResourcesDir, builtBy: 'generateThriftEntitiesJava')
       }
     }

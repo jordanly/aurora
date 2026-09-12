@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <!--
 Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this work except in compliance with the License.
-You may obtain a copy of the License in the LICENSE file, or at:
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at:
 
  http://www.apache.org/licenses/LICENSE-2.0
 
@@ -18,64 +18,86 @@ limitations under the License.
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0 http://pmd.sourceforge.net/ruleset_2_0_0.xsd">
 
-  <description>
-    Aurora PMD ruleset.
-  </description>
+  <description>Aurora PMD ruleset.</description>
 
-  <rule ref="rulesets/java/junit.xml">
-    <!-- With the source code in hand, assertion messages can be redundant. -->
-    <exclude name="JUnitAssertionsShouldIncludeMessage"/>
-
-    <!-- We have several cases where numerous assertions are valuable. -->
-    <exclude name="JUnitTestContainsTooManyAsserts"/>
-
-    <!-- This rule seems to have false positives when the test uses helper methods for asserts. -->
-    <exclude name="JUnitTestsShouldIncludeAssert"/>
-
-    <!-- Suffers from false positives for tests whose test cases are all defined in an abstract
-         super class. -->
-    <exclude name="TestClassWithoutTestCases"/>
+  <!-- Explicit PMD 7 category refs preserve the former JUnit, type-resolution, design, and naming rules. -->
+  <rule ref="category/java/errorprone.xml/JUnitStaticSuite"/>
+  <rule ref="category/java/errorprone.xml/JUnitSpelling"/>
+  <rule ref="category/java/errorprone.xml/UnnecessaryBooleanAssertion"/>
+  <rule ref="category/java/bestpractices.xml/SimplifiableTestAssertion"/>
+  <rule ref="category/java/bestpractices.xml/LooseCoupling">
+    <properties>
+      <!-- PMD 5.5.3 checked exactly ten java.util types in fields and signatures. -->
+      <property name="violationSuppressXPath" value="self::*[not((parent::FieldDeclaration or parent::FormalParameter or parent::MethodDeclaration or parent::ArrayType[parent::FieldDeclaration or parent::FormalParameter or parent::MethodDeclaration]) and (pmd-java:typeIsExactly('java.util.ArrayList') or pmd-java:typeIsExactly('java.util.LinkedList') or pmd-java:typeIsExactly('java.util.Vector') or pmd-java:typeIsExactly('java.util.HashMap') or pmd-java:typeIsExactly('java.util.LinkedHashMap') or pmd-java:typeIsExactly('java.util.TreeMap') or pmd-java:typeIsExactly('java.util.TreeSet') or pmd-java:typeIsExactly('java.util.HashSet') or pmd-java:typeIsExactly('java.util.LinkedHashSet') or pmd-java:typeIsExactly('java.util.Hashtable')))]"/>
+    </properties>
   </rule>
-
-  <rule ref="rulesets/java/typeresolution.xml">
-    <!-- We frequently use 'throws Exception' in test cases for convenience. -->
-    <exclude name="SignatureDeclareThrowsException"/>
+  <rule ref="category/java/errorprone.xml/CloneMethodMustImplementCloneable"/>
+  <rule ref="category/java/design.xml/SimplifyBooleanReturns"/>
+  <rule ref="category/java/design.xml/SimplifyBooleanExpressions"/>
+  <rule ref="category/java/bestpractices.xml/SwitchStmtsShouldHaveDefault"/>
+  <rule ref="category/java/design.xml/AvoidDeeplyNestedIfStmts"/>
+  <rule ref="category/java/bestpractices.xml/AvoidReassigningParameters"/>
+  <rule ref="category/java/design.xml/SwitchDensity"/>
+  <rule ref="category/java/errorprone.xml/ConstructorCallsOverridableMethod"/>
+  <rule ref="category/java/design.xml/FinalFieldCouldBeStatic"/>
+  <!-- PMD 5.5.3 default scope; keep type resolution without adding every AutoCloseable. -->
+  <rule ref="category/java/errorprone.xml/CloseResource">
+    <properties>
+      <property name="types" value="java.sql.Connection,java.sql.Statement,java.sql.ResultSet"/>
+    </properties>
   </rule>
-
-  <rule ref="rulesets/java/design.xml">
-    <!-- This can trip for guice-bound classes using a package-private constructor.
-     -->
-    <exclude name="UseUtilityClass"/>
-
-    <!-- This rule suffers from false positivies in cases where we are implementing a third-party
-         interface. -->
-    <exclude name="UseVarargs"/>
-
-    <!-- In tests we often instantiate private utility classes, which this rule does not like. -->
-    <exclude name="AccessorClassGeneration"/>
-
-    <!-- We're not currently focusing on localization. -->
-    <exclude name="SimpleDateFormatNeedsLocale"/>
-    <exclude name="UseLocaleWithCaseConversions"/>
-
-    <!-- Empty methods in abstract classes can save implementers from boilerplate. -->
-    <exclude name="EmptyMethodInAbstractClassShouldBeAbstract"/>
-    <!-- We don't follow this practice, as we often prefer to keep like constants closest to where
-         they are used. -->
-    <exclude name="FieldDeclarationsShouldBeAtStartOfClass"/>
-
-    <exclude name="GodClass"/>
-  </rule>
-
-  <rule ref="rulesets/java/naming.xml">
-    <!-- Requiring longer variable names can be cumbersome when applied globally. -->
-    <exclude name="ShortVariable"/>
-    <!-- Requiring shorter variable names can be cumbersome when applied globally. -->
-    <exclude name="LongVariable"/>
-    <!-- Short method names are useful on occasion, such as with factory methods: Rate.of(...). -->
-    <exclude name="ShortMethodName"/>
-
-    <!-- There are rare, but valid, cases where short class names are useful. -->
-    <exclude name="ShortClassName"/>
-  </rule>
+  <rule ref="category/java/errorprone.xml/NonStaticInitializer"/>
+  <rule ref="category/java/bestpractices.xml/DefaultLabelNotLastInSwitchStmt"/>
+  <rule ref="category/java/errorprone.xml/NonCaseLabelInSwitchStatement"/>
+  <rule ref="category/java/performance.xml/OptimizableToArrayCall"/>
+  <rule ref="category/java/errorprone.xml/ComparisonWithNaN"/>
+  <rule ref="category/java/errorprone.xml/EqualsNull"/>
+  <rule ref="category/java/codestyle.xml/ConfusingTernary"/>
+  <rule ref="category/java/errorprone.xml/InstantiationToGetClass"/>
+  <rule ref="category/java/errorprone.xml/IdempotentOperations"/>
+  <rule ref="category/java/design.xml/ImmutableField"/>
+  <rule ref="category/java/codestyle.xml/AvoidProtectedFieldInFinalClass"/>
+  <rule ref="category/java/errorprone.xml/AssignmentToNonFinalStatic"/>
+  <rule ref="category/java/errorprone.xml/MissingStaticMethodInNonInstantiatableClass"/>
+  <rule ref="category/java/multithreading.xml/AvoidSynchronizedAtMethodLevel"/>
+  <rule ref="category/java/errorprone.xml/ImplicitSwitchFallThrough"/>
+  <rule ref="category/java/multithreading.xml/UseNotifyAllInsteadOfNotify"/>
+  <rule ref="category/java/errorprone.xml/AvoidInstanceofChecksInCatchClause"/>
+  <rule ref="category/java/bestpractices.xml/AbstractClassWithoutAbstractMethod"/>
+  <rule ref="category/java/design.xml/SimplifyConditional"/>
+  <rule ref="category/java/errorprone.xml/CompareObjectsWithEquals"/>
+  <rule ref="category/java/bestpractices.xml/LiteralsFirstInComparisons"/>
+  <rule ref="category/java/codestyle.xml/UnnecessaryLocalBeforeReturn"/>
+  <rule ref="category/java/multithreading.xml/NonThreadSafeSingleton"/>
+  <rule ref="category/java/errorprone.xml/SingleMethodSingleton"/>
+  <rule ref="category/java/errorprone.xml/SingletonClassReturningNewInstance"/>
+  <rule ref="category/java/documentation.xml/UncommentedEmptyMethodBody"/>
+  <rule ref="category/java/documentation.xml/UncommentedEmptyConstructor"/>
+  <rule ref="category/java/multithreading.xml/UnsynchronizedStaticFormatter"/>
+  <rule ref="category/java/bestpractices.xml/PreserveStackTrace"/>
+  <rule ref="category/java/bestpractices.xml/UseCollectionIsEmpty"/>
+  <rule ref="config/pmd/compatibility.xml/ClassWithOnlyPrivateConstructorsShouldBeFinal"/>
+  <rule ref="category/java/design.xml/SingularField"/>
+  <rule ref="category/java/design.xml/AbstractClassWithoutAnyMethod"/>
+  <rule ref="category/java/performance.xml/TooFewBranchesForASwitchStatement"/>
+  <rule ref="category/java/design.xml/LogicInversion"/>
+  <rule ref="category/java/codestyle.xml/AvoidProtectedMethodInFinalClassNotExtending"/>
+  <rule ref="category/java/bestpractices.xml/ConstantsInInterface"/>
+  <rule ref="category/java/codestyle.xml/FieldNamingConventions"/>
+  <rule ref="category/java/codestyle.xml/LocalVariableNamingConventions"/>
+  <rule ref="category/java/codestyle.xml/FormalParameterNamingConventions"/>
+  <rule ref="category/java/codestyle.xml/MethodNamingConventions"/>
+  <rule ref="category/java/codestyle.xml/ClassNamingConventions"/>
+  <rule ref="category/java/codestyle.xml/AvoidDollarSigns"/>
+  <rule ref="category/java/errorprone.xml/MethodWithSameNameAsEnclosingClass"/>
+  <rule ref="category/java/errorprone.xml/SuspiciousHashcodeMethodName"/>
+  <rule ref="category/java/errorprone.xml/SuspiciousEqualsMethodName"/>
+  <rule ref="category/java/errorprone.xml/AvoidFieldNameMatchingTypeName"/>
+  <rule ref="category/java/errorprone.xml/AvoidFieldNameMatchingMethodName"/>
+  <rule ref="category/java/codestyle.xml/NoPackage"/>
+  <rule ref="category/java/codestyle.xml/PackageCase"/>
+  <rule ref="category/java/codestyle.xml/BooleanGetMethodName"/>
+  <rule ref="category/java/codestyle.xml/GenericsNaming"/>
+  <rule ref="config/pmd/compatibility.xml/AbstractNaming"/>
+  <rule ref="config/pmd/compatibility.xml/ReturnEmptyArrayRatherThanNull"/>
 </ruleset>

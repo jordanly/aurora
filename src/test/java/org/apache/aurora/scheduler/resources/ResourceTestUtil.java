@@ -25,6 +25,7 @@ import org.apache.aurora.gen.Resource;
 import org.apache.aurora.gen.ResourceAggregate;
 import org.apache.aurora.gen.TaskConfig;
 import org.apache.aurora.scheduler.base.Numbers;
+import org.apache.aurora.scheduler.mesos.MesosResourceType;
 import org.apache.aurora.scheduler.storage.entities.IResource;
 import org.apache.aurora.scheduler.storage.entities.IResourceAggregate;
 import org.apache.aurora.scheduler.storage.entities.ITaskConfig;
@@ -151,7 +152,7 @@ public final class ResourceTestUtil {
 
     Protos.Resource.Builder builder = Protos.Resource.newBuilder()
         .setType(type.equals(PORTS) ? Type.RANGES : Type.SCALAR)
-        .setName(type.getMesosName());
+        .setName(MesosResourceType.getMesosName(type));
 
     if (revocable) {
       builder.setRevocable(Protos.Resource.RevocableInfo.getDefaultInstance());

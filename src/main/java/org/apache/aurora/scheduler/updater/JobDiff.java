@@ -146,7 +146,7 @@ public final class JobDiff {
 
     Map<Integer, ITaskConfig> removedInstances = ImmutableMap.<Integer, ITaskConfig>builder()
         .putAll(diff.entriesOnlyOnLeft())
-        .putAll(Maps.transformValues(diff.entriesDiffering(), JobDiff.leftValue()))
+        .putAll(Maps.transformValues(diff.entriesDiffering(), leftValue()))
         .build();
 
     Set<Integer> addedInstances = ImmutableSet.<Integer>builder()

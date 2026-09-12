@@ -37,6 +37,7 @@ import org.apache.aurora.gen.apiConstants;
 import org.apache.aurora.scheduler.config.splitters.CommaSplitter;
 import org.apache.aurora.scheduler.config.types.DataAmount;
 import org.apache.aurora.scheduler.config.validators.ReadableFile;
+import org.apache.aurora.scheduler.mesos.MesosResourceType;
 import org.apache.aurora.scheduler.resources.ResourceType;
 import org.apache.mesos.v1.Protos;
 import org.apache.mesos.v1.Protos.CommandInfo;
@@ -205,7 +206,7 @@ public class ExecutorModule extends AbstractModule {
   private static Resource makeResource(ResourceType type, double value) {
     return Resource.newBuilder()
         .setType(Type.SCALAR)
-        .setName(type.getMesosName())
+        .setName(MesosResourceType.getMesosName(type))
         .setScalar(Scalar.newBuilder().setValue(value))
         .build();
   }

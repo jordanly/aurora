@@ -32,6 +32,7 @@ import org.apache.aurora.gen.ScheduleStatus;
 import org.apache.aurora.scheduler.TaskIdGenerator;
 import org.apache.aurora.scheduler.async.AsyncModule;
 import org.apache.aurora.scheduler.events.EventSink;
+import org.apache.aurora.scheduler.execution.TaskKiller;
 import org.apache.aurora.scheduler.mesos.Driver;
 import org.apache.aurora.scheduler.scheduling.RescheduleCalculator;
 import org.apache.aurora.scheduler.state.StateManager;
@@ -173,6 +174,7 @@ public class StateManagerBenchmarks {
           protected void configure() {
             bind(Clock.class).toInstance(Clock.SYSTEM_CLOCK);
             bind(Driver.class).toInstance(new FakeDriver());
+            bind(TaskKiller.class).to(Driver.class);
             bind(EventSink.class).toInstance(new FakeEventSink());
             // We want to measure the throughput of the state manager so we fake out the
             // rescheduling calculator.

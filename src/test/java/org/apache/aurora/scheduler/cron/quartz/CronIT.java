@@ -187,9 +187,17 @@ public class CronIT extends EasyMockTest {
     try {
       boot();
 
+      // Drive exactly two explicit starts. A wall-clock minute boundary must not
+      // inject a third execution from the calendar trigger into this collision test.
+      Scheduler scheduler = injector.getInstance(Scheduler.class);
+      scheduler.standby();
       cronJobManager.createJob(SanitizedCronJob.fromUnsanitized(
           TaskTestUtil.CONFIGURATION_MANAGER,
           CRON_JOB));
+      for (Trigger trigger : scheduler.getTriggersOfJob(Quartz.jobKey(JOB_KEY))) {
+        scheduler.pauseTrigger(trigger.getKey());
+      }
+      scheduler.start();
       cronJobManager.startJobNow(JOB_KEY);
       assertTrue(firstExecutionTriggered.await(30, TimeUnit.SECONDS));
       cronJobManager.startJobNow(JOB_KEY);

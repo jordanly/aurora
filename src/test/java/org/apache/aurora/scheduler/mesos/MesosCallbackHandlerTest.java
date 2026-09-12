@@ -13,6 +13,7 @@
  */
 package org.apache.aurora.scheduler.mesos;
 
+import java.time.Instant;
 import java.util.LinkedList;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -36,6 +37,7 @@ import org.apache.aurora.scheduler.base.Conversions;
 import org.apache.aurora.scheduler.base.SchedulerException;
 import org.apache.aurora.scheduler.events.EventSink;
 import org.apache.aurora.scheduler.events.PubsubEvent;
+import org.apache.aurora.scheduler.execution.MaintenanceRequest;
 import org.apache.aurora.scheduler.maintenance.MaintenanceController;
 import org.apache.aurora.scheduler.offers.HostOffer;
 import org.apache.aurora.scheduler.offers.OfferManager;
@@ -89,7 +91,7 @@ public class MesosCallbackHandlerTest extends EasyMockTest {
       .build();
 
   private static final HostOffer HOST_OFFER = new HostOffer(
-      OFFER,
+      new MesosOffer(OFFER),
       IHostAttributes.build(
           new HostAttributes()
               .setHost(AGENT_HOST)
@@ -110,7 +112,7 @@ public class MesosCallbackHandlerTest extends EasyMockTest {
       .build();
 
   private static final HostOffer HOST_OFFER_2 = new HostOffer(
-      OFFER_2,
+      new MesosOffer(OFFER_2),
       IHostAttributes.build(
           new HostAttributes()
               .setHost(AGENT_HOST_2)
@@ -119,7 +121,7 @@ public class MesosCallbackHandlerTest extends EasyMockTest {
               .setAttributes(ImmutableSet.of())));
 
   private static final HostOffer DRAINING_HOST_OFFER = new HostOffer(
-      OFFER,
+      new MesosOffer(OFFER),
       IHostAttributes.build(new HostAttributes()
           .setHost(AGENT_HOST)
           .setSlaveId(AGENT_ID.getValue())
@@ -248,10 +250,10 @@ public class MesosCallbackHandlerTest extends EasyMockTest {
   }
 
   private void expectOfferAttributesSaved(HostOffer offer) {
-    expect(storageUtil.attributeStore.getHostAttributes(offer.getOffer().getHostname()))
+    expect(storageUtil.attributeStore.getHostAttributes(offer.getHost()))
         .andReturn(Optional.empty());
     IHostAttributes defaultMode = IHostAttributes.build(
-        Conversions.getAttributes(offer.getOffer()).newBuilder().setMode(NONE));
+        Conversions.getAttributes(MesosOffer.toMesos(offer.getOffer())).newBuilder().setMode(NONE));
     expect(storageUtil.attributeStore.saveHostAttributes(defaultMode)).andReturn(true);
   }
 
@@ -263,7 +265,7 @@ public class MesosCallbackHandlerTest extends EasyMockTest {
 
     control.replay();
 
-    handler.handleOffers(ImmutableList.of(HOST_OFFER.getOffer()));
+    handler.handleOffers(ImmutableList.of(MesosOffer.toMesos(HOST_OFFER.getOffer())));
     assertEquals(1L, statsProvider.getLongValue("scheduler_resource_offers"));
   }
 
@@ -277,7 +279,8 @@ public class MesosCallbackHandlerTest extends EasyMockTest {
 
     control.replay();
 
-    handler.handleOffers(ImmutableList.of(HOST_OFFER.getOffer(), HOST_OFFER_2.getOffer()));
+    handler.handleOffers(ImmutableList.of(
+        MesosOffer.toMesos(HOST_OFFER.getOffer()), MesosOffer.toMesos(HOST_OFFER_2.getOffer())));
     assertEquals(2L, statsProvider.getLongValue("scheduler_resource_offers"));
   }
 
@@ -291,7 +294,8 @@ public class MesosCallbackHandlerTest extends EasyMockTest {
         .andReturn(Optional.of(draining));
 
     IHostAttributes saved = IHostAttributes.build(
-        Conversions.getAttributes(HOST_OFFER.getOffer()).newBuilder().setMode(DRAINING));
+        Conversions.getAttributes(MesosOffer.toMesos(HOST_OFFER.getOffer()))
+            .newBuilder().setMode(DRAINING));
 
     expect(storageUtil.attributeStore.saveHostAttributes(saved)).andReturn(true);
 
@@ -299,7 +303,7 @@ public class MesosCallbackHandlerTest extends EasyMockTest {
     offerManager.add(DRAINING_HOST_OFFER);
 
     control.replay();
-    handler.handleOffers(ImmutableList.of(HOST_OFFER.getOffer()));
+    handler.handleOffers(ImmutableList.of(MesosOffer.toMesos(HOST_OFFER.getOffer())));
     assertEquals(1L, statsProvider.getLongValue("scheduler_resource_offers"));
   }
 
@@ -316,7 +320,7 @@ public class MesosCallbackHandlerTest extends EasyMockTest {
 
   @Test
   public void testRescind() {
-    expect(offerManager.cancel(OFFER_ID)).andReturn(true);
+    expect(offerManager.cancel(OFFER_ID.getValue())).andReturn(true);
 
     control.replay();
 
@@ -336,18 +340,18 @@ public class MesosCallbackHandlerTest extends EasyMockTest {
     FakeScheduledThreadPoolExecutor fakeExecutor = new FakeScheduledThreadPoolExecutor();
     createHandler(false, fakeExecutor);
 
-    expect(offerManager.cancel(OFFER_ID)).andReturn(false);
-    offerManager.ban(OFFER_ID);
+    expect(offerManager.cancel(OFFER_ID.getValue())).andReturn(false);
+    offerManager.ban(OFFER_ID.getValue());
     storageUtil.expectOperations();
     expectOfferAttributesSaved(HOST_OFFER);
     offerManager.add(HOST_OFFER);
-    expect(offerManager.cancel(OFFER_ID)).andReturn(true);
+    expect(offerManager.cancel(OFFER_ID.getValue())).andReturn(true);
 
     control.replay();
     replay(offerManager);
 
     // Offer comes in, it will be put on the executor queue to add.
-    handler.handleOffers(ImmutableList.of(HOST_OFFER.getOffer()));
+    handler.handleOffers(ImmutableList.of(MesosOffer.toMesos(HOST_OFFER.getOffer())));
 
     // Rescind comes in asynchronously, and we do not see HOST_OFFER in available list so we will
     // temporarily ban it and add a command to the executor to unban it later. As the executor
@@ -377,12 +381,12 @@ public class MesosCallbackHandlerTest extends EasyMockTest {
   @Test
   public void testUpdate() {
     eventSink.post(new PubsubEvent.TaskStatusReceived(
-        STATUS.getState(),
-        Optional.ofNullable(STATUS.getSource()),
-        Optional.ofNullable(STATUS.getReason()),
+        STATUS.getState().name(),
+        Optional.ofNullable(STATUS.getSource().name()),
+        Optional.ofNullable(STATUS.getReason().name()),
         Optional.of(1000000L)
     ));
-    statusHandler.statusUpdate(STATUS);
+    statusHandler.statusUpdate(new MesosTaskUpdate(STATUS, driver));
 
     control.replay();
 
@@ -395,12 +399,12 @@ public class MesosCallbackHandlerTest extends EasyMockTest {
     Protos.TaskStatus status = STATUS.toBuilder().clearSource().build();
 
     eventSink.post(new PubsubEvent.TaskStatusReceived(
-        status.getState(),
+        status.getState().name(),
         Optional.empty(),
-        Optional.ofNullable(status.getReason()),
+        Optional.ofNullable(status.getReason().name()),
         Optional.of(1000000L)
     ));
-    statusHandler.statusUpdate(status);
+    statusHandler.statusUpdate(new MesosTaskUpdate(status, driver));
 
     control.replay();
 
@@ -413,12 +417,12 @@ public class MesosCallbackHandlerTest extends EasyMockTest {
     Protos.TaskStatus status = STATUS.toBuilder().clearReason().build();
 
     eventSink.post(new PubsubEvent.TaskStatusReceived(
-        status.getState(),
-        Optional.ofNullable(status.getSource()),
+        status.getState().name(),
+        Optional.ofNullable(status.getSource().name()),
         Optional.empty(),
         Optional.of(1000000L)
     ));
-    statusHandler.statusUpdate(status);
+    statusHandler.statusUpdate(new MesosTaskUpdate(status, driver));
 
     control.replay();
 
@@ -431,12 +435,12 @@ public class MesosCallbackHandlerTest extends EasyMockTest {
     Protos.TaskStatus status = STATUS.toBuilder().clearMessage().build();
 
     eventSink.post(new PubsubEvent.TaskStatusReceived(
-        status.getState(),
-        Optional.ofNullable(status.getSource()),
-        Optional.ofNullable(status.getReason()),
+        status.getState().name(),
+        Optional.ofNullable(status.getSource().name()),
+        Optional.ofNullable(status.getReason().name()),
         Optional.of(1000000L)
     ));
-    statusHandler.statusUpdate(status);
+    statusHandler.statusUpdate(new MesosTaskUpdate(status, driver));
 
     control.replay();
 
@@ -447,12 +451,12 @@ public class MesosCallbackHandlerTest extends EasyMockTest {
   @Test(expected = SchedulerException.class)
   public void testUpdateWithException() {
     eventSink.post(new PubsubEvent.TaskStatusReceived(
-        STATUS.getState(),
-        Optional.ofNullable(STATUS.getSource()),
-        Optional.ofNullable(STATUS.getReason()),
+        STATUS.getState().name(),
+        Optional.ofNullable(STATUS.getSource().name()),
+        Optional.ofNullable(STATUS.getReason().name()),
         Optional.of(1000000L)
     ));
-    statusHandler.statusUpdate(STATUS);
+    statusHandler.statusUpdate(new MesosTaskUpdate(STATUS, driver));
     expectLastCall().andThrow(new Storage.StorageException("Storage Failure"));
 
     control.replay();
@@ -471,13 +475,13 @@ public class MesosCallbackHandlerTest extends EasyMockTest {
     injectedLog.debug(expectedMsg);
 
     eventSink.post(new PubsubEvent.TaskStatusReceived(
-        STATUS_RECONCILIATION.getState(),
-        Optional.ofNullable(STATUS_RECONCILIATION.getSource()),
-        Optional.ofNullable(STATUS_RECONCILIATION.getReason()),
+        STATUS_RECONCILIATION.getState().name(),
+        Optional.ofNullable(STATUS_RECONCILIATION.getSource().name()),
+        Optional.ofNullable(STATUS_RECONCILIATION.getReason().name()),
         Optional.of(1000000L)
     ));
 
-    statusHandler.statusUpdate(STATUS_RECONCILIATION);
+    statusHandler.statusUpdate(new MesosTaskUpdate(STATUS_RECONCILIATION, driver));
 
     control.replay();
 
@@ -555,15 +559,44 @@ public class MesosCallbackHandlerTest extends EasyMockTest {
 
   @Test
   public void testInverseOfferWithinThreshold() {
+    control.checkOrder(true);
     clock.advance(Amount.of(4L, Time.MINUTES));
 
     driver.acceptInverseOffer(OFFER_ID, FILTER);
-    controller.drainForInverseOffer(INVERSE_OFFER);
+    controller.drainForUnavailability(new MaintenanceRequest(
+        OFFER_ID.getValue(), AGENT_ID.getValue(), Optional.empty(), Instant.ofEpochSecond(300)));
 
     control.replay();
 
     handler.handleInverseOffer(ImmutableList.of(INVERSE_OFFER));
     assertEquals(1L, statsProvider.getLongValue("scheduler_inverse_offers"));
+  }
+
+  @Test
+  public void testInverseOfferAtThresholdDoesNotDrain() {
+    clock.advance(Amount.of(3L, Time.MINUTES));
+    driver.acceptInverseOffer(OFFER_ID, FILTER);
+
+    control.replay();
+    handler.handleInverseOffer(ImmutableList.of(INVERSE_OFFER));
+    assertEquals(1L, statsProvider.getLongValue("scheduler_inverse_offers"));
+  }
+
+  @Test
+  public void testInverseOfferPassesHostnameAndConvertedStart() {
+    clock.advance(Amount.of(4L, Time.MINUTES));
+    Protos.InverseOffer withHostname = INVERSE_OFFER.toBuilder()
+        .setUrl(Protos.URL.newBuilder().setScheme("http").setAddress(
+            Protos.Address.newBuilder().setHostname("draining-host").setPort(5051)))
+        .build();
+    control.checkOrder(true);
+    driver.acceptInverseOffer(OFFER_ID, FILTER);
+    controller.drainForUnavailability(new MaintenanceRequest(
+        OFFER_ID.getValue(), AGENT_ID.getValue(), Optional.of("draining-host"),
+        Instant.ofEpochSecond(300)));
+
+    control.replay();
+    handler.handleInverseOffer(ImmutableList.of(withHostname));
   }
 
   /**

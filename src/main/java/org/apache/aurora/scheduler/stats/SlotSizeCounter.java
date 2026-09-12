@@ -71,7 +71,7 @@ class SlotSizeCounter implements Runnable {
     this.cachedCounters = requireNonNull(cachedCounters);
   }
 
-  static record MachineResource(ResourceBag size, boolean dedicated, boolean revocable) {
+  record MachineResource(ResourceBag size, boolean dedicated, boolean revocable) {
     MachineResource {
       requireNonNull(size);
     }

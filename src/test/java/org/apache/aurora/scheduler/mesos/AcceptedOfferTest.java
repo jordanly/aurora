@@ -11,7 +11,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.aurora.scheduler.resources;
+package org.apache.aurora.scheduler.mesos;
 
 import java.util.Collections;
 import java.util.Optional;
@@ -21,6 +21,8 @@ import com.google.common.collect.ImmutableSet;
 
 import org.apache.aurora.gen.AssignedTask;
 import org.apache.aurora.gen.TaskConfig;
+import org.apache.aurora.scheduler.resources.ResourceBag;
+import org.apache.aurora.scheduler.resources.ResourceType;
 import org.apache.aurora.scheduler.storage.entities.IAssignedTask;
 import org.apache.mesos.v1.Protos;
 import org.apache.mesos.v1.Protos.Resource;

@@ -29,15 +29,14 @@ import com.google.common.util.concurrent.AbstractExecutionThreadService;
 import com.google.common.util.concurrent.MoreExecutors;
 
 import org.apache.aurora.common.stats.StatsProvider;
-import org.apache.aurora.gen.ScheduleStatus;
-import org.apache.aurora.scheduler.base.Conversions;
-import org.apache.aurora.scheduler.mesos.Driver;
+import org.apache.aurora.scheduler.execution.ExecutionControl;
+import org.apache.aurora.scheduler.execution.TaskObservation;
+import org.apache.aurora.scheduler.execution.TaskUpdate;
 import org.apache.aurora.scheduler.state.StateChangeResult;
 import org.apache.aurora.scheduler.state.StateManager;
 import org.apache.aurora.scheduler.stats.CachedCounters;
 import org.apache.aurora.scheduler.storage.Storage;
 import org.apache.aurora.scheduler.storage.Storage.MutateWork.NoResult;
-import org.apache.mesos.v1.Protos.TaskStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -56,16 +55,10 @@ public class TaskStatusHandlerImpl extends AbstractExecutionThreadService
 
   private static final Logger LOG = LoggerFactory.getLogger(TaskStatusHandlerImpl.class);
 
-  @VisibleForTesting
-  static final String MEMORY_LIMIT_DISPLAY = "Task used more memory than requested.";
-
-  @VisibleForTesting
-  static final String DISK_LIMIT_DISPLAY = "Task used more disk than requested.";
-
   private final Storage storage;
   private final StateManager stateManager;
-  private final Driver driver;
-  private final BlockingQueue<TaskStatus> pendingUpdates;
+  private final ExecutionControl executionControl;
+  private final BlockingQueue<TaskUpdate> pendingUpdates;
   private final int maxBatchSize;
   private final CachedCounters counters;
 
@@ -92,14 +85,14 @@ public class TaskStatusHandlerImpl extends AbstractExecutionThreadService
       Storage storage,
       StateManager stateManager,
       StatsProvider statsProvider,
-      final Driver driver,
-      @StatusUpdateQueue BlockingQueue<TaskStatus> pendingUpdates,
+      final ExecutionControl executionControl,
+      @StatusUpdateQueue BlockingQueue<TaskUpdate> pendingUpdates,
       @MaxBatchSize Integer maxBatchSize,
       CachedCounters counters) {
 
     this.storage = requireNonNull(storage);
     this.stateManager = requireNonNull(stateManager);
-    this.driver = requireNonNull(driver);
+    this.executionControl = requireNonNull(executionControl);
     this.pendingUpdates = requireNonNull(pendingUpdates);
     this.maxBatchSize = requireNonNull(maxBatchSize);
     this.counters = requireNonNull(counters);
@@ -112,14 +105,14 @@ public class TaskStatusHandlerImpl extends AbstractExecutionThreadService
           @Override
           public void failed(State from, Throwable failure) {
             LOG.error("TaskStatusHandler failed: ", failure);
-            driver.abort();
+            executionControl.abort();
           }
         },
         MoreExecutors.newDirectExecutorService());
   }
 
   @Override
-  public void statusUpdate(TaskStatus status) {
+  public void statusUpdate(TaskUpdate status) {
     pendingUpdates.add(status);
   }
 
@@ -137,7 +130,7 @@ public class TaskStatusHandlerImpl extends AbstractExecutionThreadService
     threadReference.set(Thread.currentThread());
 
     while (isRunning()) {
-      final Queue<TaskStatus> updates = new ArrayDeque<>();
+      final Queue<TaskUpdate> updates = new ArrayDeque<>();
 
       try {
         updates.add(pendingUpdates.take());
@@ -152,24 +145,24 @@ public class TaskStatusHandlerImpl extends AbstractExecutionThreadService
 
       try {
         storage.write((NoResult.Quiet) storeProvider -> {
-          for (TaskStatus status : updates) {
-            ScheduleStatus translatedState = Conversions.convertProtoState(status.getState());
+          for (TaskUpdate update : updates) {
+            TaskObservation status = update.observe();
 
             StateChangeResult result = stateManager.changeState(
                 storeProvider,
-                status.getTaskId().getValue(),
+                status.taskId(),
                 Optional.empty(),
-                translatedState,
-                formatMessage(status));
+                status.state(),
+                status.message());
 
-            if (status.hasReason()) {
+            if (status.reason().isPresent()) {
               counters.get(statName(status, result)).incrementAndGet();
             }
           }
         });
 
-        for (TaskStatus status : updates) {
-          driver.acknowledgeStatusUpdate(status);
+        for (TaskUpdate update : updates) {
+          update.acknowledge();
         }
       } catch (RuntimeException e) {
         LOG.error("Failed to process status update batch " + updates, e);
@@ -178,43 +171,7 @@ public class TaskStatusHandlerImpl extends AbstractExecutionThreadService
   }
 
   @VisibleForTesting
-  static String statName(TaskStatus status, StateChangeResult result) {
-    return "status_update_" + status.getReason() + "_" + result;
-  }
-
-  private static Optional<String> formatMessage(TaskStatus status) {
-    Optional<String> message = Optional.empty();
-    if (status.hasMessage()) {
-      message = Optional.of(status.getMessage());
-    }
-
-    if (status.hasReason()) {
-      switch (status.getReason()) {
-        case REASON_CONTAINER_LIMITATION_MEMORY:
-          // Add a failure explanation to the user
-          if (!message.isPresent()) {
-            message = Optional.of(MEMORY_LIMIT_DISPLAY);
-          }
-          break;
-
-        case REASON_CONTAINER_LIMITATION_DISK:
-          // Add a failure explanation to the user
-          if (!message.isPresent()) {
-            message = Optional.of(DISK_LIMIT_DISPLAY);
-          }
-          break;
-
-        case REASON_EXECUTOR_UNREGISTERED:
-          // Suppress "Unregistered executor" message as it bears no meaning to the user.
-          message = Optional.empty();
-          break;
-
-        default:
-          // Message is already populated above.
-          break;
-      }
-    }
-
-    return message;
+  static String statName(TaskObservation status, StateChangeResult result) {
+    return "status_update_" + status.reason().get() + "_" + result;
   }
 }

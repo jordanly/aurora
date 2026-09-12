@@ -138,12 +138,8 @@ public interface TaskStore {
             && !query.getSlaveHosts().contains(task.getAssignedTask().getSlaveHost())) {
           return false;
         }
-        if (!query.getInstanceIds().isEmpty()
-            && !query.getInstanceIds().contains(task.getAssignedTask().getInstanceId())) {
-          return false;
-        }
-
-        return true;
+        return query.getInstanceIds().isEmpty()
+            || query.getInstanceIds().contains(task.getAssignedTask().getInstanceId());
       };
     }
   }

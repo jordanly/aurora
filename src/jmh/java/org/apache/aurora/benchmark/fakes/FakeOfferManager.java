@@ -19,10 +19,10 @@ import com.google.common.collect.ImmutableList;
 
 import org.apache.aurora.scheduler.base.TaskGroupKey;
 import org.apache.aurora.scheduler.events.PubsubEvent;
+import org.apache.aurora.scheduler.execution.PreparedTask;
 import org.apache.aurora.scheduler.filter.SchedulingFilter.ResourceRequest;
 import org.apache.aurora.scheduler.offers.HostOffer;
 import org.apache.aurora.scheduler.offers.OfferManager;
-import org.apache.mesos.v1.Protos;
 
 public class FakeOfferManager implements OfferManager {
   @Override
@@ -31,17 +31,17 @@ public class FakeOfferManager implements OfferManager {
   }
 
   @Override
-  public boolean cancel(Protos.OfferID offerId) {
+  public boolean cancel(String offerId) {
     return false;
   }
 
   @Override
-  public void ban(Protos.OfferID offerId) {
+  public void ban(String offerId) {
     // no-op
   }
 
   @Override
-  public void launchTask(Protos.OfferID offerId, Protos.TaskInfo taskInfo) throws LaunchException {
+  public void launchTask(String offerId, PreparedTask task) throws LaunchException {
     // no-op
   }
 
@@ -51,7 +51,7 @@ public class FakeOfferManager implements OfferManager {
   }
 
   @Override
-  public Optional<HostOffer> get(Protos.AgentID agentId) {
+  public Optional<HostOffer> get(String agentId) {
     return Optional.empty();
   }
 
@@ -61,7 +61,7 @@ public class FakeOfferManager implements OfferManager {
   }
 
   @Override
-  public Optional<HostOffer> getMatching(Protos.AgentID slaveId, ResourceRequest resourceRequest) {
+  public Optional<HostOffer> getMatching(String agentId, ResourceRequest resourceRequest) {
     return Optional.empty();
   }
 

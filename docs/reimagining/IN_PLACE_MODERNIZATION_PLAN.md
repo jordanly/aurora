@@ -2,11 +2,12 @@
 
 Active plan, 2026-09-11. This supersedes the parallel scheduler strategy and the
 JAVA-11 proposal to retire the original scheduler, Python code and UI.
-INPLACE-00 is complete; the first INPLACE-01 increment builds and tests the original
-Java application on `codex/in-place-java25`. Full build qualification remains open; see the
-[current build status](INPLACE01_BUILD_STATUS.md) for executed evidence and gaps.
-Follow-on coverage, identity extraction and storage-contract work is recorded in
-[INPLACE-02 progress](INPLACE02_BEHAVIOR_STATUS.md).
+INPLACE-00 is complete. The original Java 25 build, behavior gates, execution
+boundary extraction and seven-store SQLite backend are implemented on
+`codex/in-place-java25`. See the [current implementation and qualification
+status](INPLACE02_04_IMPLEMENTATION_STATUS.md) for INPLACE-01 through INPLACE-04,
+executed evidence and remaining environment/HA boundaries. Earlier build and
+behavior receipts remain historical records.
 
 ## The architectural decision
 

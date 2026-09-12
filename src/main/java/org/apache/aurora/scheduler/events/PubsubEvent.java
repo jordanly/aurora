@@ -25,8 +25,6 @@ import org.apache.aurora.gen.ScheduleStatus;
 import org.apache.aurora.scheduler.base.Tasks;
 import org.apache.aurora.scheduler.storage.entities.IHostAttributes;
 import org.apache.aurora.scheduler.storage.entities.IScheduledTask;
-import org.apache.mesos.v1.Protos;
-import org.apache.mesos.v1.Protos.TaskStatus;
 
 import static java.util.Objects.requireNonNull;
 
@@ -57,10 +55,7 @@ public interface PubsubEvent {
 
     @Override
     public boolean equals(Object o) {
-      if (!(o instanceof TasksDeleted other)) {
-        return false;
-      }
-      return Objects.equals(tasks, other.tasks);
+      return o instanceof TasksDeleted other && Objects.equals(tasks, other.tasks);
     }
 
     @Override
@@ -188,10 +183,8 @@ public interface PubsubEvent {
 
     @Override
     public boolean equals(Object o) {
-      if (!(o instanceof HostAttributesChanged other)) {
-        return false;
-      }
-      return Objects.equals(attributes, other.getAttributes());
+      return o instanceof HostAttributesChanged other
+          && Objects.equals(attributes, other.getAttributes());
     }
 
     @Override
@@ -227,15 +220,15 @@ public interface PubsubEvent {
   }
 
   class TaskStatusReceived implements PubsubEvent {
-    private final Protos.TaskState state;
-    private final Optional<TaskStatus.Source> source;
-    private final Optional<TaskStatus.Reason> reason;
+    private final String state;
+    private final Optional<String> source;
+    private final Optional<String> reason;
     private final Optional<Long> epochTimestampMicros;
 
     public TaskStatusReceived(
-        Protos.TaskState state,
-        Optional<TaskStatus.Source> source,
-        Optional<TaskStatus.Reason> reason,
+        String state,
+        Optional<String> source,
+        Optional<String> reason,
         Optional<Long> epochTimestampMicros) {
 
       this.state = requireNonNull(state);
@@ -244,15 +237,15 @@ public interface PubsubEvent {
       this.epochTimestampMicros = requireNonNull(epochTimestampMicros);
     }
 
-    public Protos.TaskState getState() {
+    public String getState() {
       return state;
     }
 
-    public Optional<TaskStatus.Source> getSource() {
+    public Optional<String> getSource() {
       return source;
     }
 
-    public Optional<TaskStatus.Reason> getReason() {
+    public Optional<String> getReason() {
       return reason;
     }
 

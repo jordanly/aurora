@@ -23,6 +23,8 @@ import com.google.common.collect.Iterables;
 import org.apache.aurora.common.quantity.Amount;
 import org.apache.aurora.common.quantity.Data;
 import org.apache.aurora.scheduler.base.Numbers;
+import org.apache.aurora.scheduler.mesos.MesosOffer;
+import org.apache.aurora.scheduler.mesos.MesosResourceType;
 import org.apache.aurora.scheduler.offers.HostOffer;
 import org.apache.aurora.scheduler.offers.OfferManager;
 import org.apache.aurora.scheduler.resources.ResourceType;
@@ -110,7 +112,7 @@ final class Offers {
             .setHostname(String.format(attributes.getHost()))
             .build();
 
-        offers.add(new HostOffer(offer, attributes));
+        offers.add(new HostOffer(new MesosOffer(offer), attributes));
       }
 
       return offers.build();
@@ -119,7 +121,7 @@ final class Offers {
     private static Protos.Resource makeScalar(ResourceType type, double value) {
       return Protos.Resource.newBuilder()
           .setType(Protos.Value.Type.SCALAR)
-          .setName(type.getMesosName())
+          .setName(MesosResourceType.getMesosName(type))
           .setScalar(Protos.Value.Scalar.newBuilder().setValue(value).build())
           .build();
     }
@@ -127,7 +129,7 @@ final class Offers {
     private static Protos.Resource makeRange(ResourceType type, Iterable<Integer> values) {
       return Protos.Resource.newBuilder()
           .setType(Protos.Value.Type.RANGES)
-          .setName(type.getMesosName())
+          .setName(MesosResourceType.getMesosName(type))
           .setRanges(Protos.Value.Ranges.newBuilder().addAllRange(
               Iterables.transform(Numbers.toRanges(values), Numbers.RANGE_TRANSFORM)))
           .build();

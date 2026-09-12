@@ -89,7 +89,7 @@ interface SlaGroup {
         task -> quantityOf(getTaskResources(task.getAssignedTask().getTask(), DISK_MB))
     ));
 
-    private SlaGroup group;
+    private final SlaGroup group;
     GroupType(SlaGroup group) {
       this.group = group;
     }

@@ -163,7 +163,7 @@ public class VersionedMesosSchedulerImpl implements Scheduler {
   @Override
   public void received(Mesos mesos, Event event) {
     countEventMetrics(event);
-    switch(event.getType()) {
+    switch (event.getType()) {
       case SUBSCRIBED:
         Event.Subscribed subscribed = event.getSubscribed();
         if (isRegistered.get()) {

@@ -1,0 +1,24 @@
+{
+  "renames": [
+    {
+      "originalPath": "src/main/java/org/apache/aurora/scheduler/resources/AcceptedOffer.java",
+      "currentPath": "src/main/java/org/apache/aurora/scheduler/mesos/AcceptedOffer.java",
+      "reason": "Reviewed resource-to-mesos package relocation."
+    },
+    {
+      "originalPath": "src/main/java/org/apache/aurora/scheduler/resources/MesosResourceConverter.java",
+      "currentPath": "src/main/java/org/apache/aurora/scheduler/mesos/MesosResourceConverter.java",
+      "reason": "Reviewed resource-to-mesos package relocation."
+    },
+    {
+      "originalPath": "src/test/java/org/apache/aurora/scheduler/resources/AcceptedOfferTest.java",
+      "currentPath": "src/test/java/org/apache/aurora/scheduler/mesos/AcceptedOfferTest.java",
+      "reason": "Reviewed resource-to-mesos package relocation."
+    },
+    {
+      "originalPath": "src/test/java/org/apache/aurora/scheduler/resources/MesosResourceConverterTest.java",
+      "currentPath": "src/test/java/org/apache/aurora/scheduler/mesos/MesosResourceConverterTest.java",
+      "reason": "Reviewed resource-to-mesos package relocation."
+    }
+  ]
+}

@@ -17,8 +17,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
+import org.apache.aurora.scheduler.mesos.MesosResourceManager;
 import org.apache.aurora.scheduler.resources.ResourceBag;
-import org.apache.aurora.scheduler.resources.ResourceManager;
 import org.apache.aurora.scheduler.storage.entities.ITaskConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -59,7 +59,7 @@ public class ExecutorSettings {
 
     String name = task.getExecutorConfig().getName();
     if (config.containsKey(name)) {
-      return ResourceManager.bagFromMesosResources(
+      return MesosResourceManager.bagFromMesosResources(
           config.get(name).getExecutor().getResourcesList());
     } else {
       LOG.warn("No executor configuration found for " + name);

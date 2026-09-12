@@ -43,6 +43,8 @@ import org.apache.aurora.scheduler.base.TaskTestUtil;
 import org.apache.aurora.scheduler.filter.SchedulingFilter;
 import org.apache.aurora.scheduler.filter.SchedulingFilter.Veto;
 import org.apache.aurora.scheduler.filter.SchedulingFilterImpl;
+import org.apache.aurora.scheduler.mesos.MesosOffer;
+import org.apache.aurora.scheduler.mesos.MesosResourceType;
 import org.apache.aurora.scheduler.mesos.TaskExecutors;
 import org.apache.aurora.scheduler.offers.HostOffer;
 import org.apache.aurora.scheduler.preemptor.PreemptionVictimFilter.PreemptionVictimFilterImpl;
@@ -626,10 +628,10 @@ public class PreemptionVictimFilterTest extends EasyMockTest {
     if (revocable) {
       resources = ImmutableList.<Resource>builder()
           .addAll(FluentIterable.from(resources)
-              .filter(e -> !e.getName().equals(CPUS.getMesosName()))
+              .filter(e -> !e.getName().equals(MesosResourceType.getMesosName(CPUS)))
               .toList())
           .add(Protos.Resource.newBuilder()
-              .setName(CPUS.getMesosName())
+              .setName(MesosResourceType.getMesosName(CPUS))
               .setType(Protos.Value.Type.SCALAR)
               .setScalar(Protos.Value.Scalar.newBuilder().setValue(cpu))
               .setRevocable(Resource.RevocableInfo.newBuilder())
@@ -644,7 +646,7 @@ public class PreemptionVictimFilterTest extends EasyMockTest {
     builder.addAllResources(resources);
 
     return Optional.of(new HostOffer(
-        builder.build(),
+        new MesosOffer(builder.build()),
         IHostAttributes.build(new HostAttributes().setMode(NONE))));
   }
 

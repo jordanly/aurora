@@ -19,10 +19,8 @@ import com.google.common.annotations.VisibleForTesting;
 
 import org.apache.aurora.scheduler.base.TaskGroupKey;
 import org.apache.aurora.scheduler.events.PubsubEvent.EventSubscriber;
+import org.apache.aurora.scheduler.execution.PreparedTask;
 import org.apache.aurora.scheduler.filter.SchedulingFilter.ResourceRequest;
-import org.apache.mesos.v1.Protos;
-import org.apache.mesos.v1.Protos.AgentID;
-import org.apache.mesos.v1.Protos.OfferID;
 
 import static org.apache.aurora.scheduler.events.PubsubEvent.HostAttributesChanged;
 
@@ -45,14 +43,14 @@ public interface OfferManager extends EventSubscriber {
    * @param offerId Cancelled offer.
    * @return A boolean on whether or not the offer was successfully cancelled.
    */
-  boolean cancel(OfferID offerId);
+  boolean cancel(String offerId);
 
   /**
    * Exclude an offer from being matched against all tasks.
    *
    * @param offerId Offer ID to ban.
    */
-  void ban(OfferID offerId);
+  void ban(String offerId);
 
   /**
    * Notifies the offer queue that a host's attributes have changed.
@@ -64,10 +62,10 @@ public interface OfferManager extends EventSubscriber {
   /**
    * Gets the offer for the given slave ID.
    *
-   * @param slaveId Slave ID to get the offer for.
-   * @return The offer for the slave ID.
+   * @param agentId Agent ID to get the offer for.
+   * @return The offer for the agent ID.
    */
-  Optional<HostOffer> get(AgentID slaveId);
+  Optional<HostOffer> get(String agentId);
 
   /**
    * Gets all offers that the scheduler is holding, excluding banned offers.
@@ -79,11 +77,11 @@ public interface OfferManager extends EventSubscriber {
   /**
    * Gets the offer for the given slave ID if satisfies the supplied {@link ResourceRequest}.
    *
-   * @param slaveId Slave ID to get the offer for.
+   * @param agentId Agent ID to get the offer for.
    * @param resourceRequest The request that the offer should satisfy.
-   * @return An option containing the offer for the slave ID if it fits.
+   * @return An option containing the offer for the agent ID if it fits.
    */
-  Optional<HostOffer> getMatching(AgentID slaveId, ResourceRequest resourceRequest);
+  Optional<HostOffer> getMatching(String agentId, ResourceRequest resourceRequest);
 
   /**
    * Gets all offers that the scheduler is holding that satisfy the supplied
@@ -102,7 +100,7 @@ public interface OfferManager extends EventSubscriber {
    * @param task Matched task info.
    * @throws LaunchException If there was an error launching the task.
    */
-  void launchTask(OfferID offerId, Protos.TaskInfo task) throws LaunchException;
+  void launchTask(String offerId, PreparedTask task) throws LaunchException;
 
   /**
    * Thrown when there was an unexpected failure trying to launch a task.

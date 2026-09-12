@@ -38,7 +38,7 @@ import org.apache.aurora.scheduler.async.AsyncModule.AsyncExecutor;
 import org.apache.aurora.scheduler.base.Query;
 import org.apache.aurora.scheduler.events.PubsubEvent.TaskStateChange;
 import org.apache.aurora.scheduler.events.PubsubEventModule;
-import org.apache.aurora.scheduler.mesos.Driver;
+import org.apache.aurora.scheduler.execution.TaskKiller;
 import org.apache.aurora.scheduler.state.PubsubTestUtil;
 import org.apache.aurora.scheduler.storage.Storage;
 import org.apache.aurora.scheduler.storage.entities.IScheduledTask;
@@ -55,7 +55,7 @@ import static org.junit.Assert.assertEquals;
 
 public class KillRetryTest extends EasyMockTest {
 
-  private Driver driver;
+  private TaskKiller taskKiller;
   private StorageTestUtil storageUtil;
   private BackoffStrategy backoffStrategy;
   private FakeScheduledExecutor clock;
@@ -64,7 +64,7 @@ public class KillRetryTest extends EasyMockTest {
 
   @Before
   public void setUp() throws Exception {
-    driver = createMock(Driver.class);
+    taskKiller = createMock(TaskKiller.class);
     storageUtil = new StorageTestUtil(this);
     storageUtil.expectOperations();
     backoffStrategy = createMock(BackoffStrategy.class);
@@ -79,7 +79,7 @@ public class KillRetryTest extends EasyMockTest {
         new AbstractModule() {
           @Override
           protected void configure() {
-            bind(Driver.class).toInstance(driver);
+            bind(TaskKiller.class).toInstance(taskKiller);
             bind(Storage.class).toInstance(storageUtil.storage);
             bind(ScheduledExecutorService.class).annotatedWith(AsyncExecutor.class)
                 .toInstance(executorMock);
@@ -118,7 +118,7 @@ public class KillRetryTest extends EasyMockTest {
 
   private void expectRetry(String taskId, long prevRetryMs, long nextRetryMs) {
     storageUtil.expectTaskFetch(killingQuery(taskId), makeTask(taskId, KILLING));
-    driver.killTask(taskId);
+    taskKiller.killTask(taskId);
     expectGetRetryDelay(prevRetryMs, nextRetryMs);
   }
 

@@ -14,6 +14,7 @@
 package org.apache.aurora.scheduler.state;
 
 import java.util.List;
+
 import javax.inject.Singleton;
 
 import com.beust.jcommander.Parameter;
@@ -26,8 +27,10 @@ import org.apache.aurora.scheduler.app.MoreModules;
 import org.apache.aurora.scheduler.config.CliOptions;
 import org.apache.aurora.scheduler.config.splitters.CommaSplitter;
 import org.apache.aurora.scheduler.events.PubsubEventModule;
+import org.apache.aurora.scheduler.execution.TaskFactory;
 import org.apache.aurora.scheduler.mesos.MesosTaskFactory;
 import org.apache.aurora.scheduler.mesos.MesosTaskFactory.MesosTaskFactoryImpl;
+import org.apache.aurora.scheduler.mesos.MesosTaskFactoryAdapter;
 import org.apache.aurora.scheduler.scheduling.TaskAssignerImplModule;
 import org.apache.aurora.scheduler.state.UUIDGenerator.UUIDGeneratorImpl;
 
@@ -57,6 +60,7 @@ public class StateModule extends AbstractModule {
       install(module);
     }
     bind(MesosTaskFactory.class).to(MesosTaskFactoryImpl.class);
+    bind(TaskFactory.class).to(MesosTaskFactoryAdapter.class);
 
     bind(StateManager.class).to(StateManagerImpl.class);
     bind(StateManagerImpl.class).in(Singleton.class);

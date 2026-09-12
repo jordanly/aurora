@@ -42,6 +42,11 @@ allprojects {
     useJUnit()
     maxParallelForks = 1
     maxHeapSize = '512m'
+    jvmArgs '--enable-native-access=ALL-UNNAMED'
+    doFirst {
+      // Crash probes launch a separate JVM with the same tested classes and pinned JDBC driver.
+      systemProperty 'aurora.test.classpath', classpath.asPath
+    }
   }
 
   group = 'org.apache.aurora'
@@ -100,6 +105,11 @@ For more details, please see https://issues.apache.org/jira/browse/AURORA-1169
   ext.zookeeperRev = '3.4.8'
 
   configurations.all {
+    // Analyzer dependencies are isolated from the application's historical dependency pins.
+    if (name in ['checkstyle', 'checkstyleLegacy', 'checkstyleFixtureSupport',
+                 'pmd', 'pmdFixtureSupport', 'spotbugs']) {
+      return
+    }
     exclude module: 'junit-dep'
     // Multibindings has been part of Guice core since 4.2.
     exclude group: 'com.google.inject.extensions', module: 'guice-multibindings'
@@ -141,34 +151,38 @@ For more details, please see https://issues.apache.org/jira/browse/AURORA-1169
  * into the resources directory of the Scheduler, so it must be built before the Scheduler.
  */
 project(':ui') {
-  // The original npm/webpack application remains part of the full build.
-  // Node and npm must be installed by the developer; no obsolete Gradle Node plugin is loaded.
-  tasks.register('pluginInstall', Exec) {
-    workingDir projectDir
-    commandLine 'npm', 'install', 'plugin/'
-  }
+  def launcher = rootProject.file('build-support/java/ui.py')
+  def bootstrap = rootProject.file('build-support/java/bootstrap.py')
+  def pins = rootProject.file('build-support/java/ui-tools.json')
+  def npmCommand = ['python3', launcher.absolutePath]
+      + (gradle.startParameter.offline ? ['--offline'] : [])
+  // The local customization plugin is installed by the same checked-in lockfile.
   tasks.register('install', Exec) {
-    dependsOn 'pluginInstall'
     workingDir projectDir
-    commandLine 'npm', 'install'
+    inputs.files(launcher, bootstrap, pins, file('package.json'), file('package-lock.json'),
+        file('.npmrc'), file('plugin/package.json'))
+    outputs.dir(file('node_modules'))
+    commandLine npmCommand + ['ci']
   }
+  tasks.register('pluginInstall') { dependsOn 'install' }
   tasks.register('lint', Exec) {
     dependsOn 'install'
     workingDir projectDir
-    commandLine 'npm', 'run', 'lint'
+    commandLine npmCommand + ['run', 'lint']
   }
   tasks.register('npm_test', Exec) {
     dependsOn 'install'
     workingDir projectDir
-    commandLine 'npm', 'test', '--', '--runInBand'
+    commandLine npmCommand + ['test', '--', '--runInBand']
   }
   tasks.register('test_') { dependsOn 'npm_test' }
   tasks.register('webpack', Exec) {
     dependsOn 'install'
     workingDir projectDir
-    inputs.files(fileTree('src'), fileTree('plugin'), file('webpack.config.js'))
+    inputs.files(fileTree('src'), fileTree('plugin'), file('webpack.config.js'),
+        file('package-lock.json'), file('package.json'), launcher, bootstrap, pins)
     outputs.dir(rootProject.file('src/main/resources/scheduler/assets/js'))
-    commandLine 'node', 'node_modules/.bin/webpack'
+    commandLine npmCommand + ['run', 'build']
   }
   tasks.named('build') { dependsOn 'lint', 'webpack', 'npm_test' }
 }
@@ -176,17 +190,22 @@ project(':ui') {
 // building the Scheduler JAR, the JS bundle is built first.
 tasks.processResources.dependsOn(':ui:webpack')
 
-project(':commons') {
-  // The original commons build required license checks. Keep that gate explicit
-  // until the old license plugin is ported; a full build must not silently omit it.
-  ['licenseMain', 'licenseTest'].each { taskName ->
-    tasks.register(taskName) {
-      group = 'verification'
-      doLast {
-        throw new GradleException("${path}: original license integration awaits Gradle 9 port")
-      }
-    }
+// Preserve the original Java header scope without the obsolete license plugin.
+def registerLicenseCheck = { Project owner, String taskName, List<File> roots ->
+  def checker = rootProject.file('build-support/java/check-license-headers.py')
+  def header = rootProject.file('config/checkstyle/apache.header')
+  owner.tasks.register(taskName, Exec) {
+    group = 'verification'
+    inputs.files(checker, header)
+    roots.each { sourceRoot -> inputs.files(owner.fileTree(sourceRoot) { include '**/*.java' }) }
+    commandLine(['python3', checker.absolutePath, '--header', header.absolutePath]
+        + roots.collect { it.absolutePath } + ['--extensions', '.java'])
   }
+}
+
+project(':commons') {
+  registerLicenseCheck(project, 'licenseMain', [file('src/main/java')])
+  registerLicenseCheck(project, 'licenseTest', [file('src/test/java')])
   tasks.named('check') { dependsOn 'licenseMain', 'licenseTest' }
 
   dependencies {
@@ -367,6 +386,8 @@ dependencies {
   api "org.jboss.resteasy:resteasy-jaxrs:${resteasyRev}"
   // The existing Jackson/JAX-RS error provider needs annotations no longer bundled with the JDK.
   runtimeOnly 'javax.xml.bind:jaxb-api:2.3.1'
+  // SQLite 3.53.4 includes the upstream WAL-reset fix; qualify on this Pi through JDBC.
+  runtimeOnly 'org.xerial:sqlite-jdbc:3.53.4.0'
   api 'javax.inject:javax.inject:1'
   api "javax.servlet:javax.servlet-api:${servletRev}"
   api "org.antlr:stringtemplate:${stringTemplateRev}"
@@ -390,26 +411,61 @@ dependencies {
   testImplementation "org.powermock:powermock-api-easymock:1.6.4"
 }
 
-// Preserve quality entrypoints, with explicit failures for integrations not yet ported.
-// The bounded Java 25 baseline does not claim these old analyzers understand Java 25.
+// Register the benchmark source set before analyzer task creation.
+sourceSets.create('jmh') {
+  compileClasspath += sourceSets.main.output + sourceSets.test.output
+  runtimeClasspath += sourceSets.main.output + sourceSets.test.output
+}
+
+// Run the original analyzer rules with Java 25-capable tools when requested.
 def runCodeQuality = project.hasProperty('q')
 tasks.withType(Checkstyle).configureEach { enabled = runCodeQuality }
 tasks.withType(Pmd).configureEach { enabled = runCodeQuality }
-checkstyle { toolVersion = '7.3' }
+checkstyle { toolVersion = '14.1.0' }
 pmd {
-  toolVersion = '5.5.3'
+  toolVersion = '7.27.0'
+  ruleSets = []
   consoleOutput = true
+}
+def pmdRuleResources = tasks.register('preparePmdRules', Sync) {
+  from('config/pmd') { into 'config/pmd' }
+  into layout.buildDirectory.dir('pmd-rule-resources')
+}
+tasks.withType(Pmd).configureEach {
+  pmdClasspath += files(pmdRuleResources)
 }
 tasks.named('pmdMain') { ruleSetFiles = files('config/pmd/common.xml', 'config/pmd/main.xml') }
 tasks.named('pmdTest') { ruleSetFiles = files('config/pmd/common.xml', 'config/pmd/test.xml') }
-['spotbugsMain', 'spotbugsTest', 'licenseMain', 'licenseTest'].each { taskName ->
-  tasks.register(taskName) {
+tasks.named('pmdJmh') { ruleSetFiles = files('config/pmd/jmh.xml') }
+configurations.create('spotbugs')
+dependencies { spotbugs 'com.github.spotbugs:spotbugs:4.10.4' }
+['main', 'test', 'jmh'].each { sourceName ->
+  def sourceSet = sourceSets[sourceName]
+  def reportFile = layout.buildDirectory.file("reports/spotbugs/${sourceName}.xml")
+  def filterFile = file('config/spotbugs/excludeFilter.xml')
+  def analysisClasses = sourceSet.output.classesDirs
+  def auxiliaryClasses = sourceSet.compileClasspath
+  tasks.register("spotbugs${sourceName.capitalize()}", JavaExec) {
     group = 'verification'
-    doLast { throw new GradleException("${taskName}: original quality integration awaits Java 25/Gradle 9 port") }
+    dependsOn sourceSet.compileJavaTaskName
+    classpath = configurations.spotbugs
+    mainClass = 'edu.umd.cs.findbugs.LaunchAppropriateUI'
+    maxHeapSize = '512m'
+    inputs.files(analysisClasses, auxiliaryClasses, filterFile)
+    outputs.file(reportFile)
+    doFirst {
+      reportFile.get().asFile.parentFile.mkdirs()
+      args = ['-textui', '-effort:max', '-medium', '-exitcode', '-xml:withMessages',
+          '-output', reportFile.get().asFile.absolutePath, '-exclude', filterFile.absolutePath,
+          '-auxclasspath', auxiliaryClasses.asPath] + analysisClasses.files.collect { it.absolutePath }
+    }
   }
 }
+['licenseMain', 'licenseTest'].each { taskName ->
+  registerLicenseCheck(project, taskName, [file('src/main/java'), file('src/test/java')])
+}
 if (runCodeQuality) {
-  tasks.named('check') { dependsOn 'spotbugsMain', 'spotbugsTest', 'licenseMain', 'licenseTest' }
+  tasks.named('check') { dependsOn 'spotbugsMain', 'spotbugsTest', 'spotbugsJmh', 'licenseMain', 'licenseTest' }
 }
 
 // Compile every original test class; Java compilation does not need the UI bundle.
@@ -417,7 +473,8 @@ tasks.named('compileTestJava') {
   classpath = files(sourceSets.main.output.classesDirs, configurations.testCompileClasspath)
 }
 tasks.register('processJavaResources', Copy) {
-  from sourceSets.main.resources
+  from(sourceSets.main.resources) { exclude 'scheduler/assets/js/bundle.js*' }
+  mustRunAfter project(':ui').tasks.named('webpack')
   from tasks.named('generateBuildProperties')
   into layout.buildDirectory.dir('java-resources')
 }
@@ -560,12 +617,6 @@ tasks.register('verifyOriginalBehavior') {
 }
 
 // Keep the complete original benchmark source set without the obsolete JMH plugin.
-sourceSets {
-  jmh {
-    compileClasspath += sourceSets.main.output + sourceSets.test.output
-    runtimeClasspath += sourceSets.main.output + sourceSets.test.output
-  }
-}
 configurations.jmhImplementation.extendsFrom(configurations.testImplementation)
 configurations.jmhRuntimeOnly.extendsFrom(configurations.testRuntimeOnly)
 dependencies {
@@ -590,6 +641,7 @@ run {
 }
 
 startScripts {
+  outputDir = layout.buildDirectory.dir('scheduler-scripts').get().asFile
   def environmentClasspathPrefix = System.env.CLASSPATH_PREFIX
 
   if (!environmentClasspathPrefix?.trim()) {
@@ -605,11 +657,133 @@ startScripts {
 task moreStartScripts(type: CreateStartScripts) {
   mainClass = 'org.apache.aurora.scheduler.storage.durability.RecoveryTool'
   applicationName = 'recovery-tool'
-  outputDir = new File(project.buildDir, 'scripts')
+  outputDir = layout.buildDirectory.dir('recovery-scripts').get().asFile
   classpath = jar.outputs.files + project.configurations.runtimeClasspath
 }
 
 distributions.main.contents.into('bin') {
   from(moreStartScripts)
   filePermissions { unix(0755) }
+}
+
+// Execute both installed original entrypoints on the pinned runtime, without starting services.
+tasks.register('verifyInstalledDistribution', Exec) {
+  group = 'verification'
+  description = 'Verify packaged Java/UI artifacts and original scheduler/recovery launchers.'
+  def installed = tasks.named('installDist')
+  def checker = file('build-support/java/verify-distribution.py')
+  def receipt = layout.buildDirectory.file('distribution-verification.json')
+  dependsOn installed
+  inputs.file(checker)
+  inputs.dir(installed.map { it.destinationDir })
+  outputs.file(receipt)
+  outputs.upToDateWhen { false }
+  commandLine 'python3', checker.absolutePath,
+      installed.get().destinationDir.absolutePath, '--receipt', receipt.get().asFile.absolutePath
+}
+
+// Gradle supplies logging to its PMD worker and excludes it from the PMD configuration.
+// The standalone source-launcher fixture needs PMD's declared logging API explicitly.
+configurations.create('pmdFixtureSupport')
+dependencies {
+  pmdFixtureSupport 'org.slf4j:slf4j-simple:1.7.36'
+  pmdFixtureSupport 'junit:junit:4.12'
+}
+def pmdFixtureClasspath = configurations.pmd + configurations.pmdFixtureSupport +
+    sourceSets.test.compileClasspath
+tasks.register('verifyPmdMigration', Exec) {
+  group = 'verification'
+  description = 'Verify historical PMD rule mappings against positive and negative Java fixtures.'
+  def fixture = file('build-support/java/PmdMigrationFixtures.java')
+  inputs.files(fileTree('config/pmd'), fixture, pmdFixtureClasspath)
+  workingDir rootDir
+  doFirst {
+    commandLine new File(System.getProperty('java.home'), 'bin/java').absolutePath,
+        '-cp', pmdFixtureClasspath.asPath, fixture.absolutePath
+  }
+}
+
+tasks.register('verifyOriginalQuality') {
+  group = 'verification'
+  description = 'Run every original Java quality gate explicitly; requires -Pq.'
+  dependsOn 'checkstyleMain', 'checkstyleTest', 'pmdMain', 'pmdTest',
+      'spotbugsMain', 'spotbugsTest', 'licenseMain', 'licenseTest',
+      ':commons:licenseMain', ':commons:licenseTest', 'verifyPmdMigration'
+  doLast {
+    if (!runCodeQuality) {
+      throw new GradleException('verifyOriginalQuality requires -Pq to enable all analyzer gates')
+    }
+  }
+}
+if (runCodeQuality) {
+  tasks.named('check') { dependsOn 'verifyPmdMigration' }
+}
+
+// Keep the old analyzer only as a comparison oracle for migration fixtures.
+configurations.create('checkstyleLegacy')
+configurations.create('checkstyleFixtureSupport')
+dependencies {
+  checkstyleLegacy 'com.puppycrawl.tools:checkstyle:7.3'
+  checkstyleLegacy 'commons-cli:commons-cli:1.3.1'
+  checkstyleLegacy 'commons-logging:commons-logging:1.2'
+  checkstyleLegacy 'antlr:antlr:2.7.7'
+  // Gradle's worker supplies this dependency; the standalone CLI fixture needs its own copy.
+  checkstyleFixtureSupport 'commons-logging:commons-logging:1.2'
+}
+def checkstyleFixtureClasspath = configurations.checkstyle + configurations.checkstyleFixtureSupport
+tasks.register('verifyCheckstyleMigration', Exec) {
+  group = 'verification'
+  def fixture = file('config/checkstyle/verify-migration.py')
+  def receipt = layout.buildDirectory.file('reports/checkstyle/migration-fixtures.json')
+  inputs.files(fileTree('config/checkstyle'), configurations.checkstyleLegacy,
+      checkstyleFixtureClasspath)
+  outputs.file(receipt)
+  workingDir rootDir
+  doFirst {
+    commandLine 'python3', fixture.absolutePath,
+        '--java', new File(System.getProperty('java.home'), 'bin/java').absolutePath,
+        '--old-classpath', configurations.checkstyleLegacy.asPath,
+        '--new-classpath', checkstyleFixtureClasspath.asPath,
+        '--receipt', receipt.get().asFile.absolutePath
+  }
+}
+tasks.register('verifySpotBugsMigration', Exec) {
+  group = 'verification'
+  def fixture = file('build-support/java/SpotBugsMigrationFixtures.java')
+  inputs.files(fileTree('config/spotbugs'), configurations.spotbugs, fixture)
+  workingDir rootDir
+  doFirst {
+    commandLine new File(System.getProperty('java.home'), 'bin/java').absolutePath,
+        '-cp', configurations.spotbugs.asPath, fixture.absolutePath
+  }
+}
+tasks.named('verifyOriginalQuality') {
+  dependsOn 'verifyCheckstyleMigration', 'verifySpotBugsMigration'
+}
+if (runCodeQuality) {
+  tasks.named('check') { dependsOn 'verifyCheckstyleMigration', 'verifySpotBugsMigration' }
+}
+
+// The historical optional checks covered all source sets, including benchmarks.
+def requiredQualityTasks = [
+    'checkstyleMain', 'checkstyleTest', 'checkstyleJmh', 'pmdMain', 'pmdTest', 'pmdJmh',
+    'spotbugsMain', 'spotbugsTest', 'spotbugsJmh', 'licenseMain', 'licenseTest',
+    'verifyCheckstyleMigration', 'verifyPmdMigration', 'verifySpotBugsMigration'
+].collect { tasks.named(it) } + [
+    project(':commons').tasks.named('licenseMain'),
+    project(':commons').tasks.named('licenseTest')
+]
+tasks.named('verifyOriginalQuality') {
+  dependsOn requiredQualityTasks
+  doLast {
+    requiredQualityTasks.each { provider ->
+      def requiredTask = provider.get()
+      def state = requiredTask.state
+      if (!requiredTask.enabled || !state.executed
+          || (state.skipped && !(state.skipMessage in ['UP-TO-DATE', 'FROM-CACHE']))) {
+        throw new GradleException("Original quality qualification requires ${requiredTask.path}; "
+            + 'it was excluded, disabled or skipped')
+      }
+    }
+  }
 }

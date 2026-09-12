@@ -23,6 +23,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
+
 import javax.inject.Inject;
 import javax.inject.Qualifier;
 
@@ -58,6 +59,7 @@ import org.apache.aurora.scheduler.base.Tasks;
 import org.apache.aurora.scheduler.config.types.TimeAmount;
 import org.apache.aurora.scheduler.events.PubsubEvent.EventSubscriber;
 import org.apache.aurora.scheduler.events.PubsubEvent.TaskStateChange;
+import org.apache.aurora.scheduler.execution.MaintenanceRequest;
 import org.apache.aurora.scheduler.sla.SlaManager;
 import org.apache.aurora.scheduler.state.StateManager;
 import org.apache.aurora.scheduler.storage.AttributeStore;
@@ -69,7 +71,6 @@ import org.apache.aurora.scheduler.storage.entities.IHostMaintenanceRequest;
 import org.apache.aurora.scheduler.storage.entities.IHostStatus;
 import org.apache.aurora.scheduler.storage.entities.IScheduledTask;
 import org.apache.aurora.scheduler.storage.entities.ISlaPolicy;
-import org.apache.mesos.v1.Protos;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -127,9 +128,9 @@ public interface MaintenanceController {
    * Drain tasks defined by the inverse offer.
    * This method doesn't set any host attributes.
    *
-   * @param inverseOffer the inverse offer to use.
+   * @param request backend unavailability information.
    */
-  void drainForInverseOffer(Protos.InverseOffer inverseOffer);
+  void drainForUnavailability(MaintenanceRequest request);
 
   /**
    * Fetches the current maintenance mode of {$code host}.
@@ -268,27 +269,29 @@ public interface MaintenanceController {
      */
     @Subscribe
     public void taskChangedState(final TaskStateChange change) {
-      if (Tasks.isTerminated(change.getNewState())) {
-        final String host = change.getTask().getAssignedTask().getSlaveHost();
-        batchWorker.execute(store -> {
-          // If the task _was_ associated with a draining host, and it was the last task on the
-          // host.
-          Optional<IHostAttributes> attributes =
-              store.getAttributeStore().getHostAttributes(host);
-          if (attributes.isPresent() && attributes.get().getMode() == DRAINING) {
-            Query.Builder builder = Query.slaveScoped(host).active();
-            Iterable<IScheduledTask> activeTasks = store.getTaskStore().fetchTasks(builder);
-            if (Iterables.isEmpty(activeTasks)) {
-              LOG.info("Moving host {} into DRAINED", host);
-              setMaintenanceMode(store, ImmutableSet.of(host), DRAINED);
-              store.getHostMaintenanceStore().removeHostMaintenanceRequest(host);
-            } else {
-              LOG.info("Host {} is DRAINING with active tasks: {}", host, Tasks.ids(activeTasks));
-            }
-          }
-          return BatchWorker.NO_RESULT;
-        });
+      if (!Tasks.isTerminated(change.getNewState())) {
+        return;
       }
+      final String host = change.getTask().getAssignedTask().getSlaveHost();
+      batchWorker.execute(store -> {
+        // If the task _was_ associated with a draining host, and it was the last task on the
+        // host.
+        Optional<IHostAttributes> attributes =
+            store.getAttributeStore().getHostAttributes(host);
+        if (attributes.isEmpty() || attributes.get().getMode() != DRAINING) {
+          return BatchWorker.NO_RESULT;
+        }
+        Query.Builder builder = Query.slaveScoped(host).active();
+        Iterable<IScheduledTask> activeTasks = store.getTaskStore().fetchTasks(builder);
+        if (Iterables.isEmpty(activeTasks)) {
+          LOG.info("Moving host {} into DRAINED", host);
+          setMaintenanceMode(store, ImmutableSet.of(host), DRAINED);
+          store.getHostMaintenanceStore().removeHostMaintenanceRequest(host);
+        } else {
+          LOG.info("Host {} is DRAINING with active tasks: {}", host, Tasks.ids(activeTasks));
+        }
+        return BatchWorker.NO_RESULT;
+      });
     }
 
     @Override
@@ -339,18 +342,10 @@ public interface MaintenanceController {
       });
     }
 
-    private Optional<String> getHostname(Protos.InverseOffer offer) {
-      if (offer.getUrl().getAddress().hasHostname()) {
-        return Optional.of(offer.getUrl().getAddress().getHostname());
-      } else {
-        return Optional.empty();
-      }
-    }
-
     @Override
-    public void drainForInverseOffer(Protos.InverseOffer offer) {
+    public void drainForUnavailability(MaintenanceRequest request) {
       // TaskStore does not allow for querying by agent id.
-      Optional<String> hostname = getHostname(offer);
+      Optional<String> hostname = request.hostname();
 
       if (hostname.isPresent()) {
         String host = hostname.get();
@@ -361,7 +356,7 @@ public interface MaintenanceController {
         });
       } else {
         LOG.error("Unable to drain tasks on agent {} because "
-            + "no hostname attached to inverse offer {}.", offer.getAgentId(), offer.getId());
+            + "no hostname attached to inverse offer {}.", request.agentId(), request.offerId());
       }
     }
 

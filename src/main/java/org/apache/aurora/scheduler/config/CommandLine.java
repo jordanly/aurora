@@ -86,7 +86,7 @@ public final class CommandLine {
         .programName(SchedulerMain.class.getName());
 
     builder.addConverterFactory(new IStringConverterFactory() {
-      private Map<Class<?>, Class<? extends IStringConverter<?>>> classConverters =
+      private final Map<Class<?>, Class<? extends IStringConverter<?>>> classConverters =
           ImmutableMap.<Class<?>, Class<? extends IStringConverter<?>>>builder()
               .put(Class.class, ClassConverter.class)
               .put(DataAmount.class, DataAmountConverter.class)

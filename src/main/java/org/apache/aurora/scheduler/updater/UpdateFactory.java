@@ -220,11 +220,11 @@ interface UpdateFactory {
      */
     @Override
     public int compare(Integer a, Integer b) {
-      Integer aActionPriority = instanceToActionPriority.get(a);
-      Integer bActionPriority = instanceToActionPriority.get(b);
+      int aActionPriority = requireNonNull(instanceToActionPriority.get(a));
+      int bActionPriority = requireNonNull(instanceToActionPriority.get(b));
 
       // Try to order by the instance's action.
-      if (!aActionPriority.equals(bActionPriority)) {
+      if (aActionPriority != bActionPriority) {
         return Integer.compare(aActionPriority, bActionPriority);
       }
 

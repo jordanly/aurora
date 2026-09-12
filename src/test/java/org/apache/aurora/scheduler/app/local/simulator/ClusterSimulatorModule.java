@@ -24,6 +24,7 @@ import com.google.inject.AbstractModule;
 import com.google.inject.multibindings.Multibinder;
 
 import org.apache.aurora.scheduler.SchedulerServicesModule;
+import org.apache.aurora.scheduler.mesos.MesosResourceType;
 import org.apache.mesos.Protos;
 import org.apache.mesos.Protos.Offer;
 
@@ -94,13 +95,17 @@ public class ClusterSimulatorModule extends AbstractModule {
 
     String host = slaveId + "-hostname";
     return Offer.newBuilder()
-        .addResources(Protos.Resource.newBuilder().setType(SCALAR).setName(CPUS.getMesosName())
+        .addResources(Protos.Resource.newBuilder().setType(SCALAR)
+            .setName(MesosResourceType.getMesosName(CPUS))
             .setScalar(Protos.Value.Scalar.newBuilder().setValue(cpu)))
-        .addResources(Protos.Resource.newBuilder().setType(SCALAR).setName(RAM_MB.getMesosName())
+        .addResources(Protos.Resource.newBuilder().setType(SCALAR)
+            .setName(MesosResourceType.getMesosName(RAM_MB))
             .setScalar(Protos.Value.Scalar.newBuilder().setValue(ramMb)))
-        .addResources(Protos.Resource.newBuilder().setType(SCALAR).setName(DISK_MB.getMesosName())
+        .addResources(Protos.Resource.newBuilder().setType(SCALAR)
+            .setName(MesosResourceType.getMesosName(DISK_MB))
             .setScalar(Protos.Value.Scalar.newBuilder().setValue(diskMb)))
-        .addResources(Protos.Resource.newBuilder().setType(RANGES).setName(PORTS.getMesosName())
+        .addResources(Protos.Resource.newBuilder().setType(RANGES)
+            .setName(MesosResourceType.getMesosName(PORTS))
             .setRanges(portRanges))
         .addAttributes(Protos.Attribute.newBuilder().setType(Protos.Value.Type.TEXT)
             .setName("host")

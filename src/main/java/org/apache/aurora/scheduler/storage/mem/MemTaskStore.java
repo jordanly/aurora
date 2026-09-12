@@ -385,7 +385,7 @@ class MemTaskStore implements TaskStore.Mutable {
             }
             return matches;
           }
-    };
+        };
 
     Optional<Iterable<String>> getMatches(Query.Builder query) {
       return queryExtractor.apply(query).map(lookup);

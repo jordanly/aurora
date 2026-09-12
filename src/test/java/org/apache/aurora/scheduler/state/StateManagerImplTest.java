@@ -45,7 +45,7 @@ import org.apache.aurora.scheduler.events.EventSink;
 import org.apache.aurora.scheduler.events.PubsubEvent;
 import org.apache.aurora.scheduler.events.PubsubEvent.TaskStateChange;
 import org.apache.aurora.scheduler.events.PubsubEvent.TasksDeleted;
-import org.apache.aurora.scheduler.mesos.Driver;
+import org.apache.aurora.scheduler.execution.TaskKiller;
 import org.apache.aurora.scheduler.resources.ResourceManager;
 import org.apache.aurora.scheduler.scheduling.RescheduleCalculator;
 import org.apache.aurora.scheduler.storage.AttributeStore;
@@ -99,7 +99,7 @@ public class StateManagerImplTest extends EasyMockTest {
       setIsService(TaskTestUtil.makeConfig(TaskTestUtil.JOB), false);
   private static final ITaskConfig SERVICE_CONFIG = setIsService(NON_SERVICE_CONFIG, true);
 
-  private Driver driver;
+  private TaskKiller taskKiller;
   private TaskIdGenerator taskIdGenerator;
   private EventSink eventSink;
   private RescheduleCalculator rescheduleCalculator;
@@ -110,14 +110,14 @@ public class StateManagerImplTest extends EasyMockTest {
   @Before
   public void setUp() throws Exception {
     taskIdGenerator = createMock(TaskIdGenerator.class);
-    driver = createMock(Driver.class);
+    taskKiller = createMock(TaskKiller.class);
     eventSink = createMock(EventSink.class);
     rescheduleCalculator = createMock(RescheduleCalculator.class);
     // TODO(William Farner): Use a mocked storage.
-    storage = MemStorageModule.newEmptyStorage();
+    storage = createStorage();
     stateManager = new StateManagerImpl(
         clock,
-        driver,
+        taskKiller,
         taskIdGenerator,
         eventSink,
         rescheduleCalculator);
@@ -125,6 +125,10 @@ public class StateManagerImplTest extends EasyMockTest {
       AttributeStore.Mutable attributeStore = storeProvider.getAttributeStore();
       attributeStore.saveHostAttributes(HOST_A);
     });
+  }
+
+  protected Storage createStorage() {
+    return MemStorageModule.newEmptyStorage();
   }
 
   private static class StateChangeMatcher implements IArgumentMatcher {
@@ -233,7 +237,7 @@ public class StateManagerImplTest extends EasyMockTest {
     String taskId = "a";
     expect(taskIdGenerator.generate(NON_SERVICE_CONFIG, 0)).andReturn(taskId);
     expectStateTransitions(taskId, INIT, PENDING, ASSIGNED, RUNNING, KILLING, KILLED);
-    driver.killTask(EasyMock.anyObject());
+    taskKiller.killTask(EasyMock.anyObject());
 
     control.replay();
 
@@ -251,7 +255,7 @@ public class StateManagerImplTest extends EasyMockTest {
     expect(taskIdGenerator.generate(NON_SERVICE_CONFIG, 0)).andReturn(taskId);
     expectStateTransitions(taskId, INIT, PENDING, ASSIGNED, RUNNING, KILLING, LOST);
 
-    driver.killTask(EasyMock.anyObject());
+    taskKiller.killTask(EasyMock.anyObject());
 
     control.replay();
 
@@ -323,7 +327,7 @@ public class StateManagerImplTest extends EasyMockTest {
   public void testKillUnknownTask() {
     String unknownTask = "unknown";
 
-    driver.killTask(unknownTask);
+    taskKiller.killTask(unknownTask);
 
     control.replay();
 
@@ -378,8 +382,8 @@ public class StateManagerImplTest extends EasyMockTest {
     String taskId = "a";
     expect(taskIdGenerator.generate(SERVICE_CONFIG, 0)).andReturn(taskId);
     expectStateTransitions(taskId, INIT, PENDING, ASSIGNED, RESTARTING, PARTITIONED, LOST);
-    driver.killTask(EasyMock.anyObject());
-    driver.killTask(EasyMock.anyObject());
+    taskKiller.killTask(EasyMock.anyObject());
+    taskKiller.killTask(EasyMock.anyObject());
     String taskId2 = "a2";
     expect(taskIdGenerator.generate(SERVICE_CONFIG, 0)).andReturn(taskId2);
     noFlappingPenalty();

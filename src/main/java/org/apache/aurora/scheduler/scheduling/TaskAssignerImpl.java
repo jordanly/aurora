@@ -29,8 +29,10 @@ import com.google.common.collect.Maps;
 import org.apache.aurora.common.stats.StatsProvider;
 import org.apache.aurora.scheduler.base.InstanceKeys;
 import org.apache.aurora.scheduler.base.TaskGroupKey;
+import org.apache.aurora.scheduler.execution.ExecutionOffer;
+import org.apache.aurora.scheduler.execution.PreparedTask;
+import org.apache.aurora.scheduler.execution.TaskFactory;
 import org.apache.aurora.scheduler.filter.SchedulingFilter.ResourceRequest;
-import org.apache.aurora.scheduler.mesos.MesosTaskFactory;
 import org.apache.aurora.scheduler.offers.HostOffer;
 import org.apache.aurora.scheduler.offers.OfferManager;
 import org.apache.aurora.scheduler.offers.OfferManager.LaunchException;
@@ -41,7 +43,6 @@ import org.apache.aurora.scheduler.storage.Storage.MutableStoreProvider;
 import org.apache.aurora.scheduler.storage.entities.IAssignedTask;
 import org.apache.aurora.scheduler.storage.entities.IInstanceKey;
 import org.apache.aurora.scheduler.updater.UpdateAgentReserver;
-import org.apache.mesos.v1.Protos;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,14 +64,14 @@ public class TaskAssignerImpl implements TaskAssigner {
   private final AtomicLong launchFailures;
 
   private final StateManager stateManager;
-  private final MesosTaskFactory taskFactory;
+  private final TaskFactory taskFactory;
   private final OfferManager offerManager;
   private final UpdateAgentReserver updateAgentReserver;
 
   @Inject
   public TaskAssignerImpl(
       StateManager stateManager,
-      MesosTaskFactory taskFactory,
+      TaskFactory taskFactory,
       OfferManager offerManager,
       UpdateAgentReserver updateAgentReserver,
       StatsProvider statsProvider) {
@@ -83,7 +84,7 @@ public class TaskAssignerImpl implements TaskAssigner {
   }
 
   @VisibleForTesting
-  IAssignedTask mapAndAssignResources(Protos.Offer offer, IAssignedTask task) {
+  IAssignedTask mapAndAssignResources(ExecutionOffer offer, IAssignedTask task) {
     IAssignedTask assigned = task;
     for (ResourceType type : ResourceManager.getTaskResourceTypes(assigned)) {
       if (type.getMapper().isPresent()) {
@@ -93,14 +94,14 @@ public class TaskAssignerImpl implements TaskAssigner {
     return assigned;
   }
 
-  private Protos.TaskInfo assign(
+  private PreparedTask assign(
       MutableStoreProvider storeProvider,
-      Protos.Offer offer,
+      ExecutionOffer offer,
       String taskId,
       boolean revocable) {
 
     String host = offer.getHostname();
-    String agentId = offer.getAgentId().getValue();
+    String agentId = offer.getAgentId();
     IAssignedTask assigned = stateManager.assignTask(
         storeProvider,
         taskId,
@@ -109,8 +110,8 @@ public class TaskAssignerImpl implements TaskAssigner {
         task -> mapAndAssignResources(offer, task));
     LOG.info(
         "Offer on agent {} (id {}) is being assigned task for {}.",
-        host, offer.getAgentId().getValue(), taskId);
-    return taskFactory.createFrom(assigned, offer, revocable);
+        host, offer.getAgentId(), taskId);
+    return taskFactory.prepare(assigned, offer, revocable);
   }
 
   private void launchUsingOffer(
@@ -120,11 +121,11 @@ public class TaskAssignerImpl implements TaskAssigner {
       HostOffer offer) throws LaunchException {
 
     String taskId = task.getTaskId();
-    Protos.TaskInfo taskInfo =
+    PreparedTask taskInfo =
         assign(stores, offer.getOffer(), taskId, resourceRequest.isRevocable());
     resourceRequest.getJobState().updateAttributeAggregate(offer.getAttributes());
     try {
-      offerManager.launchTask(offer.getOffer().getId(), taskInfo);
+      offerManager.launchTask(offer.getOfferId(), taskInfo);
     } catch (LaunchException e) {
       LOG.warn("Failed to launch task.", e);
       launchFailures.incrementAndGet();
@@ -171,7 +172,7 @@ public class TaskAssignerImpl implements TaskAssigner {
       return ReservationStatus.NOT_RESERVING;
     }
     Optional<HostOffer> offer = offerManager.getMatching(
-        Protos.AgentID.newBuilder().setValue(agentId.get()).build(),
+        agentId.get(),
         resourceRequest);
     if (offer.isPresent()) {
       LOG.info("Used update reservation for {} on {}", key, agentId.get());
@@ -195,7 +196,7 @@ public class TaskAssignerImpl implements TaskAssigner {
       TaskGroupKey groupKey,
       Map<String, TaskGroupKey> preemptionReservations) {
 
-    String agentId = offer.getOffer().getAgentId().getValue();
+    String agentId = offer.getAgentId();
     boolean reservedForPreemption = Optional.ofNullable(preemptionReservations.get(agentId))
         .map(group -> !group.equals(groupKey))
         .orElse(false);
@@ -233,14 +234,14 @@ public class TaskAssignerImpl implements TaskAssigner {
         // for updates or preemption.
         Iterable<HostOffer> matchingOffers = Iterables.filter(
             offerManager.getAllMatching(groupKey, resourceRequest),
-            o -> !matchesByOffer.containsKey(o.getOffer().getId().getValue())
+            o -> !matchesByOffer.containsKey(o.getOfferId())
                 && !isAgentReserved(o, groupKey, preemptionReservations));
 
         chosenOffer = Optional.ofNullable(Iterables.getFirst(matchingOffers, null));
       }
 
       chosenOffer.ifPresent(hostOffer -> matchesByOffer.put(
-          hostOffer.getOffer().getId().getValue(),
+          hostOffer.getOfferId(),
           new SchedulingMatch(task, hostOffer)));
     });
 

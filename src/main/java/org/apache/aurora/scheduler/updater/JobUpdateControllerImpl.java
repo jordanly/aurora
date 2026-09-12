@@ -334,11 +334,8 @@ class JobUpdateControllerImpl implements JobUpdateController {
       return strategy.getBatchStrategy().isAutopauseAfterBatch();
     }
 
-    if (strategy.isSetVarBatchStrategy()) {
-      return strategy.getVarBatchStrategy().isAutopauseAfterBatch();
-    }
-
-    return false;
+    return strategy.isSetVarBatchStrategy()
+        && strategy.getVarBatchStrategy().isAutopauseAfterBatch();
   }
 
   @Override
@@ -447,30 +444,29 @@ class JobUpdateControllerImpl implements JobUpdateController {
     taskEventBatchWorker.execute(storeProvider -> {
       IJobKey job = instance.getJobKey();
       UpdateFactory.Update update = updates.get(job);
-      if (update != null) {
-        if (update.getUpdater().containsInstance(instance.getInstanceId())) {
-          // We check to see if the state change is specified, and if it is, ensure that the new
-          // state matches the current state. We do this because events are processed asynchronously
-          // and it is possible for an old event trigger an action that should not be triggered
-          // for the actual updated state.
-          if (!state.isPresent() || isLatestState(storeProvider, state.get())) {
-            LOG.info("Forwarding task change for " + InstanceKeys.toString(instance));
-            try {
-              evaluateUpdater(
-                  storeProvider,
-                  update,
-                  getOnlyMatch(storeProvider.getJobUpdateStore(), queryActiveByJob(job)),
-                  ImmutableMap.of(instance.getInstanceId(), state));
-            } catch (UpdateStateException e) {
-              throw new RuntimeException(e);
-            }
-          } else {
-            LOG.info("Ignoring out of date task change for " + instance);
-          }
-        } else {
-          LOG.info("Instance " + instance + " is not part of active update for "
-              + JobKeys.canonicalString(job));
-        }
+      if (update == null) {
+        return BatchWorker.NO_RESULT;
+      }
+      if (!update.getUpdater().containsInstance(instance.getInstanceId())) {
+        LOG.info("Instance " + instance + " is not part of active update for "
+            + JobKeys.canonicalString(job));
+        return BatchWorker.NO_RESULT;
+      }
+      // Events are processed asynchronously. Ignore a specified state that no longer
+      // matches storage, so an old event cannot trigger an action for the current state.
+      if (state.isPresent() && !isLatestState(storeProvider, state.get())) {
+        LOG.info("Ignoring out of date task change for " + instance);
+        return BatchWorker.NO_RESULT;
+      }
+      LOG.info("Forwarding task change for " + InstanceKeys.toString(instance));
+      try {
+        evaluateUpdater(
+            storeProvider,
+            update,
+            getOnlyMatch(storeProvider.getJobUpdateStore(), queryActiveByJob(job)),
+            ImmutableMap.of(instance.getInstanceId(), state));
+      } catch (UpdateStateException e) {
+        throw new RuntimeException(e);
       }
       return BatchWorker.NO_RESULT;
     });
@@ -754,13 +750,7 @@ class JobUpdateControllerImpl implements JobUpdateController {
         // the update over the failure threshold (in all likelihood this group is of size 1).
         // This is done as a rough cut to aid in diagnosing a failed update, as generating a
         // complete summary would likely be of dubious value.
-        for (Map.Entry<Integer, SideEffect> entry : result.getSideEffects().entrySet()) {
-          Optional<Failure> failure = entry.getValue().getFailure();
-          if (failure.isPresent()) {
-            event.setMessage(failureMessage(entry.getKey(), failure.get()));
-            break;
-          }
-        }
+        setFailureMessage(event, result.getSideEffects());
       }
 
       changeUpdateStatus(storeProvider, summary, event);
@@ -774,25 +764,39 @@ class JobUpdateControllerImpl implements JobUpdateController {
       IInstanceKey instance = InstanceKeys.from(key.getJob(), entry.getKey());
 
       Optional<InstanceAction> action = entry.getValue().getAction();
-      if (action.isPresent() && !skipSideEffect(autoPauseAfterCurrentBatch, entry.getValue())) {
-        Optional<InstanceActionHandler> handler = action.get().getHandler();
-        if (handler.isPresent()) {
-          Optional<Amount<Long, Time>> reevaluateDelay = handler.get().getReevaluationDelay(
-              instance,
-              instructions,
-              storeProvider,
-              stateManager,
-              updateAgentReserver,
-              updaterStatus,
-              key,
-              slaKillController);
-          if (reevaluateDelay.isPresent()) {
-            executor.schedule(
-                getDeferredEvaluator(instance, key),
-                reevaluateDelay.get().getValue(),
-                reevaluateDelay.get().getUnit().getTimeUnit());
-          }
-        }
+      if (action.isEmpty() || skipSideEffect(autoPauseAfterCurrentBatch, entry.getValue())) {
+        continue;
+      }
+      Optional<InstanceActionHandler> handler = action.get().getHandler();
+      if (handler.isEmpty()) {
+        continue;
+      }
+      Optional<Amount<Long, Time>> reevaluateDelay = handler.get().getReevaluationDelay(
+          instance,
+          instructions,
+          storeProvider,
+          stateManager,
+          updateAgentReserver,
+          updaterStatus,
+          key,
+          slaKillController);
+      if (reevaluateDelay.isPresent()) {
+        executor.schedule(
+            getDeferredEvaluator(instance, key),
+            reevaluateDelay.get().getValue(),
+            reevaluateDelay.get().getUnit().getTimeUnit());
+      }
+    }
+  }
+
+  private static void setFailureMessage(
+      JobUpdateEvent event, Map<Integer, SideEffect> sideEffects) {
+
+    for (Map.Entry<Integer, SideEffect> entry : sideEffects.entrySet()) {
+      Optional<Failure> failure = entry.getValue().getFailure();
+      if (failure.isPresent()) {
+        event.setMessage(failureMessage(entry.getKey(), failure.get()));
+        break;
       }
     }
   }

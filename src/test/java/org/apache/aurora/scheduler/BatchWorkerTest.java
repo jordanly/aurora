@@ -363,7 +363,8 @@ public class BatchWorkerTest extends EasyMockTest {
     }
   }
 
-  private static void assertFailure(CompletableFuture<?> result, Throwable failure) throws Exception {
+  private static void assertFailure(CompletableFuture<?> result, Throwable failure)
+      throws Exception {
     try {
       result.get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
       fail("Expected failed work");

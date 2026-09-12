@@ -58,6 +58,7 @@ public class MesosLogTest extends EasyMockTest {
   private ReaderInterface logReader;
   private WriterInterface logWriter;
   private org.apache.aurora.scheduler.log.Log.Stream logStream;
+  private byte[] noopEntry;
 
   @Before
   public void setUp() {
@@ -65,6 +66,7 @@ public class MesosLogTest extends EasyMockTest {
     backingLog = createMock(LogInterface.class);
     logReader = createMock(ReaderInterface.class);
     logWriter = createMock(WriterInterface.class);
+    noopEntry = DUMMY_CONTENT.getBytes(StandardCharsets.UTF_8);
 
     Injector injector = Guice.createInjector(new AbstractModule() {
       @Override
@@ -76,14 +78,25 @@ public class MesosLogTest extends EasyMockTest {
         bind(WriterInterface.class).toInstance(logWriter);
         bind(new TypeLiteral<Amount<Long, Time>>() { }).annotatedWith(MesosLog.WriteTimeout.class)
             .toInstance(WRITE_TIMEOUT);
-        bind(byte[].class).annotatedWith(MesosLog.NoopEntry.class)
-            .toInstance(DUMMY_CONTENT.getBytes(StandardCharsets.UTF_8));
+        bind(byte[].class).annotatedWith(MesosLog.NoopEntry.class).toInstance(noopEntry);
         bind(Lifecycle.class).toInstance(new Lifecycle(shutdownHooks));
       }
     });
 
     MesosLog log = injector.getInstance(MesosLog.class);
     logStream = log.open();
+  }
+
+  @Test
+  public void testNoopEntryCopiesCallerInput() throws Exception {
+    noopEntry[0] = 'X';
+    Position position = expectWrite(DUMMY_CONTENT, 1);
+    expectDiscoverEntryRange(position, position);
+    expectRead(position, DUMMY_CONTENT);
+
+    control.replay();
+
+    assertEquals(ImmutableList.of(DUMMY_CONTENT), readAll());
   }
 
   @Test

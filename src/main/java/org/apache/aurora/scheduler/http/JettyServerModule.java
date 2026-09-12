@@ -192,7 +192,7 @@ public class JettyServerModule extends AbstractModule {
         ServletContextListener provideServletContextListener(Injector parentInjector) {
           return makeServletContextListener(
               parentInjector,
-              (servletContext) -> Modules.combine(
+              servletContext -> Modules.combine(
                   new ApiModule(options.api),
                   new HttpSecurityModule(options, servletContext),
                   new ThriftModule(),

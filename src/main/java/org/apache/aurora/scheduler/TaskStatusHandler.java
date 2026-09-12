@@ -13,7 +13,7 @@
  */
 package org.apache.aurora.scheduler;
 
-import org.apache.mesos.v1.Protos.TaskStatus;
+import org.apache.aurora.scheduler.execution.TaskUpdate;
 
 /**
  * A handler of task status updates.
@@ -24,5 +24,5 @@ public interface TaskStatusHandler {
    *
    * @param status The status update.
    */
-  void statusUpdate(TaskStatus status);
+  void statusUpdate(TaskUpdate status);
 }

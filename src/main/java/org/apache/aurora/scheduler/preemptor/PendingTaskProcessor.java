@@ -288,5 +288,5 @@ public class PendingTaskProcessor implements Runnable {
   };
 
   private static final Function<HostOffer, String> OFFER_TO_SLAVE_ID =
-      offer -> offer.getOffer().getAgentId().getValue();
+      HostOffer::getAgentId;
 }

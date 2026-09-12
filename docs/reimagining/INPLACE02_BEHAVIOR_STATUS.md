@@ -1,5 +1,8 @@
 # Original behavior qualification and next roadmap increments
 
+Historical checkpoint at `1e0f9d54a`; see the [current implementation status](INPLACE02_04_IMPLEMENTATION_STATUS.md)
+for subsequent work. Counts and incomplete items below describe that checkpoint.
+
 This continues INPLACE-02, INPLACE-03 and INPLACE-04 on `codex/in-place-java25`
 after the [local Java 25 modernization](JAVA25_IMPLEMENTATION_STATUS.md).
 It is an incremental checkpoint; none of these three complete roadmap slices is

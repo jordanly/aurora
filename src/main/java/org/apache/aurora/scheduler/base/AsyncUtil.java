@@ -146,21 +146,20 @@ public final class AsyncUtil {
   private static void evaluateResult(Runnable runnable, Throwable throwable, Logger logger) {
     // See java.util.concurrent.ThreadPoolExecutor#afterExecute(Runnable, Throwable)
     // for more details and an implementation example.
-    if (throwable == null) {
-      if (runnable instanceof Future<?> future) {
-        try {
-          if (future.isDone()) {
-            future.get();
-          }
-        } catch (InterruptedException ie) {
-          Thread.currentThread().interrupt();
-        } catch (ExecutionException ee) {
-          logger.error(ee.toString(), ee);
-          UNCAUGHT_EXCEPTIONS.incrementAndGet();
-        }
-      }
-    } else {
+    if (throwable != null) {
       logger.error(throwable.toString(), throwable);
+      UNCAUGHT_EXCEPTIONS.incrementAndGet();
+      return;
+    }
+    if (!(runnable instanceof Future<?> future) || !future.isDone()) {
+      return;
+    }
+    try {
+      future.get();
+    } catch (InterruptedException ie) {
+      Thread.currentThread().interrupt();
+    } catch (ExecutionException ee) {
+      logger.error(ee.toString(), ee);
       UNCAUGHT_EXCEPTIONS.incrementAndGet();
     }
   }

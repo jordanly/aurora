@@ -1,0 +1,14 @@
+{
+  "source": {
+    "version": "0.10.0",
+    "file": "thrift-0.10.0.tar.gz",
+    "url": "https://archive.apache.org/dist/thrift/0.10.0/thrift-0.10.0.tar.gz",
+    "sha256": "2289d02de6e8db04cbbabb921aeb62bfe3098c4c83f36eec6c31194301efa10b"
+  },
+  "compiler": "compiler/cpp/thrift",
+  "configure": [
+    "--without-libs",
+    "--without-tests",
+    "--without-tutorial"
+  ]
+}

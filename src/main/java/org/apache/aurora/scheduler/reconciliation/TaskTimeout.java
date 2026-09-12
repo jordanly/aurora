@@ -113,35 +113,37 @@ class TaskTimeout extends AbstractIdleService implements EventSubscriber {
 
     @Override
     public void run() {
-      if (isRunning()) {
-        Optional<IScheduledTask> task = storage.read(
-            storeProvider -> storeProvider.getTaskStore().fetchTask(taskId));
-        // Double-Checked Locking: acquire storage write lock only if necessary
-        if (task.isPresent() && task.get().getStatus() == newState) {
-          // This query acts as a CAS by including the state that we expect the task to be in
-          // if the timeout is still valid.  Ideally, the future would have already been
-          // canceled, but in the event of a state transition race, including transientState
-          // prevents an unintended task timeout.
-          // Note: This requires LOST transitions trigger Driver.killTask.
-          StateChangeResult result = storage.write(storeProvider -> stateManager.changeState(
-              storeProvider,
-              taskId,
-              Optional.of(newState),
-              ScheduleStatus.LOST,
-              TIMEOUT_MESSAGE));
-
-          if (result == StateChangeResult.SUCCESS) {
-            LOG.info("Timeout reached for task " + taskId + ":" + taskId);
-            timedOutTasks.incrementAndGet();
-          }
-        }
-      } else {
+      if (!isRunning()) {
         // Our service is not yet started.  We don't want to lose track of the task, so
         // we will try again later.
         LOG.debug("Retrying timeout of task {} in {}", taskId, NOT_STARTED_RETRY);
         // TODO(wfarner): This execution should not wait for a transaction, but a second executor
         // would be weird.
         executor.schedule(this, NOT_STARTED_RETRY.as(Time.MILLISECONDS), TimeUnit.MILLISECONDS);
+        return;
+      }
+
+      Optional<IScheduledTask> task = storage.read(
+          storeProvider -> storeProvider.getTaskStore().fetchTask(taskId));
+      // Double-Checked Locking: acquire storage write lock only if necessary
+      if (task.isEmpty() || task.get().getStatus() != newState) {
+        return;
+      }
+      // This query acts as a CAS by including the state that we expect the task to be in
+      // if the timeout is still valid.  Ideally, the future would have already been
+      // canceled, but in the event of a state transition race, including transientState
+      // prevents an unintended task timeout.
+      // Note: This requires LOST transitions trigger Driver.killTask.
+      StateChangeResult result = storage.write(storeProvider -> stateManager.changeState(
+          storeProvider,
+          taskId,
+          Optional.of(newState),
+          ScheduleStatus.LOST,
+          TIMEOUT_MESSAGE));
+
+      if (result == StateChangeResult.SUCCESS) {
+        LOG.info("Timeout reached for task " + taskId + ":" + taskId);
+        timedOutTasks.incrementAndGet();
       }
     }
   }

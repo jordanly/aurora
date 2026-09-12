@@ -30,7 +30,7 @@ import org.apache.aurora.scheduler.async.AsyncModule.AsyncExecutor;
 import org.apache.aurora.scheduler.base.Query;
 import org.apache.aurora.scheduler.events.PubsubEvent.EventSubscriber;
 import org.apache.aurora.scheduler.events.PubsubEvent.TaskStateChange;
-import org.apache.aurora.scheduler.mesos.Driver;
+import org.apache.aurora.scheduler.execution.TaskKiller;
 import org.apache.aurora.scheduler.storage.Storage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,7 +39,7 @@ import static java.util.Objects.requireNonNull;
 
 /**
  * Watches for task transitions into {@link ScheduleStatus#KILLING KILLING} and periodically
- * retries {@link Driver#killTask(String)} until the task transitions.
+ * retries {@link TaskKiller#killTask(String)} until the task transitions.
  */
 public class KillRetry implements EventSubscriber {
   private static final Logger LOG = LoggerFactory.getLogger(KillRetry.class);
@@ -47,7 +47,7 @@ public class KillRetry implements EventSubscriber {
   @VisibleForTesting
   static final String RETRIES_COUNTER = "task_kill_retries";
 
-  private final Driver driver;
+  private final TaskKiller taskKiller;
   private final Storage storage;
   private final ScheduledExecutorService executor;
   private final BackoffStrategy backoffStrategy;
@@ -55,13 +55,13 @@ public class KillRetry implements EventSubscriber {
 
   @Inject
   KillRetry(
-      Driver driver,
+      TaskKiller taskKiller,
       Storage storage,
       @AsyncExecutor ScheduledExecutorService executor,
       BackoffStrategy backoffStrategy,
       StatsProvider statsProvider) {
 
-    this.driver = requireNonNull(driver);
+    this.taskKiller = requireNonNull(taskKiller);
     this.storage = requireNonNull(storage);
     this.executor = requireNonNull(executor);
     this.backoffStrategy = requireNonNull(backoffStrategy);
@@ -95,7 +95,7 @@ public class KillRetry implements EventSubscriber {
         LOG.info("Task " + taskId + " not yet killed, retrying.");
 
         // Kill did not yet take effect, try again.
-        driver.killTask(taskId);
+        taskKiller.killTask(taskId);
         killRetries.incrementAndGet();
         tryLater();
       }

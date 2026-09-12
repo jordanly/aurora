@@ -27,9 +27,6 @@ import org.apache.aurora.common.stats.StatsProvider.RequestTimer;
 import org.apache.aurora.common.util.Clock;
 import org.apache.aurora.scheduler.events.PubsubEvent.EventSubscriber;
 import org.apache.aurora.scheduler.events.PubsubEvent.TaskStatusReceived;
-import org.apache.mesos.v1.Protos;
-import org.apache.mesos.v1.Protos.TaskStatus.Reason;
-import org.apache.mesos.v1.Protos.TaskStatus.Source;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,10 +41,10 @@ class TaskStatusStats implements EventSubscriber {
 
   private final Clock clock;
 
-  private final LoadingCache<Source, AtomicLong> lostSourceCounters;
-  private final LoadingCache<Reason, AtomicLong> reasonCounters;
+  private final LoadingCache<String, AtomicLong> lostSourceCounters;
+  private final LoadingCache<String, AtomicLong> reasonCounters;
 
-  private final LoadingCache<Source, RequestTimer> latencyTimers;
+  private final LoadingCache<String, RequestTimer> latencyTimers;
 
   @Inject
   TaskStatusStats(final StatsProvider statsProvider, Clock clock) {
@@ -55,46 +52,46 @@ class TaskStatusStats implements EventSubscriber {
     this.clock = requireNonNull(clock);
 
     lostSourceCounters = CacheBuilder.newBuilder()
-        .build(new CacheLoader<Source, AtomicLong>() {
+        .build(new CacheLoader<String, AtomicLong>() {
           @Override
-          public AtomicLong load(Source source) {
+          public AtomicLong load(String source) {
             return statsProvider.makeCounter(lostCounterName(source));
           }
         });
     reasonCounters = CacheBuilder.newBuilder()
-        .build(new CacheLoader<Reason, AtomicLong>() {
+        .build(new CacheLoader<String, AtomicLong>() {
           @Override
-          public AtomicLong load(Reason reason) {
+          public AtomicLong load(String reason) {
             return statsProvider.makeCounter(reasonCounterName(reason));
           }
         });
     latencyTimers = CacheBuilder.newBuilder()
-        .build(new CacheLoader<Source, RequestTimer>() {
+        .build(new CacheLoader<String, RequestTimer>() {
           @Override
-          public RequestTimer load(Source source) {
+          public RequestTimer load(String source) {
             return statsProvider.makeRequestTimer(latencyTimerName(source));
           }
         });
   }
 
   @VisibleForTesting
-  static String lostCounterName(Source source) {
+  static String lostCounterName(String source) {
     return "task_lost_" + source;
   }
 
   @VisibleForTesting
-  static String reasonCounterName(Reason reason) {
+  static String reasonCounterName(String reason) {
     return "task_exit_" + reason;
   }
 
   @VisibleForTesting
-  static String latencyTimerName(Source source) {
+  static String latencyTimerName(String source) {
     return "task_delivery_delay_" + source;
   }
 
   @Subscribe
   public void accumulate(TaskStatusReceived event) {
-    if (event.getState() == Protos.TaskState.TASK_LOST && event.getSource().isPresent()) {
+    if ("TASK_LOST".equals(event.getState()) && event.getSource().isPresent()) {
       lostSourceCounters.getUnchecked(event.getSource().get()).incrementAndGet();
     }
 

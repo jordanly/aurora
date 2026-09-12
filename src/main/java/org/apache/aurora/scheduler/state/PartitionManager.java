@@ -68,10 +68,10 @@ public class PartitionManager implements PubsubEvent.EventSubscriber {
   @Inject
   PartitionManager(Storage storage, StateManager stateManager, Clock clock) {
     this(
-      storage,
-      stateManager,
-      clock,
-      AsyncUtil.singleThreadLoggingScheduledExecutor("PartitionManager", LOG));
+        storage,
+        stateManager,
+        clock,
+        AsyncUtil.singleThreadLoggingScheduledExecutor("PartitionManager", LOG));
   }
 
   private long getLastTransitionSecsAgo(IScheduledTask task) {

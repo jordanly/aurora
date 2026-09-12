@@ -220,12 +220,14 @@ public class ThriftStatsExporterInterceptorTest extends EasyMockTest {
     }
   }
 
-  public static class InaccessibleCounter extends StatefulCounter {
+  public static final class InaccessibleCounter extends StatefulCounter {
     private InaccessibleCounter() { }
   }
 
   public static class MissingCounter extends StatefulCounter {
-    public MissingCounter(String ignored) { }
+    public MissingCounter(String ignored) {
+      // Constructor intentionally has no side effects.
+    }
   }
 
   public static class ThrowingCounter extends StatefulCounter {

@@ -36,8 +36,8 @@ import org.apache.aurora.scheduler.config.CliOptions;
 import org.apache.aurora.scheduler.config.types.TimeAmount;
 import org.apache.aurora.scheduler.config.validators.PositiveNumber;
 import org.apache.aurora.scheduler.events.PubsubEventModule;
+import org.apache.aurora.scheduler.execution.TaskUpdate;
 import org.apache.aurora.scheduler.storage.Storage;
-import org.apache.mesos.v1.Protos;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -102,7 +102,7 @@ public class SchedulerModule extends AbstractModule {
     PubsubEventModule.bindSubscriber(binder(), TaskVars.class);
     addSchedulerActiveServiceBinding(binder()).to(TaskVars.class);
 
-    bind(new TypeLiteral<BlockingQueue<Protos.TaskStatus>>() { })
+    bind(new TypeLiteral<BlockingQueue<TaskUpdate>>() { })
         .annotatedWith(TaskStatusHandlerImpl.StatusUpdateQueue.class)
         .toInstance(new LinkedBlockingQueue<>());
     bind(new TypeLiteral<Integer>() { })

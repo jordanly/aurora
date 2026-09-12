@@ -61,7 +61,11 @@ public class State {
    * O(DISTINCT_RUNNING_TASK_CONFIGS).
    */
   private static class NormalizedClusterState {
+    // Read reflectively by the existing serialization/field-inspection contract.
+    @SuppressWarnings("PMD.UnusedPrivateField")
     private final Map<String, ITaskConfig> taskConfigs;
+    // Read reflectively by the existing serialization/field-inspection contract.
+    @SuppressWarnings("PMD.UnusedPrivateField")
     private final Map<String, List<String>> agents;
 
     NormalizedClusterState(

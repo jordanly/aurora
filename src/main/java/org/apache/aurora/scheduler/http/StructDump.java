@@ -107,10 +107,8 @@ public class StructDump extends JerseyTemplateServlet {
       .setExclusionStrategies(new ExclusionStrategy() {
         @Override
         public boolean shouldSkipField(FieldAttributes f) {
-          if (f.getName().startsWith("_")) {
-            return true;
-          }
-          return f.getDeclaredClass().getName().contains("$_Fields");
+          return f.getName().startsWith("_")
+              || f.getDeclaredClass().getName().contains("$_Fields");
         }
 
         @Override

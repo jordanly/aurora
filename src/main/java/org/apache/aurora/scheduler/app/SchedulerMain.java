@@ -157,7 +157,7 @@ public class SchedulerMain {
   void run(Options options) {
     try {
       startupServices.startAsync();
-      Runtime.getRuntime().addShutdownHook(new Thread(SchedulerMain.this::stop, "ShutdownHook"));
+      Runtime.getRuntime().addShutdownHook(new Thread(this::stop, "ShutdownHook"));
       startupServices.awaitHealthy();
 
       LeadershipListener leaderListener = schedulerLifecycle.prepare();

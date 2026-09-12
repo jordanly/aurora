@@ -25,9 +25,6 @@ import static org.apache.aurora.gen.MaintenanceMode.DRAINED;
 import static org.apache.aurora.gen.MaintenanceMode.DRAINING;
 import static org.apache.aurora.gen.MaintenanceMode.NONE;
 import static org.apache.aurora.gen.MaintenanceMode.SCHEDULED;
-import static org.apache.aurora.scheduler.resources.ResourceManager.bagFromMesosResources;
-import static org.apache.aurora.scheduler.resources.ResourceManager.getNonRevocableOfferResources;
-import static org.apache.aurora.scheduler.resources.ResourceManager.getRevocableOfferResources;
 
 /**
  * Utility class for creating compounded offer orders based on some combination of offer ordering.
@@ -67,16 +64,14 @@ public final class OfferOrderBuilder {
   private static Ordering<HostOffer> nonRevocableResourceOrdering(ResourceType resourceType) {
     return Ordering
         .natural()
-        .onResultOf(o -> bagFromMesosResources(
-            getNonRevocableOfferResources(o.getOffer())).valueOf(resourceType));
+        .onResultOf(o -> o.getResourceBag(false).valueOf(resourceType));
   }
 
   private static Ordering<HostOffer> revocableResourceOrdering(ResourceType resourceType) {
     return Ordering
         .natural()
         .onResultOf(o -> {
-          double resource = bagFromMesosResources(
-              getRevocableOfferResources(o.getOffer())).valueOf(resourceType);
+          double resource = o.getResourceBag(true).valueOf(resourceType);
           // resource will be 0.0 if there is no revocable cpus available. Since the purpose of
           // this ordering is to bin-pack revocable then we push those offers to the back.
           return resource == 0.0 ? Double.MAX_VALUE : resource;
@@ -86,7 +81,7 @@ public final class OfferOrderBuilder {
   private static Ordering<HostOffer> getOrdering(Ordering<HostOffer> base, OfferOrder order) {
     // Random is Ordering<Object> so accepting base as a parameter and compounding in here is the
     // cleanest way I could come up with to avoid a whole bunch of type finagling.
-    switch(order) {
+    switch (order) {
       case CPU: return base.compound(CPU_COMPARATOR);
       case DISK: return base.compound(DISK_COMPARATOR);
       case MEMORY: return base.compound(RAM_COMPARATOR);

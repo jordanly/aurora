@@ -89,7 +89,7 @@ class Kerberos5Realm implements Realm {
         if (failure == null) {
           throw e;
         }
-        if (failure != e) {
+        if (failure != e) { // NOPMD - Throwable forbids self-suppression by identity.
           failure.addSuppressed(e);
         }
       }

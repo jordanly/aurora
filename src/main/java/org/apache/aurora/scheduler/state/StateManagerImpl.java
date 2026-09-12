@@ -45,7 +45,7 @@ import org.apache.aurora.scheduler.base.Tasks;
 import org.apache.aurora.scheduler.events.EventSink;
 import org.apache.aurora.scheduler.events.PubsubEvent;
 import org.apache.aurora.scheduler.events.PubsubEvent.TaskStateChange;
-import org.apache.aurora.scheduler.mesos.Driver;
+import org.apache.aurora.scheduler.execution.TaskKiller;
 import org.apache.aurora.scheduler.scheduling.RescheduleCalculator;
 import org.apache.aurora.scheduler.state.SideEffect.Action;
 import org.apache.aurora.scheduler.storage.Storage.MutableStoreProvider;
@@ -74,7 +74,7 @@ public class StateManagerImpl implements StateManager {
   private static final Logger LOG = LoggerFactory.getLogger(StateManagerImpl.class);
 
   private final Clock clock;
-  private final Driver driver;
+  private final TaskKiller taskKiller;
   private final TaskIdGenerator taskIdGenerator;
   private final EventSink eventSink;
   private final RescheduleCalculator rescheduleCalculator;
@@ -82,13 +82,13 @@ public class StateManagerImpl implements StateManager {
   @Inject
   StateManagerImpl(
       final Clock clock,
-      Driver driver,
+      TaskKiller taskKiller,
       TaskIdGenerator taskIdGenerator,
       EventSink eventSink,
       RescheduleCalculator rescheduleCalculator) {
 
     this.clock = requireNonNull(clock);
-    this.driver = requireNonNull(driver);
+    this.taskKiller = requireNonNull(taskKiller);
     this.taskIdGenerator = requireNonNull(taskIdGenerator);
     this.eventSink = requireNonNull(eventSink);
     this.rescheduleCalculator = requireNonNull(rescheduleCalculator);
@@ -349,7 +349,7 @@ public class StateManagerImpl implements StateManager {
           break;
 
         case KILL:
-          driver.killTask(taskId);
+          taskKiller.killTask(taskId);
           break;
 
         case DELETE:

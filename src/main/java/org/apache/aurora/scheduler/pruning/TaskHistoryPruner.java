@@ -79,7 +79,7 @@ public class TaskHistoryPruner implements EventSubscriber {
     }
   };
 
-  static record HistoryPrunerSettings(
+  record HistoryPrunerSettings(
       long pruneThresholdMillis,
       long minRetentionThresholdMillis,
       int perJobHistoryGoal) {
@@ -119,7 +119,8 @@ public class TaskHistoryPruner implements EventSubscriber {
   long calculateTimeout(long taskEventTimestampMillis) {
     return Math.max(
         settings.minRetentionThresholdMillis(),
-        settings.pruneThresholdMillis() - Math.max(0, clock.nowMillis() - taskEventTimestampMillis));
+        settings.pruneThresholdMillis()
+            - Math.max(0, clock.nowMillis() - taskEventTimestampMillis));
   }
 
   /**

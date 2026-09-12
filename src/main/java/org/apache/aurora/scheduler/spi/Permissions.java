@@ -87,7 +87,7 @@ public final class Permissions {
      * @return The domain represented by it, if one exists.
      */
     public static Optional<Domain> fromString(String permissionPart) {
-      for (Domain domain : Domain.values()) {
+      for (Domain domain : values()) {
         if (domain.permissionPart.equals(permissionPart)) {
           return Optional.of(domain);
         }

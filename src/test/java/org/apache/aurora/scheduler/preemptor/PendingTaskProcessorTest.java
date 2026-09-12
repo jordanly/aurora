@@ -38,6 +38,7 @@ import org.apache.aurora.scheduler.base.JobKeys;
 import org.apache.aurora.scheduler.base.Query;
 import org.apache.aurora.scheduler.base.TaskGroupKey;
 import org.apache.aurora.scheduler.filter.AttributeAggregate;
+import org.apache.aurora.scheduler.mesos.MesosOffer;
 import org.apache.aurora.scheduler.offers.HostOffer;
 import org.apache.aurora.scheduler.offers.OfferManager;
 import org.apache.aurora.scheduler.state.ClusterState;
@@ -308,7 +309,7 @@ public class PendingTaskProcessorTest extends EasyMockTest {
     builder.getAgentIdBuilder().setValue(slaveId);
     builder.setHostname(slaveId);
     return new HostOffer(
-        builder.build(),
+        new MesosOffer(builder.build()),
         IHostAttributes.build(new HostAttributes().setMode(MaintenanceMode.NONE)));
   }
 

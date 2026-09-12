@@ -191,11 +191,11 @@ public class SlaManager extends AbstractIdleService {
 
   private boolean meetsSLAInstances(ISlaPolicy slaPolicy, long running, long total) {
     if (slaPolicy.isSetPercentageSlaPolicy()) {
-      double percentageRunning = ((double) running / total) * 100.0;
+      double percentageRunning = (double) running / total * 100.0;
       double percentageRequired = slaPolicy.getPercentageSlaPolicy().getPercentage();
       long numMaintenance = (long) ((1 - percentageRequired / 100.0) * total);
       if (numMaintenance < 1) {
-        double updated = ((total - 1) / (double) total) * 100;
+        double updated = (total - 1) / (double) total * 100;
         LOG.warn("Invalid PercentageSlaPolicy(percentage={}) for task with {} instances "
                 + "that allows {} instances to be in maintenance."
                 + "Using percentage={} which allows 1 instance to be under maintenance.",
@@ -386,19 +386,22 @@ public class SlaManager extends AbstractIdleService {
 
   private void incrementErrorCount(String prefix, String taskKey) {
     try {
-      if (prefix.equals(ERRORS_STAT_NAME)) {
-        errorsCounter.incrementAndGet();
-        errorsByTaskCounter.get(prefix + "_" + taskKey).incrementAndGet();
-      }
-
-      if (prefix.equals(USER_ERRORS_STAT_NAME)) {
-        userErrorsCounter.incrementAndGet();
-        userErrorsByTaskCounter.get(prefix + "_" + taskKey).incrementAndGet();
-      }
-
-      if (prefix.equals(LOCK_STARVATION_STAT_NAME)) {
-        lockStarvationCounter.incrementAndGet();
-        lockStarvationByTaskCounter.get(prefix + "_" + taskKey).incrementAndGet();
+      switch (prefix) {
+        case ERRORS_STAT_NAME -> {
+          errorsCounter.incrementAndGet();
+          errorsByTaskCounter.get(prefix + "_" + taskKey).incrementAndGet();
+        }
+        case USER_ERRORS_STAT_NAME -> {
+          userErrorsCounter.incrementAndGet();
+          userErrorsByTaskCounter.get(prefix + "_" + taskKey).incrementAndGet();
+        }
+        case LOCK_STARVATION_STAT_NAME -> {
+          lockStarvationCounter.incrementAndGet();
+          lockStarvationByTaskCounter.get(prefix + "_" + taskKey).incrementAndGet();
+        }
+        default -> {
+          // Other prefixes do not represent one of this controller's failure metrics.
+        }
       }
     } catch (ExecutionException e) {
       LOG.error("Failed increment failure metrics for task: {}", taskKey, e);
