@@ -154,8 +154,8 @@ project(':ui') {
   def launcher = rootProject.file('build-support/java/ui.py')
   def bootstrap = rootProject.file('build-support/java/bootstrap.py')
   def pins = rootProject.file('build-support/java/ui-tools.json')
-  def npmCommand = ['python3', launcher.absolutePath]
-      + (gradle.startParameter.offline ? ['--offline'] : [])
+  def npmCommand = ['python3', launcher.absolutePath] +
+      (gradle.startParameter.offline ? ['--offline'] : [])
   // The local customization plugin is installed by the same checked-in lockfile.
   tasks.register('install', Exec) {
     workingDir projectDir
