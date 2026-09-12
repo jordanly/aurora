@@ -196,16 +196,7 @@ public class SqliteDatabaseTest {
   @Test
   public void testSchemaOneMigrationPreservesOwnershipAndOutcomes() throws Exception {
     Path oldPath = temporary.getRoot().toPath().resolve("version-one.db");
-    try (Connection connection = DriverManager.getConnection("jdbc:sqlite:" + oldPath);
-         Statement statement = connection.createStatement()) {
-      statement.execute("CREATE TABLE storage_owner (singleton INTEGER PRIMARY KEY"
-          + " CHECK(singleton=1), epoch INTEGER NOT NULL, session_id TEXT NOT NULL)");
-      statement.execute("INSERT INTO storage_owner VALUES (1, 7, 'old-owner')");
-      statement.execute("CREATE TABLE storage_transactions (operation_id TEXT PRIMARY KEY"
-          + " NOT NULL, owner_epoch INTEGER NOT NULL)");
-      statement.execute("INSERT INTO storage_transactions VALUES ('old-operation', 7)");
-      statement.execute("PRAGMA user_version=1");
-    }
+    createVersionOneDatabase(oldPath);
     try (SqliteDatabase migrated = SqliteDatabase.open(oldPath)) {
       assertTrue(migrated.isCommitted("old-operation"));
       migrated.read(() -> {
@@ -235,6 +226,54 @@ public class SqliteDatabaseTest {
     try (SqliteDatabase reopened = SqliteDatabase.open(oldPath)) {
       assertTrue(reopened.isCommitted("old-operation"));
       assertTrue(reopened.isCommitted("new-operation"));
+    }
+  }
+
+  @Test
+  public void testFailedMigrationRollsBackSchemaAndOwnership() throws Exception {
+    Path legacyPath = temporary.getRoot().toPath().resolve("failed-migration.db");
+    createVersionOneDatabase(legacyPath);
+    AtomicBoolean failCommit = new AtomicBoolean(true);
+    expectFailure(StorageException.class, () -> SqliteDatabase.open(legacyPath,
+        url -> interceptCommit(DriverManager.getConnection(url), failCommit, false)));
+    assertFalse("Failure must occur at migration commit", failCommit.get());
+
+    try (Connection connection = DriverManager.getConnection("jdbc:sqlite:" + legacyPath);
+         Statement statement = connection.createStatement()) {
+      try (ResultSet rows = statement.executeQuery("PRAGMA user_version")) {
+        assertTrue(rows.next());
+        assertEquals(1, rows.getInt(1));
+      }
+      try (ResultSet rows = statement.executeQuery("SELECT epoch, session_id FROM storage_owner")) {
+        assertTrue(rows.next());
+        assertEquals(7, rows.getLong(1));
+        assertEquals("old-owner", rows.getString(2));
+      }
+      try (ResultSet rows = statement.executeQuery("SELECT count(*) FROM sqlite_schema"
+          + " WHERE name NOT LIKE 'sqlite_%'"
+          + " AND name NOT IN ('storage_owner', 'storage_transactions')")) {
+        assertTrue(rows.next());
+        assertEquals(0, rows.getInt(1));
+      }
+    }
+    // Failed initialization must release ownership and leave the old database retryable.
+    try (SqliteDatabase recovered = SqliteDatabase.open(legacyPath)) {
+      assertTrue(recovered.isCommitted("old-operation"));
+      recovered.write("after-migration-retry", () -> null);
+      assertTrue(recovered.isCommitted("after-migration-retry"));
+    }
+  }
+
+  private static void createVersionOneDatabase(Path legacyPath) throws Exception {
+    try (Connection connection = DriverManager.getConnection("jdbc:sqlite:" + legacyPath);
+         Statement statement = connection.createStatement()) {
+      statement.execute("CREATE TABLE storage_owner (singleton INTEGER PRIMARY KEY"
+          + " CHECK(singleton=1), epoch INTEGER NOT NULL, session_id TEXT NOT NULL)");
+      statement.execute("INSERT INTO storage_owner VALUES (1, 7, 'old-owner')");
+      statement.execute("CREATE TABLE storage_transactions (operation_id TEXT PRIMARY KEY"
+          + " NOT NULL, owner_epoch INTEGER NOT NULL)");
+      statement.execute("INSERT INTO storage_transactions VALUES ('old-operation', 7)");
+      statement.execute("PRAGMA user_version=1");
     }
   }
 
