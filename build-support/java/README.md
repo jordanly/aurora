@@ -46,6 +46,26 @@ compiler must support Java, JavaScript and HTML generation. Tool downloads need
 network access unless the pinned archives are seeded; `--offline` also requires
 the Maven dependencies to have been cached already.
 
+Qualify all original Java behavior with application coverage, independently of UI
+packaging:
+
+```sh
+./gradlew -PthriftCompiler="$PWD/.pi-tools/thrift-0.10.0/compiler/cpp/thrift" \
+  verifyOriginalBehavior --continue
+```
+
+This runs `behaviorTest` and `:commons:test`, reports all root production class
+directories with JaCoCo, and enforces the existing 87% instruction / 79% branch
+thresholds. `behaviorTest` rejects test filters; the aggregate gate rejects skipped,
+disabled or excluded prerequisites while accepting Gradle's valid up-to-date and
+cache results. Use `focusedTest` for selected tests. The existing ignored storage
+test remains visible in the XML ledger and is not counted as passing.
+
+Application test XML is in `scheduler/test-results/behaviorTest` under the build
+root. Coverage XML and HTML are in `scheduler/reports/jacoco/behaviorCoverageReport`.
+This gate does not include UI/distribution, full static analysis, native Mesos or
+real-KDC integration; those retain their separate qualification requirements.
+
 The full `build` graph also includes the original UI and full test/quality
 requirements. Consult the [build status](../../docs/reimagining/INPLACE01_BUILD_STATUS.md)
 before interpreting a focused test result as full application qualification.

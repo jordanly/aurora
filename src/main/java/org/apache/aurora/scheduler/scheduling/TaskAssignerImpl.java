@@ -100,11 +100,12 @@ public class TaskAssignerImpl implements TaskAssigner {
       boolean revocable) {
 
     String host = offer.getHostname();
+    String agentId = offer.getAgentId().getValue();
     IAssignedTask assigned = stateManager.assignTask(
         storeProvider,
         taskId,
         host,
-        offer.getAgentId(),
+        agentId,
         task -> mapAndAssignResources(offer, task));
     LOG.info(
         "Offer on agent {} (id {}) is being assigned task for {}.",

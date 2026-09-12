@@ -8,6 +8,8 @@ implementation. INPLACE-00 is **complete**. INPLACE-01 has a passing original Ja
 baseline; its full build gates remain open. INPLACE-02 has initial Java evidence;
 its broader compatibility qualification and subsequent slices remain open.
 See the [current build status](INPLACE01_BUILD_STATUS.md) for executed evidence.
+Subsequent coverage qualification, the first identity extraction, and storage
+contract preparation are tracked in [INPLACE-02 progress](INPLACE02_BEHAVIOR_STATUS.md).
 The [Java 25 file audit](JAVA25_FILE_AUDIT.md) assesses all 636 tracked Java files
 and orders concrete modernization batches. Small resource, failure-handling and
 test-reliability fixes can accompany the early baseline work; broad framework

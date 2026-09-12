@@ -20,7 +20,6 @@ import java.util.function.Function;
 import org.apache.aurora.gen.ScheduleStatus;
 import org.apache.aurora.scheduler.storage.entities.IAssignedTask;
 import org.apache.aurora.scheduler.storage.entities.ITaskConfig;
-import org.apache.mesos.v1.Protos.AgentID;
 
 import static org.apache.aurora.scheduler.storage.Storage.MutableStoreProvider;
 
@@ -60,7 +59,7 @@ public interface StateManager {
    * @param storeProvider Storage provider.
    * @param taskId ID of the task to mutate.
    * @param slaveHost Host name that the task is being assigned to.
-   * @param slaveId ID of the slave that the task is being assigned to.
+   * @param agentId ID of the agent that the task is being assigned to.
    * @param resourceAssigner The resource assign operation.
    * @return The updated task record, or {@code null} if the task was not found.
    */
@@ -68,7 +67,7 @@ public interface StateManager {
       MutableStoreProvider storeProvider,
       String taskId,
       String slaveHost,
-      AgentID slaveId,
+      String agentId,
       Function<IAssignedTask, IAssignedTask> resourceAssigner);
 
   /**

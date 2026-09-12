@@ -5,6 +5,8 @@ JAVA-11 proposal to retire the original scheduler, Python code and UI.
 INPLACE-00 is complete; the first INPLACE-01 increment builds and tests the original
 Java application on `codex/in-place-java25`. Full build qualification remains open; see the
 [current build status](INPLACE01_BUILD_STATUS.md) for executed evidence and gaps.
+Follow-on coverage, identity extraction and storage-contract work is recorded in
+[INPLACE-02 progress](INPLACE02_BEHAVIOR_STATUS.md).
 
 ## The architectural decision
 

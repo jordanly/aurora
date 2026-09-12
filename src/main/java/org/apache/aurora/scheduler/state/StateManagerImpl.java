@@ -53,7 +53,6 @@ import org.apache.aurora.scheduler.storage.TaskStore;
 import org.apache.aurora.scheduler.storage.entities.IAssignedTask;
 import org.apache.aurora.scheduler.storage.entities.IScheduledTask;
 import org.apache.aurora.scheduler.storage.entities.ITaskConfig;
-import org.apache.mesos.v1.Protos.AgentID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -159,12 +158,12 @@ public class StateManagerImpl implements StateManager {
       MutableStoreProvider storeProvider,
       String taskId,
       String slaveHost,
-      AgentID slaveId,
+      String agentId,
       Function<IAssignedTask, IAssignedTask> resourceAssigner) {
 
     checkNotBlank(taskId);
     checkNotBlank(slaveHost);
-    requireNonNull(slaveId);
+    requireNonNull(agentId);
     requireNonNull(resourceAssigner);
 
     IScheduledTask mutated = storeProvider.getUnsafeTaskStore().mutateTask(taskId,
@@ -173,7 +172,7 @@ public class StateManagerImpl implements StateManager {
           builder.setAssignedTask(resourceAssigner.apply(task.getAssignedTask()).newBuilder());
           builder.getAssignedTask()
               .setSlaveHost(slaveHost)
-              .setSlaveId(slaveId.getValue());
+              .setSlaveId(agentId);
           return IScheduledTask.build(builder);
         }).get();
 

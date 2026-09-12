@@ -1,5 +1,8 @@
 # Original Aurora build restoration
 
+This records the initial baseline. Subsequent passing coverage qualification and
+the current remaining gates are recorded in [INPLACE-02 progress](INPLACE02_BEHAVIOR_STATUS.md).
+
 Original Java build/test baseline established on `codex/in-place-java25`, based on
 upstream master
 `11ebaeeb071cb182c388a40755e84f60dda32260`. Upstream, fork and local master were

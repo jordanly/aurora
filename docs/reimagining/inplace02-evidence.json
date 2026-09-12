@@ -1,0 +1,91 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-09-12T00:21:40.042426+00:00",
+  "source_base_commit": "29374c6e826f97c2d415315c5722a7c63f5a8859",
+  "branch": "codex/in-place-java25",
+  "upstream_master": "11ebaeeb071cb182c388a40755e84f60dda32260",
+  "java": "25.0.4.1",
+  "gradle": "9.7.1",
+  "jacoco": "0.8.14",
+  "command": "./gradlew --offline -PthriftCompiler=\"$PWD/.pi-tools/thrift-0.10.0/compiler/cpp/thrift\" verifyOriginalBehavior --continue",
+  "test_totals": {
+    "tests": 1362,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 1,
+    "passed": 1361
+  },
+  "test_ledger": {
+    "path": "docs/reimagining/inplace02-tests.jsonl",
+    "sha256": "e0af3b387d8c5b74945c3c3c0f75638c010ddeb6f182ed6e7ec733b2d105e576"
+  },
+  "coverage": {
+    "INSTRUCTION": {
+      "covered": 47837,
+      "missed": 5196,
+      "ratio": 0.9020232685309147
+    },
+    "BRANCH": {
+      "covered": 2252,
+      "missed": 443,
+      "ratio": 0.835621521335807
+    },
+    "LINE": {
+      "covered": 10988,
+      "missed": 1216,
+      "ratio": 0.9003605375286792
+    },
+    "COMPLEXITY": {
+      "covered": 3700,
+      "missed": 698,
+      "ratio": 0.8412914961346066
+    },
+    "METHOD": {
+      "covered": 2698,
+      "missed": 304,
+      "ratio": 0.8987341772151899
+    },
+    "CLASS": {
+      "covered": 590,
+      "missed": 38,
+      "ratio": 0.9394904458598726
+    }
+  },
+  "coverage_report": {
+    "path": ".cache/inplace-build/build/scheduler/reports/jacoco/behaviorCoverageReport/behaviorCoverageReport.xml",
+    "sha256": "115b7b9a1fb4fbe920402839ac0731cbca235cb8f853cf8e2a6d6cc3c087c9cf",
+    "classes": 761,
+    "scope": "All root application production class directories, no exclusions; commons tested without a coverage threshold."
+  },
+  "java_sources": {
+    "files": 641,
+    "sorted_path_sha256_digest": "b63b0b292c20ea1beacdc1d02cac2bb451a4358f11fc930612c42841c7334d46"
+  },
+  "changed_tested_inputs": {
+    "build.gradle": "0c3771f89ca874cb4943c8a43605d4c469b6c34a1b123e2694d42045c6e0f46d",
+    "src/main/java/org/apache/aurora/scheduler/scheduling/TaskAssignerImpl.java": "25a48dc727dd45bbeec82c712a991ddf36a6cfa67b5eba8d8015c4b1f89241fb",
+    "src/main/java/org/apache/aurora/scheduler/state/StateManager.java": "2ca1eda84652817d6912f894a226677795a9030acf334092ea2474cdc840bba7",
+    "src/main/java/org/apache/aurora/scheduler/state/StateManagerImpl.java": "e9797713c39f7b2e25233d99bd288a56f07f67faab1318f35360535a5b755fba",
+    "src/test/java/org/apache/aurora/scheduler/scheduling/TaskAssignerImplTest.java": "36f9a90bcc6ca765706dbe1f59368e2932e9afeae91d23532ca3d430d956223f",
+    "src/test/java/org/apache/aurora/scheduler/state/StateManagerImplTest.java": "32137bd03ea5860824654de168191970413aa97ab220883a016b90f87a64e93c"
+  },
+  "logs": {
+    ".cache/inplace02-validation/behavior-01.log": "5dbd1b4661ed16fee817f5be99fc13b28b50f0fc1d72237614e6f513eddb520f",
+    ".cache/inplace02-validation/behavior-02.log": "bf8734500731df24f82b756ce5dfdd7671fc325a23f67f30573cbfd1eed2f611",
+    ".cache/inplace02-validation/excluded-suite.log": "14ca117674b3adc611cd3b681d3e4acb32eb1dcf1046c56cc07423ad754b229f",
+    ".cache/inplace02-validation/filtered-suite.log": "3f22ecaa1098d3d62a23c737ae508bcf0dc470d0b78b8e3e4f504cd954c371bc",
+    ".cache/inplace02-validation/behavior-final.log": "c0cec95cb226743dd9f11b7a2687884e659c02a2d2a15d9a90c2fa5ac40fa225"
+  },
+  "negative_checks": {
+    "excluded_test_task": "rejected despite existing coverage data",
+    "filtered_test_task": "rejected before filtered test execution"
+  },
+  "result_reuse": "behaviorTest reran on final sources; commons:test used its passing unchanged-input result.",
+  "limits": [
+    "INPLACE-02 broader packaging, UI, quality/CI, executor and native integration remain open.",
+    "One existing secondary-index concurrency test remains ignored.",
+    "INPLACE-03 only extracts agent identity; other Mesos dependencies remain.",
+    "INPLACE-04 contract preparation only; no SQL backend, outbox or receipts implemented.",
+    "Stopped at user-set 50% remaining usage floor."
+  ]
+}

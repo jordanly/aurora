@@ -56,7 +56,6 @@ import org.apache.aurora.scheduler.storage.entities.IHostAttributes;
 import org.apache.aurora.scheduler.storage.entities.IScheduledTask;
 import org.apache.aurora.scheduler.storage.entities.ITaskConfig;
 import org.apache.aurora.scheduler.storage.mem.MemStorageModule;
-import org.apache.mesos.v1.Protos.AgentID;
 import org.easymock.Capture;
 import org.easymock.EasyMock;
 import org.easymock.IArgumentMatcher;
@@ -86,6 +85,7 @@ import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.expectLastCall;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 public class StateManagerImplTest extends EasyMockTest {
 
@@ -587,6 +587,47 @@ public class StateManagerImplTest extends EasyMockTest {
     assertEquals(HOST_A.getSlaveId(), change.getTask().getAssignedTask().getSlaveId());
   }
 
+  @Test
+  public void testAgentIdentityIsStoredVerbatim() {
+    List<String> agentIds = List.of("", "  ", "agent/π:worker-01");
+    for (int i = 0; i < agentIds.size(); i++) {
+      String taskId = "identity-" + i;
+      expect(taskIdGenerator.generate(NON_SERVICE_CONFIG, i)).andReturn(taskId);
+      expectStateTransitions(taskId, INIT, PENDING, ASSIGNED);
+    }
+    control.replay();
+
+    for (int i = 0; i < agentIds.size(); i++) {
+      String taskId = "identity-" + i;
+      insertTask(NON_SERVICE_CONFIG, i);
+      assignTask(taskId, IHostAttributes.build(
+          HOST_A.newBuilder().setSlaveId(agentIds.get(i))));
+      IAssignedTask assigned = Storage.Util.fetchTask(storage, taskId).get().getAssignedTask();
+      assertEquals(agentIds.get(i), assigned.getSlaveId());
+      assertEquals(HOST_A.getHost(), assigned.getSlaveHost());
+    }
+  }
+
+  @Test
+  public void testNullAgentIdentityRejectedBeforeMutation() {
+    String taskId = "identity-null";
+    expect(taskIdGenerator.generate(NON_SERVICE_CONFIG, 0)).andReturn(taskId);
+    expectStateTransitions(taskId, INIT, PENDING);
+    control.replay();
+
+    insertTask(NON_SERVICE_CONFIG, 0);
+    Optional<IScheduledTask> before = Storage.Util.fetchTask(storage, taskId);
+    try {
+      storage.write(storeProvider -> stateManager.assignTask(
+          storeProvider, taskId, HOST_A.getHost(), null, task -> {
+            throw new AssertionError("Invalid identity must not reach resource assignment");
+          }));
+      fail("Expected null identity rejection");
+    } catch (NullPointerException expected) {
+      assertEquals(before, Storage.Util.fetchTask(storage, taskId));
+    }
+  }
+
   private void expectStateTransitions(
       String taskId,
       ScheduleStatus initial,
@@ -645,7 +686,7 @@ public class StateManagerImplTest extends EasyMockTest {
         storeProvider,
         taskId,
         host.getHost(),
-        AgentID.newBuilder().setValue(host.getSlaveId()).build(),
+        host.getSlaveId(),
         e -> IAssignedTask.build(e.newBuilder().setAssignedPorts(ports))));
   }
 }

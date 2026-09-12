@@ -484,6 +484,81 @@ jacocoTestCoverageVerification {
 }
 jacocoTestReport.finalizedBy jacocoTestCoverageVerification
 
+// Qualify the complete original Java suite before backend extraction. Keep UI/distribution
+// qualification in the full build, and retain focusedTest for selected, uninstrumented tests.
+def behaviorTest = tasks.register('behaviorTest', Test) {
+  description = 'Run all original scheduler Java tests with coverage, independently of UI packaging.'
+  group = 'verification'
+  testClassesDirs = sourceSets.test.output.classesDirs
+  classpath = files(sourceSets.test.output, sourceSets.main.output.classesDirs,
+      tasks.named('processJavaResources'), configurations.testRuntimeClasspath)
+  doFirst {
+    if (!filter.commandLineIncludePatterns.empty || !filter.includePatterns.empty
+        || !filter.excludePatterns.empty || !includes.empty || !excludes.empty) {
+      throw new GradleException('behaviorTest requires the complete suite; use focusedTest for filters')
+    }
+  }
+}
+
+def behaviorCoverageReport = tasks.register('behaviorCoverageReport', JacocoReport) {
+  description = 'Report coverage of the original application classes from behaviorTest.'
+  group = 'verification'
+  dependsOn behaviorTest
+  executionData behaviorTest.map { it.jacoco.destinationFile }
+  sourceDirectories.setFrom(sourceSets.main.java.srcDirs)
+  classDirectories.setFrom(sourceSets.main.output.classesDirs)
+  reports {
+    xml.required = true
+    html.required = true
+  }
+}
+
+def behaviorCoverageVerification = tasks.register(
+    'behaviorCoverageVerification', JacocoCoverageVerification) {
+  description = 'Enforce the historical coverage thresholds on the original application.'
+  group = 'verification'
+  dependsOn behaviorCoverageReport
+  executionData behaviorTest.map { it.jacoco.destinationFile }
+  sourceDirectories.setFrom(sourceSets.main.java.srcDirs)
+  classDirectories.setFrom(sourceSets.main.output.classesDirs)
+  violationRules {
+    rule {
+      limit {
+        counter = 'INSTRUCTION'
+        minimum = 0.87
+      }
+      limit {
+        counter = 'BRANCH'
+        minimum = 0.79
+      }
+    }
+  }
+}
+
+def commonsBehaviorTest = project(':commons').tasks.named('test')
+tasks.register('verifyOriginalBehavior') {
+  description = 'Run original Java behavior and commons suites and enforce application coverage.'
+  group = 'verification'
+  dependsOn behaviorCoverageVerification, commonsBehaviorTest
+  doLast {
+    def requiredTasks = [behaviorTest.get(), behaviorCoverageReport.get(),
+        behaviorCoverageVerification.get(), commonsBehaviorTest.get()]
+    requiredTasks.each { requiredTask ->
+      def state = requiredTask.state
+      if (!requiredTask.enabled || !state.executed
+          || (state.skipped && !(state.skipMessage in ['UP-TO-DATE', 'FROM-CACHE']))) {
+        throw new GradleException("Original behavior qualification requires ${requiredTask.path}; "
+            + "it was excluded, disabled or skipped")
+      }
+    }
+    // JaCoCo skips its task when execution data is absent; that must not pass this gate.
+    def report = behaviorCoverageReport.get().reports.xml.outputLocation.get().asFile
+    if (!behaviorTest.get().jacoco.destinationFile.isFile() || !report.isFile()) {
+      throw new GradleException('Original behavior qualification requires coverage data and an XML report')
+    }
+  }
+}
+
 // Keep the complete original benchmark source set without the obsolete JMH plugin.
 sourceSets {
   jmh {

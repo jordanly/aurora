@@ -337,7 +337,7 @@ public class TaskAssignerImplTest extends EasyMockTest {
         eq(storeProvider),
         eq(task.getTaskId()),
         eq(offer.getHostname()),
-        eq(offer.getAgentId()),
+        eq(offer.getAgentId().getValue()),
         anyObject())).andReturn(task);
   }
 
