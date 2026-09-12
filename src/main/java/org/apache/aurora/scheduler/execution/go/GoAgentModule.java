@@ -14,7 +14,6 @@
 package org.apache.aurora.scheduler.execution.go;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.Map;
 
 import javax.inject.Singleton;
@@ -27,6 +26,7 @@ import com.google.inject.Provides;
 import org.apache.aurora.scheduler.config.CliOptions;
 import org.apache.aurora.scheduler.configuration.executor.ExecutorConfig;
 import org.apache.aurora.scheduler.configuration.executor.ExecutorSettings;
+import org.apache.aurora.scheduler.events.PubsubEventModule;
 import org.apache.aurora.scheduler.execution.ExecutionControl;
 import org.apache.aurora.scheduler.execution.ExecutionDriver;
 import org.apache.aurora.scheduler.execution.OfferTransport;
@@ -34,12 +34,12 @@ import org.apache.aurora.scheduler.execution.TaskConfigValidator;
 import org.apache.aurora.scheduler.execution.TaskFactory;
 import org.apache.aurora.scheduler.execution.TaskKiller;
 import org.apache.aurora.scheduler.execution.TaskReconciliation;
+import org.apache.aurora.scheduler.resources.ResourceBag;
 import org.apache.aurora.scheduler.storage.CallOrderEnforcingStorage;
 import org.apache.aurora.scheduler.storage.SnapshotStore;
 import org.apache.aurora.scheduler.storage.backup.Recovery;
 import org.apache.aurora.scheduler.storage.backup.StorageBackup;
 import org.apache.aurora.scheduler.storage.sqlite.SqliteStorage;
-import org.apache.mesos.v1.Protos;
 
 /** Selects Go execution and SQLite inside the existing SchedulerMain application. */
 public final class GoAgentModule extends AbstractModule {
@@ -66,13 +66,9 @@ public final class GoAgentModule extends AbstractModule {
     bind(GoTaskFactory.class).in(Singleton.class);
     bind(TaskFactory.class).to(GoTaskFactory.class);
     bind(TaskConfigValidator.class).to(GoTaskFactory.class);
-    // ExecutorSettings still serves the original resource-accounting contract. The placeholder
-    // protobuf carries no executable payload or overhead, and is never sent to Mesos.
-    bind(ExecutorSettings.class).toInstance(new ExecutorSettings(Map.of(GoTaskFactory.EXECUTOR,
-        new ExecutorConfig(Protos.ExecutorInfo.newBuilder()
-            .setExecutorId(Protos.ExecutorID.newBuilder().setValue("go-process"))
-            .setCommand(Protos.CommandInfo.newBuilder().setValue("unused")).build(),
-            List.of(), "go-")), false));
+    bind(ExecutorSettings.class).toInstance(new ExecutorSettings(Map.of(
+        GoTaskFactory.EXECUTOR, new ExecutorConfig(ResourceBag.EMPTY))));
+    PubsubEventModule.bindSubscriber(binder(), GoAgentDriver.class);
     bind(GoStorageBackup.class).in(Singleton.class);
     bind(StorageBackup.class).to(GoStorageBackup.class);
     bind(SnapshotStore.class).to(GoStorageBackup.class);

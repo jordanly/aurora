@@ -28,13 +28,14 @@ import org.apache.aurora.scheduler.execution.ExecutionOffer;
 import org.apache.aurora.scheduler.execution.PreparedTask;
 import org.apache.aurora.scheduler.execution.TaskConfigValidator;
 import org.apache.aurora.scheduler.execution.TaskFactory;
+import org.apache.aurora.scheduler.resources.ResourceBag;
 import org.apache.aurora.scheduler.resources.ResourceManager;
 import org.apache.aurora.scheduler.resources.ResourceType;
 import org.apache.aurora.scheduler.storage.entities.IAssignedTask;
 import org.apache.aurora.scheduler.storage.entities.ITaskConfig;
 
 /** Explicit process-only executor cohort through the original TaskConfig contract. */
-final class GoTaskFactory implements TaskFactory, TaskConfigValidator {
+public final class GoTaskFactory implements TaskFactory, TaskConfigValidator {
   static final String EXECUTOR = "go-process";
   private final GoAgentConfig config;
   private final TierManager tiers;
@@ -50,10 +51,19 @@ final class GoTaskFactory implements TaskFactory, TaskConfigValidator {
   @Override
   public void validate(ITaskConfig task) throws TaskDescriptionException {
     try {
+      WireJson.require(!tiers.getTier(task).isRevocable(), "Go agents do not offer revocable CPU");
+      validateForImport(task);
+    } catch (IllegalArgumentException e) {
+      throw new TaskDescriptionException(e.getMessage(), e);
+    }
+  }
+
+  /** Validates the executable profile without requiring a running scheduler or enrolled agents. */
+  public static void validateForImport(ITaskConfig task) throws TaskDescriptionException {
+    try {
       WireJson.require(task.isSetExecutorConfig()
           && EXECUTOR.equals(task.getExecutorConfig().getName()),
           "Go agents require the go-process executor with aurora-process-v1 data");
-      WireJson.require(!tiers.getTier(task).isRevocable(), "Go agents do not offer revocable CPU");
       WireJson.require(task.getContainer().isSetMesos()
           && !task.getContainer().getMesos().isSetImage()
           && task.getContainer().getMesos().getVolumes().isEmpty()
@@ -66,12 +76,8 @@ final class GoTaskFactory implements TaskFactory, TaskConfigValidator {
       WireJson.require(!task.isSetPartitionPolicy() || !task.getPartitionPolicy().isReschedule(),
           "Process profile preserves reservations through partitions; rescheduling is unsupported");
       var resources = ResourceManager.bagFromResources(task.getResources());
-      double cpuMillis = resources.valueOf(ResourceType.CPUS) * 1000;
-      WireJson.require(Double.isFinite(cpuMillis)
-          && Double.compare(cpuMillis, Math.rint(cpuMillis)) == 0,
-          "CPU reservations must be whole milliseconds of a core");
-      WireJson.require(resources.valueOf(ResourceType.CPUS) * 1000 <= Integer.MAX_VALUE
-          && resources.valueOf(ResourceType.RAM_MB) * 1048576 <= 9007199254740991L,
+      cpuMillis(resources);
+      WireJson.require(resources.valueOf(ResourceType.RAM_MB) * 1048576 <= 9007199254740991L,
           "Resource value exceeds agent protocol range");
       var key = task.getJob();
       WireJson.require(java.util.stream.Stream.of(
@@ -82,6 +88,17 @@ final class GoTaskFactory implements TaskFactory, TaskConfigValidator {
     } catch (IOException | IllegalArgumentException e) {
       throw new TaskDescriptionException(e.getMessage(), e);
     }
+  }
+
+  private static long cpuMillis(ResourceBag resources) {
+    double scaled = resources.valueOf(ResourceType.CPUS) * 1000;
+    double rounded = Math.rint(scaled);
+    // Thrift carries cores as a double. For example 1.001 * 1000 is slightly
+    // below 1001; tolerate binary roundoff, not fractional-millisecond requests.
+    WireJson.require(Double.isFinite(scaled) && rounded > 0 && rounded <= Integer.MAX_VALUE
+        && Math.abs(scaled - rounded) <= 2 * Math.ulp(scaled),
+        "CPU reservations must be positive whole milliseconds within the agent protocol range");
+    return (long) rounded;
   }
 
   private static JsonNode process(ITaskConfig task) throws IOException {
@@ -131,7 +148,7 @@ final class GoTaskFactory implements TaskFactory, TaskConfigValidator {
       assignment.set("argv", spec.get("argv"));
       assignment.set("env", spec.get("env"));
       assignment.set("resources", WireJson.object()
-          .put("cpuMillis", (long) Math.ceil(resources.valueOf(ResourceType.CPUS) * 1000))
+          .put("cpuMillis", cpuMillis(resources))
           .put("memoryBytes", (long) resources.valueOf(ResourceType.RAM_MB) * 1048576)
           .put("memoryEnforcement", "reservation"));
       assignment.putArray("ports");

@@ -1,0 +1,8 @@
+{
+  "version": "aurora-job-v1",
+  "job": {"role": "fixtures", "environment": "test", "name": "process-batch"},
+  "instances": 2,
+  "service": false,
+  "resources": {"cpuMillis": 100, "ramMb": 32, "diskMb": 32},
+  "process": {"argv": ["/bin/echo", "Hello from Aurora"], "env": {}, "graceMillis": 1000}
+}

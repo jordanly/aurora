@@ -1,0 +1,19 @@
+{
+  "version": "aurora-job-v1",
+  "job": {"role": "fixtures", "environment": "test", "name": "process-service"},
+  "instances": 2,
+  "service": true,
+  "resources": {"cpuMillis": 600, "ramMb": 32, "diskMb": 32},
+  "process": {
+    "argv": ["/bin/sleep", "infinity"],
+    "env": {},
+    "graceMillis": 1000
+  },
+  "update": {
+    "batchSize": 1,
+    "maxPerInstanceFailures": 0,
+    "maxFailedInstances": 0,
+    "minRunningMillis": 1000,
+    "rollbackOnFailure": true
+  }
+}

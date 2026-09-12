@@ -1,15 +1,18 @@
 # In-place modernization backlog
 
-Active as of 2026-09-11. This replaces the parallel application's backlog and
-cancels JAVA-11 source retirement. The [full plan](IN_PLACE_MODERNIZATION_PLAN.md)
+Active as of 2026-09-12. This replaces the parallel application's backlog and
+keeps the original scheduler and UI. The [full plan](IN_PLACE_MODERNIZATION_PLAN.md)
 defines the architecture, detailed acceptance criteria and Docker testing ground.
 These are repository work items, not claims of created GitHub issues.
 INPLACE-00 is complete. INPLACE-01/02 have restored local Java, UI, packaging and
 quality gates; INPLACE-03 execution boundaries and INPLACE-04 local transactional
-storage are implemented. Native execution, real credentials, Python runtime and
-production HA qualification remain explicit gates. See the [current status and
-evidence](INPLACE02_04_IMPLEMENTATION_STATUS.md). INPLACE-05 is the next runtime
-integration boundary: durable effects and controller recovery.
+storage are implemented. INPLACE-05–07 integrated the Go process cohort and
+qualified the original scheduler in the private Pi cluster. The current
+[INPLACE-08 checkpoint](INPLACE08_IMPLEMENTATION_STATUS.md) replaces polling with
+push updates, retires the Python and Mesos paths, and supplies JSON jobs, a Go
+client and offline recovery. The supported process profile replaces the earlier
+requirement to retain executable Python configurations; general Thermos parity
+is not claimed. Production HA follows these changes and remains deferred.
 The [Java 25 file audit](JAVA25_FILE_AUDIT.md) assesses all 636 tracked Java files
 and orders concrete modernization batches. Small resource, failure-handling and
 test-reliability fixes can accompany the early baseline work; broad framework
@@ -25,9 +28,10 @@ and application refactoring remains sequenced through INPLACE-09.
 | INPLACE-05 | Durable dispatch, committed state events, observation deduplication and controller recovery | 03, 04 | No effects before outer commit; correct replay/cancellation/leadership ordering; original state semantics; readiness gated by successful recovery. |
 | INPLACE-06 | Go backend and resolved-config adapter integrated with original task/status/reconciliation paths | 03, 05 | Original identities and API preserved; capability validation; real execution; compatibility fixtures for supported cohort. |
 | INPLACE-07 | Original Java 25 scheduler plus two Go agents in isolated Pi containers | 06; applicable 02 gates closed | Existing API drives original policy; three recovery rounds and ten-minute workload; source/image/config provenance and safe cleanup. |
-| INPLACE-08 | Remaining execution parity, historical-state migration, HA/fencing qualification and Mesos retirement | 04–07 | Full feature ledger; all-store import/restore and cutover rehearsal; required isolation/availability; driver and replicated-log dependencies removed. |
+| INPLACE-08 | Push updates, Python/Mesos retirement, Go client/JSON jobs and offline migration | 04–07 | Original behavior, transport/recovery and two-agent acceptance; declared process profile; complete retirement ledger; no Python/Mesos build or runtime dependency. |
 | INPLACE-09 | Idiomatic Java 25+ throughout the retained application and tools | 08 | Original suites and packaging pass; reviewed language/dependency/DI/HTTP improvements; explicit semantic and concurrency changes. |
 | INPLACE-10 | Incremental UI and client modernization through preserved application contracts | 09; API/UI compatibility retained throughout | Submit, inspect, update/rollback, cron, drain and logs work; auth and existing links/workflows preserved. |
+| INPLACE-HA (last) | Production storage ownership, fencing and failover qualification | Supported runtime and operational requirements established | Multi-scheduler leadership, partitions, stale owners, power/storage loss, backup cutover and recovery objectives demonstrated. Local SQLite restart tests do not establish HA. |
 
 ## First implementation batch
 
@@ -44,8 +48,8 @@ dependencies, finalization, health/discovery, and resource/sandbox/log behavior.
 Contract and fixture preparation may proceed independently once the relevant
 baseline is known; runtime integration waits for its durability gates.
 
-The first Pi cohort can be limited to supported process workloads. Full Aurora
-feature and HA preservation remain required work, not silently dropped scope.
+The maintained Pi cohort is limited to the documented process profile. Retired
+Thermos features have explicit migration limits; production HA is deferred.
 A blocked test stays visible until executed or its obsolete dependency is
 replaced and the equivalent behavior has a passing test.
 

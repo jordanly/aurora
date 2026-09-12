@@ -91,34 +91,6 @@ public final class GuiceUtils {
     };
   }
 
-  /**
-   * Binds an interceptor that ensures the main ClassLoader is bound as the thread context
-   * {@link ClassLoader} during JNI callbacks from mesos.  Some libraries require a thread
-   * context ClassLoader be set and this ensures those libraries work properly.
-   *
-   * @param binder The binder to use to register an interceptor with.
-   * @param wrapInterface Interface whose methods should wrapped.
-   */
-  public static void bindJNIContextClassLoader(Binder binder, Class<?> wrapInterface) {
-    final ClassLoader mainClassLoader = GuiceUtils.class.getClassLoader();
-    binder.bindInterceptor(
-        Matchers.subclassesOf(wrapInterface),
-        interfaceMatcher(wrapInterface, false),
-        new MethodInterceptor() {
-          @Override
-          public Object invoke(MethodInvocation invocation) throws Throwable {
-            Thread currentThread = Thread.currentThread();
-            ClassLoader prior = currentThread.getContextClassLoader();
-            try {
-              currentThread.setContextClassLoader(mainClassLoader);
-              return invocation.proceed();
-            } finally {
-              currentThread.setContextClassLoader(prior);
-            }
-          }
-        });
-  }
-
   private static final Predicate<Method> IS_WHITELISTED =
       method -> method.getAnnotation(AllowUnchecked.class) != null;
 

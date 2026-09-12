@@ -37,8 +37,8 @@ import org.apache.aurora.gen.TaskEvent;
 import org.apache.aurora.scheduler.base.JobKeys;
 import org.apache.aurora.scheduler.base.Query;
 import org.apache.aurora.scheduler.base.TaskGroupKey;
+import org.apache.aurora.scheduler.execution.TestOffer;
 import org.apache.aurora.scheduler.filter.AttributeAggregate;
-import org.apache.aurora.scheduler.mesos.MesosOffer;
 import org.apache.aurora.scheduler.offers.HostOffer;
 import org.apache.aurora.scheduler.offers.OfferManager;
 import org.apache.aurora.scheduler.state.ClusterState;
@@ -49,7 +49,6 @@ import org.apache.aurora.scheduler.storage.entities.IScheduledTask;
 import org.apache.aurora.scheduler.storage.entities.ITaskConfig;
 import org.apache.aurora.scheduler.storage.testing.StorageTestUtil;
 import org.apache.aurora.scheduler.testing.FakeStatsProvider;
-import org.apache.mesos.v1.Protos;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -303,13 +302,8 @@ public class PendingTaskProcessorTest extends EasyMockTest {
   }
 
   private HostOffer makeOffer(String slaveId) {
-    Protos.Offer.Builder builder = Protos.Offer.newBuilder();
-    builder.getIdBuilder().setValue("id");
-    builder.getFrameworkIdBuilder().setValue("framework-id");
-    builder.getAgentIdBuilder().setValue(slaveId);
-    builder.setHostname(slaveId);
     return new HostOffer(
-        new MesosOffer(builder.build()),
+        TestOffer.builder("id").agentId(slaveId).hostname(slaveId).build(),
         IHostAttributes.build(new HostAttributes().setMode(MaintenanceMode.NONE)));
   }
 

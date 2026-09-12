@@ -13,8 +13,7 @@
  */
 package org.apache.aurora.scheduler.app.local.simulator.events;
 
-import org.apache.mesos.v1.Protos.OfferID;
-import org.apache.mesos.v1.Protos.TaskInfo;
+import org.apache.aurora.scheduler.app.local.FakeMaster.Launch;
 
 import static java.util.Objects.requireNonNull;
 
@@ -22,10 +21,10 @@ import static java.util.Objects.requireNonNull;
  * Event indicating that an offer has been accepted.
  */
 public class OfferAccepted {
-  public final OfferID offer;
-  public final TaskInfo task;
+  public final String offer;
+  public final Launch task;
 
-  public OfferAccepted(OfferID offer, TaskInfo task) {
+  public OfferAccepted(String offer, Launch task) {
     this.offer = requireNonNull(offer);
     this.task = requireNonNull(task);
   }

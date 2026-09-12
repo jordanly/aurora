@@ -1,0 +1,6 @@
+{
+  "java/org/apache/aurora/scheduler/storage/entities/AuroraAdminMetadata.java": "eafe400b0fb601d4e2586e706d3c6b36d8d909a0e9c66c6e600fa0c0e46091c4",
+  "java/org/apache/aurora/scheduler/storage/entities/IAllTypes.java": "627787473019e8de2ffb519e0061edab92d3fdd7d42edf76ae10b7696c0727f6",
+  "java/org/apache/aurora/scheduler/storage/entities/IChoice.java": "0a272f0bdbfc07cd2f5c6d7a1625c93cab81e53ac6de84b6cdf9b74651201cac",
+  "java/org/apache/aurora/scheduler/storage/entities/ILeaf.java": "f7f0c0b0d2df5dd26df06a170f4f446b0481992f84a6aceae5ef9382fce8adae"
+}

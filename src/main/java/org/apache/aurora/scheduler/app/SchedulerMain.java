@@ -14,7 +14,6 @@
 package org.apache.aurora.scheduler.app;
 
 import java.net.InetSocketAddress;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
@@ -24,7 +23,6 @@ import javax.inject.Inject;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.net.HostAndPort;
 import com.google.inject.AbstractModule;
@@ -46,24 +44,15 @@ import org.apache.aurora.scheduler.TierModule;
 import org.apache.aurora.scheduler.config.CliOptions;
 import org.apache.aurora.scheduler.config.CommandLine;
 import org.apache.aurora.scheduler.config.validators.NotEmptyString;
-import org.apache.aurora.scheduler.configuration.executor.ExecutorModule;
 import org.apache.aurora.scheduler.cron.quartz.CronModule;
 import org.apache.aurora.scheduler.discovery.FlaggedZooKeeperConfig;
 import org.apache.aurora.scheduler.discovery.ServiceDiscoveryModule;
 import org.apache.aurora.scheduler.events.WebhookModule;
+import org.apache.aurora.scheduler.execution.go.GoAgentModule;
 import org.apache.aurora.scheduler.http.HttpService;
-import org.apache.aurora.scheduler.log.mesos.MesosLogStreamModule;
-import org.apache.aurora.scheduler.mesos.CommandLineDriverSettingsModule;
-import org.apache.aurora.scheduler.mesos.FrameworkInfoFactory.FrameworkInfoFactoryImpl.SchedulerProtocol;
-import org.apache.aurora.scheduler.mesos.LibMesosLoadingModule;
 import org.apache.aurora.scheduler.stats.StatsModule;
 import org.apache.aurora.scheduler.storage.Storage.Volatile;
-import org.apache.aurora.scheduler.storage.backup.BackupModule;
-import org.apache.aurora.scheduler.storage.durability.DurableStorageModule;
 import org.apache.aurora.scheduler.storage.entities.IServerInfo;
-import org.apache.aurora.scheduler.storage.log.LogPersistenceModule;
-import org.apache.aurora.scheduler.storage.log.SnapshotModule;
-import org.apache.aurora.scheduler.storage.log.SnapshotterImpl;
 import org.apache.aurora.scheduler.storage.mem.MemStorageModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -98,46 +87,14 @@ public class SchedulerMain {
     public String statsUrlPrefix = "";
 
     @Parameter(names = "-allow_gpu_resource",
-        description = "Allow jobs to request Mesos GPU resource.",
+        description = "Allow jobs to request GPU resources.",
         arity = 1)
     public boolean allowGpuResource = false;
 
-    public enum DriverKind {
-      // TODO(zmanji): Remove this option once V0_DRIVER has been proven out in production.
-      // This is the original driver that libmesos shipped with. Uses unversioned protobufs, and has
-      // minimal backwards compatibility guarantees.
-      SCHEDULER_DRIVER,
-      // These are the new drivers that libmesos ships with. They use versioned (V1) protobufs for
-      // the Java API.
-      // V0 Driver offers the V1 API over the old Scheduler Driver. It does not fully support
-      // the V1 API (ie mesos maintenance).
-      V0_DRIVER,
-      // V1 Driver offers the V1 API over a full HTTP API implementation. It allows for maintenance
-      // primitives and other new features.
-      V1_DRIVER,
-    }
-
-    @Parameter(names = "-go_agent_config",
+    @Parameter(names = "-go_agent_config", required = true,
         description = "Go process agent enrollment and SQLite configuration file.")
     public java.io.File goAgentConfig;
 
-    @Parameter(names = "-mesos_driver", description = "Which Mesos Driver to use")
-    public DriverKind driverImpl = DriverKind.SCHEDULER_DRIVER;
-  }
-
-  public static class ProtocolModule extends AbstractModule {
-    private final Options options;
-
-    public ProtocolModule(Options options) {
-      this.options = options;
-    }
-
-    @Override
-    protected void configure() {
-      bind(String.class)
-          .annotatedWith(SchedulerProtocol.class)
-          .toInstance(options.serversetEndpointName);
-    }
   }
 
   @Inject private SingletonService schedulerService;
@@ -187,7 +144,6 @@ public class SchedulerMain {
   @VisibleForTesting
   static Module getUniversalModule(CliOptions options) {
     return Modules.combine(
-        new ProtocolModule(options.main),
         new LifecycleModule(),
         new StatsModule(options.stats),
         new AppModule(options),
@@ -216,10 +172,7 @@ public class SchedulerMain {
         new ServiceDiscoveryModule(
             FlaggedZooKeeperConfig.create(options.zk),
             options.main.serversetPath),
-        options.main.goAgentConfig == null
-            ? Modules.combine(new BackupModule(options.backup, SnapshotterImpl.class),
-                new ExecutorModule(options.executor))
-            : Modules.EMPTY_MODULE,
+        new GoAgentModule(options),
         new AbstractModule() {
           @Override
           protected void configure() {
@@ -253,24 +206,7 @@ public class SchedulerMain {
   public static void main(String... args) {
     CliOptions options = CommandLine.parseOptions(args);
 
-    if (options.main.goAgentConfig != null) {
-      flagConfiguredMain(options, Modules.combine(
-          new TierModule(options.tiers), new WebhookModule(options.webhook)));
-      return;
-    }
-
-    List<Module> modules = ImmutableList.<Module>builder()
-        .add(
-            new CommandLineDriverSettingsModule(options.driver, options.main.allowGpuResource),
-            new LibMesosLoadingModule(options.main.driverImpl),
-            new DurableStorageModule(),
-            new MesosLogStreamModule(options.mesosLog, FlaggedZooKeeperConfig.create(options.zk)),
-            new LogPersistenceModule(options.logPersistence),
-            new SnapshotModule(options.snapshot),
-            new TierModule(options.tiers),
-            new WebhookModule(options.webhook)
-        )
-        .build();
-    flagConfiguredMain(options, Modules.combine(modules));
+    flagConfiguredMain(options, Modules.combine(
+        new TierModule(options.tiers), new WebhookModule(options.webhook)));
   }
 }

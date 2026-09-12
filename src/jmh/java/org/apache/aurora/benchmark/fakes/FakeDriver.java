@@ -17,58 +17,31 @@ import java.util.Collection;
 
 import com.google.common.util.concurrent.AbstractIdleService;
 
-import org.apache.aurora.scheduler.mesos.Driver;
-import org.apache.mesos.v1.Protos;
+import org.apache.aurora.scheduler.execution.ExecutionDriver;
+import org.apache.aurora.scheduler.execution.ExecutionOffer;
+import org.apache.aurora.scheduler.execution.OfferTransport;
+import org.apache.aurora.scheduler.execution.PreparedTask;
+import org.apache.aurora.scheduler.execution.ReconciliationTarget;
+import org.apache.aurora.scheduler.execution.TaskFactory;
+import org.apache.aurora.scheduler.execution.TaskReconciliation;
+import org.apache.aurora.scheduler.storage.entities.IAssignedTask;
 
-public class FakeDriver extends AbstractIdleService implements Driver {
-  @Override
-  public void blockUntilStopped() {
-    // no-op
-  }
-
-  @Override
-  public void acceptOffers(Protos.OfferID offerId, Collection<Protos.Offer.Operation> operations,
-      Protos.Filters filter) {
-    // no-op
-  }
-
-  @Override
-  public void acceptInverseOffer(Protos.OfferID offerID, Protos.Filters filter) {
-    // no-op
-  }
+/** No external work: benchmarks measure the original policy and state machinery. */
+public class FakeDriver extends AbstractIdleService
+    implements ExecutionDriver, OfferTransport, TaskFactory, TaskReconciliation {
+  public record Launch(IAssignedTask task) implements PreparedTask { }
 
   @Override
-  public void declineOffer(Protos.OfferID offerId, Protos.Filters filters) {
-    // no-op
+  public PreparedTask prepare(IAssignedTask task, ExecutionOffer offer, boolean revocable) {
+    return new Launch(task);
   }
 
-  @Override
-  public void killTask(String taskId) {
-    // no-op
-  }
-
-  @Override
-  public void acknowledgeStatusUpdate(Protos.TaskStatus status) {
-    // no-op
-  }
-
-  @Override
-  public void abort() {
-    // no-op
-  }
-
-  @Override
-  protected void startUp() throws Exception {
-    // no-op
-  }
-
-  @Override
-  protected void shutDown() throws Exception {
-    // no-op
-  }
-
-  @Override
-  public void reconcileTasks(Collection<Protos.TaskStatus> statuses) {
-    // no-op
-  }
+  @Override public void blockUntilStopped() { }
+  @Override public void launch(String offerId, PreparedTask task, double refuseSeconds) { }
+  @Override public void decline(String offerId, double refuseSeconds) { }
+  @Override public void killTask(String taskId) { }
+  @Override public void abort() { }
+  @Override protected void startUp() { }
+  @Override protected void shutDown() { }
+  @Override public void reconcileTasks(Collection<ReconciliationTarget> targets) { }
 }

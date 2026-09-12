@@ -1,15 +1,63 @@
 ![Aurora Logo](docs/images/aurora_logo.png)
 
-This fork modernizes Aurora **in place**: the existing scheduler, state machines,
-policies, public API and UI remain the application while execution and persistence
-are replaced. All maintained Java code targets Java 25+.
-See the [modernization plan](docs/reimagining/IN_PLACE_MODERNIZATION_PLAN.md),
-[ordered backlog](docs/reimagining/IMPLEMENTATION_BACKLOG.md), and
-[current build status](docs/reimagining/INPLACE01_BUILD_STATUS.md).
+This fork modernizes Aurora **in place**. The original Java scheduler, state
+machines, policies, Thrift API and UI remain the application. The maintained
+runtime uses Java 25, SQLite persistence and Go process agents with mutually
+authenticated streaming updates. Mesos, Thermos and the Python client are retired
+from the maintained runtime and build workflow.
 
-The separate scheduler prototype is preserved on `codex/standalone-foundations`
-as reference work. This branch starts from upstream and builds the original
-Aurora source. The Apache overview below describes that application's features.
+The supported process MVP runs trusted processes with resource reservations.
+It does not provide container isolation, the Thermos process graph or production
+multi-scheduler high availability. Restart recovery with durable local state is
+separate from HA, which is deferred. Historical feature documentation below is
+not a claim of current execution-profile compatibility or qualification.
+
+## Build and use this fork
+
+The pinned bootstrap currently supports Linux ARM64. From the repository root:
+
+```sh
+build-support/bootstrap-go check-tools
+compiler="$(build-support/bootstrap-go thrift)"
+./gradlew -PthriftCompiler="$compiler" compileJava compileTestJava focusedTest \
+  --tests org.apache.aurora.scheduler.state.TaskStateMachineTest
+./aurora job validate examples/jobs/process-service.json
+```
+
+The launchers bootstrap checksum-pinned tools without Python. Initial downloads
+need network access; offline use requires the pinned archives and dependency
+caches. See the [Java build guide](build-support/java/README.md) for prerequisites
+and full verification commands, and the [private integration lab](build-support/lab/README.md)
+for starting the original scheduler with Go agents.
+
+For an already running scheduler leader:
+
+```sh
+export AURORA_SCHEDULER=http://LEADER:8081
+./aurora job check examples/jobs/process-service.json
+./aurora job create examples/jobs/process-service.json
+./aurora job status fixtures/test/process-service
+./aurora job kill fixtures/test/process-service
+```
+
+Use private HTTP only in the isolated lab; configure the appropriate authenticated
+endpoint for other deployments. The [Go client guide](docs/reference/go-client.md)
+describes JSON jobs, TLS options, update/cron commands and migration limits.
+See [CONTRIBUTING](CONTRIBUTING.md) for development checks. Commands here describe
+how to verify a checkout; only receipts tied to that checkout establish results.
+The [current checkpoint](docs/reimagining/INPLACE08_IMPLEMENTATION_STATUS.md)
+records push transport, Python/Mesos retirement, recovery and cluster qualification.
+
+The [modernization plan](docs/reimagining/IN_PLACE_MODERNIZATION_PLAN.md) and
+[ordered backlog](docs/reimagining/IMPLEMENTATION_BACKLOG.md) preserve design history.
+The separate scheduler prototype on `codex/standalone-foundations` is reference
+work, not this branch's scheduler.
+
+## Upstream history
+
+The following overview and adoption list describe historical Apache Aurora,
+including its Mesos/Thermos execution stack. They are retained for attribution
+and context, not as support or deployment instructions for this fork.
 
 **NOTE: The Apache Aurora project has been moved into the [Apache Attic](https://attic.apache.org/).
 A fork led by members of the former Project Management Committee (PMC) can be found at https://github.com/aurora-scheduler**
@@ -24,7 +72,7 @@ To very concisely describe Aurora, it is like a distributed monit or distributed
 you can instruct to do things like _run 100 of these, somewhere, forever_.
 
 
-## Features
+## Historical upstream features
 
 Aurora is built for users _and_ operators.
 
@@ -82,7 +130,7 @@ Are you using Aurora too?  Let us know, or submit a patch to join the list!
 - [Twitter](https://twitter.com)
 - [Uber](https://www.uber.com)
 
-## Getting Help
+## Historical upstream community links
 If you have questions that aren't answered in our [documentation](https://aurora.apache.org/documentation/latest/), you can reach out to one of our [mailing lists](https://aurora.apache.org/community/).
 We're also often available in Slack: #aurora on [mesos.slack.com](http://mesos.slack.com).
 Invites to our slack channel may be requested via [mesos-slackin.herokuapp.com](https://mesos-slackin.herokuapp.com/)

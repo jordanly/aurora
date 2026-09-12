@@ -45,9 +45,9 @@ import static org.apache.aurora.common.quantity.Time.MINUTES;
 import static org.apache.aurora.common.quantity.Time.SECONDS;
 
 /**
- * A task reconciler that periodically triggers Mesos (implicit) and Aurora (explicit) task
- * reconciliation to synchronize global task states. More on task reconciliation:
- * http://mesos.apache.org/documentation/latest/reconciliation.
+ * Periodically requests execution driver reconciliation of all agent tasks (implicit) or
+ * scheduler-selected tasks (explicit). The Go execution driver reconciles through watch snapshots
+ * independently of these requests.
  */
 public class TaskReconciler extends AbstractIdleService {
 

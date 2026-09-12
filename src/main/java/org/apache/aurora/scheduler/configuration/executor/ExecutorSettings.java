@@ -17,54 +17,31 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
-import org.apache.aurora.scheduler.mesos.MesosResourceManager;
 import org.apache.aurora.scheduler.resources.ResourceBag;
 import org.apache.aurora.scheduler.storage.entities.ITaskConfig;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import static java.util.Objects.requireNonNull;
 
-/**
- * Configuration for the executor to run, and resource overhead required for it.
- */
-public class ExecutorSettings {
-
-  private static final Logger LOG = LoggerFactory.getLogger(ExecutorSettings.class);
-
+/** Immutable execution backend settings used for resource accounting. */
+public final class ExecutorSettings {
   private final Map<String, ExecutorConfig> config;
-  private final boolean populateDiscoveryInfo;
 
-  public ExecutorSettings(
-      Map<String, ExecutorConfig> config,
-      boolean populateDiscoveryInfo) {
-
-    this.config = requireNonNull(config);
-    this.populateDiscoveryInfo = populateDiscoveryInfo;
+  public ExecutorSettings(Map<String, ExecutorConfig> config) {
+    this.config = Map.copyOf(requireNonNull(config));
   }
 
   public Optional<ExecutorConfig> getExecutorConfig(String name) {
-    return Optional.ofNullable(config.get(name));
-  }
-
-  public boolean shouldPopulateDiscoverInfo() {
-    return populateDiscoveryInfo;
+    return Optional.ofNullable(config.get(requireNonNull(name)));
   }
 
   public ResourceBag getExecutorOverhead(ITaskConfig task) {
+    requireNonNull(task);
     if (!task.isSetExecutorConfig()) {
-      // Docker-based tasks don't need executors
       return ResourceBag.EMPTY;
     }
-
-    String name = task.getExecutorConfig().getName();
-    if (config.containsKey(name)) {
-      return MesosResourceManager.bagFromMesosResources(
-          config.get(name).getExecutor().getResourcesList());
-    } else {
-      LOG.warn("No executor configuration found for " + name);
-      return ResourceBag.EMPTY;
-    }
+    return getExecutorConfig(task.getExecutorConfig().getName())
+        .map(ExecutorConfig::overhead)
+        .orElse(ResourceBag.EMPTY);
   }
 
   @Override
@@ -74,11 +51,6 @@ public class ExecutorSettings {
 
   @Override
   public boolean equals(Object obj) {
-    if (!(obj instanceof ExecutorSettings)) {
-      return false;
-    }
-
-    ExecutorSettings other = (ExecutorSettings) obj;
-    return Objects.equals(config, other.config);
+    return obj instanceof ExecutorSettings other && Objects.equals(config, other.config);
   }
 }

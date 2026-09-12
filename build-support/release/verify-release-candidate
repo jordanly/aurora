@@ -45,19 +45,10 @@ fetch_archive() {
   shasum -a 512 ${dist_name}.tar.gz | diff - ${dist_name}.tar.gz.sha512
 }
 
-install_gradle_wrapper() {
-  GRADLE_VERSION=$(grep GRADLE_VERSION $HERE/../../buildSrc/gradle.properties | cut -d' ' -f3)
-  curl -f -O https://downloads.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip
-  unzip gradle-${GRADLE_VERSION}-bin.zip
-  gradle_path=$PWD/gradle-$GRADLE_VERSION/bin/gradle
-  pushd $1
-    $gradle_path wrapper
-  popd
-}
 
 run_tests() {
   ./build-support/jenkins/build.sh
-  ./src/test/sh/org/apache/aurora/e2e/test_end_to_end.sh
+  # Owned two-agent acceptance is documented in build-support/lab/README.md.
 }
 
 setup_tempdir() {
@@ -86,7 +77,6 @@ import_gpg_keys
 dist_name="apache-aurora-${verify_version}"
 fetch_archive $dist_name
 tar xvzf ${dist_name}.tar.gz
-install_gradle_wrapper ${dist_name}
 cd ${dist_name}
 run_tests
 

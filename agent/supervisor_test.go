@@ -280,8 +280,26 @@ func TestSupervisorMissingJournalRetainsReservation(t *testing.T) {
 	runUntil(t, r, func(st State) bool { return onlyAttempt(st).Execution.Outcome == "running" })
 	st, _ := s.Inspect()
 	a := onlyAttempt(st)
-	unix.Kill(a.Supervisor.Process.PID, unix.SIGKILL)
-	time.Sleep(50 * time.Millisecond)
+	if e = unix.Kill(a.Supervisor.Process.PID, unix.SIGKILL); e != nil {
+		t.Fatal(e)
+	}
+	// SIGKILL delivery is asynchronous. Exercise the dead-supervisor recovery
+	// branch only after its identity is gone or a zombie; a still-live supervisor
+	// correctly blocks admission without claiming that its journal is lost.
+	deadline := time.Now().Add(5 * time.Second)
+	for {
+		process, err := processInfo(a.Supervisor.Process.PID)
+		if os.IsNotExist(err) || (err == nil && (process.Start != a.Supervisor.Process.Start || process.State == "Z" || process.State == "X")) {
+			break
+		}
+		if err != nil {
+			t.Fatal(err)
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("supervisor did not stop after SIGKILL: %+v", process)
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
 	key := attemptKey(b["identity"].(map[string]any))
 	path := filepath.Join(filepath.Dir(supervisorSocket(r.opts.Root, key)), "journal.db")
 	if e = os.Rename(path, path+".quarantined"); e != nil {
@@ -293,7 +311,7 @@ func TestSupervisorMissingJournalRetainsReservation(t *testing.T) {
 	st, _ = s.Inspect()
 	a = onlyAttempt(st)
 	if !a.Reserved() || a.Execution.Outcome != "lost" || a.Execution.Cleanup != "unknown" || a.Execution.ExitCode != nil {
-		t.Fatalf("missing journal released or fabricated outcome: %+v", a)
+		t.Fatalf("missing journal released or fabricated outcome: attempt=%+v execution=%+v", a, a.Execution)
 	}
 }
 

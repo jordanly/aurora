@@ -259,7 +259,7 @@ public final class PubsubEventModule extends AbstractModule {
   }
 
   /**
-   * Binds a subscriber to receive Mesos registered events.
+   * Binds a subscriber to receive execution driver registered events.
    *
    * @param binder Binder to bind the subscriber with.
    * @param subscriber Subscriber implementation class to register for events.

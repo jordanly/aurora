@@ -13,39 +13,22 @@
  */
 package org.apache.aurora.scheduler.offers;
 
-import com.google.common.collect.ImmutableList;
+import org.apache.aurora.scheduler.execution.TestOffer;
 
-import org.apache.aurora.scheduler.resources.ResourceType;
-import org.apache.mesos.v1.Protos.AgentID;
-import org.apache.mesos.v1.Protos.FrameworkID;
-import org.apache.mesos.v1.Protos.Offer;
-import org.apache.mesos.v1.Protos.OfferID;
+import static org.apache.aurora.scheduler.resources.ResourceTestUtil.bag;
 
-import static org.apache.aurora.scheduler.resources.ResourceTestUtil.mesosScalar;
-
-/**
- * Utility class for creating resource offers in unit tests.
- */
+/** Resource offers for the original scheduling policy tests. */
 public final class Offers {
-  private Offers() {
-    // Utility class.
-  }
-
   public static final String DEFAULT_HOST = "hostname";
 
-  public static Offer makeOffer(String offerId) {
+  private Offers() { }
+
+  public static TestOffer makeOffer(String offerId) {
     return makeOffer(offerId, DEFAULT_HOST);
   }
 
-  public static Offer makeOffer(String offerId, String hostName) {
-    return Offer.newBuilder()
-        .setId(OfferID.newBuilder().setValue(offerId))
-        .setFrameworkId(FrameworkID.newBuilder().setValue("framework_id"))
-        .setAgentId(AgentID.newBuilder().setValue("slave_id-" + offerId))
-        .setHostname(hostName)
-        .addAllResources(ImmutableList.of(
-            mesosScalar(ResourceType.CPUS, 10),
-            mesosScalar(ResourceType.RAM_MB, 1024)))
-        .build();
+  public static TestOffer makeOffer(String offerId, String hostname) {
+    return TestOffer.builder(offerId).agentId("slave_id-" + offerId).hostname(hostname)
+        .resources(bag(10, 1024, 0)).build();
   }
 }

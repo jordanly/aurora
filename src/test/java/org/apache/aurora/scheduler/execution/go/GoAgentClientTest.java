@@ -135,6 +135,91 @@ public class GoAgentClientTest {
     }
   }
 
+  @Test
+  public void testWatchReadsFramesBeforeResponseEnds() throws Exception {
+    server.createContext("/v1/watch", exchange -> {
+      try (exchange) {
+        assertEquals("afterCursor=7&limit=128", exchange.getRequestURI().getQuery());
+        assertEquals("session", exchange.getRequestHeaders().getFirst("X-Aurora-Session"));
+        exchange.getResponseHeaders().set("Content-Type", "application/x-ndjson");
+        exchange.sendResponseHeaders(200, 0);
+        exchange.getResponseBody().write(("{\"kind\":\"snapshot\"}\n"
+            + "{\"kind\":\"heartbeat\"}\n").getBytes(StandardCharsets.US_ASCII));
+        exchange.getResponseBody().flush();
+        try {
+          release.await(10, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+          Thread.currentThread().interrupt();
+        }
+      }
+    });
+    server.start();
+    try (AgentTransport.Watch watch = client.watch(node, 7, "1", "session")) {
+      assertEquals("snapshot", watch.next().path("kind").asText());
+      assertEquals("heartbeat", watch.next().path("kind").asText());
+    }
+  }
+
+  @Test
+  public void testWatchRejectsOversizedUnterminatedFrame() throws Exception {
+    server.createContext("/v1/watch", exchange -> {
+      try (exchange) {
+        exchange.getResponseHeaders().set("Content-Type", "application/x-ndjson");
+        exchange.sendResponseHeaders(200, 0);
+        exchange.getResponseBody().write(new byte[WireJson.MAX_BYTES + 1]);
+      }
+    });
+    server.start();
+    try (AgentTransport.Watch watch = client.watch(node, 0, "1", "session")) {
+      try {
+        watch.next();
+        fail("An unterminated oversized frame must fail");
+      } catch (IOException expected) {
+        assertTrue(expected.getCause().getCause().getMessage().contains("exceeds 1 MiB"));
+      }
+    }
+  }
+
+  @Test
+  public void testWatchPartialFrameTimesOutAndCancelsRead() throws Exception {
+    client.close();
+    client = new GoAgentClient(HttpClient.newHttpClient(), Duration.ofSeconds(5),
+        Duration.ofMillis(100));
+    server.createContext("/v1/watch", exchange -> {
+      try (exchange) {
+        exchange.getResponseHeaders().set("Content-Type", "application/x-ndjson");
+        exchange.sendResponseHeaders(200, 0);
+        exchange.getResponseBody().write('{');
+        exchange.getResponseBody().flush();
+        try {
+          release.await(10, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+          Thread.currentThread().interrupt();
+        }
+      }
+    });
+    server.start();
+    try (AgentTransport.Watch watch = client.watch(node, 0, "1", "session")) {
+      try {
+        watch.next();
+        fail("Partial frame must meet watch deadline");
+      } catch (IOException expected) {
+        assertTrue(expected.getCause() instanceof java.util.concurrent.TimeoutException);
+      }
+    }
+  }
+
+  @Test
+  public void testWatchRejectsWrongContentType() throws Exception {
+    respond(200, "{}");
+    try {
+      client.watch(node, 0, "1", "session");
+      fail("Watch requires NDJSON content type");
+    } catch (IOException expected) {
+      assertTrue(expected.getMessage().contains("Invalid agent watch response"));
+    }
+  }
+
   private void respond(int status, String body) {
     server.createContext("/", exchange -> {
       try (exchange) {

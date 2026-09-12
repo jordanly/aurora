@@ -25,7 +25,7 @@ import org.apache.aurora.common.zookeeper.SingletonService.LeaderControl;
 import org.apache.aurora.common.zookeeper.SingletonService.LeadershipListener;
 import org.apache.aurora.scheduler.SchedulerLifecycle.DelayedActions;
 import org.apache.aurora.scheduler.events.PubsubEvent.DriverRegistered;
-import org.apache.aurora.scheduler.mesos.Driver;
+import org.apache.aurora.scheduler.execution.ExecutionDriver;
 import org.apache.aurora.scheduler.storage.Storage.StorageException;
 import org.apache.aurora.scheduler.storage.testing.StorageTestUtil;
 import org.apache.aurora.scheduler.testing.FakeStatsProvider;
@@ -45,7 +45,7 @@ import static org.junit.Assert.fail;
 public class SchedulerLifecycleTest extends EasyMockTest {
   private StorageTestUtil storageUtil;
   private ShutdownSystem shutdownRegistry;
-  private Driver driver;
+  private ExecutionDriver driver;
   private LeaderControl leaderControl;
   private DelayedActions delayedActions;
   private FakeStatsProvider statsProvider;
@@ -57,7 +57,7 @@ public class SchedulerLifecycleTest extends EasyMockTest {
   public void setUp() {
     storageUtil = new StorageTestUtil(this);
     shutdownRegistry = createMock(ShutdownSystem.class);
-    driver = createMock(Driver.class);
+    driver = createMock(ExecutionDriver.class);
     leaderControl = createMock(LeaderControl.class);
     delayedActions = createMock(DelayedActions.class);
     statsProvider = new FakeStatsProvider();

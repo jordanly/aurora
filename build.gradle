@@ -96,7 +96,6 @@ For more details, please see https://issues.apache.org/jira/browse/AURORA-1169
   ext.junitRev = '4.12'
   ext.logbackRev = '1.2.3'
   ext.nettyRev = '4.0.52.Final'
-  ext.protobufRev = '3.5.1'
   ext.resteasyRev = '3.1.4.Final'
   ext.servletRev = '3.1.0'
   ext.slf4jRev = '1.7.25'
@@ -132,7 +131,6 @@ For more details, please see https://issues.apache.org/jira/browse/AURORA-1169
       force "com.fasterxml.jackson.core:jackson-core:${jacksonRev}"
       force "com.google.code.gson:gson:${gsonRev}"
       force "com.google.guava:guava:${guavaRev}"
-      force "com.google.protobuf:protobuf-java:${protobufRev}"
       force "io.netty:netty-handler:${nettyRev}"
       force "junit:junit:${junitRev}"
       force "org.apache.thrift:libthrift:${thriftRev}"
@@ -151,10 +149,10 @@ For more details, please see https://issues.apache.org/jira/browse/AURORA-1169
  * into the resources directory of the Scheduler, so it must be built before the Scheduler.
  */
 project(':ui') {
-  def launcher = rootProject.file('build-support/java/ui.py')
-  def bootstrap = rootProject.file('build-support/java/bootstrap.py')
+  def launcher = rootProject.file('build-support/bootstrap-go')
+  def bootstrap = rootProject.fileTree('tools')
   def pins = rootProject.file('build-support/java/ui-tools.json')
-  def npmCommand = ['python3', launcher.absolutePath] +
+  def npmCommand = [launcher.absolutePath, 'ui'] +
       (gradle.startParameter.offline ? ['--offline'] : [])
   // The local customization plugin is installed by the same checked-in lockfile.
   tasks.register('install', Exec) {
@@ -188,17 +186,22 @@ project(':ui') {
 }
 // Make sure UI webpack is run as part of 'processResources --continuous'. Also makes sure when
 // building the Scheduler JAR, the JS bundle is built first.
-tasks.processResources.dependsOn(':ui:webpack')
+tasks.named('processResources') {
+  dependsOn ':ui:webpack'
+  // Copy tasks can retain resources whose source was removed. This task owns
+  // its entire output directory, so each executed copy starts from empty output.
+  doFirst { delete destinationDir }
+}
 
 // Preserve the original Java header scope without the obsolete license plugin.
 def registerLicenseCheck = { Project owner, String taskName, List<File> roots ->
-  def checker = rootProject.file('build-support/java/check-license-headers.py')
+  def checker = rootProject.file('build-support/bootstrap-go')
   def header = rootProject.file('config/checkstyle/apache.header')
   owner.tasks.register(taskName, Exec) {
     group = 'verification'
-    inputs.files(checker, header)
+    inputs.files(checker, header, rootProject.fileTree('tools'))
     roots.each { sourceRoot -> inputs.files(owner.fileTree(sourceRoot) { include '**/*.java' }) }
-    commandLine(['python3', checker.absolutePath, '--header', header.absolutePath]
+    commandLine([checker.absolutePath, 'licenses', '--header', header.absolutePath]
         + roots.collect { it.absolutePath } + ['--extensions', '.java'])
   }
 }
@@ -378,9 +381,8 @@ dependencies {
   api "com.google.inject:guice:${guiceRev}"
   api "com.google.inject.extensions:guice-assistedinject:${guiceRev}"
   api "com.google.inject.extensions:guice-servlet:${guiceRev}"
-  api "com.google.protobuf:protobuf-java:${protobufRev}"
-  api 'com.hubspot.jackson:jackson-datatype-protobuf:0.9.3'
   api "com.fasterxml.jackson.core:jackson-core:${jacksonRev}"
+  api "com.fasterxml.jackson.core:jackson-databind:${jacksonRev}"
   api "org.jboss.resteasy:resteasy-guice:${resteasyRev}"
   api "org.jboss.resteasy:resteasy-jackson-provider:${resteasyRev}"
   api "org.jboss.resteasy:resteasy-jaxrs:${resteasyRev}"
@@ -394,7 +396,6 @@ dependencies {
   api "org.apache.curator:curator-client:${curatorRev}"
   api "org.apache.curator:curator-framework:${curatorRev}"
   api "org.apache.curator:curator-recipes:${curatorRev}"
-  api 'org.apache.mesos:mesos:1.6.1'
   api "org.asynchttpclient:async-http-client:${asyncHttpclientRev}"
   api "org.apache.shiro:shiro-guice:${shiroRev}"
   api "org.apache.shiro:shiro-web:${shiroRev}"
@@ -472,7 +473,7 @@ if (runCodeQuality) {
 tasks.named('compileTestJava') {
   classpath = files(sourceSets.main.output.classesDirs, configurations.testCompileClasspath)
 }
-tasks.register('processJavaResources', Copy) {
+tasks.register('processJavaResources', Sync) {
   from(sourceSets.main.resources) { exclude 'scheduler/assets/js/bundle.js*' }
   mustRunAfter project(':ui').tasks.named('webpack')
   from tasks.named('generateBuildProperties')
@@ -671,14 +672,14 @@ tasks.register('verifyInstalledDistribution', Exec) {
   group = 'verification'
   description = 'Verify packaged Java/UI artifacts and original scheduler/recovery launchers.'
   def installed = tasks.named('installDist')
-  def checker = file('build-support/java/verify-distribution.py')
+  def checker = file('build-support/bootstrap-go')
   def receipt = layout.buildDirectory.file('distribution-verification.json')
   dependsOn installed
-  inputs.file(checker)
+  inputs.files(checker, fileTree('tools'))
   inputs.dir(installed.map { it.destinationDir })
   outputs.file(receipt)
   outputs.upToDateWhen { false }
-  commandLine 'python3', checker.absolutePath,
+  commandLine checker.absolutePath, 'verify-distribution',
       installed.get().destinationDir.absolutePath, '--receipt', receipt.get().asFile.absolutePath
 }
 
@@ -733,14 +734,14 @@ dependencies {
 def checkstyleFixtureClasspath = configurations.checkstyle + configurations.checkstyleFixtureSupport
 tasks.register('verifyCheckstyleMigration', Exec) {
   group = 'verification'
-  def fixture = file('config/checkstyle/verify-migration.py')
+  def fixture = file('build-support/bootstrap-go')
   def receipt = layout.buildDirectory.file('reports/checkstyle/migration-fixtures.json')
-  inputs.files(fileTree('config/checkstyle'), configurations.checkstyleLegacy,
+  inputs.files(fixture, fileTree('tools'), fileTree('config/checkstyle'), configurations.checkstyleLegacy,
       checkstyleFixtureClasspath)
   outputs.file(receipt)
   workingDir rootDir
   doFirst {
-    commandLine 'python3', fixture.absolutePath,
+    commandLine fixture.absolutePath, 'checkstyle-migration',
         '--java', new File(System.getProperty('java.home'), 'bin/java').absolutePath,
         '--old-classpath', configurations.checkstyleLegacy.asPath,
         '--new-classpath', checkstyleFixtureClasspath.asPath,

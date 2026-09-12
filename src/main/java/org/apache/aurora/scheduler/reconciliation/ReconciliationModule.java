@@ -60,7 +60,7 @@ public class ReconciliationModule extends AbstractModule {
     public TimeAmount transientTaskStateTimeout = new TimeAmount(5L, Time.MINUTES);
 
     @Parameter(names = "-initial_task_kill_retry_interval",
-        description = "When killing a task, retry after this delay if mesos has not responded,"
+        description = "When killing a task, retry after this delay if the agent has not responded,"
             + " backing off up to transient_task_state_timeout")
     public TimeAmount initialTaskKillRetryInterval = new TimeAmount(15L, Time.SECONDS);
 
@@ -73,14 +73,14 @@ public class ReconciliationModule extends AbstractModule {
 
     @Parameter(names = "-reconciliation_explicit_interval",
         validateValueWith = PositiveAmount.class,
-        description = "Interval on which scheduler will ask Mesos for status updates of all"
-            + "non-terminal tasks known to scheduler.")
+        description = "Interval for explicit execution driver reconciliation of non-terminal tasks "
+            + "known to the scheduler. Go agents reconcile through watch snapshots.")
     public TimeAmount reconciliationExplicitInterval = new TimeAmount(60L, Time.MINUTES);
 
     @Parameter(names = "-reconciliation_implicit_interval",
         validateValueWith = PositiveAmount.class,
-        description = "Interval on which scheduler will ask Mesos for status updates of all"
-            + "non-terminal tasks known to Mesos.")
+        description = "Interval for implicit execution driver reconciliation of tasks known to "
+            + "agents. Go agents reconcile through watch snapshots.")
     public TimeAmount reconciliationImplicitInterval = new TimeAmount(60L, Time.MINUTES);
 
     @Parameter(names = "-reconciliation_schedule_spread",
@@ -92,7 +92,7 @@ public class ReconciliationModule extends AbstractModule {
     @Parameter(names = "-reconciliation_explicit_batch_size",
         validateValueWith = PositiveNumber.class,
         description =
-            "Number of tasks in a single batch request sent to Mesos for explicit reconciliation.")
+            "Number of tasks in each explicit execution driver reconciliation request.")
     public int reconciliationBatchSize = 1000;
 
     @Parameter(names = "-reconciliation_explicit_batch_interval",

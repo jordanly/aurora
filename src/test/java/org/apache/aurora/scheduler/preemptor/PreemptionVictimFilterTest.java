@@ -13,7 +13,6 @@
  */
 package org.apache.aurora.scheduler.preemptor;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.IntStream;
@@ -40,12 +39,11 @@ import org.apache.aurora.gen.TaskConfig;
 import org.apache.aurora.gen.TaskEvent;
 import org.apache.aurora.gen.apiConstants;
 import org.apache.aurora.scheduler.base.TaskTestUtil;
+import org.apache.aurora.scheduler.configuration.executor.TaskExecutors;
+import org.apache.aurora.scheduler.execution.TestOffer;
 import org.apache.aurora.scheduler.filter.SchedulingFilter;
 import org.apache.aurora.scheduler.filter.SchedulingFilter.Veto;
 import org.apache.aurora.scheduler.filter.SchedulingFilterImpl;
-import org.apache.aurora.scheduler.mesos.MesosOffer;
-import org.apache.aurora.scheduler.mesos.MesosResourceType;
-import org.apache.aurora.scheduler.mesos.TaskExecutors;
 import org.apache.aurora.scheduler.offers.HostOffer;
 import org.apache.aurora.scheduler.preemptor.PreemptionVictimFilter.PreemptionVictimFilterImpl;
 import org.apache.aurora.scheduler.resources.ResourceBag;
@@ -57,7 +55,6 @@ import org.apache.aurora.scheduler.storage.entities.IHostAttributes;
 import org.apache.aurora.scheduler.storage.entities.ITaskConfig;
 import org.apache.aurora.scheduler.storage.testing.StorageTestUtil;
 import org.apache.aurora.scheduler.testing.FakeStatsProvider;
-import org.apache.mesos.v1.Protos;
 import org.easymock.EasyMock;
 import org.easymock.IExpectationSetters;
 import org.junit.Before;
@@ -73,15 +70,13 @@ import static org.apache.aurora.scheduler.filter.AttributeAggregate.empty;
 import static org.apache.aurora.scheduler.preemptor.PreemptionVictimFilter.PreemptionVictimFilterImpl.ORDER;
 import static org.apache.aurora.scheduler.preemptor.PreemptorMetrics.MISSING_ATTRIBUTES_NAME;
 import static org.apache.aurora.scheduler.resources.ResourceTestUtil.bag;
-import static org.apache.aurora.scheduler.resources.ResourceTestUtil.mesosRange;
-import static org.apache.aurora.scheduler.resources.ResourceTestUtil.mesosScalar;
+import static org.apache.aurora.scheduler.resources.ResourceTestUtil.range;
+import static org.apache.aurora.scheduler.resources.ResourceTestUtil.scalar;
 import static org.apache.aurora.scheduler.resources.ResourceType.CPUS;
 import static org.apache.aurora.scheduler.resources.ResourceType.DISK_MB;
 import static org.apache.aurora.scheduler.resources.ResourceType.GPUS;
 import static org.apache.aurora.scheduler.resources.ResourceType.PORTS;
 import static org.apache.aurora.scheduler.resources.ResourceType.RAM_MB;
-import static org.apache.mesos.v1.Protos.Offer;
-import static org.apache.mesos.v1.Protos.Resource;
 import static org.easymock.EasyMock.expect;
 import static org.junit.Assert.assertEquals;
 
@@ -617,36 +612,15 @@ public class PreemptionVictimFilterTest extends EasyMockTest {
       int numPorts,
       boolean revocable) {
 
-    List<Resource> resources = ImmutableList.of(
-        mesosScalar(CPUS, cpu),
-        mesosScalar(RAM_MB, ram.getValue()),
-        mesosScalar(DISK_MB, disk.getValue()),
-        mesosRange(
-            PORTS,
-            Optional.empty(),
-            IntStream.range(1, numPorts).boxed().collect(toSet())));
-    if (revocable) {
-      resources = ImmutableList.<Resource>builder()
-          .addAll(FluentIterable.from(resources)
-              .filter(e -> !e.getName().equals(MesosResourceType.getMesosName(CPUS)))
-              .toList())
-          .add(Protos.Resource.newBuilder()
-              .setName(MesosResourceType.getMesosName(CPUS))
-              .setType(Protos.Value.Type.SCALAR)
-              .setScalar(Protos.Value.Scalar.newBuilder().setValue(cpu))
-              .setRevocable(Resource.RevocableInfo.newBuilder())
-              .build())
-          .build();
-    }
-    Offer.Builder builder = Offer.newBuilder();
-    builder.getIdBuilder().setValue(offerId);
-    builder.getFrameworkIdBuilder().setValue("framework-id");
-    builder.getAgentIdBuilder().setValue(SLAVE_ID);
-    builder.setHostname(HOST_A);
-    builder.addAllResources(resources);
-
+    ResourceTestUtil.TestResource cpuResource = scalar(CPUS, cpu, revocable);
+    ResourceTestUtil.TestResource ramResource = scalar(RAM_MB, ram.getValue());
+    ResourceTestUtil.TestResource diskResource = scalar(DISK_MB, disk.getValue());
+    ResourceTestUtil.TestResource portResource = range(
+        PORTS, IntStream.range(1, numPorts).boxed().collect(toSet()));
     return Optional.of(new HostOffer(
-        new MesosOffer(builder.build()),
+        TestOffer.copyOf(ResourceTestUtil.offer(SLAVE_ID,
+            cpuResource, ramResource, diskResource, portResource))
+            .offerId(offerId).hostname(HOST_A).build(),
         IHostAttributes.build(new HostAttributes().setMode(NONE))));
   }
 

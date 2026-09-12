@@ -221,7 +221,7 @@ func NewRuntime(s *Store, opts RuntimeOptions) (*Runtime, error) {
 	if s.runtimeActive {
 		return nil, errors.New("runtime already owns store")
 	}
-	e = s.db.Update(func(tx *bolt.Tx) error {
+	e = s.update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte("state"))
 		st, e := read(b)
 		if e != nil {
@@ -360,7 +360,7 @@ func (r *Runtime) Tick(ctx context.Context) error {
 }
 
 func (r *Runtime) update(key string, change func(*Attempt) error, observe bool) error {
-	return r.store.db.Update(func(tx *bolt.Tx) error {
+	return r.store.update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte("state"))
 		st, e := read(b)
 		if e != nil {
@@ -758,7 +758,7 @@ func (r *Runtime) Shutdown(ctx context.Context) error {
 	}
 	r.store.effectMu.Lock()
 	r.store.runtimeDraining = true
-	e := r.store.db.Update(func(tx *bolt.Tx) error {
+	e := r.store.update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte("state"))
 		st, e := read(b)
 		if e != nil {

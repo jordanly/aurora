@@ -643,7 +643,14 @@ func TestRuntimeRootSafety(t *testing.T) {
 		t.Fatal("root preparation escaped before rejection")
 	}
 	public := filepath.Join(dir, "public")
-	os.Mkdir(public, 0755)
+	if err := os.Mkdir(public, 0700); err != nil {
+		t.Fatal(err)
+	}
+	// The verified build launcher uses umask 077. Set the intentionally unsafe
+	// permission explicitly so this test exercises the same case under any umask.
+	if err := os.Chmod(public, 0755); err != nil {
+		t.Fatal(err)
+	}
 	if _, e := NewRuntime(s, testRuntimeOpts(t, public)); e == nil {
 		t.Fatal("public runtime root accepted")
 	}

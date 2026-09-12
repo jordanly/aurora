@@ -47,17 +47,14 @@ import org.apache.aurora.scheduler.TierManager;
 import org.apache.aurora.scheduler.TierManager.TierManagerImpl.TierConfig;
 import org.apache.aurora.scheduler.configuration.ConfigurationManager;
 import org.apache.aurora.scheduler.configuration.ConfigurationManager.ConfigurationManagerSettings;
-import org.apache.aurora.scheduler.configuration.executor.ExecutorConfig;
 import org.apache.aurora.scheduler.configuration.executor.ExecutorSettings;
+import org.apache.aurora.scheduler.configuration.executor.TestExecutorSettings;
 import org.apache.aurora.scheduler.filter.AttributeAggregate;
 import org.apache.aurora.scheduler.filter.SchedulingFilter.ResourceRequest;
 import org.apache.aurora.scheduler.storage.durability.ThriftBackfill;
 import org.apache.aurora.scheduler.storage.entities.IJobKey;
 import org.apache.aurora.scheduler.storage.entities.IScheduledTask;
 import org.apache.aurora.scheduler.storage.entities.ITaskConfig;
-import org.apache.mesos.v1.Protos;
-import org.apache.mesos.v1.Protos.ExecutorID;
-import org.apache.mesos.v1.Protos.ExecutorInfo;
 
 /**
  * Convenience methods for working with tasks.
@@ -95,18 +92,10 @@ public final class TaskTestUtil {
           1800L,
           ConfigurationManager.DEFAULT_ALLOWED_JOB_ENVIRONMENTS,
           false);
-  public static final ExecutorID EXECUTOR_ID = ExecutorID.newBuilder()
-      .setValue("PLACEHOLDER")
-      .build();
-  public static final ExecutorInfo EXECUTOR_INFO = ExecutorInfo.newBuilder()
-      .setExecutorId(EXECUTOR_ID)
-      .setName(apiConstants.AURORA_EXECUTOR_NAME)
-      .setCommand(Protos.CommandInfo.newBuilder().build()).build();
-  public static final ExecutorSettings EXECUTOR_SETTINGS = new ExecutorSettings(
-      ImmutableMap.<String, ExecutorConfig>builder()
-          .put(EXECUTOR_INFO.getName(), new ExecutorConfig(EXECUTOR_INFO, ImmutableList.of(), ""))
-          .build(),
-      false);
+  public static final String EXECUTOR_NAME = apiConstants.AURORA_EXECUTOR_NAME;
+  public static final ExecutorSettings EXECUTOR_SETTINGS =
+      TestExecutorSettings.thermosOnlyWithOverhead(
+          org.apache.aurora.scheduler.resources.ResourceBag.EMPTY);
   public static final ConfigurationManager CONFIGURATION_MANAGER =
       new ConfigurationManager(CONFIGURATION_MANAGER_SETTINGS,
           TIER_MANAGER,
@@ -158,7 +147,7 @@ public final class TaskTestUtil {
                 .setCache(true)
                 .setOutputFile("test_2")))
         .setExecutorConfig(new org.apache.aurora.gen.ExecutorConfig(
-            EXECUTOR_INFO.getName(),
+            EXECUTOR_NAME,
             "config"))
         .setContainer(Container.docker(
             new DockerContainer("imagename")

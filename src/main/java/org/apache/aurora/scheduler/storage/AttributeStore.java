@@ -19,11 +19,9 @@ import java.util.Set;
 import com.google.common.collect.ImmutableList;
 
 import org.apache.aurora.gen.MaintenanceMode;
-import org.apache.aurora.scheduler.base.Conversions;
 import org.apache.aurora.scheduler.storage.Storage.StoreProvider;
 import org.apache.aurora.scheduler.storage.entities.IAttribute;
 import org.apache.aurora.scheduler.storage.entities.IHostAttributes;
-import org.apache.mesos.v1.Protos;
 
 /**
  * Storage interface for host attributes.
@@ -113,11 +111,10 @@ public interface AttributeStore {
      * Merges the attributes from an offer, applying the default maintenance mode.
      *
      * @param store Store to fetch the existing maintenance mode for this host.
-     * @param offer Offer to merge.
-     * @return attributes from {@code offer} and the existing (or default) maintenance mode.
+     * @param fromOffer Agent attributes to merge.
+     * @return attributes from {@code fromOffer} and the existing (or default) maintenance mode.
      */
-    public static IHostAttributes mergeOffer(AttributeStore store, Protos.Offer offer) {
-      IHostAttributes fromOffer = Conversions.getAttributes(offer);
+    public static IHostAttributes mergeOffer(AttributeStore store, IHostAttributes fromOffer) {
       MaintenanceMode mode = store.getHostAttributes(fromOffer.getHost())
           .map(IHostAttributes::getMode)
           .orElse(MaintenanceMode.NONE);

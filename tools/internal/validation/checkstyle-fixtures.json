@@ -1,0 +1,107 @@
+{
+  "AnnotationPrivateCtor": {
+    "count": 0,
+    "modernOnly": false,
+    "source": "@interface AnnotationPrivateCtor { class Nested {\n private Nested() {} } }\n"
+  },
+  "ClassBothMethods": {
+    "count": 0,
+    "modernOnly": false,
+    "source": "class ClassBothMethods { public int hashCode() { return 1; }\n public boolean equals(Object other) { return other == this; } }\n"
+  },
+  "ClassOnlyHash": {
+    "count": 1,
+    "modernOnly": false,
+    "source": "class ClassOnlyHash { public int hashCode() { return 1; } }\n"
+  },
+  "ExplicitPrivateClass": {
+    "count": 1,
+    "modernOnly": false,
+    "source": "class ExplicitPrivateClass { private ExplicitPrivateClass() {} }\n"
+  },
+  "GroupGaps": {
+    "count": 0,
+    "modernOnly": false,
+    "source": "import java.io.File;\n\nimport java.util.List;\n\nimport javax.inject.Inject;\n\nimport org.example.Z;\nclass GroupGaps {}\n"
+  },
+  "ImplicitPrivateClass": {
+    "count": 0,
+    "modernOnly": false,
+    "source": "class ImplicitPrivateClass { private static class Nested {} }\n"
+  },
+  "InterfacePrivateCtor": {
+    "count": 0,
+    "modernOnly": false,
+    "source": "interface InterfacePrivateCtor { class Nested {\n private Nested() {} } }\n"
+  },
+  "MissingGap": {
+    "count": 1,
+    "modernOnly": false,
+    "source": "import java.io.File;\nimport org.example.Z;\nclass MissingGap {}\n"
+  },
+  "NestedPrivateCtor": {
+    "count": 1,
+    "modernOnly": false,
+    "source": "class NestedPrivateCtor { private static class Nested {\n private Nested() {} } }\n"
+  },
+  "PublicCtor": {
+    "count": 0,
+    "modernOnly": false,
+    "source": "class PublicCtor { public PublicCtor() {} }\n"
+  },
+  "RecordNestedBadClass": {
+    "count": 1,
+    "modernOnly": true,
+    "source": "record RecordNestedBadClass(int value) {\n static class Bad { public int hashCode() { return 1; } } }\n"
+  },
+  "RecordOnlyEquals": {
+    "count": 0,
+    "modernOnly": true,
+    "source": "record RecordOnlyEquals(int value) {\n public boolean equals(Object other) { return other == this; } }\n"
+  },
+  "RecordOnlyHash": {
+    "count": 0,
+    "modernOnly": true,
+    "source": "record RecordOnlyHash(int value) {\n public int hashCode() { return value; } }\n"
+  },
+  "Scopes": {
+    "count": 0,
+    "modernOnly": false,
+    "source": "public class Scopes {\n public int a; protected int b; int c; private int d;\n private static class PrivateNested { public int a; int b; }\n public static class PublicNested { public int a; private int b; }\n interface NestedInterface { int VALUE = 1; }\n}\n"
+  },
+  "StaticGaps": {
+    "count": 0,
+    "modernOnly": false,
+    "source": "import java.io.File;\n\nimport static java.util.Collections.emptyList;\n\nimport static java.util.Collections.emptySet;\n\nimport static org.example.Z.VALUE;\nclass StaticGaps {}\n"
+  },
+  "StaticMissingGap": {
+    "count": 1,
+    "modernOnly": false,
+    "source": "import static java.util.Collections.emptyList;\nimport static org.example.Z.VALUE;\nclass StaticMissingGap {}\n"
+  },
+  "StaticPlacement": {
+    "count": 1,
+    "modernOnly": false,
+    "source": "import static java.util.Collections.emptyList;\n\nimport java.io.File;\nclass StaticPlacement {}\n"
+  },
+  "StaticWrongGroup": {
+    "count": 1,
+    "modernOnly": false,
+    "source": "import static org.example.Z.VALUE;\n\nimport static java.util.Collections.emptyList;\nclass StaticWrongGroup {}\n"
+  },
+  "StaticWrongOrder": {
+    "count": 1,
+    "modernOnly": false,
+    "source": "import static java.util.Collections.emptySet;\nimport static java.util.Collections.emptyList;\nclass StaticWrongOrder {}\n"
+  },
+  "WrongGroup": {
+    "count": 1,
+    "modernOnly": false,
+    "source": "import org.example.Z;\n\nimport java.io.File;\nclass WrongGroup {}\n"
+  },
+  "WrongOrder": {
+    "count": 1,
+    "modernOnly": false,
+    "source": "import java.util.List;\nimport java.io.File;\nclass WrongOrder {}\n"
+  }
+}

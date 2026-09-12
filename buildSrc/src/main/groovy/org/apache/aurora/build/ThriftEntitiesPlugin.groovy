@@ -49,7 +49,7 @@ class ThriftEntitiesPlugin implements Plugin<Project>  {
       task('generateThriftEntitiesJava') {
         inputs.files {thriftEntities.inputFiles}
         inputs.files {thriftEntities.codeGenerator}
-        inputs.property('python') {thriftEntities.python}
+        inputs.files(project.rootProject.fileTree('tools'))
         outputs.dir {thriftEntities.genJavaDir}
         outputs.dir {thriftEntities.genResourcesDir}
         doLast {
@@ -57,8 +57,8 @@ class ThriftEntitiesPlugin implements Plugin<Project>  {
           thriftEntities.genJavaDir.mkdirs()
           thriftEntities.inputFiles.sort().each { File file ->
             execOperations.exec {
-              commandLine thriftEntities.python,
-                  thriftEntities.codeGenerator,
+              commandLine thriftEntities.codeGenerator,
+                  'entities',
                   file.path,
                   thriftEntities.genJavaDir,
                   thriftEntities.genResourcesDir
@@ -93,7 +93,6 @@ class ThriftEntitiesPlugin implements Plugin<Project>  {
 }
 
 class ThriftEntitiesPluginExtension {
-  def python
   File genClassesDir
   File genResourcesDir
   File genJavaDir
@@ -119,13 +118,12 @@ class ThriftEntitiesPluginExtension {
   }
 
   ThriftEntitiesPluginExtension(Project project) {
-    python = project.findProperty('wrapperPython') ?: 'python3'
     genClassesDir = project.file("${project.buildDir}/thriftEntities/classes")
     genResourcesDir = project.file("${project.buildDir}/thriftEntities/gen-resources")
     genJavaDir = project.file("${project.buildDir}/thriftEntities/gen-java")
     inputFiles = project.fileTree("src/main/thrift").matching {
       include "**/*.thrift"
     }
-    codeGenerator = "${project.rootDir}/src/main/python/apache/aurora/tools/java/thrift_wrapper_codegen.py"
+    codeGenerator = "${project.rootDir}/build-support/bootstrap-go"
   }
 }

@@ -1,0 +1,104 @@
+#!/bin/sh
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy at http://www.apache.org/licenses/LICENSE-2.0
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+set -eu
+umask 077
+fail() { echo "Go bootstrap: $*" >&2; exit 1; }
+check_path() {
+  case "$1" in /*) ;; *) fail "absolute path required: $1" ;; esac
+  case "/$1/" in */../*) fail "parent traversal rejected: $1" ;; esac
+  bootstrap_check=$1
+  while [ "$bootstrap_check" != / ] && [ -n "$bootstrap_check" ]; do
+    [ ! -L "$bootstrap_check" ] || fail "symlink path rejected: $bootstrap_check"
+    bootstrap_check=${bootstrap_check%/*}
+  done
+}
+case "$0" in /*) bootstrap_script=$0 ;; *) bootstrap_script=$PWD/$0 ;; esac
+check_path "$bootstrap_script"
+bootstrap_root=$(CDPATH= cd -- "$(dirname -- "$bootstrap_script")/.." && pwd -P)
+# Generated from tools/go-tools.json. The tools bootstrap tests enforce exact
+# consistency of these literals with that JSON pin; no installed SDK is trusted.
+bootstrap_platform=linux/arm64
+bootstrap_file=go1.27.1.linux-arm64.tar.gz
+bootstrap_url=https://go.dev/dl/go1.27.1.linux-arm64.tar.gz
+bootstrap_sha=3450b45a3f9ee8568792736a5c5e70a1f2e9b36c35a8f74958c03e51d7d92bec
+[ "$(uname -s)" = Linux ] || fail "supported platform is $bootstrap_platform"
+case "$(uname -m)" in aarch64|arm64) ;; *) fail "supported platform is $bootstrap_platform" ;; esac
+bootstrap_cache=${AURORA_BOOTSTRAP_GO_CACHE:-$bootstrap_root/.cache/bootstrap-go}
+case "$bootstrap_cache" in /*) ;; *) bootstrap_cache=$PWD/$bootstrap_cache ;; esac
+check_path "$bootstrap_cache"
+mkdir -p -- "$bootstrap_cache"
+[ "$(stat -c %u -- "$bootstrap_cache")" = "$(id -u)" ] || fail "cache must be owned by this user"
+chmod 700 -- "$bootstrap_cache"
+check_path "$bootstrap_cache/bootstrap.lock"
+exec 9>"$bootstrap_cache/bootstrap.lock"
+flock -x 9
+bootstrap_work=$(mktemp -d "$bootstrap_cache/invocation-XXXXXXXX")
+trap 'rm -rf -- "$bootstrap_work"' EXIT
+trap 'exit 130' HUP INT TERM
+bootstrap_archive=$bootstrap_cache/$bootstrap_file
+check_path "$bootstrap_archive"
+bootstrap_offline=false
+for bootstrap_arg do
+  [ "$bootstrap_arg" != --offline ] || bootstrap_offline=true
+done
+if [ ! -e "$bootstrap_archive" ]; then
+  bootstrap_seed=${AURORA_INPLACE_GO_SEED_ARCHIVES:-${AURORA_INPLACE_SEED_ARCHIVES:-$bootstrap_root/.pi-tools/downloads}}
+  case "$bootstrap_seed" in /*) ;; *) bootstrap_seed=$PWD/$bootstrap_seed ;; esac
+  check_path "$bootstrap_seed/$bootstrap_file"
+  if [ -f "$bootstrap_seed/$bootstrap_file" ]; then
+    cp -- "$bootstrap_seed/$bootstrap_file" "$bootstrap_work/archive"
+  else
+    [ "$bootstrap_offline" = false ] || fail "offline pinned Go archive missing"
+    curl --fail --location --proto '=https' --proto-redir '=https' \
+      --connect-timeout 30 --max-time 300 --max-filesize 1073741824 \
+      --output "$bootstrap_work/archive" "$bootstrap_url"
+  fi
+  [ "$(stat -c %s -- "$bootstrap_work/archive")" -le 1073741824 ] || fail "archive size limit"
+  [ "$(sha256sum -- "$bootstrap_work/archive" | cut -d ' ' -f 1)" = "$bootstrap_sha" ] || fail "Go archive checksum mismatch"
+  ln -- "$bootstrap_work/archive" "$bootstrap_archive"
+fi
+[ -f "$bootstrap_archive" ] || fail "archive must be regular"
+[ "$(stat -c %s -- "$bootstrap_archive")" -le 1073741824 ] || fail "archive size limit"
+[ "$(sha256sum -- "$bootstrap_archive" | cut -d ' ' -f 1)" = "$bootstrap_sha" ] || fail "cached Go archive checksum mismatch"
+# Only this exact, checksum-verified known Go archive reaches system tar.
+# General tool archives are extracted by the bounded Go archive validator.
+mkdir "$bootstrap_work/sdk"
+tar --extract --gzip --file "$bootstrap_archive" --directory "$bootstrap_work/sdk" \
+  --no-same-owner --no-same-permissions
+bootstrap_go=$bootstrap_work/sdk/go/bin/go
+[ -f "$bootstrap_go" ] && [ ! -L "$bootstrap_go" ] || fail "invalid verified Go archive layout"
+# Private extraction survives until the command exits. Release the cache lock:
+# nested tools invocations must not deadlock, and no mutable SDK is reused.
+flock -u 9
+exec 9>&-
+export GOTOOLCHAIN=local
+export GOENV=off
+export GOWORK=off
+export GOFLAGS=
+export CGO_ENABLED=0
+export GOOS=linux
+export GOARCH=arm64
+export GOROOT="$bootstrap_work/sdk/go"
+export GOCACHE=${GOCACHE:-$bootstrap_cache/gocache}
+export GOMODCACHE=${GOMODCACHE:-$bootstrap_cache/gomodcache}
+case "$GOCACHE" in /*) ;; *) export GOCACHE=$PWD/$GOCACHE ;; esac
+case "$GOMODCACHE" in /*) ;; *) export GOMODCACHE=$PWD/$GOMODCACHE ;; esac
+for bootstrap_managed_cache in "$GOCACHE" "$GOMODCACHE"; do
+  check_path "$bootstrap_managed_cache"
+  mkdir -p -- "$bootstrap_managed_cache"
+  [ "$(stat -c %u -- "$bootstrap_managed_cache")" = "$(id -u)" ] || fail "Go cache must be owned by this user"
+  chmod 700 -- "$bootstrap_managed_cache"
+done
+export AURORA_BOOTSTRAP_GO_ARCHIVE_SHA256=$bootstrap_sha
+export AURORA_TOOLS_ROOT=$bootstrap_root
+export AURORA_TOOLS_CWD=$PWD
+"$bootstrap_go" -C "$bootstrap_root/tools" build -trimpath -buildvcs=false \
+  -o "$bootstrap_work/aurora-tools" ./cmd/aurora-tools
+"$bootstrap_work/aurora-tools" "$@"

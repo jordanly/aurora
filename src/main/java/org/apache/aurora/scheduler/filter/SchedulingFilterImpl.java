@@ -127,7 +127,7 @@ public class SchedulingFilterImpl implements SchedulingFilter {
         : Optional.empty();
   }
 
-  private Optional<Veto> getMesosMaintenanceVeto(Optional<Instant> unavailabilityStart) {
+  private Optional<Veto> getHostUnavailabilityVeto(Optional<Instant> unavailabilityStart) {
     if (unavailabilityStart.isPresent()) {
       Instant start = unavailabilityStart.get();
       Instant drainTime = start.minusMillis(unavailabilityThreshold.as(Time.MILLISECONDS));
@@ -165,10 +165,10 @@ public class SchedulingFilterImpl implements SchedulingFilter {
       return ImmutableSet.of(maintenanceVeto.get());
     }
 
-    Optional<Veto> mesosMaintenanceVeto =
-        getMesosMaintenanceVeto(resource.getUnavailabilityStart());
-    if (mesosMaintenanceVeto.isPresent()) {
-      return ImmutableSet.of(mesosMaintenanceVeto.get());
+    Optional<Veto> hostUnavailabilityVeto =
+        getHostUnavailabilityVeto(resource.getUnavailabilityStart());
+    if (hostUnavailabilityVeto.isPresent()) {
+      return ImmutableSet.of(hostUnavailabilityVeto.get());
     }
 
     // 3. Value and limit constraint check.

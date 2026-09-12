@@ -1,66 +1,58 @@
-## Get the Source Code
+## Working on this fork
 
-First things first, you'll need the source! The Aurora source is available from Apache git:
+Work from this fork's checkout and target its active branch. Apache Aurora's
+upstream history is retained, but the maintained application is the original
+scheduler on Java 25 with SQLite and Go process agents. The standalone scheduler
+prototype, Python/Pants/PEX workflow and Mesos/Thermos runtime are not development
+targets. Production multi-scheduler HA remains deferred.
 
-    git clone https://gitbox.apache.org/repos/asf/aurora
+Java follows the existing [Twitter Commons style guide](https://github.com/twitter/commons/blob/master/src/java/com/twitter/common/styleguide.md)
+and repository Checkstyle rules, including 100-character lines. Format Go with
+`gofmt`. Keep original scheduler policy and public Thrift compatibility tests;
+changes to execution must not quietly replace those behavioral contracts.
 
-Read the Style Guides
----------------------
-Aurora's codebase is primarily Java and Python and conforms to the Twitter Commons styleguides for
-both languages.
+## Build and test
 
-- [Java Style Guide](https://github.com/twitter/commons/blob/master/src/java/com/twitter/common/styleguide.md)
-- [Python Style Guide](https://github.com/twitter/commons/blob/master/src/python/twitter/common/styleguide.md)
+The checksum-pinned bootstrap supports Linux ARM64 and requires no Python.
+Thrift compilation requires `make`, `g++` and Boost headers. Read the
+[build guide](build-support/java/README.md) for cache, offline and platform details.
+From the repository root:
 
-## Find Something to Do
+```sh
+build-support/bootstrap-go check-tools
+compiler="$(build-support/bootstrap-go thrift)"
+./gradlew -PthriftCompiler="$compiler" focusedTest \
+  --tests org.apache.aurora.scheduler.state.TaskStateMachineTest
+build-support/lab/build-agents --check
+```
 
-There are issues in [Github](https://github.com/apache/aurora/issues) with the
-["good first issue" label](https://github.com/apache/aurora/issues?q=is%3Aissue+label%3A%22good+first+issue%22+is%3Aopen)
-that are good starting places for new Aurora contributors; pick one of these and dive in! To assign
-a task to yourself, you may chime in on the issue discussion and ask one of the maintainers
-to assign the issue to you, drop us a message on our Slack channel, or
-email us at dev@apache.aurora.org.
+`check-tools` runs the Go build-helper/client tests and `go vet`.
+`build-agents --check` does the same for the agent and lab helper before building them. Selected
+Java tests belong in `focusedTest`. Before claiming full behavior or distribution
+qualification, run the corresponding gates:
 
-The next step is to prepare your patch and then send us a Pull Request via the Github Web UI.
+```sh
+./gradlew -PthriftCompiler="$compiler" \
+  verifyOriginalBehavior :ui:build verifyInstalledDistribution compileJmhJava --continue
+./gradlew -PthriftCompiler="$compiler" -Pq verifyOriginalQuality --continue
+```
 
-## Submitting a Pull Request
+These commands can require downloads and local test sockets. The original UI
+uses pinned Node tooling. Preserve reports, failures and skipped-test details;
+a focused pass is not a full qualification result. Run live acceptance only in
+an owned [private integration lab](build-support/lab/README.md).
 
-Follow the instructions outlined in the
-[Github Documentation](https://help.github.com/en/github/collaborating-with-issues-and-pull-requests/creating-a-pull-request)
+Use the [Go client and JSON examples](docs/reference/go-client.md) to exercise
+supported process jobs. Historical `.aurora` Python configurations require an
+explicit migration; the client does not execute or translate Python.
 
-If possible, make a link to the issue this PR is solving by adding the `#` followed by the number
-of the issue it is addressing.
+## Submit a change
 
-If you're unsure about who to add as a reviewer, you can default to adding Stephan Erb (StephanErb),
-Mauricio Garavaglia (mauri), or Renan DelValle (ridv).
-They will take care of finding an appropriate reviewer for the patch.
+Open a pull request against this fork with the concrete behavior change, relevant
+issue, test commands and results. Identify compatibility limits and deferred work,
+and link any qualification receipts to the exact source and artifact versions.
+Do not present historical upstream reports as evidence for a new build.
 
-## Getting Your Review Merged
-
-If you're not an Aurora committer, one of the committers will merge your change in as described
-below. Generally, the last reviewer to give the review a 'Ship It!' will be responsible.
-
-### Merging Your Own Review (Committers)
-
-Submit a Pull Request against the master branch and click on squash and merge the PR via
-the Github Web UI.
-
-
-### Merging Someone Else's Review
-
-Sometimes you'll need to merge someone else's PR. Use Github's Web UI to do this using the
-squash and merge strategy.
-
-
-Note for committers: some changes are often required to the commit message:
-
-1. Ensure the the commit message does not exceed 100 characters per line.
-2. Remove the "Testing Done" section. It's generally redundant (can be seen by checking the linked
-  review) or entirely irrelevant to the commit itself.
-
-## Cleaning Up
-
-Your patch has landed, congratulations! The last thing you'll want to do before moving on to your
-next fix is to clean up. You may delete the branch that served as the basis
-for the PR and if the PR addresses a specific Github Issue, this issue should be closed and be tagged
-with the version on which the fix landed.
+Keep patches reviewable and preserve Apache attribution and license headers.
+Maintainers of the target fork control review and merging; historical Apache
+reviewer lists and release procedures do not appoint reviewers for this fork.

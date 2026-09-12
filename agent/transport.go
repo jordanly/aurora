@@ -46,11 +46,20 @@ type HTTPSOptions struct{ Listen, CertFile, KeyFile, CAFile string }
 // TransportHandler requires a verified TLS connection and exact leaf DNS SAN.
 // It never accepts a peer or caller authority assertion from command JSON.
 func TransportHandler(store *Store) http.Handler {
+	return transportHandler(store, defaultWatchTiming)
+}
+
+func transportHandler(store *Store, timing watchTiming) http.Handler {
 	slots := make(chan struct{}, 8)
+	watchSlots := make(chan struct{}, 2)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requestSlots := slots
+		if r.URL.Path == "/v1/watch" {
+			requestSlots = watchSlots
+		}
 		select {
-		case slots <- struct{}{}:
-			defer func() { <-slots }()
+		case requestSlots <- struct{}{}:
+			defer func() { <-requestSlots }()
 		default:
 			transportError(w, 503, "server busy")
 			return
@@ -60,16 +69,20 @@ func TransportHandler(store *Store) http.Handler {
 			transportError(w, 403, "peer rejected")
 			return
 		}
-		if r.URL.Path != "/v1/state" && r.URL.Path != "/v1/session" && r.URL.Path != "/v1/deliver" && r.URL.Path != "/v1/ack" {
+		if r.URL.Path != "/v1/watch" && r.URL.Path != "/v1/state" && r.URL.Path != "/v1/session" && r.URL.Path != "/v1/deliver" && r.URL.Path != "/v1/ack" {
 			transportError(w, 404, "unknown endpoint")
 			return
 		}
-		if r.URL.Path == "/v1/state" {
+		if r.URL.Path == "/v1/state" || r.URL.Path == "/v1/watch" {
 			if r.Method != "GET" {
 				transportError(w, 405, "method rejected")
 				return
 			}
-			serveState(w, r, store)
+			if r.URL.Path == "/v1/watch" {
+				serveWatch(w, r, store, timing)
+			} else {
+				serveState(w, r, store)
+			}
 			return
 		}
 		if r.Method != "POST" {
@@ -283,7 +296,9 @@ func ServeHTTPS(ctx context.Context, store *Store, runtimeOptions RuntimeOptions
 	if e != nil {
 		return e
 	}
-	server := &http.Server{Handler: TransportHandler(store), TLSConfig: tlsConfig, ReadHeaderTimeout: 3 * time.Second, ReadTimeout: 5 * time.Second, WriteTimeout: 5 * time.Second, IdleTimeout: 30 * time.Second, MaxHeaderBytes: 8192}
+	serverCtx, cancelServer := context.WithCancel(ctx)
+	defer cancelServer()
+	server := &http.Server{BaseContext: func(net.Listener) context.Context { return serverCtx }, Handler: TransportHandler(store), TLSConfig: tlsConfig, ReadHeaderTimeout: 3 * time.Second, ReadTimeout: 5 * time.Second, WriteTimeout: 5 * time.Second, IdleTimeout: 30 * time.Second, MaxHeaderBytes: 8192}
 	serveResult := make(chan error, 1)
 	go func() { serveResult <- server.Serve(tls.NewListener(listener, tlsConfig)) }()
 	defer server.Close()

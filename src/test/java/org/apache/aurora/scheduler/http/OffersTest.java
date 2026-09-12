@@ -13,28 +13,25 @@
  */
 package org.apache.aurora.scheduler.http;
 
+import java.time.Instant;
 import java.util.List;
 
-import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.Response;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.PropertyNamingStrategy;
-import com.google.common.collect.ImmutableSet;
-import com.google.gson.Gson;
-import com.hubspot.jackson.datatype.protobuf.ProtobufModule;
 
 import org.apache.aurora.common.testing.easymock.EasyMockTest;
 import org.apache.aurora.gen.HostAttributes;
-import org.apache.aurora.scheduler.mesos.MesosOffer;
+import org.apache.aurora.gen.MaintenanceMode;
+import org.apache.aurora.scheduler.execution.TestOffer;
 import org.apache.aurora.scheduler.offers.HostOffer;
 import org.apache.aurora.scheduler.offers.OfferManager;
 import org.apache.aurora.scheduler.storage.entities.IHostAttributes;
-import org.apache.mesos.v1.Protos;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.apache.aurora.gen.MaintenanceMode.NONE;
+import static org.apache.aurora.scheduler.resources.ResourceTestUtil.bag;
 import static org.easymock.EasyMock.expect;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -51,107 +48,38 @@ public class OffersTest extends EasyMockTest {
 
   @Test
   public void testNoOffers() throws Exception {
-    expect(offerManager.getAll()).andReturn(ImmutableSet.of());
-
+    expect(offerManager.getAll()).andReturn(List.of());
     control.replay();
-
     Response response = offers.getOffers();
-    assertEquals(HttpServletResponse.SC_OK, response.getStatus());
-    assertTrue(toList(response.getEntity().toString()).isEmpty());
+    assertEquals(200, response.getStatus());
+    assertEquals("[]", response.getEntity());
   }
 
   @Test
-  public void testOneOffer() throws Exception {
-    HostOffer offer = new HostOffer(
-        new MesosOffer(Protos.Offer.newBuilder()
-            .setId(Protos.OfferID.newBuilder().setValue("offer_id"))
-            .setFrameworkId(Protos.FrameworkID.newBuilder().setValue("framework_id"))
-            .setAgentId(Protos.AgentID.newBuilder().setValue("slave_id"))
-            .setHostname("host_name")
-            .addResources(Protos.Resource.newBuilder()
-                .setName("cpus")
-                .setType(Protos.Value.Type.SCALAR)
-                .setScalar(Protos.Value.Scalar.newBuilder().setValue(1.0).build())
-                .setReservation(Protos.Resource.ReservationInfo.newBuilder()
-                    .setLabels(Protos.Labels.newBuilder()
-                        .addLabels(Protos.Label.newBuilder()
-                            .setKey("key")
-                            .setValue("value"))
-                        .build())
-                    .build())
-                .build())
-            .addResources(Protos.Resource.newBuilder()
-                .setName("mem")
-                .setType(Protos.Value.Type.SCALAR)
-                .setScalar(Protos.Value.Scalar.newBuilder().setValue(128.0).build())
-                .setReservation(Protos.Resource.ReservationInfo.newBuilder().build())
-                .build())
-            .addResources(Protos.Resource.newBuilder()
-                .setName("disk")
-                .setType(Protos.Value.Type.SCALAR)
-                .setScalar(Protos.Value.Scalar.newBuilder().setValue(128.0).build())
-                .setReservation(Protos.Resource.ReservationInfo.newBuilder()
-                    .setLabels(Protos.Labels.newBuilder()
-                        .addLabels(Protos.Label.newBuilder()
-                            .setKey("key"))
-                        .build())
-                    .build())
-                .setDisk(Protos.Resource.DiskInfo.newBuilder()
-                    .setPersistence(Protos.Resource.DiskInfo.Persistence.newBuilder()
-                        .setId("volume")
-                        .build())
-                    .setVolume(Protos.Volume.newBuilder()
-                        .setContainerPath("path")
-                        .setMode(Protos.Volume.Mode.RW)
-                        .setImage(Protos.Image.newBuilder()
-                            .setType(Protos.Image.Type.DOCKER)
-                            .setDocker(Protos.Image.Docker.newBuilder()
-                                .setName("image")
-                                .build())
-                            .build())
-                        .build())
-                    .setSource(Protos.Resource.DiskInfo.Source.newBuilder()
-                        .setType(Protos.Resource.DiskInfo.Source.Type.PATH)
-                        .setPath(Protos.Resource.DiskInfo.Source.Path.newBuilder()
-                            .setRoot("root")
-                            .build())
-                        .build())
-                    .build())
-                .build())
-            .addResources(Protos.Resource.newBuilder()
-                .setName("gpus")
-                .setType(Protos.Value.Type.SCALAR)
-                .setScalar(Protos.Value.Scalar.newBuilder().setValue(4.0).build())
-                .build())
-            .addResources(Protos.Resource.newBuilder()
-                .setName("ports")
-                .setType(Protos.Value.Type.RANGES)
-                .setRanges(Protos.Value.Ranges.newBuilder()
-                    .addRange(Protos.Value.Range.newBuilder()
-                        .setBegin(31000)
-                        .setEnd(32000)
-                        .build())
-                    .build())
-                .build())
-            .build()),
-        IHostAttributes.build(new HostAttributes().setMode(NONE)));
-
-    expect(offerManager.getAll()).andReturn(ImmutableSet.of(offer));
-
+  public void testNeutralOfferWithResourcesAndMaintenance() throws Exception {
+    var offer = TestOffer.builder("offer-1").agentId("agent-a").hostname("host-a")
+        .resources(bag(1.0, 128, 256)).revocable(bag(0.5, 0, 0))
+        .ports(31000, 31001).dedicated(true).unavailableAt(Instant.EPOCH).build();
+    expect(offerManager.getAll()).andReturn(List.of(new HostOffer(offer,
+        IHostAttributes.build(new HostAttributes().setHost("host-a")
+            .setMode(MaintenanceMode.DRAINING)))));
     control.replay();
-
     Response response = offers.getOffers();
-    assertEquals(HttpServletResponse.SC_OK, response.getStatus());
-    ObjectMapper mapper = new ObjectMapper()
-        .registerModule(new ProtobufModule())
-        .setPropertyNamingStrategy(
-            PropertyNamingStrategy.CAMEL_CASE_TO_LOWER_CASE_WITH_UNDERSCORES);
-    assertEquals(
-        MesosOffer.toMesos(offer.getOffer()),
-        mapper.readValue(response.getEntity().toString(), Protos.Offer.class));
-  }
-
-  private static List toList(String json) {
-    return new Gson().fromJson(json, List.class);
+    assertEquals(200, response.getStatus());
+    JsonNode result = new ObjectMapper().readTree(response.getEntity().toString());
+    assertTrue(result.isArray());
+    assertEquals(1, result.size());
+    JsonNode actual = result.get(0);
+    assertEquals("offer-1", actual.path("offerId").asText());
+    assertEquals("agent-a", actual.path("agentId").asText());
+    assertEquals("host-a", actual.path("hostname").asText());
+    assertEquals(1.0, actual.path("resources").path("CPUS").asDouble(), 0.0);
+    assertEquals(128, actual.path("resources").path("RAM_MB").asInt());
+    assertEquals(256, actual.path("resources").path("DISK_MB").asInt());
+    assertEquals(0.5, actual.path("revocableResources").path("CPUS").asDouble(), 0.0);
+    assertEquals("[31000,31001]", actual.path("ports").toString());
+    assertEquals(Instant.EPOCH.toString(), actual.path("unavailableAt").asText());
+    assertTrue(actual.path("dedicated").asBoolean());
+    assertEquals("DRAINING", actual.path("maintenanceMode").asText());
   }
 }

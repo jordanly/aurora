@@ -22,16 +22,22 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 import javax.inject.Inject;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.common.eventbus.Subscribe;
 import com.google.common.util.concurrent.AbstractIdleService;
 
+import org.apache.aurora.common.stats.Stats;
 import org.apache.aurora.gen.Attribute;
 import org.apache.aurora.gen.HostAttributes;
 import org.apache.aurora.gen.MaintenanceMode;
@@ -41,6 +47,8 @@ import org.apache.aurora.scheduler.base.Query;
 import org.apache.aurora.scheduler.base.Tasks;
 import org.apache.aurora.scheduler.events.EventSink;
 import org.apache.aurora.scheduler.events.PubsubEvent.DriverRegistered;
+import org.apache.aurora.scheduler.events.PubsubEvent.EventSubscriber;
+import org.apache.aurora.scheduler.events.PubsubEvent.TaskStateChange;
 import org.apache.aurora.scheduler.events.PubsubEventModule.RegisteredEvents;
 import org.apache.aurora.scheduler.execution.ExecutionDriver;
 import org.apache.aurora.scheduler.execution.ExecutionOffer;
@@ -65,8 +73,17 @@ import org.slf4j.LoggerFactory;
 
 /** Durable execution adapter beneath Aurora's existing offers and state machine. */
 final class GoAgentDriver extends AbstractIdleService
-    implements ExecutionDriver, OfferTransport, TaskReconciliation {
+    implements ExecutionDriver, OfferTransport, TaskReconciliation, EventSubscriber {
   private static final Logger LOG = LoggerFactory.getLogger(GoAgentDriver.class);
+  private static final AtomicLong WATCH_CONNECTIONS =
+      Stats.exportLong("go_agent_watch_connections");
+  private static final AtomicLong WATCH_SNAPSHOTS = Stats.exportLong("go_agent_watch_snapshots");
+  private static final AtomicLong WATCH_DELTAS = Stats.exportLong("go_agent_watch_deltas");
+  private static final AtomicLong WATCH_HEARTBEATS = Stats.exportLong("go_agent_watch_heartbeats");
+  private static final AtomicLong INVENTORY_REQUESTS =
+      Stats.exportLong("go_agent_inventory_requests");
+  private static final AtomicLong ACK_REQUESTS = Stats.exportLong("go_agent_ack_requests");
+  private static final AtomicLong COMMAND_REQUESTS = Stats.exportLong("go_agent_command_requests");
   private final GoAgentConfig config;
   private final Storage storage;
   private final SqliteStorage sqlite;
@@ -77,8 +94,19 @@ final class GoAgentDriver extends AbstractIdleService
   private final boolean autoPoll;
   private final String epoch;
   private final String session = "s-" + UUID.randomUUID();
-  private final ScheduledExecutorService worker = Executors.newSingleThreadScheduledExecutor(
-      Thread.ofPlatform().daemon().name("GoAgentPoller").factory());
+  private final ExecutorService consumers = Executors.newVirtualThreadPerTaskExecutor();
+  private final java.util.Map<String, Inventory> inventories = new ConcurrentHashMap<>();
+  private final java.util.Map<String, Long> offeredAt = new ConcurrentHashMap<>();
+  private volatile boolean closing;
+
+  private static final class Inventory {
+    private ObjectNode attempts = WireJson.object();
+    private boolean ready;
+    private boolean changed;
+    private Set<?> tasks = Set.of();
+    private final Semaphore wake = new Semaphore(0);
+    private final CompletableFuture<Void> initial = new CompletableFuture<>();
+  }
 
   @Inject
   GoAgentDriver(GoAgentConfig config, Storage storage, SqliteStorage sqlite,
@@ -115,18 +143,214 @@ final class GoAgentDriver extends AbstractIdleService
     // The existing lifecycle has recovered storage and published initialized task events.
     // Registration is withheld until every enrolled journal has reconciled successfully.
     try {
-      for (GoAgentConfig.Node node : config.nodes()) {
-        poll(node, false);
-      }
       if (autoPoll) {
-        worker.scheduleWithFixedDelay(this::tick, 1, 1, TimeUnit.SECONDS);
+        for (GoAgentConfig.Node node : config.nodes()) {
+          Inventory inventory = new Inventory();
+          inventories.put(node.name(), inventory);
+          consumers.submit(() -> watch(node, inventory));
+          consumers.submit(() -> localWork(node, inventory));
+        }
+        for (Inventory inventory : inventories.values()) {
+          inventory.initial.get(90, TimeUnit.SECONDS);
+        }
+      } else {
+        for (GoAgentConfig.Node node : config.nodes()) {
+          poll(node, false);
+        }
       }
       registered.post(new DriverRegistered());
+      inventories.values().forEach(inventory -> inventory.wake.release());
     } catch (Exception | Error failure) {
-      worker.shutdownNow();
+      closing = true;
+      consumers.shutdownNow();
       client.close();
       throw failure;
     }
+  }
+
+  private void refreshOffer(GoAgentConfig.Node node, Inventory inventory) {
+    synchronized (inventory) {
+      if (!inventory.ready) {
+        return;
+      }
+      var tasks = storage.read(stores -> stores.getTaskStore().fetchTasks(Query.unscoped())
+          .stream().filter(task -> node.name().equals(task.getAssignedTask().getSlaveId()))
+          .collect(java.util.stream.Collectors.toSet()));
+      if (inventory.changed || !inventory.tasks.equals(tasks)
+          || offers.get().get(node.name()).isEmpty()
+          || System.nanoTime() - offeredAt.getOrDefault(node.name(), 0L)
+              >= TimeUnit.MINUTES.toNanos(1)) {
+        offer(node, inventory.attempts);
+        inventory.tasks = tasks;
+        inventory.changed = false;
+      }
+    }
+  }
+
+  private void withdrawInventory(GoAgentConfig.Node node, Inventory inventory) {
+    synchronized (inventory) {
+      inventory.ready = false;
+      cancelOffer(node);
+    }
+  }
+
+  private void localWork(GoAgentConfig.Node node, Inventory inventory) {
+    try {
+      awaitRunning();
+    } catch (IllegalStateException startupFailed) {
+      return;
+    }
+    while (!closing && !Thread.currentThread().isInterrupted()) {
+      try {
+        boolean pending = false;
+        if (isRunning()) {
+          refreshOffer(node, inventory);
+          dispatchIfPending(node);
+          pending = hasPending(node);
+        }
+        inventory.wake.tryAcquire(pending ? 1 : 60, TimeUnit.SECONDS);
+        inventory.wake.drainPermits();
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+      } catch (Exception e) {
+        LOG.warn("Agent {} local dispatch failed: {}", node.name(), e.toString());
+        try {
+          inventory.wake.tryAcquire(1, TimeUnit.SECONDS);
+        } catch (InterruptedException interrupted) {
+          Thread.currentThread().interrupt();
+        }
+      }
+    }
+  }
+
+  private boolean hasPending(GoAgentConfig.Node node) {
+    return storage.read(stores -> sqlite.effects().pending(1024).stream()
+        .anyMatch(item -> item.command().agentId().equals(node.name())));
+  }
+
+  private void dispatchIfPending(GoAgentConfig.Node node) {
+    if (hasPending(node)) {
+      dispatch(node);
+    }
+  }
+
+  @Subscribe
+  public void taskChanged(TaskStateChange event) {
+    // The SQLite event sink publishes after commit. Never acquire inventory locks here.
+    inventories.values().forEach(inventory -> inventory.wake.release());
+  }
+
+  private void watch(GoAgentConfig.Node node, Inventory inventory) {
+    long retrySeconds = 1;
+    while (!closing && !Thread.currentThread().isInterrupted()) {
+      try {
+        client.request(node, "/v1/session", WireJson.object().put("schedulerEpoch", epoch)
+            .put("session", session), epoch, session);
+        long after = storage.read(stores -> sqlite.effects().committedCursor(
+            node.name(), journalScope(node)));
+        try (AgentTransport.Watch stream = client.watch(node, after, epoch, session)) {
+          WATCH_CONNECTIONS.incrementAndGet();
+          boolean first = true;
+          while (!closing) {
+            JsonNode frame = stream.next();
+            validateAuthority(node, frame);
+            String kind = WireJson.text(frame, "kind");
+            if ("heartbeat".equals(kind)) {
+              WireJson.fields(frame, "kind", "config", "nextCursor");
+              WireJson.require(!first && WireJson.counter(frame, "nextCursor") == after,
+                  "Invalid watch heartbeat cursor");
+              WATCH_HEARTBEATS.incrementAndGet();
+              continue;
+            }
+            WireJson.require("snapshot".equals(kind) || !first && "delta".equals(kind),
+                "Watch must begin with a snapshot");
+            WireJson.fields(frame, "kind", "config", "state", "nextCursor", "hasMore");
+            validateState(node, frame);
+            long next = commitPage(node, frame, after);
+            synchronized (inventory) {
+              ObjectNode attempts = "snapshot".equals(kind)
+                  ? WireJson.object() : inventory.attempts.deepCopy();
+              frame.path("state").path("attempts").fields().forEachRemaining(
+                  entry -> attempts.set(entry.getKey(), entry.getValue()));
+              WireJson.require(attempts.size() <= 128, "Merged attempt inventory exceeds bound");
+              for (JsonNode attempt : attempts) {
+                WireJson.require(attempt.path("reserved").isBoolean(),
+                    "Incomplete reservation inventory");
+              }
+              inventory.changed |= !inventory.attempts.equals(attempts);
+              inventory.attempts = attempts;
+              inventory.ready = !frame.path("hasMore").asBoolean();
+              if (!inventory.ready) {
+                cancelOffer(node);
+              }
+            }
+            // Re-ACK the reconnect snapshot even when its cursor is unchanged: a prior
+            // acknowledgement may have been lost after the scheduler committed its receipts.
+            if (first || next != after) {
+              acknowledge(node, next);
+            }
+            ("snapshot".equals(kind) ? WATCH_SNAPSHOTS : WATCH_DELTAS).incrementAndGet();
+            after = next;
+            first = false;
+            retrySeconds = 1;
+            if (!frame.path("hasMore").asBoolean()) {
+              inventory.initial.complete(null);
+              inventory.wake.release();
+            }
+          }
+        }
+      } catch (InterruptedException e) {
+        withdrawInventory(node, inventory);
+        Thread.currentThread().interrupt();
+        return;
+      } catch (IOException | RuntimeException e) {
+        withdrawInventory(node, inventory);
+        LOG.warn("Agent {} watch failed; reservations retained: {}", node.name(), e.toString());
+        try {
+          TimeUnit.SECONDS.sleep(retrySeconds);
+          retrySeconds = Math.min(30, retrySeconds * 2);
+        } catch (InterruptedException interrupted) {
+          Thread.currentThread().interrupt();
+        }
+      }
+    }
+  }
+
+  private long commitPage(GoAgentConfig.Node node, JsonNode response, long after) {
+    long next = WireJson.counter(response, "nextCursor");
+    List<JsonNode> observations = new java.util.ArrayList<>();
+    long expected = after;
+    for (JsonNode observation : response.path("state").path("observations")) {
+      validateObservation(node, observation);
+      WireJson.require(WireJson.counter(observation, "cursor") == Math.incrementExact(expected),
+          "Observation cursor gap");
+      expected++;
+      observations.add(observation);
+    }
+    WireJson.require(expected == next && next <= WireJson.counter(response.path("state"), "cursor")
+        && (!response.path("hasMore").asBoolean() || !observations.isEmpty()),
+        "Invalid page cursor");
+    if (observations.isEmpty()) {
+      return next;
+    }
+    storage.write(stores -> {
+      WireJson.require(sqlite.effects().committedCursor(node.name(), journalScope(node)) == after,
+          "Concurrent observation consumer");
+      for (JsonNode observation : observations) {
+        observe(stores, node, observation);
+      }
+      return null;
+    });
+    return next;
+  }
+
+  private void acknowledge(GoAgentConfig.Node node, long next)
+      throws IOException, InterruptedException {
+    ObjectNode ack = WireJson.base("ObservationAck").put("cluster", config.cluster())
+        .put("incarnation", config.incarnation()).put("node", node.name())
+        .put("journal", node.journal()).put("committedCursor", Long.toString(next));
+    ACK_REQUESTS.incrementAndGet();
+    client.request(node, "/v1/ack", ack, epoch, session);
   }
 
   void tick() {
@@ -155,37 +379,12 @@ final class GoAgentDriver extends AbstractIdleService
     long after = storage.read(stores -> sqlite.effects().committedCursor(
         node.name(), journalScope(node)));
     for (int page = 0; page < 4; page++) {
+      INVENTORY_REQUESTS.incrementAndGet();
       JsonNode response = client.request(node, "/v1/state?afterCursor=" + after + "&limit=128",
           null, epoch, session);
       validateState(node, response);
-      long next = WireJson.counter(response, "nextCursor");
-      List<JsonNode> observations = new java.util.ArrayList<>();
-      long expected = after;
-      for (JsonNode observation : response.path("state").path("observations")) {
-        validateObservation(node, observation);
-        WireJson.require(WireJson.counter(observation, "cursor") == Math.incrementExact(expected),
-            "Observation cursor gap");
-        expected++;
-        observations.add(observation);
-      }
-      WireJson.require(expected == next
-          && next <= WireJson.counter(response.path("state"), "cursor")
-          && (!response.path("hasMore").asBoolean() || !observations.isEmpty()),
-          "Invalid page cursor");
-      long before = after;
-      storage.write(stores -> {
-        WireJson.require(
-            sqlite.effects().committedCursor(node.name(), journalScope(node)) == before,
-            "Concurrent observation consumer");
-        for (JsonNode observation : observations) {
-          observe(stores, node, observation);
-        }
-        return null;
-      });
-      ObjectNode ack = WireJson.base("ObservationAck").put("cluster", config.cluster())
-          .put("incarnation", config.incarnation()).put("node", node.name())
-          .put("journal", node.journal()).put("committedCursor", Long.toString(next));
-      client.request(node, "/v1/ack", ack, epoch, session);
+      long next = commitPage(node, response, after);
+      acknowledge(node, next);
       after = next;
       if (!response.path("hasMore").asBoolean()) {
         if (advertise) {
@@ -197,7 +396,7 @@ final class GoAgentDriver extends AbstractIdleService
     throw new IOException("Observation backlog not drained");
   }
 
-  private void validateState(GoAgentConfig.Node node, JsonNode response) {
+  private void validateAuthority(GoAgentConfig.Node node, JsonNode response) {
     JsonNode actual = response.path("config");
     WireJson.require(config.cluster().equals(actual.path("cluster").asText())
         && config.incarnation().equals(actual.path("incarnation").asText())
@@ -208,6 +407,10 @@ final class GoAgentDriver extends AbstractIdleService
         && node.memoryBytes() == actual.path("memoryBytes").asLong(), "Agent enrollment differs");
     node.target().fields().forEachRemaining(entry -> WireJson.require(
         entry.getValue().equals(actual.path(entry.getKey())), "Agent target differs"));
+  }
+
+  private void validateState(GoAgentConfig.Node node, JsonNode response) {
+    validateAuthority(node, response);
     JsonNode state = response.path("state");
     WireJson.require(
         state.path("observations").isArray() && state.path("observations").size() <= 128
@@ -274,13 +477,13 @@ final class GoAgentDriver extends AbstractIdleService
 
   private void offer(GoAgentConfig.Node node, JsonNode inventory) {
     storage.write(stores -> {
-      cancelOffer(node);
       Set<String> reserved = new HashSet<>();
       for (JsonNode attempt : inventory) {
         WireJson.require(attempt.path("reserved").isBoolean(), "Incomplete reservation inventory");
         if (attempt.path("reserved").asBoolean()) {
           Optional<Command> run = runFor(attempt.path("identity"));
           if (run.isEmpty() || !node.name().equals(run.get().agentId())) {
+            cancelOffer(node);
             return null; // Unknown execution prevents advertising any free capacity.
           }
           reserved.add(run.get().taskId());
@@ -298,6 +501,7 @@ final class GoAgentDriver extends AbstractIdleService
         }
       }
       if (!reserved.isEmpty()) {
+        cancelOffer(node);
         return null; // A pruned task with unfinished cleanup still reserves its agent.
       }
       var existing = stores.getAttributeStore().getHostAttributes(node.name());
@@ -309,8 +513,16 @@ final class GoAgentDriver extends AbstractIdleService
       if (existing.isEmpty()) {
         stores.getAttributeStore().saveHostAttributes(attributes);
       }
+      var current = offers.get().get(node.name());
+      if (current.isPresent() && current.get().getResourceBag(false).equals(available)
+          && System.nanoTime() - offeredAt.getOrDefault(node.name(), 0L)
+              < TimeUnit.MINUTES.toNanos(1)) {
+        return null;
+      }
+      cancelOffer(node);
       offers.get().add(new HostOffer(
           new AgentOffer(node.name(), "offer-" + UUID.randomUUID(), available), attributes));
+      offeredAt.put(node.name(), System.nanoTime());
       return null;
     });
   }
@@ -393,34 +605,50 @@ final class GoAgentDriver extends AbstractIdleService
         taskId, "Stop", 1, WireJson.bytes(stop)));
   }
 
-  private void dispatch(GoAgentConfig.Node node) {
-    // Serialize the final cancellation check with policy writes. Only intents from an earlier
-    // committed transaction are eligible; transport failures retain the exact identity/body.
-    for (int count = 0; count < 16; count++) {
-      boolean delivered = storage.write(stores -> {
+  private Optional<Command> selectCommand(GoAgentConfig.Node node) {
+    return storage.write(stores -> {
+      Optional<Command> selected = Optional.empty();
+      for (int count = 0; count < 16 && isRunning() && selected.isEmpty(); count++) {
         var next = sqlite.effects().pending(1024).stream()
             .filter(item -> item.command().agentId().equals(node.name())).findFirst();
-        if (next.isEmpty() || !isRunning()) {
-          return false;
+        if (next.isEmpty()) {
+          return Optional.empty();
         }
         Command command = next.get().command();
-        if ("Run".equals(command.type())) {
-          var task = stores.getTaskStore().fetchTask(command.taskId());
-          if (task.isEmpty() || !Set.of(
-                  ScheduleStatus.ASSIGNED, ScheduleStatus.STARTING, ScheduleStatus.RUNNING)
-              .contains(task.get().getStatus())) {
-            killTask(command.taskId());
-            return true;
-          }
+        var task = stores.getTaskStore().fetchTask(command.taskId());
+        boolean canceledRun = "Run".equals(command.type()) && (task.isEmpty() || !Set.of(
+                ScheduleStatus.ASSIGNED, ScheduleStatus.STARTING, ScheduleStatus.RUNNING)
+            .contains(task.get().getStatus()));
+        if (canceledRun) {
+          enqueueStop(command.taskId());
+        } else {
+          selected = Optional.of(command);
         }
-        ObjectNode delivery = WireJson.base("Delivery")
-            .put("bodySha256", WireJson.hash(command.payload()));
-        delivery.set("body", parse(command));
-        delivery.set("authority", WireJson.object().put("cluster", config.cluster())
-            .put("incarnation", config.incarnation()).put("schedulerEpoch", epoch)
-            .put("session", session));
-        try {
-          JsonNode result = client.request(node, "/v1/deliver", delivery, epoch, session);
+      }
+      return selected;
+    });
+  }
+
+  private void dispatch(GoAgentConfig.Node node) {
+    for (int count = 0; count < 16; count++) {
+      Optional<Command> selected = selectCommand(node);
+      if (selected.isEmpty() || !isRunning()) {
+        return;
+      }
+      Command command = selected.get();
+      ObjectNode delivery = WireJson.base("Delivery")
+          .put("bodySha256", WireJson.hash(command.payload()));
+      delivery.set("body", parse(command));
+      delivery.set("authority", WireJson.object().put("cluster", config.cluster())
+          .put("incarnation", config.incarnation()).put("schedulerEpoch", epoch)
+          .put("session", session));
+      try {
+        // No SQLite lock spans network I/O. A concurrent Stop durably supersedes this Run.
+        // The agent retains Stop tombstones: late Runs cannot resurrect stopped attempts,
+        // and an already accepted Run remains reserved until cleanup is observed.
+        COMMAND_REQUESTS.incrementAndGet();
+        JsonNode result = client.request(node, "/v1/deliver", delivery, epoch, session);
+        storage.write(stores -> {
           WireJson.require(command.id().equals(result.path("command").asText())
               && WireJson.hash(command.payload()).equals(result.path("bodySha256").asText()),
               "Command receipt differs");
@@ -429,20 +657,31 @@ final class GoAgentDriver extends AbstractIdleService
             WireJson.require("Run".equals(command.type()) && Set.of("rejected-capacity",
                 "rejected-capability", "rejected-socket", "rejected-stopped").contains(outcome),
                 "Command rejection has an ambiguous execution outcome");
-            stateManager.get().changeState(stores, command.taskId(), Optional.empty(),
-                ScheduleStatus.LOST, Optional.of("Go agent refused launch: " + outcome));
+          }
+          WireJson.require(sqlite.effects().command(command.id()).filter(command::equals)
+              .isPresent(), "Durable command differs from delivery");
+          boolean pending = sqlite.effects().pending(1024).stream()
+              .anyMatch(item -> item.command().equals(command));
+          if (!pending) {
+            return null; // A committed Stop or another receipt already superseded this delivery.
+          }
+          if (!"accepted".equals(outcome)) {
+            var task = stores.getTaskStore().fetchTask(command.taskId());
+            if (task.isPresent() && Set.of(
+                ScheduleStatus.ASSIGNED, ScheduleStatus.STARTING, ScheduleStatus.RUNNING)
+                .contains(task.get().getStatus())) {
+              stateManager.get().changeState(stores, command.taskId(), Optional.empty(),
+                  ScheduleStatus.LOST, Optional.of("Go agent refused launch: " + outcome));
+            }
           }
           sqlite.effects().acknowledge(command.id());
-          return true;
-        } catch (IOException e) {
-          LOG.warn("Command {} remains pending: {}", command.id(), e.toString());
-          return false;
-        } catch (InterruptedException e) {
-          Thread.currentThread().interrupt();
-          return false;
-        }
-      });
-      if (!delivered) {
+          return null;
+        });
+      } catch (IOException e) {
+        LOG.warn("Command {} remains pending: {}", command.id(), e.toString());
+        return;
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
         return;
       }
     }
@@ -459,10 +698,11 @@ final class GoAgentDriver extends AbstractIdleService
 
   @Override
   public void decline(String offerId, double refuseSeconds) {
-    // Offers are regenerated from the agent inventory on every poll.
+    // Placement can consume an offer without changing a task.
+    inventories.values().forEach(inventory -> inventory.wake.release());
   }
   @Override public void reconcileTasks(Collection<ReconciliationTarget> targets) {
-    // Every poll reconciles full journal inventory; no task is lost solely on a missed heartbeat.
+    // Watch snapshots reconcile journals; a missed heartbeat does not imply task loss.
   }
   @Override
   public void blockUntilStopped() {
@@ -475,7 +715,8 @@ final class GoAgentDriver extends AbstractIdleService
 
   @Override
   protected void shutDown() {
-    worker.shutdownNow();
+    closing = true;
+    consumers.shutdownNow();
     client.close();
     config.nodes().forEach(this::cancelOffer);
   }

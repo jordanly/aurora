@@ -42,14 +42,14 @@ public final class OfferOrderBuilder {
   // We should not prefer offers from agents that are scheduled to become unavailable.
   // We should also sort the unavailability start to prefer agents that are starting
   // maintenance later.
-  private static final Ordering<HostOffer> MESOS_MAINTENANCE_COMPARATOR =
+  private static final Ordering<HostOffer> UNAVAILABILITY_COMPARATOR =
       Ordering
           .natural()
           .reverse()
           .onResultOf(o -> o.getUnavailabilityStart().orElse(Instant.MAX));
 
   private static final Ordering<HostOffer> BASE_COMPARATOR =
-      AURORA_MAINTENANCE_COMPARATOR.compound(MESOS_MAINTENANCE_COMPARATOR);
+      AURORA_MAINTENANCE_COMPARATOR.compound(UNAVAILABILITY_COMPARATOR);
 
   private static final Ordering<Object> RANDOM_COMPARATOR = Ordering.arbitrary();
   private static final Ordering<HostOffer> CPU_COMPARATOR =

@@ -133,6 +133,11 @@ func processInfo(pid int) (procInfo, error) {
 	p.PID = pid
 	b, e := os.ReadFile(fmt.Sprintf("/proc/%d/stat", pid))
 	if e != nil {
+		// procfs may report ESRCH, not ENOENT, when the task exits between
+		// opening stat and reading it. Both mean this process is gone.
+		if errors.Is(e, unix.ESRCH) {
+			return p, os.ErrNotExist
+		}
 		return p, e
 	}
 	s := string(b)

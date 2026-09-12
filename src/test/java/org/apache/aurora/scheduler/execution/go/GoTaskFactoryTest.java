@@ -82,6 +82,10 @@ public class GoTaskFactoryTest extends EasyMockTest {
     var valid = task(PROCESS).newBuilder()
         .setResources(ImmutableSet.of(numCpus(0.6), ramMb(1), diskMb(1)));
     factory().validate(ITaskConfig.build(valid));
+    for (double cores : List.of(1.001, 1.007, 4.097, Integer.MAX_VALUE / 1000.0)) {
+      factory().validate(ITaskConfig.build(valid.deepCopy()
+          .setResources(ImmutableSet.of(numCpus(cores), ramMb(1), diskMb(1)))));
+    }
     var fractional = valid.deepCopy()
         .setResources(ImmutableSet.of(numCpus(0.6001), ramMb(1), diskMb(1)));
     assertThrowsTaskDescription(() -> factory().validate(ITaskConfig.build(fractional)));
@@ -106,7 +110,9 @@ public class GoTaskFactoryTest extends EasyMockTest {
         IAssignedTask.build(new AssignedTask()
             .setTaskId("task-1")
             .setInstanceId(3)
-            .setTask(task(PROCESS).newBuilder())), offer, false);
+            .setTask(task(PROCESS).newBuilder()
+                .setResources(ImmutableSet.of(numCpus(1.001), ramMb(1), diskMb(1))))),
+        offer, false);
     var run = WireJson.parse(launch.body().getBytes(StandardCharsets.US_ASCII));
 
     assertEquals("task-1", launch.taskId());
@@ -115,6 +121,7 @@ public class GoTaskFactoryTest extends EasyMockTest {
     assertEquals("Run", run.get("kind").asText());
     assertEquals("agent-1", run.get("target").get("node").asText());
     assertEquals("main", run.get("assignment").get("process").asText());
+    assertEquals(1001, run.path("assignment").path("resources").path("cpuMillis").asInt());
     assertEquals("1", run.get("desiredRevision").asText());
     assertNotEquals(
         GoTaskFactory.identity("a-", "task-1"),

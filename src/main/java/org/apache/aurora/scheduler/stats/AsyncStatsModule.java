@@ -36,8 +36,8 @@ import org.apache.aurora.scheduler.stats.SlotSizeCounter.MachineResourceProvider
 
 import static java.util.Objects.requireNonNull;
 
-import static org.apache.aurora.scheduler.resources.ResourceBag.IS_MESOS_REVOCABLE;
 import static org.apache.aurora.scheduler.resources.ResourceBag.IS_POSITIVE;
+import static org.apache.aurora.scheduler.resources.ResourceBag.IS_REVOCABLE;
 
 /**
  * Module to configure export of cluster-wide resource allocation and consumption statistics.
@@ -165,7 +165,7 @@ public class AsyncStatsModule extends AbstractModule {
         // It's insufficient to compare revocable against EMPTY here as RAM, DISK and PORTS
         // are always rolled in to revocable as non-compressible resources. Only if revocable
         // CPU is non-zero should we expose the revocable resources as aggregates.
-        if (!revocable.filter(IS_POSITIVE.and(IS_MESOS_REVOCABLE)).getResourceVectors().isEmpty()) {
+        if (!revocable.filter(IS_POSITIVE.and(IS_REVOCABLE)).getResourceVectors().isEmpty()) {
           builder.add(new MachineResource(revocable, isDedicated, true));
         }
 

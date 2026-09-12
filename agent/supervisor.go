@@ -289,7 +289,7 @@ func SuperviseHelper() error {
 	if len(st.Attempts) != 0 {
 		return errors.New("supervisor replay refused")
 	}
-	e = s.db.Update(func(tx *bolt.Tx) error {
+	e = s.update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte("state"))
 		st, e := read(b)
 		if e != nil {
@@ -355,7 +355,7 @@ func SuperviseHelper() error {
 				err = errors.New("supervisor protocol/identity mismatch")
 			}
 			if err == nil && q.Stop {
-				err = s.db.Update(func(tx *bolt.Tx) error {
+				err = s.update(func(tx *bolt.Tx) error {
 					b := tx.Bucket([]byte("state"))
 					v, e := read(b)
 					if e != nil {
@@ -411,7 +411,7 @@ func SuperviseHelper() error {
 				return err
 			}
 			if state.StopMono > 0 && monoMillis() >= state.StopMono {
-				err = s.db.Update(func(tx *bolt.Tx) error {
+				err = s.update(func(tx *bolt.Tx) error {
 					b := tx.Bucket([]byte("state"))
 					v, e := read(b)
 					if e != nil {
@@ -438,6 +438,16 @@ func (r *Runtime) pollSupervisor(key string, a Attempt) error {
 	ref := a.Supervisor
 	if ref.Version != supervisorVersion {
 		return errors.New("unsupported supervisor version")
+	}
+	// A Unix listener may remain connectable briefly during process teardown.
+	// Recover from the durable journal once the exact supervisor is dead rather
+	// than relying on a failed connect to discover death.
+	process, err := processInfo(ref.Process.PID)
+	if os.IsNotExist(err) || (err == nil && (process.Start != ref.Process.Start || process.State == "Z" || process.State == "X")) {
+		return r.supervisorLost(key, a)
+	}
+	if err != nil {
+		return err
 	}
 	socketDir, address, e := socketAddress(r.opts.Root, key)
 	if e != nil {

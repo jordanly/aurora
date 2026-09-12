@@ -75,9 +75,8 @@ public class OfferManagerModule extends AbstractModule {
 
     @Parameter(names = "-offer_filter_duration",
         description =
-            "Duration after which we expect Mesos to re-offer unused resources. A short duration "
-                + "improves scheduling performance in smaller clusters, but might lead to resource "
-                + "starvation for other frameworks if you run many frameworks in your cluster.")
+            "Requested retry delay supplied to the offer transport when resources are declined. "
+                + "Go agents refresh cached offers on demand without applying this delay.")
     public TimeAmount offerFilterDuration = new TimeAmount(5, Time.SECONDS);
 
     @Parameter(names = "-unavailability_threshold",

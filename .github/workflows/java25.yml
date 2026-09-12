@@ -26,14 +26,12 @@ jobs:
       - name: Check and build pinned Go integration binaries
         run: |
           mkdir -p .cache/inplace-go
-          if ! python3 build-support/lab/build-agents --check >.cache/inplace-go/build-agents.log 2>&1; then
-            python3 - <<'PYTHON'
-          from pathlib import Path
-          message = Path('.cache/inplace-go/build-agents.log').read_text()[-3000:]
-          print('::error title=Go checks failed::' + message.replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A'))
-          PYTHON
+          if ! build-support/lab/build-agents --check >.cache/inplace-go/build-agents.log 2>&1; then
+            tail -c 3000 .cache/inplace-go/build-agents.log
             exit 1
           fi
+      - name: Build the standalone Go client
+        run: build-support/bootstrap-go build-client --output "$PWD/.cache/inplace-go/aurora"
       - name: Retain Go checks and provenance
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -43,6 +41,8 @@ jobs:
           if-no-files-found: warn
           path: |
             .cache/inplace-go/build-agents.log
+            .cache/inplace-go/aurora
+            .cache/inplace-go/aurora.provenance.json
             .pi-tools/agent-original-integration/*.provenance.json
   verify:
     name: Java 25 / ${{ matrix.gate }}
@@ -65,17 +65,13 @@ jobs:
         id: thrift
         run: |
           mkdir -p .cache/inplace-thrift
-          if ! compiler="$(python3 build-support/java/bootstrap-thrift.py 2>.cache/inplace-thrift/bootstrap.log)"; then
-            python3 - <<'PYTHON'
-          from pathlib import Path
-          message = Path('.cache/inplace-thrift/bootstrap.log').read_text()[-3000:]
-          print('::error title=Thrift bootstrap failed::' + message.replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A'))
-          PYTHON
+          if ! compiler="$(build-support/bootstrap-go thrift 2>.cache/inplace-thrift/bootstrap.log)"; then
+            tail -c 3000 .cache/inplace-thrift/bootstrap.log
             exit 1
           fi
           echo "compiler=$compiler" >> "$GITHUB_OUTPUT"
       - name: Verify build helpers and code generation contracts
-        run: python3 -m unittest discover -s build-support/java -p 'test_*.py'
+        run: build-support/bootstrap-go check-tools
       - name: Verify original behavior, UI, and installed launchers
         if: matrix.gate == 'behavior-and-distribution'
         env:

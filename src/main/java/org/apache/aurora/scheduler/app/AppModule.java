@@ -24,7 +24,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.AbstractModule;
 
-import org.apache.aurora.GuiceUtils;
 import org.apache.aurora.common.inject.TimedInterceptor;
 import org.apache.aurora.common.quantity.Time;
 import org.apache.aurora.common.stats.Stats;
@@ -35,7 +34,6 @@ import org.apache.aurora.gen.Container._Fields;
 import org.apache.aurora.gen.DockerParameter;
 import org.apache.aurora.scheduler.SchedulerModule;
 import org.apache.aurora.scheduler.SchedulerServicesModule;
-import org.apache.aurora.scheduler.app.SchedulerMain.Options.DriverKind;
 import org.apache.aurora.scheduler.async.AsyncModule;
 import org.apache.aurora.scheduler.config.CliOptions;
 import org.apache.aurora.scheduler.config.splitters.CommaSplitter;
@@ -48,7 +46,6 @@ import org.apache.aurora.scheduler.filter.SchedulingFilter;
 import org.apache.aurora.scheduler.filter.SchedulingFilterImpl;
 import org.apache.aurora.scheduler.http.JettyServerModule;
 import org.apache.aurora.scheduler.maintenance.MaintenanceModule;
-import org.apache.aurora.scheduler.mesos.SchedulerDriverModule;
 import org.apache.aurora.scheduler.metadata.MetadataModule;
 import org.apache.aurora.scheduler.offers.OfferManagerModule;
 import org.apache.aurora.scheduler.preemptor.PreemptorModule;
@@ -61,7 +58,6 @@ import org.apache.aurora.scheduler.state.StateModule;
 import org.apache.aurora.scheduler.stats.AsyncStatsModule;
 import org.apache.aurora.scheduler.thrift.Thresholds;
 import org.apache.aurora.scheduler.updater.UpdaterModule;
-import org.apache.mesos.Scheduler;
 
 import static java.util.Objects.requireNonNull;
 
@@ -126,16 +122,13 @@ public class AppModule extends AbstractModule {
   }
 
   private final ConfigurationManagerSettings configurationManagerSettings;
-  private final DriverKind kind;
   private final CliOptions options;
 
   @VisibleForTesting
   public AppModule(
       ConfigurationManagerSettings configurationManagerSettings,
-      DriverKind kind,
       CliOptions options) {
     this.configurationManagerSettings = requireNonNull(configurationManagerSettings);
-    this.kind = kind;
     this.options = options;
   }
 
@@ -152,7 +145,6 @@ public class AppModule extends AbstractModule {
             opts.sla.maxSlaDuration.as(Time.SECONDS),
             opts.app.allowedJobEnvironments,
             opts.sla.slaAwareKillNonProd),
-        opts.main.driverImpl,
         opts);
   }
 
@@ -164,10 +156,8 @@ public class AppModule extends AbstractModule {
             new Thresholds(options.app.maxTasksPerJob,
             options.app.maxUpdateInstanceFailures));
 
-    // Enable intercepted method timings and context classloader repair.
+    // Enable intercepted method timings.
     TimedInterceptor.bind(binder());
-    GuiceUtils.bindJNIContextClassLoader(binder(), Scheduler.class);
-    GuiceUtils.bindExceptionTrap(binder(), Scheduler.class);
 
     bind(Clock.class).toInstance(Clock.SYSTEM_CLOCK);
     // Filter layering: notifier filter -> base impl
@@ -191,11 +181,6 @@ public class AppModule extends AbstractModule {
     install(new QuotaModule());
     install(new JettyServerModule(options));
     install(new PreemptorModule(options));
-    if (options.main.goAgentConfig == null) {
-      install(new SchedulerDriverModule(kind));
-    } else {
-      install(new org.apache.aurora.scheduler.execution.go.GoAgentModule(options));
-    }
     install(new SchedulerServicesModule());
     install(new SchedulerModule(options.scheduler));
     install(new StateModule(options));

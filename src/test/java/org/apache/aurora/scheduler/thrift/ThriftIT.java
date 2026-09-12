@@ -15,8 +15,6 @@ package org.apache.aurora.scheduler.thrift;
 
 import java.util.Optional;
 
-import javax.inject.Singleton;
-
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
@@ -25,12 +23,9 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.Provides;
-import com.google.inject.TypeLiteral;
 
 import org.apache.aurora.common.application.ShutdownStage;
 import org.apache.aurora.common.base.Command;
-import org.apache.aurora.common.quantity.Amount;
-import org.apache.aurora.common.quantity.Time;
 import org.apache.aurora.common.testing.easymock.EasyMockTest;
 import org.apache.aurora.gen.AuroraAdmin;
 import org.apache.aurora.gen.Container;
@@ -46,23 +41,22 @@ import org.apache.aurora.gen.TaskQuery;
 import org.apache.aurora.scheduler.TierModule;
 import org.apache.aurora.scheduler.app.AppModule;
 import org.apache.aurora.scheduler.app.LifecycleModule;
-import org.apache.aurora.scheduler.app.SchedulerMain;
 import org.apache.aurora.scheduler.app.ServiceGroupMonitor;
 import org.apache.aurora.scheduler.app.local.FakeNonVolatileStorage;
 import org.apache.aurora.scheduler.base.TaskTestUtil;
 import org.apache.aurora.scheduler.config.CliOptions;
-import org.apache.aurora.scheduler.config.types.TimeAmount;
 import org.apache.aurora.scheduler.configuration.ConfigurationManager;
 import org.apache.aurora.scheduler.configuration.ConfigurationManager.ConfigurationManagerSettings;
 import org.apache.aurora.scheduler.configuration.executor.ExecutorSettings;
+import org.apache.aurora.scheduler.configuration.executor.TestExecutorSettings;
 import org.apache.aurora.scheduler.cron.quartz.CronModule;
-import org.apache.aurora.scheduler.maintenance.MaintenanceController;
-import org.apache.aurora.scheduler.mesos.DriverFactory;
-import org.apache.aurora.scheduler.mesos.DriverSettings;
-import org.apache.aurora.scheduler.mesos.FrameworkInfoFactory;
-import org.apache.aurora.scheduler.mesos.FrameworkInfoFactory.FrameworkInfoFactoryImpl;
-import org.apache.aurora.scheduler.mesos.FrameworkInfoFactory.FrameworkInfoFactoryImpl.BaseFrameworkInfo;
-import org.apache.aurora.scheduler.mesos.TestExecutorSettings;
+import org.apache.aurora.scheduler.execution.ExecutionControl;
+import org.apache.aurora.scheduler.execution.ExecutionDriver;
+import org.apache.aurora.scheduler.execution.OfferTransport;
+import org.apache.aurora.scheduler.execution.TaskConfigValidator;
+import org.apache.aurora.scheduler.execution.TaskFactory;
+import org.apache.aurora.scheduler.execution.TaskKiller;
+import org.apache.aurora.scheduler.execution.TaskReconciliation;
 import org.apache.aurora.scheduler.quota.QuotaModule;
 import org.apache.aurora.scheduler.resources.ResourceTestUtil;
 import org.apache.aurora.scheduler.resources.ResourceType;
@@ -77,12 +71,10 @@ import org.apache.aurora.scheduler.storage.entities.IServerInfo;
 import org.apache.aurora.scheduler.storage.mem.MemStorageModule;
 import org.apache.aurora.scheduler.thrift.aop.AnnotatedAuroraAdmin;
 import org.apache.aurora.scheduler.thrift.aop.AopModule;
-import org.apache.mesos.v1.Protos.FrameworkInfo;
 import org.apache.shiro.subject.Subject;
 import org.junit.Test;
 
 import static org.apache.aurora.gen.ResponseCode.OK;
-import static org.apache.aurora.scheduler.app.SchedulerMain.Options.DriverKind.SCHEDULER_DRIVER;
 import static org.junit.Assert.assertEquals;
 
 public class ThriftIT extends EasyMockTest {
@@ -117,36 +109,24 @@ public class ThriftIT extends EasyMockTest {
             install(new TierModule(TaskTestUtil.TIER_CONFIG));
             bind(ExecutorSettings.class).toInstance(TestExecutorSettings.THERMOS_EXECUTOR);
 
-            install(new AppModule(configurationManagerSettings, SCHEDULER_DRIVER, options));
-            install(new SchedulerMain.ProtocolModule(new SchedulerMain.Options()));
+            install(new AppModule(configurationManagerSettings, options));
 
             bind(NonVolatileStorage.class).to(FakeNonVolatileStorage.class);
 
             ServiceGroupMonitor schedulers = createMock(ServiceGroupMonitor.class);
             bind(ServiceGroupMonitor.class).toInstance(schedulers);
 
-            FrameworkInfo base = FrameworkInfo.newBuilder()
-                    .setUser("framework user")
-                    .setName("test framework")
-                    .build();
-
-            bindMock(DriverFactory.class);
-            bind(DriverSettings.class).toInstance(new DriverSettings(
-                "fakemaster",
-                Optional.empty()));
-            bind(FrameworkInfo.class)
-                .annotatedWith(BaseFrameworkInfo.class)
-                .toInstance(base);
-            bind(FrameworkInfoFactory.class).to(FrameworkInfoFactoryImpl.class);
-            bind(FrameworkInfoFactoryImpl.class).in(Singleton.class);
+            bindMock(ExecutionDriver.class);
+            bindMock(ExecutionControl.class);
+            bindMock(TaskKiller.class);
+            bindMock(OfferTransport.class);
+            bindMock(TaskFactory.class);
+            bindMock(TaskReconciliation.class);
+            bind(TaskConfigValidator.class).toInstance(task -> { });
             bindMock(Recovery.class);
             bindMock(StorageBackup.class);
             bindMock(SnapshotStore.class);
             bind(IServerInfo.class).toInstance(SERVER_INFO);
-            bind(new TypeLiteral<Amount<Long, Time>>() { })
-                .annotatedWith(
-                    MaintenanceController.MaintenanceControllerImpl.PollingInterval.class)
-                .toInstance(new TimeAmount(1, Time.MINUTES));
           }
 
           @Provides

@@ -49,7 +49,7 @@ public class OfferSettings {
   }
 
   /**
-   * Duration after which we want Mesos to re-offer unused or declined resources.
+   * Requested retry delay supplied to the offer transport when resources are declined.
    */
   Amount<Long, Time> getFilterDuration() {
     return filterDuration;

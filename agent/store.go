@@ -123,6 +123,9 @@ type Store struct {
 	effectMu        sync.Mutex
 	runtimeActive   bool
 	runtimeDraining bool
+	watchMu         sync.Mutex
+	changed         chan struct{}
+	closed          bool
 }
 
 func Open(path string, c Config) (*Store, error) { return openStore(path, c, false) }
@@ -159,7 +162,7 @@ func openStore(path string, c Config, restoreAuthority bool) (s *Store, err erro
 	if e != nil {
 		return nil, e
 	}
-	s = &Store{db: db, c: c}
+	s = &Store{db: db, c: c, changed: make(chan struct{})}
 	defer func() {
 		if err != nil {
 			db.Close()
@@ -232,6 +235,12 @@ func (s *Store) Close() error {
 	if s.runtimeActive {
 		return errors.New("runtime must close before store")
 	}
+	s.watchMu.Lock()
+	if !s.closed {
+		s.closed = true
+		close(s.changed)
+	}
+	s.watchMu.Unlock()
 	return s.db.Close()
 }
 func save(b *bolt.Bucket, st State) error {
@@ -345,7 +354,7 @@ func (s *Store) Admit(data []byte, caller Caller) (Result, error) {
 	if auth["session"] != s.c.Session || auth["schedulerEpoch"] != s.c.Epoch || id["cluster"] != s.c.Cluster || id["incarnation"] != s.c.Incarnation || target["node"] != s.c.Node || target["journal"] != s.c.Journal || target["boot"] != s.c.Boot || target["runtime"] != s.c.Runtime {
 		return out, errors.New("authority or enrollment mismatch")
 	}
-	e = s.db.Update(func(tx *bolt.Tx) error {
+	e = s.update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte("state"))
 		st, e := read(b)
 		if e != nil {
@@ -605,7 +614,7 @@ func (s *Store) RefreshSession(peer, epoch, session string) (Config, error) {
 	if next == c {
 		return c, nil
 	}
-	err := s.db.Update(func(tx *bolt.Tx) error {
+	err := s.update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte("state"))
 		st, e := read(b)
 		if e != nil {

@@ -13,38 +13,53 @@
  */
 package org.apache.aurora.scheduler.resources;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
 
 import org.apache.aurora.gen.Resource;
 import org.apache.aurora.gen.ResourceAggregate;
 import org.apache.aurora.gen.TaskConfig;
-import org.apache.aurora.scheduler.base.Numbers;
-import org.apache.aurora.scheduler.mesos.MesosResourceType;
+import org.apache.aurora.scheduler.execution.TestOffer;
 import org.apache.aurora.scheduler.storage.entities.IResource;
 import org.apache.aurora.scheduler.storage.entities.IResourceAggregate;
 import org.apache.aurora.scheduler.storage.entities.ITaskConfig;
-import org.apache.mesos.v1.Protos;
-import org.apache.mesos.v1.Protos.Value.Type;
 
-import static org.apache.aurora.gen.Resource.diskMb;
-import static org.apache.aurora.gen.Resource.numCpus;
-import static org.apache.aurora.gen.Resource.ramMb;
-import static org.apache.aurora.scheduler.resources.ResourceType.PORTS;
-import static org.apache.aurora.scheduler.resources.ResourceType.fromResource;
-
-/**
- * Convenience methods for working with resources.
- */
+/** Neutral resource fixtures used by scheduler tests. */
 public final class ResourceTestUtil {
+  private ResourceTestUtil() { }
 
-  private ResourceTestUtil() {
-    // Utility class.
+  public record TestResource(
+      ResourceType type, double value, boolean revocable, List<Integer> ports) {
+    public TestResource {
+      type = java.util.Objects.requireNonNull(type);
+      ports = List.copyOf(ports);
+    }
+  }
+
+  public static TestResource scalar(ResourceType type, double value) {
+    return scalar(type, value, false);
+  }
+
+  public static TestResource scalar(ResourceType type, double value, boolean revocable) {
+    return new TestResource(type, value, revocable, List.of());
+  }
+
+  public static TestResource range(ResourceType type, Integer... values) {
+    return range(type, Arrays.asList(values));
+  }
+
+  public static TestResource range(ResourceType type, Iterable<Integer> values) {
+    List<Integer> ports = new ArrayList<>();
+    java.util.TreeSet<Integer> sorted = new java.util.TreeSet<>();
+    values.forEach(sorted::add);
+    ports.addAll(sorted);
+    return new TestResource(type, ports.size(), false, ports);
   }
 
   public static ResourceBag bag(Map<ResourceType, Double> resources) {
@@ -55,113 +70,65 @@ public final class ResourceTestUtil {
     return ResourceManager.bagFromAggregate(aggregate(numCpus, ramMb, diskMb));
   }
 
+  public static List<TestResource> scalarFromBag(ResourceBag bag) {
+    return resourcesFromBag(bag);
+  }
+
+  public static List<TestResource> resourcesFromBag(ResourceBag bag) {
+    return bag.streamResourceVectors()
+        .map(entry -> scalar(entry.getKey(), entry.getValue()))
+        .collect(Collectors.toList());
+  }
+
+  public static TestOffer offer(TestResource... resources) {
+    return offer("slave-id", resources);
+  }
+
+  public static TestOffer offer(String agentId, TestResource... resources) {
+    Map<ResourceType, Double> total = values(resources, false, false);
+    Map<ResourceType, Double> normal = values(resources, false, true);
+    Map<ResourceType, Double> revocable = values(resources, true, false);
+    List<Integer> ports = Arrays.stream(resources)
+        .flatMap(resource -> resource.ports().stream()).collect(Collectors.toList());
+    return TestOffer.builder("offer-id-" + agentId).agentId(agentId).hostname("hostname")
+        .total(bag(total)).nonRevocable(bag(normal)).revocable(bag(revocable))
+        .ports(ports).build();
+  }
+
+  private static Map<ResourceType, Double> values(
+      TestResource[] resources, boolean onlyRevocable, boolean normalOnly) {
+    return Arrays.stream(resources)
+        .filter(resource -> !normalOnly || !resource.revocable())
+        .filter(resource -> !onlyRevocable || resource.revocable())
+        .collect(Collectors.groupingBy(TestResource::type,
+            Collectors.summingDouble(TestResource::value)));
+  }
+
+  public static ResourceBag bagFromTestResources(Iterable<TestResource> resources) {
+    Map<ResourceType, Double> values = new java.util.EnumMap<>(ResourceType.class);
+    resources.forEach(resource -> values.merge(resource.type(), resource.value(), Double::sum));
+    return bag(values);
+  }
+
   public static IResourceAggregate aggregate(double numCpus, long ramMb, long diskMb) {
     return IResourceAggregate.build(new ResourceAggregate(ImmutableSet.of(
-        numCpus(numCpus),
-        ramMb(ramMb),
-        diskMb(diskMb)
-    )));
+        Resource.numCpus(numCpus), Resource.ramMb(ramMb), Resource.diskMb(diskMb))));
   }
 
   public static ITaskConfig resetPorts(ITaskConfig config, Set<String> portNames) {
     TaskConfig builder = config.newBuilder();
-    builder.getResources().removeIf(e -> fromResource(IResource.build(e)).equals(PORTS));
+    builder.getResources().removeIf(e -> ResourceType.fromResource(IResource.build(e))
+        .equals(ResourceType.PORTS));
     portNames.forEach(e -> builder.addToResources(Resource.namedPort(e)));
     return ITaskConfig.build(builder);
   }
 
   public static ITaskConfig resetResource(ITaskConfig config, ResourceType type, Double value) {
     TaskConfig builder = config.newBuilder();
-    builder.getResources().removeIf(e -> fromResource(IResource.build(e)).equals(type));
+    builder.getResources().removeIf(e ->
+        ResourceType.fromResource(IResource.build(e)).equals(type));
     builder.addToResources(IResource.newBuilder(
-        type.getValue(),
-        type.getAuroraResourceConverter().valueOf(value)));
+        type.getValue(), type.getAuroraResourceConverter().valueOf(value)));
     return ITaskConfig.build(builder);
-  }
-
-  public static Protos.Resource mesosScalar(ResourceType type, double value) {
-    return mesosScalar(type, Optional.empty(), false, value);
-  }
-
-  public static Protos.Resource mesosScalar(ResourceType type, double value, boolean revocable) {
-    return mesosScalar(type, Optional.empty(), revocable, value);
-  }
-
-  public static Protos.Resource mesosScalar(
-      ResourceType type,
-      Optional<String> role,
-      boolean revocable,
-      double value) {
-
-    return resourceBuilder(type, role, revocable)
-        .setScalar(Protos.Value.Scalar.newBuilder().setValue(value).build())
-        .build();
-  }
-
-  public static Protos.Resource mesosRange(ResourceType type, Integer... values) {
-    return mesosRange(type, Optional.empty(), values);
-  }
-
-  public static Protos.Resource mesosRange(
-      ResourceType type,
-      Optional<String> role,
-      Integer... values) {
-
-    return resourceBuilder(type, role, false)
-        .setRanges(Protos.Value.Ranges.newBuilder().addAllRange(
-            Iterables.transform(
-                Numbers.toRanges(ImmutableSet.copyOf(values)),
-                Numbers.RANGE_TRANSFORM)))
-        .build();
-  }
-
-  public static Protos.Resource mesosRange(
-      ResourceType type,
-      Optional<String> role,
-      Iterable<Integer> values) {
-
-    return resourceBuilder(type, role, false)
-        .setRanges(Protos.Value.Ranges.newBuilder().addAllRange(
-            Iterables.transform(Numbers.toRanges(values), Numbers.RANGE_TRANSFORM)))
-        .build();
-  }
-
-  public static Iterable<Protos.Resource> mesosScalarFromBag(ResourceBag bag) {
-    return bag.streamResourceVectors()
-        .map(entry -> mesosScalar(entry.getKey(), entry.getValue()))
-        .collect(Collectors.toSet());
-  }
-
-  public static Protos.Offer offer(Protos.Resource... resources) {
-    return offer("slave-id", resources);
-  }
-
-  public static Protos.Offer offer(String agentId, Protos.Resource... resources) {
-    return Protos.Offer.newBuilder()
-        .setId(Protos.OfferID.newBuilder().setValue("offer-id-" + agentId))
-        .setFrameworkId(Protos.FrameworkID.newBuilder().setValue("framework-id"))
-        .setAgentId(Protos.AgentID.newBuilder().setValue(agentId))
-        .setHostname("hostname")
-        .addAllResources(ImmutableSet.copyOf(resources)).build();
-  }
-
-  private static Protos.Resource.Builder resourceBuilder(
-      ResourceType type,
-      Optional<String> role,
-      boolean revocable) {
-
-    Protos.Resource.Builder builder = Protos.Resource.newBuilder()
-        .setType(type.equals(PORTS) ? Type.RANGES : Type.SCALAR)
-        .setName(MesosResourceType.getMesosName(type));
-
-    if (revocable) {
-      builder.setRevocable(Protos.Resource.RevocableInfo.getDefaultInstance());
-    }
-
-    if (role.isPresent()) {
-      builder.setRole(role.get());
-    }
-
-    return builder;
   }
 }

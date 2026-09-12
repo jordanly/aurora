@@ -2,14 +2,31 @@
 # Original scheduler integration lab
 
 `inplace-cluster` stages the original `aurora-scheduler` installed distribution
-and two Go agents in a new private Docker lab. It does not launch the abandoned
-replacement Java scheduler or operate existing labs. Build the original
-scheduler with the Go-agent adapter before starting this lane.
+and two Go agents in a new private Docker lab. The maintained scheduler uses
+Java 25 and SQLite, and reconciles Go agent state over mTLS watch streams.
+Subsequent actions require the lab's recorded Docker ownership and identities.
+The shell commands below delegate to the Go tools; no Python is required.
+This process MVP supports restart recovery, while production multi-scheduler HA
+is deferred. Historical Mesos/Thermos documentation is not its deployment guide.
 
-Default inputs (override with the corresponding flags):
+Build the installed distribution from the repository root first (see the
+[Java build guide](../java/README.md) for prerequisites):
+
+```sh
+compiler="$(build-support/bootstrap-go thrift)"
+./gradlew -PthriftCompiler="$compiler" installDist
+build-support/lab/build-agents --check
+build-support/bootstrap-go stage-java --output "$PWD/.pi-tools/lab-jdk"
+```
+
+Inputs can be selected explicitly with the following flags:
 
 - `--distribution`: `.cache/inplace-build/build/scheduler/install/aurora-scheduler`
-- `--java`: `.cache/java03-tools/java/jdk-25.0.4.1+1`
+- `--java`: the absolute JDK directory produced by `stage-java` above, using
+  `build-support/java/toolchains.json`. Pass `--java` explicitly; the historical
+  default and the Gradle launcher's temporary SDK are not clean-checkout inputs.
+  Staging requires a fresh output directory and writes an adjacent provenance
+  receipt. Add `--offline` when the verified Java archive is cached or seeded.
 - `--agent`: `.pi-tools/agent-original-integration/aurora-agent`
 - `--helper`: `.pi-tools/agent-original-integration/cluster-helper`
 
@@ -42,7 +59,8 @@ status output. The exact pinned Debian base must already be available in Docker.
 From repository root, using a Docker-authorized process with the same UID:
 
 ```
-build-support/lab/inplace-cluster up --root "$PWD/.pi-lab/original-integration-new"
+lab_java="$PWD/.pi-tools/lab-jdk"
+build-support/lab/inplace-cluster up --java "$lab_java" --root "$PWD/.pi-lab/original-integration-new"
 build-support/lab/inplace-cluster status --root "$PWD/.pi-lab/original-integration-new"
 build-support/lab/inplace-cluster crash-agent --node agent-a --root "$PWD/.pi-lab/original-integration-new"
 build-support/lab/inplace-cluster restart-scheduler --root "$PWD/.pi-lab/original-integration-new"
@@ -69,11 +87,13 @@ adopt a container by name or enumerate old labs for cleanup. A failed partial
 creation preserves its manifest/cidfile for investigation. Unknown identities,
 externally removed resources or changed ownership fail closed; they may require
 manual review rather than automatic cleanup. `down` retains local evidence and
-configuration. Never point this tool at an existing lab root.
+configuration. The `up` action requires a fresh lab root; subsequent actions use
+that same root and its recorded manifest.
 
-Executed qualification and exact artifact hashes are recorded in
-[the integration evidence](../../docs/reimagining/INPLACE05_07_IMPLEMENTATION_STATUS.md).
-A successful Docker status command alone does not establish API readiness.
+The [earlier integration evidence](../../docs/reimagining/INPLACE05_07_IMPLEMENTATION_STATUS.md)
+records only its named source and artifact versions. Re-run acceptance for a new
+checkout and retain its reports before claiming qualification. Docker status
+alone does not establish API readiness.
 
 ## API acceptance runner
 
@@ -86,8 +106,8 @@ build-support/lab/inplace-check --root "$PWD/.pi-lab/original-integration-new" -
 build-support/lab/inplace-check --root "$PWD/.pi-lab/original-integration-new" --phase policy
 ```
 
-The runner uses original `/api` Thrift JSON fields from `api.thrift`, with no
-Python Thrift installation required. It creates uniquely named fixture jobs,
+The runner uses original `/api` Thrift JSON fields from `api.thrift` through the
+runner's Go API client, with no Python Thrift installation required. It creates uniquely named fixture jobs,
 sets the isolated `fixtures` quota, and writes a timestamped JSON report even
 when a check fails. It never interprets a failed RPC as success. Run one check
 at a time in a new lab without unrelated fixture jobs.
@@ -118,6 +138,24 @@ containers and namespaces remain untouched. This is a crash/recovery integration
 action, not a graceful production upgrade. A failure preserves evidence and may
 leave the scheduler paused; inspect `refreshPending` before taking further action.
 
+## Submit a JSON job
+
+Use the scheduler's private container address reported by `status` from the lab
+host. Replace `SCHEDULER_PRIVATE_IP` with that address:
+
+```sh
+export AURORA_SCHEDULER=http://SCHEDULER_PRIVATE_IP:8081
+./aurora job validate examples/jobs/process-service.json
+./aurora job check examples/jobs/process-service.json
+./aurora job create examples/jobs/process-service.json
+./aurora job status fixtures/test/process-service
+./aurora job kill fixtures/test/process-service
+```
+
+Run manual jobs separately from acceptance phases. The [Go client guide](../../docs/reference/go-client.md)
+provides batch and cron examples, TLS options and the full JSON schema. After an
+uncertain mutation reply, inspect scheduler state before resubmitting.
+
 ## Supported task profile
 
 Submit original Aurora `TaskConfig` objects with `ExecutorConfig.name` set to
@@ -131,7 +169,10 @@ Set `partitionPolicy.reschedule` to false. CPU reservations use whole millicores
 RAM and disk remain original resource fields. The profile rejects ports, GPU,
 revocable CPU, images, volumes and fetcher URIs before assignment. Job-key parts
 match `[a-z][a-z0-9-]{0,63}`. This is a trusted process cohort with reservations;
-full Thermos behavior and production isolation are separate compatibility work.
+memory is reserved rather than cgroup-enforced, and disk is scheduler accounting.
+The `user` field is metadata, not an operating-system user switch. Thermos process
+graphs, health checks and service announcement are unsupported, as are production
+isolation and multi-scheduler HA.
 
 Agents retain bounded history (128 attempts, 1,024 command results). Reaching the
 inventory limit requires an operator lifecycle/retention decision; this lab does

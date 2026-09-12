@@ -13,6 +13,7 @@
  */
 package org.apache.aurora.scheduler.execution.go;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.http.HttpClient;
@@ -26,12 +27,15 @@ import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Flow;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLParameters;
 import javax.net.ssl.TrustManagerFactory;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -40,6 +44,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 final class GoAgentClient implements AgentTransport {
   private final HttpClient client;
   private final Duration timeout;
+  private final Duration watchTimeout;
+  private final ExecutorService readers = Executors.newVirtualThreadPerTaskExecutor();
 
   GoAgentClient(GoAgentConfig config) throws IOException, GeneralSecurityException {
     KeyStore keys = KeyStore.getInstance("PKCS12");
@@ -58,11 +64,23 @@ final class GoAgentClient implements AgentTransport {
     SSLContext tls = SSLContext.getInstance("TLSv1.3");
     tls.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
     timeout = Duration.ofSeconds(15);
-    client = HttpClient.newBuilder().sslContext(tls).connectTimeout(Duration.ofSeconds(10))
+    watchTimeout = Duration.ofSeconds(75);
+    SSLParameters parameters = new SSLParameters();
+    parameters.setProtocols(new String[] {"TLSv1.3"});
+    parameters.setEndpointIdentificationAlgorithm("HTTPS");
+    client = HttpClient.newBuilder().sslContext(tls).sslParameters(parameters)
+        .connectTimeout(Duration.ofSeconds(10))
         .followRedirects(HttpClient.Redirect.NEVER).build();
   }
 
   GoAgentClient(HttpClient client, Duration timeout) {
+    this(client, timeout, Duration.ofSeconds(75));
+  }
+
+  GoAgentClient(HttpClient client, Duration timeout, Duration watchTimeout) {
+    this.watchTimeout = java.util.Objects.requireNonNull(watchTimeout);
+    WireJson.require(!watchTimeout.isNegative() && !watchTimeout.isZero(),
+        "Positive watch timeout required");
     this.client = java.util.Objects.requireNonNull(client);
     this.timeout = java.util.Objects.requireNonNull(timeout);
     WireJson.require(!timeout.isNegative() && !timeout.isZero(),
@@ -101,6 +119,68 @@ final class GoAgentClient implements AgentTransport {
       throw e;
     } catch (ExecutionException e) {
       throw new IOException("Agent exchange failed: " + e.getCause().getMessage(), e);
+    }
+  }
+
+  @Override
+  public Watch watch(GoAgentConfig.Node node, long after, String epoch, String session)
+      throws IOException, InterruptedException {
+    HttpRequest request = HttpRequest.newBuilder(node.url().resolve(
+        "/v1/watch?afterCursor=" + after + "&limit=128"))
+        .header("X-Aurora-Epoch", epoch).header("X-Aurora-Session", session)
+        .header("Accept", "application/x-ndjson").GET().build();
+    var exchange = client.sendAsync(request, HttpResponse.BodyHandlers.ofInputStream());
+    try {
+      HttpResponse<InputStream> response = exchange.get(timeout.toNanos(), TimeUnit.NANOSECONDS);
+      if (response.statusCode() != 200 || !"application/x-ndjson".equalsIgnoreCase(
+          response.headers().firstValue("Content-Type").orElse("").split(";", 2)[0])) {
+        response.body().close();
+        throw new IOException("Invalid agent watch response: " + response.statusCode());
+      }
+      return new Watch() {
+        private final InputStream input = new java.io.BufferedInputStream(response.body());
+
+        @Override
+        public JsonNode next() throws IOException, InterruptedException {
+          var read = readers.submit(() -> {
+            ByteArrayOutputStream line = new ByteArrayOutputStream();
+            for (int value; (value = input.read()) != -1;) {
+              if (value == '\n') {
+                JsonNode frame = WireJson.parse(line.toByteArray());
+                WireJson.bytes(frame);
+                return frame;
+              }
+              if (line.size() == WireJson.MAX_BYTES) {
+                throw new IOException("Agent watch frame exceeds 1 MiB");
+              }
+              line.write(value);
+            }
+            throw new IOException("Agent watch ended");
+          });
+          try {
+            return read.get(watchTimeout.toNanos(), TimeUnit.NANOSECONDS);
+          } catch (TimeoutException | ExecutionException e) {
+            close();
+            read.cancel(true);
+            throw new IOException("Agent watch frame failed", e);
+          } catch (InterruptedException e) {
+            close();
+            read.cancel(true);
+            throw e;
+          }
+        }
+
+        @Override
+        public void close() throws IOException {
+          input.close();
+        }
+      };
+    } catch (TimeoutException | ExecutionException e) {
+      exchange.cancel(true);
+      throw new IOException("Agent watch connection failed", e);
+    } catch (InterruptedException e) {
+      exchange.cancel(true);
+      throw e;
     }
   }
 
@@ -159,6 +239,7 @@ final class GoAgentClient implements AgentTransport {
 
   @Override
   public void close() {
+    readers.shutdownNow();
     client.shutdownNow();
   }
 }

@@ -25,7 +25,6 @@ import org.apache.aurora.scheduler.TierModule;
 import org.apache.aurora.scheduler.app.AppModule;
 import org.apache.aurora.scheduler.app.SchedulerMain;
 import org.apache.aurora.scheduler.async.AsyncModule;
-import org.apache.aurora.scheduler.configuration.executor.ExecutorModule;
 import org.apache.aurora.scheduler.cron.quartz.CronModule;
 import org.apache.aurora.scheduler.discovery.FlaggedZooKeeperConfig;
 import org.apache.aurora.scheduler.events.WebhookModule;
@@ -34,9 +33,7 @@ import org.apache.aurora.scheduler.http.api.ApiModule;
 import org.apache.aurora.scheduler.http.api.security.HttpSecurityModule;
 import org.apache.aurora.scheduler.http.api.security.IniShiroRealmModule;
 import org.apache.aurora.scheduler.http.api.security.Kerberos5ShiroRealmModule;
-import org.apache.aurora.scheduler.log.mesos.MesosLogStreamModule;
 import org.apache.aurora.scheduler.maintenance.MaintenanceModule;
-import org.apache.aurora.scheduler.mesos.CommandLineDriverSettingsModule;
 import org.apache.aurora.scheduler.offers.OfferManagerModule;
 import org.apache.aurora.scheduler.preemptor.PreemptorModule;
 import org.apache.aurora.scheduler.pruning.PruningModule;
@@ -57,7 +54,6 @@ public class CliOptions {
   public final ReconciliationModule.Options reconciliation =
       new ReconciliationModule.Options();
   public final OfferManagerModule.Options offer = new OfferManagerModule.Options();
-  public final ExecutorModule.Options executor = new ExecutorModule.Options();
   public final AppModule.Options app = new AppModule.Options();
   public final SchedulerMain.Options main = new SchedulerMain.Options();
   public final SchedulingModule.Options scheduling = new SchedulingModule.Options();
@@ -70,15 +66,12 @@ public class CliOptions {
   public final BackupModule.Options backup = new BackupModule.Options();
   public final AopModule.Options aop = new AopModule.Options();
   public final PruningModule.Options pruning = new PruningModule.Options();
-  public final CommandLineDriverSettingsModule.Options driver =
-      new CommandLineDriverSettingsModule.Options();
   public final JettyServerModule.Options jetty = new JettyServerModule.Options();
   public final HttpSecurityModule.Options httpSecurity = new HttpSecurityModule.Options();
   public final Kerberos5ShiroRealmModule.Options kerberos = new Kerberos5ShiroRealmModule.Options();
   public final IniShiroRealmModule.Options iniShiroRealm = new IniShiroRealmModule.Options();
   public final ApiModule.Options api = new ApiModule.Options();
   public final PreemptorModule.Options preemptor = new PreemptorModule.Options();
-  public final MesosLogStreamModule.Options mesosLog = new MesosLogStreamModule.Options();
   public final SlaModule.Options sla = new SlaModule.Options();
   public final WebhookModule.Options webhook = new WebhookModule.Options();
   public final SchedulerModule.Options scheduler = new SchedulerModule.Options();

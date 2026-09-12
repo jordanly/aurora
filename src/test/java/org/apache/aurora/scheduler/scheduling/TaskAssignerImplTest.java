@@ -30,11 +30,11 @@ import org.apache.aurora.scheduler.base.InstanceKeys;
 import org.apache.aurora.scheduler.base.SchedulerException;
 import org.apache.aurora.scheduler.base.TaskGroupKey;
 import org.apache.aurora.scheduler.base.TaskTestUtil;
+import org.apache.aurora.scheduler.execution.ExecutionOffer;
 import org.apache.aurora.scheduler.execution.TaskFactory;
+import org.apache.aurora.scheduler.execution.TestPreparedTask;
 import org.apache.aurora.scheduler.filter.AttributeAggregate;
 import org.apache.aurora.scheduler.filter.SchedulingFilter.ResourceRequest;
-import org.apache.aurora.scheduler.mesos.MesosOffer;
-import org.apache.aurora.scheduler.mesos.MesosPreparedTask;
 import org.apache.aurora.scheduler.offers.HostOffer;
 import org.apache.aurora.scheduler.offers.OfferManager;
 import org.apache.aurora.scheduler.state.StateChangeResult;
@@ -45,8 +45,6 @@ import org.apache.aurora.scheduler.storage.entities.IInstanceKey;
 import org.apache.aurora.scheduler.storage.entities.ITaskConfig;
 import org.apache.aurora.scheduler.testing.FakeStatsProvider;
 import org.apache.aurora.scheduler.updater.UpdateAgentReserver;
-import org.apache.mesos.v1.Protos.TaskID;
-import org.apache.mesos.v1.Protos.TaskInfo;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -54,18 +52,17 @@ import static org.apache.aurora.gen.ScheduleStatus.ASSIGNED;
 import static org.apache.aurora.gen.ScheduleStatus.LOST;
 import static org.apache.aurora.scheduler.base.TaskTestUtil.JOB;
 import static org.apache.aurora.scheduler.base.TaskTestUtil.makeTask;
+import static org.apache.aurora.scheduler.configuration.executor.TaskExecutors.NO_OVERHEAD_EXECUTOR;
 import static org.apache.aurora.scheduler.filter.AttributeAggregate.empty;
-import static org.apache.aurora.scheduler.mesos.TaskExecutors.NO_OVERHEAD_EXECUTOR;
-import static org.apache.aurora.scheduler.resources.ResourceTestUtil.mesosRange;
-import static org.apache.aurora.scheduler.resources.ResourceTestUtil.mesosScalar;
 import static org.apache.aurora.scheduler.resources.ResourceTestUtil.offer;
+import static org.apache.aurora.scheduler.resources.ResourceTestUtil.range;
+import static org.apache.aurora.scheduler.resources.ResourceTestUtil.scalar;
 import static org.apache.aurora.scheduler.resources.ResourceType.CPUS;
 import static org.apache.aurora.scheduler.resources.ResourceType.PORTS;
 import static org.apache.aurora.scheduler.resources.ResourceType.RAM_MB;
 import static org.apache.aurora.scheduler.scheduling.TaskAssignerImpl.ASSIGNER_LAUNCH_FAILURES;
 import static org.apache.aurora.scheduler.scheduling.TaskAssignerImpl.LAUNCH_FAILED_MSG;
 import static org.apache.aurora.scheduler.storage.Storage.MutableStoreProvider;
-import static org.apache.mesos.v1.Protos.Offer;
 import static org.easymock.EasyMock.anyObject;
 import static org.easymock.EasyMock.anyString;
 import static org.easymock.EasyMock.eq;
@@ -79,30 +76,27 @@ import static org.junit.Assert.fail;
 public class TaskAssignerImplTest extends EasyMockTest {
 
   private static final int PORT = 1000;
-  private static final Offer MESOS_OFFER =
-      offer(mesosScalar(CPUS, 1), mesosScalar(RAM_MB, 1024), mesosRange(PORTS, PORT));
-  private static final String SLAVE_ID = MESOS_OFFER.getAgentId().getValue();
+  private static final ExecutionOffer AGENT_OFFER =
+      offer(scalar(CPUS, 1), scalar(RAM_MB, 1024), range(PORTS, PORT));
+  private static final String SLAVE_ID = AGENT_OFFER.getAgentId();
   private static final HostOffer OFFER =
-      new HostOffer(new MesosOffer(MESOS_OFFER), IHostAttributes.build(new HostAttributes()
-          .setHost(MESOS_OFFER.getHostname())
+      new HostOffer(AGENT_OFFER, IHostAttributes.build(new HostAttributes()
+          .setHost(AGENT_OFFER.getHostname())
           .setAttributes(ImmutableSet.of(
-              new Attribute("host", ImmutableSet.of(MESOS_OFFER.getHostname()))))));
+              new Attribute("host", ImmutableSet.of(AGENT_OFFER.getHostname()))))));
   private static final IAssignedTask TASK = makeTask("id", JOB).getAssignedTask();
   private static final TaskGroupKey GROUP_KEY = TaskGroupKey.from(TASK.getTask());
-  private static final TaskInfo TASK_INFO = TaskInfo.newBuilder()
-      .setName("taskName")
-      .setTaskId(TaskID.newBuilder().setValue(TASK.getTaskId()))
-      .setAgentId(MESOS_OFFER.getAgentId())
-      .build();
+  private static final TestPreparedTask PREPARED_TASK =
+      new TestPreparedTask(TASK.getTaskId(), AGENT_OFFER.getAgentId());
   private static final IInstanceKey INSTANCE_KEY = InstanceKeys.from(JOB, TASK.getInstanceId());
   private static final Map<String, TaskGroupKey> NO_RESERVATION = ImmutableMap.of();
-  private static final Offer MESOS_OFFER_2 =
-      offer("offer-2", mesosScalar(CPUS, 1), mesosScalar(RAM_MB, 1024), mesosRange(PORTS, PORT));
+  private static final ExecutionOffer AGENT_OFFER_2 =
+      offer("offer-2", scalar(CPUS, 1), scalar(RAM_MB, 1024), range(PORTS, PORT));
   private static final HostOffer OFFER_2 =
-      new HostOffer(new MesosOffer(MESOS_OFFER_2), IHostAttributes.build(new HostAttributes()
-          .setHost(MESOS_OFFER_2.getHostname())
+      new HostOffer(AGENT_OFFER_2, IHostAttributes.build(new HostAttributes()
+          .setHost(AGENT_OFFER_2.getHostname())
           .setAttributes(ImmutableSet.of(
-              new Attribute("host", ImmutableSet.of(MESOS_OFFER_2.getHostname()))))));
+              new Attribute("host", ImmutableSet.of(AGENT_OFFER_2.getHostname()))))));
 
   private static final Set<String> NO_ASSIGNMENT = ImmutableSet.of();
 
@@ -160,9 +154,9 @@ public class TaskAssignerImplTest extends EasyMockTest {
 
     expect(offerManager.getAllMatching(GROUP_KEY, resourceRequest))
         .andReturn(ImmutableSet.of(OFFER, OFFER_2)).atLeastOnce();
-    offerManager.launchTask(MESOS_OFFER.getId().getValue(), new MesosPreparedTask(TASK_INFO));
+    offerManager.launchTask(AGENT_OFFER.getOfferId(), PREPARED_TASK);
     expectLastCall().andThrow(new OfferManager.LaunchException("expected"));
-    expectAssignTask(MESOS_OFFER);
+    expectAssignTask(AGENT_OFFER);
     expect(stateManager.changeState(
         storeProvider,
         TASK.getTaskId(),
@@ -170,8 +164,8 @@ public class TaskAssignerImplTest extends EasyMockTest {
         LOST,
         LAUNCH_FAILED_MSG))
         .andReturn(StateChangeResult.SUCCESS);
-    expect(taskFactory.prepare(TASK, new MesosOffer(MESOS_OFFER), false))
-        .andReturn(new MesosPreparedTask(TASK_INFO));
+    expect(taskFactory.prepare(TASK, AGENT_OFFER, false))
+        .andReturn(PREPARED_TASK);
 
     control.replay();
 
@@ -219,10 +213,10 @@ public class TaskAssignerImplTest extends EasyMockTest {
     expectNoUpdateReservations(1);
     expect(offerManager.getAllMatching(GROUP_KEY, resourceRequest))
         .andReturn(ImmutableSet.of(OFFER_2, OFFER));
-    expectAssignTask(MesosOffer.toMesos(OFFER_2.getOffer()));
+    expectAssignTask(OFFER_2.getOffer());
     expect(taskFactory.prepare(TASK, OFFER_2.getOffer(), false))
-        .andReturn(new MesosPreparedTask(TASK_INFO));
-    offerManager.launchTask(OFFER_2.getOfferId(), new MesosPreparedTask(TASK_INFO));
+        .andReturn(PREPARED_TASK);
+    offerManager.launchTask(OFFER_2.getOfferId(), PREPARED_TASK);
 
     control.replay();
 
@@ -245,20 +239,20 @@ public class TaskAssignerImplTest extends EasyMockTest {
 
     assertEquals(
         TASK,
-        assigner.mapAndAssignResources(new MesosOffer(MESOS_OFFER), IAssignedTask.build(builder)));
+        assigner.mapAndAssignResources(AGENT_OFFER, IAssignedTask.build(builder)));
   }
 
   @Test
   public void testAssignToReservedAgent() throws Exception {
     expect(updateAgentReserver.getAgent(INSTANCE_KEY)).andReturn(Optional.of(SLAVE_ID));
     updateAgentReserver.release(SLAVE_ID, INSTANCE_KEY);
-    expect(offerManager.getMatching(MESOS_OFFER.getAgentId().getValue(), resourceRequest))
+    expect(offerManager.getMatching(AGENT_OFFER.getAgentId(), resourceRequest))
         .andReturn(Optional.of(OFFER));
-    expectAssignTask(MESOS_OFFER);
-    offerManager.launchTask(MESOS_OFFER.getId().getValue(), new MesosPreparedTask(TASK_INFO));
+    expectAssignTask(AGENT_OFFER);
+    offerManager.launchTask(AGENT_OFFER.getOfferId(), PREPARED_TASK);
 
-    expect(taskFactory.prepare(TASK, new MesosOffer(MESOS_OFFER), false))
-        .andReturn(new MesosPreparedTask(TASK_INFO));
+    expect(taskFactory.prepare(TASK, AGENT_OFFER, false))
+        .andReturn(PREPARED_TASK);
 
     control.replay();
 
@@ -277,7 +271,7 @@ public class TaskAssignerImplTest extends EasyMockTest {
   @Test
   public void testAssignReservedAgentWhenOfferNotReady() {
     expect(updateAgentReserver.getAgent(INSTANCE_KEY)).andReturn(Optional.of(SLAVE_ID));
-    expect(offerManager.getMatching(MESOS_OFFER.getAgentId().getValue(), resourceRequest))
+    expect(offerManager.getMatching(AGENT_OFFER.getAgentId(), resourceRequest))
         .andReturn(Optional.empty());
     expectLastCall();
 
@@ -298,30 +292,27 @@ public class TaskAssignerImplTest extends EasyMockTest {
   public void testAssignWithMixOfReservedAndNotReserved() throws Exception {
     expect(updateAgentReserver.getAgent(INSTANCE_KEY)).andReturn(Optional.of(SLAVE_ID));
     updateAgentReserver.release(SLAVE_ID, INSTANCE_KEY);
-    expect(offerManager.getMatching(MESOS_OFFER.getAgentId().getValue(), resourceRequest))
+    expect(offerManager.getMatching(AGENT_OFFER.getAgentId(), resourceRequest))
         .andReturn(Optional.of(OFFER));
-    expectAssignTask(MESOS_OFFER);
-    offerManager.launchTask(MESOS_OFFER.getId().getValue(), new MesosPreparedTask(TASK_INFO));
-    expect(taskFactory.prepare(TASK, new MesosOffer(MESOS_OFFER), false))
-        .andReturn(new MesosPreparedTask(TASK_INFO));
+    expectAssignTask(AGENT_OFFER);
+    offerManager.launchTask(AGENT_OFFER.getOfferId(), PREPARED_TASK);
+    expect(taskFactory.prepare(TASK, AGENT_OFFER, false))
+        .andReturn(PREPARED_TASK);
 
     // Normal scheduling loop for the remaining task.
     IAssignedTask secondTask = makeTask("another-task", JOB, 9999).getAssignedTask();
-    TaskInfo secondTaskInfo = TaskInfo.newBuilder()
-        .setName("another-task")
-        .setTaskId(TaskID.newBuilder().setValue(secondTask.getTaskId()))
-        .setAgentId(MESOS_OFFER.getAgentId())
-        .build();
+    TestPreparedTask secondTaskInfo =
+        new TestPreparedTask(secondTask.getTaskId(), AGENT_OFFER.getAgentId());
     expect(updateAgentReserver.getAgent(InstanceKeys.from(JOB, 9999))).andReturn(Optional.empty());
     expect(offerManager.getAllMatching(GROUP_KEY, resourceRequest))
         .andReturn(ImmutableSet.of(OFFER_2));
     expect(updateAgentReserver.isReserved(OFFER_2.getAgentId()))
         .andReturn(false);
-    expectAssignTask(MESOS_OFFER_2, secondTask);
+    expectAssignTask(AGENT_OFFER_2, secondTask);
     offerManager.launchTask(
-        MESOS_OFFER_2.getId().getValue(), new MesosPreparedTask(secondTaskInfo));
-    expect(taskFactory.prepare(secondTask, new MesosOffer(MESOS_OFFER_2), false))
-        .andReturn(new MesosPreparedTask(secondTaskInfo));
+        AGENT_OFFER_2.getOfferId(), secondTaskInfo);
+    expect(taskFactory.prepare(secondTask, AGENT_OFFER_2, false))
+        .andReturn(secondTaskInfo);
 
     control.replay();
 
@@ -341,7 +332,7 @@ public class TaskAssignerImplTest extends EasyMockTest {
     expectNoUpdateReservations(1);
     expect(offerManager.getAllMatching(GROUP_KEY, resourceRequest))
         .andReturn(ImmutableSet.of(OFFER));
-    expectAssignTask(MESOS_OFFER);
+    expectAssignTask(AGENT_OFFER);
     SchedulerException failure = new SchedulerException("preparation failed");
     expect(taskFactory.prepare(TASK, OFFER.getOffer(), false)).andThrow(failure);
 
@@ -363,8 +354,8 @@ public class TaskAssignerImplTest extends EasyMockTest {
     expectNoUpdateReservations(1);
     expect(offerManager.getAllMatching(GROUP_KEY, resourceRequest))
         .andReturn(ImmutableSet.of(OFFER));
-    expectAssignTask(MESOS_OFFER);
-    MesosPreparedTask prepared = new MesosPreparedTask(TASK_INFO);
+    expectAssignTask(AGENT_OFFER);
+    TestPreparedTask prepared = PREPARED_TASK;
     expect(taskFactory.prepare(TASK, OFFER.getOffer(), false)).andAnswer(() -> {
       assertEquals(empty(), aggregate);
       return prepared;
@@ -387,16 +378,16 @@ public class TaskAssignerImplTest extends EasyMockTest {
     assertEquals(0L, statsProvider.getLongValue(ASSIGNER_LAUNCH_FAILURES));
   }
 
-  private void expectAssignTask(Offer offer) {
+  private void expectAssignTask(ExecutionOffer offer) {
     expectAssignTask(offer, TASK);
   }
 
-  private void expectAssignTask(Offer offer, IAssignedTask task) {
+  private void expectAssignTask(ExecutionOffer offer, IAssignedTask task) {
     expect(stateManager.assignTask(
         eq(storeProvider),
         eq(task.getTaskId()),
         eq(offer.getHostname()),
-        eq(offer.getAgentId().getValue()),
+        eq(offer.getAgentId()),
         anyObject())).andReturn(task);
   }
 

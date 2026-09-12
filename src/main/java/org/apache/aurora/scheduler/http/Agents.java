@@ -37,7 +37,7 @@ import static java.util.Objects.requireNonNull;
 import static org.apache.aurora.common.base.MorePreconditions.checkNotBlank;
 
 /**
- * HTTP interface to serve as a HUD for the Mesos agents tracked in the scheduler.
+ * HTTP interface to serve as a HUD for the agents tracked in the scheduler.
  */
 @Path("/agents")
 public class Agents extends JerseyTemplateServlet {

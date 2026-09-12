@@ -70,7 +70,7 @@ public class ResourceBag {
   public static final Predicate<Map.Entry<ResourceType, Double>> IS_POSITIVE =
       entry -> entry.getValue() > 0;
 
-  public static final Predicate<Map.Entry<ResourceType, Double>> IS_MESOS_REVOCABLE =
+  public static final Predicate<Map.Entry<ResourceType, Double>> IS_REVOCABLE =
       entry -> entry.getKey().isRevocable();
 
   private final Map<ResourceType, Double> resourceVectors;

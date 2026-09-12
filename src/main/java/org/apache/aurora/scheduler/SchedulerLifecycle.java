@@ -72,7 +72,7 @@ import static org.apache.aurora.common.zookeeper.SingletonService.LeadershipList
  *       returned from {@link #prepare()}, signaling that this process has exclusive control of the
  *       cluster.</li>
  *   <li>{@link #registered(DriverRegistered) registered()},
- *       indicating that registration with the mesos master has succeeded.
+ *       indicating that the execution driver has completed initial reconciliation.
  *       At this point, the scheduler's presence will be announced via
  *       {@link LeaderControl#advertise() advertise()}.</li>
  * </ol>

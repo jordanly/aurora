@@ -28,7 +28,7 @@ import org.apache.aurora.gen.TaskConfig;
 import org.apache.aurora.gen.TaskEvent;
 import org.apache.aurora.scheduler.base.TaskGroupKey;
 import org.apache.aurora.scheduler.base.Tasks;
-import org.apache.aurora.scheduler.mesos.MesosOffer;
+import org.apache.aurora.scheduler.execution.TestOffer;
 import org.apache.aurora.scheduler.offers.HostOffer;
 import org.apache.aurora.scheduler.offers.OfferManager;
 import org.apache.aurora.scheduler.preemptor.Preemptor.PreemptorImpl;
@@ -41,7 +41,6 @@ import org.apache.aurora.scheduler.storage.entities.IHostAttributes;
 import org.apache.aurora.scheduler.storage.entities.IScheduledTask;
 import org.apache.aurora.scheduler.storage.entities.ITaskConfig;
 import org.apache.aurora.scheduler.testing.FakeStatsProvider;
-import org.apache.mesos.v1.Protos;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -74,7 +73,7 @@ public class PreemptorImplTest extends EasyMockTest {
   private static final Set<PreemptionProposal> NO_SLOTS = ImmutableSet.of();
   private static final Optional<String> EMPTY_RESULT = Optional.empty();
   private static final HostOffer OFFER =
-      new HostOffer(new MesosOffer(Protos.Offer.getDefaultInstance()),
+      new HostOffer(TestOffer.builder("offer").build(),
           IHostAttributes.build(new HostAttributes()));
 
   private StateManager stateManager;

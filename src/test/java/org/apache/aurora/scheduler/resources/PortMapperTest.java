@@ -14,17 +14,13 @@
 package org.apache.aurora.scheduler.resources;
 
 import org.apache.aurora.gen.AssignedTask;
-import org.apache.aurora.scheduler.mesos.MesosOffer;
+import org.apache.aurora.scheduler.execution.TestOffer;
 import org.apache.aurora.scheduler.storage.entities.IAssignedTask;
-import org.apache.mesos.v1.Protos;
 import org.junit.Test;
 
 import static org.apache.aurora.scheduler.base.TaskTestUtil.JOB;
 import static org.apache.aurora.scheduler.base.TaskTestUtil.makeTask;
 import static org.apache.aurora.scheduler.resources.ResourceMapper.PORT_MAPPER;
-import static org.apache.aurora.scheduler.resources.ResourceTestUtil.mesosRange;
-import static org.apache.aurora.scheduler.resources.ResourceTestUtil.offer;
-import static org.apache.aurora.scheduler.resources.ResourceType.PORTS;
 import static org.junit.Assert.assertEquals;
 
 public class PortMapperTest {
@@ -35,29 +31,32 @@ public class PortMapperTest {
     builder.unsetAssignedPorts();
     IAssignedTask task = IAssignedTask.build(builder);
 
-    assertEquals(task, PORT_MAPPER.mapAndAssign(new MesosOffer(offer()), task));
+    assertEquals(task, PORT_MAPPER.mapAndAssign(
+        TestOffer.builder("offer").resources(ResourceBag.EMPTY).build(), task));
   }
 
   @Test(expected = IllegalStateException.class)
   public void testPortRangeScarcity() {
-    PORT_MAPPER.mapAndAssign(new MesosOffer(offer()), makeTask("id", JOB).getAssignedTask());
+    PORT_MAPPER.mapAndAssign(TestOffer.builder("offer").resources(ResourceBag.EMPTY).build(),
+        makeTask("id", JOB).getAssignedTask());
   }
 
   @Test
   public void testPortRangeAbundance() {
-    Protos.Offer offer = offer(mesosRange(PORTS, 1, 2, 3, 4, 5));
+    TestOffer offer = TestOffer.builder("offer").resources(ResourceBag.EMPTY)
+        .ports(1, 2, 3, 4, 5).build();
     assertEquals(
         1,
-        PORT_MAPPER.mapAndAssign(new MesosOffer(offer), makeTask("id", JOB).getAssignedTask())
+        PORT_MAPPER.mapAndAssign(offer, makeTask("id", JOB).getAssignedTask())
             .getAssignedPorts().size());
   }
 
   @Test
   public void testPortRangeExact() {
-    Protos.Offer offer = offer(mesosRange(PORTS, 1));
+    TestOffer offer = TestOffer.builder("offer").resources(ResourceBag.EMPTY).ports(1).build();
     assertEquals(
         1,
-        PORT_MAPPER.mapAndAssign(new MesosOffer(offer), makeTask("id", JOB).getAssignedTask())
+        PORT_MAPPER.mapAndAssign(offer, makeTask("id", JOB).getAssignedTask())
             .getAssignedPorts().size());
   }
 }

@@ -23,12 +23,11 @@ import javax.inject.Inject;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
+import org.apache.aurora.gen.ScheduleStatus;
 import org.apache.aurora.scheduler.app.local.FakeMaster;
 import org.apache.aurora.scheduler.app.local.simulator.events.OfferAccepted;
 import org.apache.aurora.scheduler.app.local.simulator.events.Started;
-import org.apache.aurora.scheduler.mesos.ProtosConversion;
-import org.apache.mesos.Protos.Offer;
-import org.apache.mesos.Protos.TaskState;
+import org.apache.aurora.scheduler.offers.HostOffer;
 
 import static java.util.Objects.requireNonNull;
 
@@ -37,12 +36,12 @@ import static java.util.Objects.requireNonNull;
  * being scheduled.
  */
 class FakeSlaves {
-  private final Set<Offer> offers;
+  private final Set<HostOffer> offers;
   private final FakeMaster master;
   private final ScheduledExecutorService executor;
 
   @Inject
-  FakeSlaves(Set<Offer> offers, FakeMaster master) {
+  FakeSlaves(Set<HostOffer> offers, FakeMaster master) {
     this.offers = requireNonNull(offers);
     this.master = requireNonNull(master);
     this.executor = Executors.newSingleThreadScheduledExecutor(
@@ -60,11 +59,11 @@ class FakeSlaves {
     executor.schedule(
         () -> {
           master.changeState(
-              ProtosConversion.convert(accepted.task.getTaskId()), TaskState.TASK_STARTING);
+              accepted.task.assigned().getTaskId(), ScheduleStatus.STARTING);
 
           executor.schedule(
               () -> master.changeState(
-                  ProtosConversion.convert(accepted.task.getTaskId()), TaskState.TASK_RUNNING),
+                  accepted.task.assigned().getTaskId(), ScheduleStatus.RUNNING),
               1,
               TimeUnit.SECONDS);
         },

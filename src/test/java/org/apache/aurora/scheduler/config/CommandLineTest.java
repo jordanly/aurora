@@ -39,10 +39,7 @@ import org.apache.aurora.common.quantity.Data;
 import org.apache.aurora.common.quantity.Time;
 import org.apache.aurora.gen.Container;
 import org.apache.aurora.gen.DockerParameter;
-import org.apache.aurora.gen.Mode;
-import org.apache.aurora.gen.Volume;
 import org.apache.aurora.scheduler.app.MoreModules;
-import org.apache.aurora.scheduler.app.SchedulerMain.Options.DriverKind;
 import org.apache.aurora.scheduler.config.types.DataAmount;
 import org.apache.aurora.scheduler.config.types.TimeAmount;
 import org.apache.aurora.scheduler.http.api.security.HttpSecurityModule.Options.HttpAuthenticationMechanism;
@@ -75,7 +72,8 @@ public class CommandLineTest {
     CliOptions options = CommandLine.parseOptions(
         "-task_assigner_modules=org.apache.aurora.scheduler.config.CustomModule",
         "-cluster_name=test",
-        "-mesos_master_address=localhost:8080",
+        "-go_agent_config=enrollment.json",
+
         "-backup_dir=/dev/null",
         "-serverset_path=/tmp",
         "-zk_endpoints=localhost:2181",
@@ -88,13 +86,12 @@ public class CommandLineTest {
   }
 
   @Test
-  public void testGoModeDoesNotRequireMesosOrLegacyBackupFlags() {
+  public void testGoEnrollmentWithoutLegacyFlags() {
     CommandLine.clearForTest();
     CliOptions options = CommandLine.parseOptions(
         "-cluster_name=test", "-serverset_path=/test", "-zk_endpoints=localhost:2181",
         "-go_agent_config=enrollment.json");
     assertEquals(new File("enrollment.json"), options.main.goAgentConfig);
-    org.junit.Assert.assertNull(options.driver.mesosMasterAddress);
     org.junit.Assert.assertNull(options.backup.backupDir);
   }
 
@@ -135,16 +132,6 @@ public class CommandLineTest {
     expected.offer.unavailabilityThreshold = TEST_TIME;
     expected.offer.offerOrder = ImmutableList.of(OfferOrder.CPU, OfferOrder.DISK);
     expected.offer.offerSetModule = NoopModule.class;
-    expected.executor.customExecutorConfig = tempFile;
-    expected.executor.thermosExecutorPath = "testing";
-    expected.executor.thermosExecutorResources = ImmutableList.of("testing");
-    expected.executor.thermosExecutorFlags = "testing";
-    expected.executor.thermosHomeInSandbox = true;
-    expected.executor.executorOverheadCpus = 42;
-    expected.executor.executorOverheadRam = new DataAmount(42, Data.GB);
-    expected.executor.globalContainerMounts =
-        ImmutableList.of(new Volume("/container", "/host", Mode.RO));
-    expected.executor.populateDiscoveryInfo = true;
     expected.app.maxTasksPerJob = 42;
     expected.app.maxUpdateInstanceFailures = 42;
     expected.app.allowedContainerTypes = ImmutableList.of(Container._Fields.DOCKER);
@@ -155,12 +142,11 @@ public class CommandLineTest {
     expected.app.allowContainerVolumes = true;
     expected.app.allowedJobEnvironments = "^(foo|bar|zaa)$";
     expected.main.clusterName = "testing";
+    expected.main.goAgentConfig = new File("testing");
     expected.main.serversetPath = "testing";
     expected.main.serversetEndpointName = "testing";
     expected.main.statsUrlPrefix = "testing";
     expected.main.allowGpuResource = true;
-    expected.main.driverImpl = DriverKind.V0_DRIVER;
-    expected.main.goAgentConfig = new File("testing");
     expected.scheduling.maxScheduleAttemptsPerSec = 42;
     expected.scheduling.flappingThreshold = TEST_TIME;
     expected.scheduling.initialFlappingDelay = TEST_TIME;
@@ -197,15 +183,6 @@ public class CommandLineTest {
     expected.pruning.jobUpdateHistoryPerJobThreshold = 42;
     expected.pruning.jobUpdateHistoryPruningInterval = TEST_TIME;
     expected.pruning.jobUpdateHistoryPruningThreshold = TEST_TIME;
-    expected.driver.mesosMasterAddress = "testing";
-    expected.driver.frameworkAuthenticationFile = new File("testing");
-    expected.driver.frameworkFailoverTimeout = TEST_TIME;
-    expected.driver.frameworkAnnouncePrincipal = true;
-    expected.driver.frameworkName = "testing";
-    expected.driver.executorUser = "testing";
-    expected.driver.receiveRevocableResources = true;
-    expected.driver.mesosRole = "testing";
-    expected.driver.isPartitionAware = true;
     expected.jetty.hostnameOverride = "testing";
     expected.jetty.httpPort = 42;
     expected.jetty.listenIp = "testing";
@@ -239,13 +216,6 @@ public class CommandLineTest {
     expected.preemptor.preemptionSlotSearchInterval = TEST_TIME;
     expected.preemptor.reservationMaxBatchSize = 42;
     expected.preemptor.slotFinderModules = ImmutableList.of(NoopModule.class);
-    expected.mesosLog.quorumSize = 42;
-    expected.mesosLog.logPath = new File("testing");
-    expected.mesosLog.zkLogGroupPath = "testing";
-    expected.mesosLog.coordinatorElectionTimeout = TEST_TIME;
-    expected.mesosLog.coordinatorElectionRetries = 42;
-    expected.mesosLog.readTimeout = TEST_TIME;
-    expected.mesosLog.writeTimeout = TEST_TIME;
     expected.sla.minRequiredInstances = 42;
     expected.sla.maxParallelCoordinators = 42;
     expected.sla.maxSlaDuration = TEST_TIME;
@@ -292,15 +262,7 @@ public class CommandLineTest {
         "-offer_order=CPU,DISK",
         "-offer_set_module=org.apache.aurora.scheduler.config.CommandLineTest$NoopModule",
         "-offer_static_ban_cache_max_size=42",
-        "-custom_executor_config=" + tempFile.getAbsolutePath(),
-        "-thermos_executor_path=testing",
-        "-thermos_executor_resources=testing",
-        "-thermos_executor_flags=testing",
-        "-thermos_home_in_sandbox=true",
-        "-thermos_executor_cpu=42",
-        "-thermos_executor_ram=42GB",
-        "-global_container_mounts=/host:/container:ro",
-        "-populate_discovery_info=true",
+
         "-max_tasks_per_job=42",
         "-max_update_instance_failures=42",
         "-allowed_container_types=DOCKER",
@@ -315,7 +277,7 @@ public class CommandLineTest {
         "-serverset_endpoint_name=testing",
         "-viz_job_url_prefix=testing",
         "-allow_gpu_resource=true",
-        "-mesos_driver=V0_DRIVER",
+
         "-go_agent_config=testing",
         "-max_schedule_attempts_per_sec=42",
         "-flapping_task_threshold=42days",
@@ -355,14 +317,7 @@ public class CommandLineTest {
         "-job_update_history_per_job_threshold=42",
         "-job_update_history_pruning_interval=42days",
         "-job_update_history_pruning_threshold=42days",
-        "-mesos_master_address=testing",
-        "-framework_authentication_file=testing",
-        "-framework_failover_timeout=42days",
-        "-framework_announce_principal=true",
-        "-framework_name=testing",
-        "-executor_user=testing",
-        "-receive_revocable_resources=true",
-        "-mesos_role=testing",
+
         "-hostname=testing",
         "-http_port=42",
         "-ip=testing",
@@ -384,13 +339,7 @@ public class CommandLineTest {
         "-preemption_reservation_max_batch_size=42",
         "-preemption_slot_finder_modules="
             + "org.apache.aurora.scheduler.config.CommandLineTest$NoopModule",
-        "-native_log_quorum_size=42",
-        "-native_log_file_path=testing",
-        "-native_log_zk_group_path=testing",
-        "-native_log_election_timeout=42days",
-        "-native_log_election_retries=42",
-        "-native_log_read_timeout=42days",
-        "-native_log_write_timeout=42days",
+
         "-sla_stat_refresh_interval=42days",
         "-sla_prod_metrics=JOB_UPTIMES",
         "-sla_non_prod_metrics=JOB_UPTIMES",
@@ -411,7 +360,7 @@ public class CommandLineTest {
         "-cron_scheduling_max_batch_size=42",
         "-enable_revocable_cpus=false",
         "-enable_revocable_ram=true",
-        "-partition_aware=true",
+
         "-sla_coordinator_timeout=42days",
         "-host_maintenance_polling_interval=42days",
         "-max_parallel_coordinated_maintenance=42",
@@ -429,13 +378,11 @@ public class CommandLineTest {
 
     CliOptions expected = new CliOptions();
     expected.main.clusterName = "testing";
-    expected.driver.mesosMasterAddress = "testing";
+    expected.main.goAgentConfig = new File("testing");
     expected.backup.backupDir = new File("testing");
     expected.main.serversetPath = "testing";
     expected.zk.zkEndpoints = ImmutableList.of(InetSocketAddress.createUnresolved("testing", 42));
     expected.offer.offerOrder = ImmutableList.of();
-    expected.executor.thermosExecutorResources = ImmutableList.of();
-    expected.executor.globalContainerMounts = ImmutableList.of();
     expected.app.allowedContainerTypes = ImmutableList.of();
     expected.app.defaultDockerParameters = ImmutableList.of();
     expected.state.taskAssignerModules = ImmutableList.of();
@@ -447,13 +394,13 @@ public class CommandLineTest {
 
     CliOptions parsed = CommandLine.parseOptions(
             "-cluster_name=testing",
-            "-mesos_master_address=testing",
+            "-go_agent_config=testing",
+
             "-backup_dir=testing",
             "-serverset_path=testing",
             "-zk_endpoints=testing:42",
             "-offer_order=",
-            "-thermos_executor_resources=",
-            "-global_container_mounts=",
+
             "-allowed_container_types=",
             "-default_docker_parameters=",
             "-task_assigner_modules=",
@@ -465,27 +412,6 @@ public class CommandLineTest {
 
     assertEqualOptions(expected, parsed);
 
-    // Test other ways in which an empty list can be passed
-    // as thermos executor resources such as "" and ''.
-    parsed = CommandLine.parseOptions(
-            "-cluster_name=testing",
-            "-mesos_master_address=testing",
-            "-backup_dir=testing",
-            "-serverset_path=testing",
-            "-zk_endpoints=testing:42",
-            "-thermos_executor_resources=\"\"");
-
-    assertEquals(ImmutableList.of(), parsed.executor.thermosExecutorResources);
-
-    parsed = CommandLine.parseOptions(
-            "-cluster_name=testing",
-            "-mesos_master_address=testing",
-            "-backup_dir=testing",
-            "-serverset_path=testing",
-            "-zk_endpoints=testing:42",
-            "-thermos_executor_resources=''");
-
-    assertEquals(ImmutableList.of(), parsed.executor.thermosExecutorResources);
   }
 
   private static void assertEqualOptions(CliOptions expected, CliOptions actual) {

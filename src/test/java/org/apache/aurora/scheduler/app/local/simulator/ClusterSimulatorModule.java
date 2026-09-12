@@ -13,6 +13,9 @@
  */
 package org.apache.aurora.scheduler.app.local.simulator;
 
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import javax.inject.Inject;
@@ -23,10 +26,14 @@ import com.google.common.util.concurrent.AbstractIdleService;
 import com.google.inject.AbstractModule;
 import com.google.inject.multibindings.Multibinder;
 
+import org.apache.aurora.gen.Attribute;
+import org.apache.aurora.gen.HostAttributes;
+import org.apache.aurora.gen.MaintenanceMode;
 import org.apache.aurora.scheduler.SchedulerServicesModule;
-import org.apache.aurora.scheduler.mesos.MesosResourceType;
-import org.apache.mesos.Protos;
-import org.apache.mesos.Protos.Offer;
+import org.apache.aurora.scheduler.execution.TestOffer;
+import org.apache.aurora.scheduler.offers.HostOffer;
+import org.apache.aurora.scheduler.resources.ResourceTestUtil;
+import org.apache.aurora.scheduler.storage.entities.IHostAttributes;
 
 import static java.util.Objects.requireNonNull;
 
@@ -35,8 +42,6 @@ import static org.apache.aurora.scheduler.resources.ResourceType.CPUS;
 import static org.apache.aurora.scheduler.resources.ResourceType.DISK_MB;
 import static org.apache.aurora.scheduler.resources.ResourceType.PORTS;
 import static org.apache.aurora.scheduler.resources.ResourceType.RAM_MB;
-import static org.apache.mesos.Protos.Value.Type.RANGES;
-import static org.apache.mesos.Protos.Value.Type.SCALAR;
 
 /**
  * Module that sets up bindings to simulate fake cluster resources.
@@ -46,7 +51,7 @@ public class ClusterSimulatorModule extends AbstractModule {
   @Override
   protected void configure() {
     bind(FakeSlaves.class).in(Singleton.class);
-    Multibinder<Offer> offers = Multibinder.newSetBinder(binder(), Offer.class);
+    Multibinder<HostOffer> offers = Multibinder.newSetBinder(binder(), HostOffer.class);
     offers.addBinding()
         .toInstance(baseOffer("slave-1", "a", 16, 16 * 1024, 100 * 1024));
     offers.addBinding()
@@ -83,48 +88,27 @@ public class ClusterSimulatorModule extends AbstractModule {
     }
   }
 
-  private static Offer baseOffer(
+  private static HostOffer baseOffer(
       String slaveId,
       String rack,
       double cpu,
       double ramMb,
       double diskMb) {
-
-    Protos.Value.Ranges portRanges = Protos.Value.Ranges.newBuilder()
-        .addRange(Protos.Value.Range.newBuilder().setBegin(40000).setEnd(41000)).build();
-
     String host = slaveId + "-hostname";
-    return Offer.newBuilder()
-        .addResources(Protos.Resource.newBuilder().setType(SCALAR)
-            .setName(MesosResourceType.getMesosName(CPUS))
-            .setScalar(Protos.Value.Scalar.newBuilder().setValue(cpu)))
-        .addResources(Protos.Resource.newBuilder().setType(SCALAR)
-            .setName(MesosResourceType.getMesosName(RAM_MB))
-            .setScalar(Protos.Value.Scalar.newBuilder().setValue(ramMb)))
-        .addResources(Protos.Resource.newBuilder().setType(SCALAR)
-            .setName(MesosResourceType.getMesosName(DISK_MB))
-            .setScalar(Protos.Value.Scalar.newBuilder().setValue(diskMb)))
-        .addResources(Protos.Resource.newBuilder().setType(RANGES)
-            .setName(MesosResourceType.getMesosName(PORTS))
-            .setRanges(portRanges))
-        .addAttributes(Protos.Attribute.newBuilder().setType(Protos.Value.Type.TEXT)
-            .setName("host")
-            .setText(Protos.Value.Text.newBuilder().setValue(host)))
-        .addAttributes(Protos.Attribute.newBuilder().setType(Protos.Value.Type.TEXT)
-            .setName("rack")
-            .setText(Protos.Value.Text.newBuilder().setValue(rack)))
-        .setSlaveId(Protos.SlaveID.newBuilder().setValue(slaveId))
-        .setHostname(host)
-        .setFrameworkId(Protos.FrameworkID.newBuilder().setValue("frameworkId").build())
-        .setId(Protos.OfferID.newBuilder().setValue(UUID.randomUUID().toString()))
-        .build();
+    var offer = TestOffer.builder(UUID.randomUUID().toString()).agentId(slaveId).hostname(host)
+        .resources(ResourceTestUtil.bag(Map.of(
+            CPUS, cpu, RAM_MB, ramMb, DISK_MB, diskMb, PORTS, 1001.0)))
+        .ports(java.util.stream.IntStream.rangeClosed(40000, 41000).boxed().toList()).build();
+    return new HostOffer(offer, IHostAttributes.build(new HostAttributes()
+        .setHost(host).setSlaveId(slaveId).setMode(MaintenanceMode.NONE)
+        .setAttributes(Set.of(new Attribute("host", Set.of(host)),
+            new Attribute("rack", Set.of(rack))))));
   }
 
-  private static Offer dedicated(Offer base, String dedicatedTo) {
-    return Offer.newBuilder(base)
-        .addAttributes(Protos.Attribute.newBuilder().setType(Protos.Value.Type.TEXT)
-            .setName(DEDICATED_ATTRIBUTE)
-            .setText(Protos.Value.Text.newBuilder().setValue(dedicatedTo)))
-        .build();
+  private static HostOffer dedicated(HostOffer base, String dedicatedTo) {
+    HostAttributes attributes = base.getAttributes().newBuilder();
+    attributes.setAttributes(new HashSet<>(attributes.getAttributes()));
+    attributes.addToAttributes(new Attribute(DEDICATED_ATTRIBUTE, Set.of(dedicatedTo)));
+    return new HostOffer(base.getOffer(), IHostAttributes.build(attributes));
   }
 }

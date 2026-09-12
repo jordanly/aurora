@@ -46,7 +46,7 @@ import org.apache.aurora.scheduler.base.JobKeys;
 import org.apache.aurora.scheduler.base.TaskTestUtil;
 import org.apache.aurora.scheduler.configuration.ConfigurationManager.ConfigurationManagerSettings;
 import org.apache.aurora.scheduler.configuration.ConfigurationManager.TaskDescriptionException;
-import org.apache.aurora.scheduler.mesos.TestExecutorSettings;
+import org.apache.aurora.scheduler.configuration.executor.TestExecutorSettings;
 import org.apache.aurora.scheduler.storage.entities.IDockerParameter;
 import org.apache.aurora.scheduler.storage.entities.IJobConfiguration;
 import org.apache.aurora.scheduler.storage.entities.ITaskConfig;

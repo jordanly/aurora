@@ -1,7 +1,15 @@
 # Modernize Aurora in place
 
-Active plan, 2026-09-11. This supersedes the parallel scheduler strategy and the
+Active plan, updated 2026-09-12. This supersedes the parallel scheduler strategy and the
 JAVA-11 proposal to retire the original scheduler, Python code and UI.
+The later decision to retire Python and Mesos applies to their runtime, build,
+client and deployment paths; the original scheduler and UI remain. JSON job
+documents and a Go client replace executable `.aurora` files for the supported
+process profile. General Thermos feature parity is explicitly outside that
+profile. Production HA comes after push transport, Python retirement and Mesos
+cleanup. See the [current checkpoint](INPLACE08_IMPLEMENTATION_STATUS.md) for
+implementation evidence and the precise remaining boundaries. Earlier slice
+descriptions below retain their original acceptance context.
 INPLACE-00 is complete. The original Java 25 build, behavior gates, execution
 boundary extraction and seven-store SQLite backend are implemented on
 `codex/in-place-java25`. See the [current implementation and qualification

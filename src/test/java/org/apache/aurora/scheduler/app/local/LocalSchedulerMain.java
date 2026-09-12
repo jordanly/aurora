@@ -15,9 +15,6 @@ package org.apache.aurora.scheduler.app.local;
 
 import java.io.File;
 import java.util.List;
-import java.util.Optional;
-
-import javax.inject.Singleton;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.Files;
@@ -28,18 +25,17 @@ import com.google.inject.util.Modules;
 
 import org.apache.aurora.gen.storage.Snapshot;
 import org.apache.aurora.scheduler.TierModule;
-import org.apache.aurora.scheduler.app.SchedulerMain;
+import org.apache.aurora.scheduler.app.TestSchedulerLauncher;
 import org.apache.aurora.scheduler.app.local.simulator.ClusterSimulatorModule;
 import org.apache.aurora.scheduler.config.CliOptions;
 import org.apache.aurora.scheduler.config.CommandLine;
-import org.apache.aurora.scheduler.mesos.DriverFactory;
-import org.apache.aurora.scheduler.mesos.DriverSettings;
-import org.apache.aurora.scheduler.mesos.FrameworkInfoFactory;
+import org.apache.aurora.scheduler.configuration.executor.ExecutorSettings;
+import org.apache.aurora.scheduler.configuration.executor.TestExecutorSettings;
 import org.apache.aurora.scheduler.storage.SnapshotStore;
 import org.apache.aurora.scheduler.storage.Storage;
 import org.apache.aurora.scheduler.storage.Storage.NonVolatileStorage;
-import org.apache.mesos.SchedulerDriver;
-import org.apache.mesos.v1.Protos;
+import org.apache.aurora.scheduler.storage.backup.BackupModule;
+import org.apache.aurora.scheduler.storage.log.SnapshotterImpl;
 import org.apache.shiro.io.ResourceUtils;
 
 /**
@@ -49,14 +45,6 @@ public final class LocalSchedulerMain {
   private LocalSchedulerMain() {
     // Utility class.
   }
-
-  private static final Protos.FrameworkInfo BASE_FRAMEWORK_INFO = Protos.FrameworkInfo.newBuilder()
-          .setUser("framework user")
-          .setName("test framework")
-          .build();
-  private static final DriverSettings DRIVER_SETTINGS = new DriverSettings(
-      "fakemaster",
-      Optional.empty());
 
   public static void main(String[] args) {
     File backupDir = Files.createTempDir();
@@ -68,8 +56,7 @@ public final class LocalSchedulerMain {
         .add("-zk_endpoints=localhost:2181")
         .add("-zk_in_proc=true")
         .add("-backup_dir=" + backupDir.getAbsolutePath())
-        .add("-mesos_master_address=fake")
-        .add("-thermos_executor_path=fake")
+        .add("-go_agent_config=unused-by-local-simulator")
         .add("-http_port=8081")
         .add("-http_authentication_mechanism=BASIC")
         .add("-shiro_ini_path="
@@ -77,6 +64,8 @@ public final class LocalSchedulerMain {
             + "org/apache/aurora/scheduler/http/api/security/shiro-example.ini")
         .build();
     CliOptions options = CommandLine.parseOptions(arguments.toArray(new String[] {}));
+    // The production CLI requires enrollment. This test launcher installs its fake boundary.
+    options.main.goAgentConfig = null;
 
     Module persistentStorage = new AbstractModule() {
       @Override
@@ -97,24 +86,17 @@ public final class LocalSchedulerMain {
       }
     };
 
-    Module fakeMesos = new AbstractModule() {
+    Module fakeExecution = new AbstractModule() {
       @Override
       protected void configure() {
-        bind(DriverSettings.class).toInstance(DRIVER_SETTINGS);
-        bind(SchedulerDriver.class).to(FakeMaster.class);
-        bind(DriverFactory.class).to(FakeMaster.class);
-        bind(FakeMaster.class).in(Singleton.class);
-        bind(Protos.FrameworkInfo.class)
-            .annotatedWith(FrameworkInfoFactory.FrameworkInfoFactoryImpl.BaseFrameworkInfo.class)
-            .toInstance(BASE_FRAMEWORK_INFO);
-        bind(FrameworkInfoFactory.class).to(FrameworkInfoFactory.FrameworkInfoFactoryImpl.class);
-        bind(FrameworkInfoFactory.FrameworkInfoFactoryImpl.class).in(Singleton.class);
+        install(new FakeExecutionModule());
+        bind(ExecutorSettings.class).toInstance(TestExecutorSettings.THERMOS_EXECUTOR);
+        install(new BackupModule(options.backup, SnapshotterImpl.class));
         install(new ClusterSimulatorModule());
       }
     };
 
-    SchedulerMain.flagConfiguredMain(
-        options,
-        Modules.combine(fakeMesos, persistentStorage, new TierModule(options.tiers)));
+    TestSchedulerLauncher.run(options,
+        Modules.combine(fakeExecution, persistentStorage, new TierModule(options.tiers)));
   }
 }

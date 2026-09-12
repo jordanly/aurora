@@ -18,7 +18,6 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Arrays;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -30,7 +29,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.hash.Hashing;
-import com.google.common.net.InetAddresses;
 import com.google.common.util.concurrent.Atomics;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -39,14 +37,12 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.Module;
-import com.google.inject.TypeLiteral;
 
 import org.apache.aurora.GuavaUtils;
 import org.apache.aurora.codec.ThriftBinaryCodec.CodingException;
 import org.apache.aurora.common.application.Lifecycle;
 import org.apache.aurora.common.quantity.Amount;
 import org.apache.aurora.common.quantity.Data;
-import org.apache.aurora.common.quantity.Time;
 import org.apache.aurora.common.stats.Stats;
 import org.apache.aurora.common.zookeeper.Credentials;
 import org.apache.aurora.common.zookeeper.testing.BaseZooKeeperTest;
@@ -57,7 +53,6 @@ import org.apache.aurora.gen.ScheduledTask;
 import org.apache.aurora.gen.ServerInfo;
 import org.apache.aurora.gen.storage.LogEntry;
 import org.apache.aurora.gen.storage.Op;
-import org.apache.aurora.gen.storage.SaveFrameworkId;
 import org.apache.aurora.gen.storage.SaveTasks;
 import org.apache.aurora.gen.storage.Snapshot;
 import org.apache.aurora.gen.storage.Transaction;
@@ -66,19 +61,24 @@ import org.apache.aurora.scheduler.AppStartup;
 import org.apache.aurora.scheduler.TierModule;
 import org.apache.aurora.scheduler.base.TaskTestUtil;
 import org.apache.aurora.scheduler.config.CliOptions;
-import org.apache.aurora.scheduler.config.types.TimeAmount;
 import org.apache.aurora.scheduler.configuration.executor.ExecutorSettings;
+import org.apache.aurora.scheduler.configuration.executor.TestExecutorSettings;
 import org.apache.aurora.scheduler.discovery.ServiceDiscoveryModule;
 import org.apache.aurora.scheduler.discovery.ZooKeeperConfig;
+import org.apache.aurora.scheduler.events.EventSink;
+import org.apache.aurora.scheduler.events.PubsubEvent.DriverRegistered;
+import org.apache.aurora.scheduler.events.PubsubEventModule.RegisteredEvents;
+import org.apache.aurora.scheduler.execution.ExecutionControl;
+import org.apache.aurora.scheduler.execution.ExecutionDriver;
+import org.apache.aurora.scheduler.execution.OfferTransport;
+import org.apache.aurora.scheduler.execution.TaskConfigValidator;
+import org.apache.aurora.scheduler.execution.TaskFactory;
+import org.apache.aurora.scheduler.execution.TaskKiller;
+import org.apache.aurora.scheduler.execution.TaskReconciliation;
 import org.apache.aurora.scheduler.log.Log;
 import org.apache.aurora.scheduler.log.Log.Entry;
-import org.apache.aurora.scheduler.log.Log.Position;
 import org.apache.aurora.scheduler.log.Log.Stream;
-import org.apache.aurora.scheduler.maintenance.MaintenanceController;
-import org.apache.aurora.scheduler.mesos.DriverFactory;
-import org.apache.aurora.scheduler.mesos.DriverSettings;
-import org.apache.aurora.scheduler.mesos.FrameworkInfoFactory;
-import org.apache.aurora.scheduler.mesos.TestExecutorSettings;
+import org.apache.aurora.scheduler.resources.ResourceTestUtil;
 import org.apache.aurora.scheduler.storage.backup.BackupModule;
 import org.apache.aurora.scheduler.storage.durability.DurableStorageModule;
 import org.apache.aurora.scheduler.storage.entities.IHostAttributes;
@@ -88,14 +88,6 @@ import org.apache.aurora.scheduler.storage.log.EntrySerializer;
 import org.apache.aurora.scheduler.storage.log.LogPersistenceModule;
 import org.apache.aurora.scheduler.storage.log.SnapshotModule;
 import org.apache.aurora.scheduler.storage.log.SnapshotterImpl;
-import org.apache.aurora.scheduler.storage.log.testing.LogOpMatcher;
-import org.apache.aurora.scheduler.storage.log.testing.LogOpMatcher.StreamMatcher;
-import org.apache.mesos.Protos;
-import org.apache.mesos.Scheduler;
-import org.apache.mesos.SchedulerDriver;
-import org.apache.mesos.v1.Protos.FrameworkInfo;
-import org.apache.mesos.v1.Protos.Resource;
-import org.easymock.Capture;
 import org.easymock.EasyMock;
 import org.easymock.IMocksControl;
 import org.junit.Before;
@@ -105,13 +97,7 @@ import org.junit.rules.TemporaryFolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.apache.aurora.common.testing.easymock.EasyMockTest.createCapture;
-import static org.apache.aurora.scheduler.resources.ResourceTestUtil.mesosScalar;
-import static org.apache.aurora.scheduler.resources.ResourceType.CPUS;
-import static org.apache.aurora.scheduler.resources.ResourceType.RAM_MB;
-import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.createControl;
-import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -123,25 +109,11 @@ public class SchedulerIT extends BaseZooKeeperTest {
   private static final String CLUSTER_NAME = "integration_test_cluster";
   private static final String SERVERSET_PATH = "/fake/service/path";
   private static final String STATS_URL_PREFIX = "fake_url";
-  private static final String FRAMEWORK_ID = "integration_test_framework_id";
-  private static final Protos.MasterInfo MASTER = Protos.MasterInfo.newBuilder()
-      .setId("master-id")
-      .setIp(InetAddresses.coerceToInteger(InetAddresses.forString("1.2.3.4"))) //NOPMD
-      .setPort(5050).build();
   private static final IHostAttributes HOST_ATTRIBUTES = IHostAttributes.build(new HostAttributes()
       .setHost("host")
       .setSlaveId("slave-id")
       .setMode(MaintenanceMode.NONE)
       .setAttributes(ImmutableSet.of()));
-
-  private static final FrameworkInfo BASE_INFO = FrameworkInfo.newBuilder()
-          .setUser("framework user")
-          .setName("test framework")
-          .build();
-
-  private static final DriverSettings SETTINGS = new DriverSettings(
-      "fakemaster",
-      Optional.empty());
 
   private final ExecutorService executor = Executors.newCachedThreadPool(
       new ThreadFactoryBuilder().setNameFormat("SchedulerIT-%d").setDaemon(true).build());
@@ -150,11 +122,9 @@ public class SchedulerIT extends BaseZooKeeperTest {
 
   private IMocksControl control;
 
-  private SchedulerDriver driver;
-  private DriverFactory driverFactory;
+  private ExecutionDriver driver;
   private Log log;
   private Stream logStream;
-  private StreamMatcher streamMatcher;
   private EntrySerializer entrySerializer;
   private File backupDir;
   @Rule
@@ -172,14 +142,12 @@ public class SchedulerIT extends BaseZooKeeperTest {
       control.verify();
     });
     backupDir = temporaryFolder.newFolder();
-    driver = control.createMock(SchedulerDriver.class);
+    driver = control.createMock(ExecutionDriver.class);
     // This is necessary to allow driver to block, otherwise it would stall other mocks.
     EasyMock.makeThreadSafe(driver, false);
 
-    driverFactory = control.createMock(DriverFactory.class);
     log = control.createMock(Log.class);
     logStream = control.createMock(Stream.class);
-    streamMatcher = LogOpMatcher.matcherFor(logStream);
     entrySerializer = new EntrySerializer.EntrySerializerImpl(
         Amount.of(512, Data.KB),
         Hashing.md5());
@@ -188,18 +156,22 @@ public class SchedulerIT extends BaseZooKeeperTest {
   private Injector startScheduler() throws Exception {
     // TODO(wfarner): Try to accomplish all this by subclassing SchedulerMain and actually using
     // AppLauncher.
+    CliOptions options = new CliOptions();
     Module testModule = new AbstractModule() {
       @Override
       protected void configure() {
-        bind(DriverFactory.class).toInstance(driverFactory);
-        bind(FrameworkInfoFactory.class).toInstance(() -> BASE_INFO);
-        bind(DriverSettings.class).toInstance(SETTINGS);
+        bind(CliOptions.class).toInstance(options);
+        bind(ExecutionDriver.class).toInstance(driver);
+        bind(ExecutionControl.class).toInstance(driver);
+        bind(TaskKiller.class).toInstance(driver);
+        bind(OfferTransport.class).toInstance(EasyMock.createNiceMock(OfferTransport.class));
+        bind(TaskFactory.class).toInstance(EasyMock.createNiceMock(TaskFactory.class));
+        bind(TaskReconciliation.class).toInstance(targets -> { });
+        bind(TaskConfigValidator.class).toInstance(task -> { });
         bind(Log.class).toInstance(log);
-        Set<Resource> overhead = ImmutableSet.of(
-            mesosScalar(CPUS, 0.1),
-            mesosScalar(RAM_MB, 1));
         bind(ExecutorSettings.class)
-            .toInstance(TestExecutorSettings.thermosOnlyWithOverhead(overhead));
+            .toInstance(TestExecutorSettings.thermosOnlyWithOverhead(
+                ResourceTestUtil.bag(0.1, 1, 0)));
 
         BackupModule.Options backupOptions = new BackupModule.Options();
         backupOptions.backupDir = backupDir;
@@ -212,10 +184,6 @@ public class SchedulerIT extends BaseZooKeeperTest {
                     .setClusterName(CLUSTER_NAME)
                     .setStatsUrlPrefix(STATS_URL_PREFIX)));
 
-        bind(new TypeLiteral<Amount<Long, Time>>() { })
-            .annotatedWith(
-                MaintenanceController.MaintenanceControllerImpl.PollingInterval.class)
-            .toInstance(new TimeAmount(1, Time.MINUTES));
       }
     };
     ZooKeeperConfig zkClientConfig =
@@ -226,7 +194,7 @@ public class SchedulerIT extends BaseZooKeeperTest {
     SchedulerMain main = new SchedulerMain();
     Injector injector = Guice.createInjector(
         ImmutableList.<Module>builder()
-            .add(SchedulerMain.getUniversalModule(new CliOptions()))
+            .add(SchedulerMain.getUniversalModule(options))
             .add(new TierModule(TaskTestUtil.TIER_CONFIG))
             .add(new DurableStorageModule())
             .add(new LogPersistenceModule(new LogPersistenceModule.Options()))
@@ -310,14 +278,6 @@ public class SchedulerIT extends BaseZooKeeperTest {
 
   @Test
   public void testLaunch() throws Exception {
-    Capture<Scheduler> scheduler = createCapture();
-    expect(driverFactory.create(
-        capture(scheduler),
-        eq(SETTINGS.getCredentials()),
-        eq(BASE_INFO),
-        eq(SETTINGS.getMasterUri())))
-        .andReturn(driver).anyTimes();
-
     IScheduledTask snapshotTask = makeTask("snapshotTask", ScheduleStatus.ASSIGNED);
     IScheduledTask transactionTask = makeTask("transactionTask", ScheduleStatus.RUNNING);
     Iterable<Entry> recoveredEntries = toEntries(
@@ -331,32 +291,32 @@ public class SchedulerIT extends BaseZooKeeperTest {
 
     expect(log.open()).andReturn(logStream);
     expect(logStream.readAll()).andReturn(recoveredEntries.iterator()).anyTimes();
-    streamMatcher.expectTransaction(Op.saveFrameworkId(new SaveFrameworkId(FRAMEWORK_ID)))
-        .andReturn(new Position() { });
 
     CountDownLatch driverStarted = new CountDownLatch(1);
-    expect(driver.start()).andAnswer(() -> {
+    expect(driver.startAsync()).andAnswer(() -> {
       driverStarted.countDown();
-      return Protos.Status.DRIVER_RUNNING;
+      return driver;
     });
+    driver.awaitRunning();
 
     // Try to be a good test suite citizen by releasing the blocked thread when the test case exits.
     CountDownLatch testCompleted = new CountDownLatch(1);
-    expect(driver.join()).andAnswer(() -> {
+    driver.blockUntilStopped();
+    EasyMock.expectLastCall().andAnswer(() -> {
       testCompleted.await();
-      return Protos.Status.DRIVER_STOPPED;
+      return null;
     });
     addTearDown(testCompleted::countDown);
-    expect(driver.stop(true)).andReturn(Protos.Status.DRIVER_STOPPED).anyTimes();
+    expect(driver.stopAsync()).andReturn(driver).anyTimes();
+    driver.awaitTerminated();
+    EasyMock.expectLastCall().anyTimes();
 
     control.replay();
     Injector injector = startScheduler();
 
     driverStarted.await();
-    scheduler.getValue().registered(
-        driver,
-        Protos.FrameworkID.newBuilder().setValue(FRAMEWORK_ID).build(),
-        MASTER);
+    injector.getInstance(Key.get(EventSink.class, RegisteredEvents.class))
+        .post(new DriverRegistered());
 
     awaitSchedulerReady(injector);
 

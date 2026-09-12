@@ -17,18 +17,17 @@ import com.google.common.collect.ImmutableList;
 
 import org.apache.aurora.common.testing.easymock.EasyMockTest;
 import org.apache.aurora.gen.HostAttributes;
-import org.apache.aurora.scheduler.mesos.MesosOffer;
 import org.apache.aurora.scheduler.offers.HostOffer;
 import org.apache.aurora.scheduler.offers.OfferManager;
 import org.apache.aurora.scheduler.resources.ResourceTestUtil;
 import org.apache.aurora.scheduler.resources.ResourceType;
 import org.apache.aurora.scheduler.stats.SlotSizeCounter.MachineResource;
 import org.apache.aurora.scheduler.storage.entities.IHostAttributes;
-import org.apache.mesos.v1.Protos;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.apache.aurora.scheduler.resources.ResourceTestUtil.mesosScalar;
+import static org.apache.aurora.scheduler.resources.ResourceTestUtil.offer;
+import static org.apache.aurora.scheduler.resources.ResourceTestUtil.scalar;
 import static org.apache.aurora.scheduler.resources.ResourceType.CPUS;
 import static org.apache.aurora.scheduler.resources.ResourceType.DISK_MB;
 import static org.apache.aurora.scheduler.resources.ResourceType.RAM_MB;
@@ -47,16 +46,8 @@ public class AsyncStatsModuleTest extends EasyMockTest {
   public void testOfferAdapter() {
     OfferManager offerManager = createMock(OfferManager.class);
     expect(offerManager.getAll()).andReturn(ImmutableList.of(
-        new HostOffer(new MesosOffer(Protos.Offer.newBuilder()
-            .setId(Protos.OfferID.newBuilder().setValue("offerId"))
-            .setFrameworkId(Protos.FrameworkID.newBuilder().setValue("frameworkId"))
-            .setAgentId(Protos.AgentID.newBuilder().setValue("slaveId"))
-            .setHostname("hostName")
-            .addResources(mesosScalar(CPUS, 2.0, true))
-            .addResources(mesosScalar(CPUS, 4.0, false))
-            .addResources(mesosScalar(RAM_MB, 1024))
-            .addResources(mesosScalar(DISK_MB, 2048))
-            .build()),
+        new HostOffer(offer("slaveId", scalar(CPUS, 2.0, true), scalar(CPUS, 4.0, false),
+            scalar(RAM_MB, 1024), scalar(DISK_MB, 2048)),
             IHostAttributes.build(new HostAttributes()))));
 
     control.replay();

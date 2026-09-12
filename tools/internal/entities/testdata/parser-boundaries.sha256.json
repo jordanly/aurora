@@ -1,0 +1,5 @@
+{
+  "java/org/apache/aurora/scheduler/storage/entities/AuroraAdminMetadata.java": "7b2e0bfbcc364a82dbbd960f47e6295de5f18ec1638f3c05bf789a1031e0cbcb",
+  "java/org/apache/aurora/scheduler/storage/entities/IEmpty.java": "d3901eec813c372712f2efcafb75e3a42791656e02273e585d0dc59c3cbb5b50",
+  "java/org/apache/aurora/scheduler/storage/entities/IQualified.java": "b27f8691fde4a45e8d8153bb23e05558a950f747c04e0667ac004c1202dcea6c"
+}

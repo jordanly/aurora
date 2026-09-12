@@ -58,12 +58,12 @@ import static org.apache.aurora.gen.Resource.numCpus;
 import static org.apache.aurora.gen.Resource.ramMb;
 import static org.apache.aurora.scheduler.base.TaskTestUtil.TIER_MANAGER;
 import static org.apache.aurora.scheduler.configuration.ConfigurationManager.DEDICATED_ATTRIBUTE;
+import static org.apache.aurora.scheduler.configuration.executor.TaskExecutors.NO_OVERHEAD_EXECUTOR;
 import static org.apache.aurora.scheduler.filter.AttributeAggregate.empty;
-import static org.apache.aurora.scheduler.mesos.MesosResourceManager.bagFromMesosResources;
-import static org.apache.aurora.scheduler.mesos.TaskExecutors.NO_OVERHEAD_EXECUTOR;
-import static org.apache.aurora.scheduler.resources.ResourceTestUtil.mesosRange;
-import static org.apache.aurora.scheduler.resources.ResourceTestUtil.mesosScalar;
+import static org.apache.aurora.scheduler.resources.ResourceTestUtil.bagFromTestResources;
+import static org.apache.aurora.scheduler.resources.ResourceTestUtil.range;
 import static org.apache.aurora.scheduler.resources.ResourceTestUtil.resetPorts;
+import static org.apache.aurora.scheduler.resources.ResourceTestUtil.scalar;
 import static org.apache.aurora.scheduler.resources.ResourceType.CPUS;
 import static org.apache.aurora.scheduler.resources.ResourceType.DISK_MB;
 import static org.apache.aurora.scheduler.resources.ResourceType.PORTS;
@@ -87,11 +87,11 @@ public class SchedulingFilterImplTest extends EasyMockTest {
   private static final int DEFAULT_CPUS = 4;
   private static final long DEFAULT_RAM = 1000;
   private static final long DEFAULT_DISK = 2000;
-  private static final ResourceBag DEFAULT_OFFER = bagFromMesosResources(ImmutableSet.of(
-      mesosScalar(CPUS, DEFAULT_CPUS),
-      mesosScalar(RAM_MB, DEFAULT_RAM),
-      mesosScalar(DISK_MB, DEFAULT_DISK),
-      mesosRange(PORTS, 80, 81)));
+  private static final ResourceBag DEFAULT_OFFER = bagFromTestResources(ImmutableSet.of(
+      scalar(CPUS, DEFAULT_CPUS),
+      scalar(RAM_MB, DEFAULT_RAM),
+      scalar(DISK_MB, DEFAULT_DISK),
+      range(PORTS, 80, 81)));
 
   private static final Amount<Long, Time> UNAVAILABILITY_THRESHOLD = Amount.of(2L, Time.MINUTES);
   private final FakeClock clock = new FakeClock();

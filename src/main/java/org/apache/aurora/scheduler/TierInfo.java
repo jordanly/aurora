@@ -51,7 +51,7 @@ public final class TierInfo {
   }
 
   /**
-   * Checks if this tier intends to run with Mesos revocable resource offers.
+   * Checks if this tier intends to run with revocable resource offers.
    *
    * @return {@code true} if this tier requires revocable resource offers, {@code false} otherwise.
    */

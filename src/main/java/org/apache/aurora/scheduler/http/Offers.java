@@ -14,7 +14,6 @@
 package org.apache.aurora.scheduler.http;
 
 import java.util.Objects;
-import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import javax.inject.Inject;
@@ -24,46 +23,45 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.PropertyNamingStrategy;
-import com.hubspot.jackson.datatype.protobuf.ProtobufModule;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
-import org.apache.aurora.scheduler.mesos.MesosOffer;
+import org.apache.aurora.scheduler.offers.HostOffer;
 import org.apache.aurora.scheduler.offers.OfferManager;
 
-/**
- * Servlet that exposes resource offers that the scheduler is currently retaining.
- */
+/** Exposes the resource offers retained by the original scheduler, independently of transport. */
 @Path("/offers")
 public class Offers {
-
   private final OfferManager offerManager;
-  private final ObjectMapper mapper;
+  private final ObjectMapper mapper = new ObjectMapper();
 
   @Inject
   Offers(OfferManager offerManager) {
     this.offerManager = Objects.requireNonNull(offerManager);
-    mapper = new ObjectMapper()
-        .registerModule(new ProtobufModule())
-        .setPropertyNamingStrategy(PropertyNamingStrategy.CAMEL_CASE_TO_LOWER_CASE_WITH_UNDERSCORES)
-        .setSerializationInclusion(JsonInclude.Include.NON_NULL);
   }
 
-  /**
-   * Dumps the offers queued in the scheduler.
-   *
-   * @return HTTP response.
-   */
+  /** Resource units follow their explicit Aurora type names: CPU cores, MB and counts. */
+  private ObjectNode view(HostOffer hostOffer) {
+    var offer = hostOffer.getOffer();
+    ObjectNode result = mapper.createObjectNode()
+        .put("offerId", offer.getOfferId()).put("agentId", offer.getAgentId())
+        .put("hostname", offer.getHostname()).put("dedicated", offer.isDedicated())
+        .put("maintenanceMode", hostOffer.getAttributes().getMode().name())
+        .put("unavailableAt", offer.getUnavailabilityStart().map(Object::toString).orElse(null));
+    result.set("resources", mapper.valueToTree(offer.getResources(false).getResourceVectors()));
+    result.set("revocableResources", mapper.valueToTree(
+        offer.getResources(true).getResourceVectors()));
+    result.set("ports", mapper.valueToTree(offer.getAvailablePorts()));
+    return result;
+  }
+
+  /** Returns retained offers with current maintenance mode and resource availability. */
   @GET
   @Produces(MediaType.APPLICATION_JSON)
   public Response getOffers() throws JsonProcessingException {
-    return Response.ok(
-        mapper.writeValueAsString(
-            StreamSupport.stream(offerManager.getAll().spliterator(), false)
-                .map(o -> MesosOffer.toMesos(o.getOffer()))
-                .collect(Collectors.toList())))
-        .build();
+    var views = StreamSupport.stream(offerManager.getAll().spliterator(), false)
+        .map(this::view).toList();
+    return Response.ok(mapper.writeValueAsString(views)).build();
   }
 }

@@ -5,4 +5,4 @@
 
 set -e
 APP_HOME=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
-exec "$APP_HOME/build-support/java/root-gradle.py" "$@"
+exec "$APP_HOME/build-support/bootstrap-go" gradle "$@"

@@ -47,7 +47,7 @@ import org.apache.aurora.scheduler.storage.entities.ITaskConfig;
 import static java.util.Objects.requireNonNull;
 
 import static org.apache.aurora.scheduler.resources.ResourceBag.EMPTY;
-import static org.apache.aurora.scheduler.resources.ResourceBag.IS_MESOS_REVOCABLE;
+import static org.apache.aurora.scheduler.resources.ResourceBag.IS_REVOCABLE;
 
 /**
  * Filters active tasks (victims) and available offer (slack) resources that can accommodate a
@@ -116,7 +116,7 @@ public interface PreemptionVictimFilter {
             if (tierManager.getTier(victim.getConfig()).isRevocable()) {
               // Revocable task CPU cannot be used for preemption purposes as it's a compressible
               // resource. We can still use RAM, DISK and PORTS as they are not compressible.
-              bag = bag.filter(IS_MESOS_REVOCABLE.negate());
+              bag = bag.filter(IS_REVOCABLE.negate());
             }
 
             return bag;

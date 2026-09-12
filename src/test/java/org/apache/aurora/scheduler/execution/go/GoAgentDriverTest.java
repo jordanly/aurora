@@ -67,15 +67,18 @@ public class GoAgentDriverTest {
   private SqliteStorage sqlite;
   private GoAgentDriver driver;
   private FakeAgent agent;
-  private HostOffer currentOffer;
-  private final List<PubsubEvent> registered = new ArrayList<>();
-  private final List<ScheduleStatus> transitions = new ArrayList<>();
-  private boolean failTransition;
+  private volatile HostOffer currentOffer;
+  private OfferManager offers;
+  private StateManager states;
+  private final List<PubsubEvent> registered = new java.util.concurrent.CopyOnWriteArrayList<>();
+  private final List<ScheduleStatus> transitions =
+      new java.util.concurrent.CopyOnWriteArrayList<>();
+  private volatile boolean failTransition;
 
   @Before
   public void setUp() {
     sqlite = SqliteStorage.open(temporary.getRoot().toPath().resolve("driver.db"));
-    OfferManager offers = EasyMock.createMock(OfferManager.class);
+    offers = EasyMock.createMock(OfferManager.class);
     expect(offers.get(anyString())).andAnswer(() -> Optional.ofNullable(currentOffer)).anyTimes();
     expect(offers.cancel(anyString())).andAnswer(() -> {
       currentOffer = null;
@@ -86,7 +89,7 @@ public class GoAgentDriverTest {
       currentOffer = EasyMock.getCurrentArgument(0);
       return null;
     }).anyTimes();
-    StateManager states = EasyMock.createMock(StateManager.class);
+    states = EasyMock.createMock(StateManager.class);
     expect(states.changeState(anyObject(), anyString(), anyObject(), anyObject(), anyObject()))
         .andAnswer(() -> {
           MutableStoreProvider stores = EasyMock.getCurrentArgument(0);
@@ -279,6 +282,182 @@ public class GoAgentDriverTest {
     assertTrue(transitions.isEmpty());
   }
 
+  private void startWatch() throws Exception {
+    startWatch(List.of(NODE), agent);
+  }
+
+  private void startWatch(List<GoAgentConfig.Node> nodes, AgentTransport transport)
+      throws Exception {
+    GoAgentConfig config = new GoAgentConfig("cluster", "incarnation", null, null, "", null, "",
+        nodes);
+    driver = new GoAgentDriver(config, sqlite, sqlite, () -> offers, () -> states,
+        registered::add, transport, true);
+    start();
+  }
+
+  private static void eventually(java.util.function.BooleanSupplier condition) throws Exception {
+    eventually(10, condition);
+  }
+
+  private static void eventually(long seconds, java.util.function.BooleanSupplier condition)
+      throws Exception {
+    long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(seconds);
+    while (!condition.getAsBoolean() && System.nanoTime() < deadline) {
+      Thread.sleep(10);
+    }
+    assertTrue(condition.getAsBoolean());
+  }
+
+  private void notifyAssignment() {
+    driver.taskChanged(PubsubEvent.TaskStateChange.initialized(
+        sqlite.read(stores -> stores.getTaskStore().fetchTask(TASK).orElseThrow())));
+  }
+
+  @Test
+  public void testWatchIdleHeartbeatAndCommittedLocalAssignment() throws Exception {
+    startWatch();
+    eventually(() -> currentOffer != null);
+    assertEquals(List.of("/v1/session", "/v1/ack"), agent.requests);
+    ObjectNode heartbeat = WireJson.object().put("kind", "heartbeat").put("nextCursor", "0");
+    heartbeat.set("config", agent.frame("snapshot", 0).path("config"));
+    agent.frames.add(heartbeat);
+    Thread.sleep(1200);
+    assertEquals(List.of("/v1/session", "/v1/ack"), agent.requests);
+    commitLaunch();
+    notifyAssignment();
+    eventually(() -> agent.deliveries.size() == 1 && pending() == 0 && currentOffer != null
+        && currentOffer.getResourceBag(false).valueOf(ResourceType.CPUS) == 1.0);
+    assertEquals(0, pending());
+  }
+
+  @Test
+  public void testWatchReconnectUsesCommittedCursorWithoutDuplicateTransition() throws Exception {
+    startWatch();
+    commitLaunch();
+    notifyAssignment();
+    eventually(() -> pending() == 0);
+    agent.observations.add(observation(1, "running", "pending", true));
+    agent.frames.add(agent.frame("delta", 0));
+    eventually(() -> agent.acknowledgments.contains(1L));
+    agent.frames.add(new IOException("stream lost after committed receipt"));
+    eventually(() -> agent.watchCursors.size() == 2);
+    eventually(() -> agent.acknowledgments.size() == 3);
+    assertEquals(List.of(0L, 1L), agent.watchCursors);
+    assertEquals(List.of(ScheduleStatus.RUNNING), transitions);
+  }
+
+  @Test
+  public void testWatchRollbackDoesNotAcknowledgeFailedObservation() throws Exception {
+    startWatch();
+    commitLaunch();
+    notifyAssignment();
+    eventually(() -> pending() == 0);
+    failTransition = true;
+    agent.observations.add(observation(1, "running", "pending", true));
+    agent.frames.add(agent.frame("delta", 0));
+    eventually(() -> !transitions.isEmpty());
+    assertEquals(0L, cursor());
+    assertEquals(List.of(0L), agent.acknowledgments);
+    failTransition = false;
+    eventually(() -> agent.acknowledgments.contains(1L));
+    assertEquals(List.of(0L, 0L), agent.watchCursors);
+    assertEquals(ScheduleStatus.RUNNING, status());
+  }
+
+  @Test
+  public void testBlockedDeliveryDoesNotBlockOtherAgentDispatchOrObservation() throws Exception {
+    GoAgentConfig.Node second = new GoAgentConfig.Node("agent-2", URI.create("https://agent-2"),
+        "journal-2", "boot", "runtime", 2000, 2097152, 2);
+    FakeAgent other = new FakeAgent(second, "task-2");
+    AgentTransport router = new AgentTransport() {
+      private FakeAgent target(GoAgentConfig.Node node) {
+        return node.name().equals(NODE.name()) ? agent : other;
+      }
+      @Override
+      public JsonNode request(GoAgentConfig.Node node, String path, JsonNode body,
+                              String epoch, String session) throws IOException {
+        return target(node).request(node, path, body, epoch, session);
+      }
+      @Override
+      public Watch watch(GoAgentConfig.Node node, long after, String epoch, String session)
+          throws IOException {
+        return target(node).watch(node, after, epoch, session);
+      }
+      @Override public void close() {
+        agent.close();
+        other.close();
+      }
+    };
+    startWatch(List.of(NODE, second), router);
+    agent.blockRun = true;
+    commitLaunch();
+    notifyAssignment();
+    assertTrue(agent.deliveryStarted.await(2, TimeUnit.SECONDS));
+    try {
+      java.util.concurrent.CompletableFuture.runAsync(() -> {
+        sqlite.write(stores -> {
+          assign(stores, second, "task-2");
+          driver.launch("offer-2", launch(second, "task-2"), 0);
+          return null;
+        });
+        notifyAssignment();
+      }).get(2, TimeUnit.SECONDS);
+      eventually(2, () -> other.deliveries.size() == 1);
+      ObjectNode observation = (ObjectNode) observation(1, "running", "pending", true);
+      observation.set("identity", identity("task-2"));
+      observation.set("source", second.target());
+      other.observations.add(observation);
+      other.frames.add(other.frame("delta", 0));
+      eventually(2, () -> other.acknowledgments.contains(1L));
+      assertEquals(ScheduleStatus.RUNNING, sqlite.read(stores -> stores.getTaskStore()
+          .fetchTask("task-2").orElseThrow().getStatus()));
+      assertEquals(1L, agent.resumeDelivery.getCount());
+      assertEquals(1, pending());
+    } finally {
+      agent.resumeDelivery.countDown();
+    }
+  }
+
+  @Test
+  public void testCancellationSupersedesLateAcceptedRunReceipt() throws Exception {
+    cancellationDuringDelivery("accepted");
+  }
+
+  @Test
+  public void testCancellationSupersedesLateStoppedRunRejection() throws Exception {
+    cancellationDuringDelivery("rejected-stopped");
+  }
+
+  private void cancellationDuringDelivery(String lateOutcome) throws Exception {
+    start();
+    commitLaunch();
+    agent.blockRun = true;
+    var delivery = java.util.concurrent.CompletableFuture.runAsync(driver::tick);
+    assertTrue(agent.deliveryStarted.await(2, TimeUnit.SECONDS));
+    try {
+      java.util.concurrent.CompletableFuture.runAsync(() -> sqlite.write(stores -> {
+        driver.killTask(TASK);
+        stores.getUnsafeTaskStore().mutateTask(TASK, original -> IScheduledTask.build(
+            original.newBuilder().setStatus(ScheduleStatus.KILLING)));
+        return null;
+      })).get(2, TimeUnit.SECONDS);
+      // The Stop can be delivered while the earlier Run exchange is still unresolved.
+      driver.tick();
+      assertEquals("Stop", agent.deliveries.get(1).path("body").path("kind").asText());
+      assertEquals(0, pending());
+      agent.outcome = lateOutcome;
+      agent.resumeDelivery.countDown();
+      delivery.get(2, TimeUnit.SECONDS);
+      assertEquals(ScheduleStatus.KILLING, status());
+      assertTrue(transitions.isEmpty());
+      assertEquals(0, pending());
+      assertEquals(2, agent.deliveries.size());
+    } finally {
+      agent.resumeDelivery.countDown();
+      delivery.get(2, TimeUnit.SECONDS);
+    }
+  }
+
   private int pending() {
     return sqlite.read(stores -> sqlite.effects().pending(100).size());
   }
@@ -302,26 +481,38 @@ public class GoAgentDriverTest {
   }
 
   private static void assign(MutableStoreProvider stores) {
-    var task = TaskTestUtil.makeTask(TASK, TaskTestUtil.JOB).newBuilder();
+    assign(stores, NODE, TASK);
+  }
+
+  private static void assign(MutableStoreProvider stores, GoAgentConfig.Node node, String taskId) {
+    var task = TaskTestUtil.makeTask(taskId, TaskTestUtil.JOB).newBuilder();
     task.setStatus(ScheduleStatus.ASSIGNED);
-    task.getAssignedTask().setSlaveId(NODE.name()).setSlaveHost(NODE.name());
+    task.getAssignedTask().setSlaveId(node.name()).setSlaveHost(node.name());
     task.getAssignedTask().getTask().setResources(
         Set.of(Resource.numCpus(1), Resource.ramMb(1), Resource.diskMb(1)));
     stores.getUnsafeTaskStore().saveTasks(Set.of(IScheduledTask.build(task)));
   }
 
   private static ObjectNode identity() {
-    return WireJson.object().put("attempt", GoTaskFactory.identity("a-", TASK));
+    return identity(TASK);
+  }
+
+  private static ObjectNode identity(String taskId) {
+    return WireJson.object().put("attempt", GoTaskFactory.identity("a-", taskId));
   }
 
   private static GoTaskFactory.Launch launch() {
-    ObjectNode body = WireJson.base("Run").put("command", GoTaskFactory.identity("r-", TASK));
-    body.set("identity", identity());
-    body.set("target", NODE.target());
+    return launch(NODE, TASK);
+  }
+
+  private static GoTaskFactory.Launch launch(GoAgentConfig.Node node, String taskId) {
+    ObjectNode body = WireJson.base("Run").put("command", GoTaskFactory.identity("r-", taskId));
+    body.set("identity", identity(taskId));
+    body.set("target", node.target());
     ObjectNode assignment = WireJson.object();
     assignment.set("stop", WireJson.object().put("graceMillis", 100));
     body.set("assignment", assignment);
-    return new GoTaskFactory.Launch(TASK, NODE.name(), WireJson.string(body));
+    return new GoTaskFactory.Launch(taskId, node.name(), WireJson.string(body));
   }
 
   private static JsonNode observation(long sequence, String state, String cleanup, boolean ready) {
@@ -334,9 +525,31 @@ public class GoAgentDriverTest {
   }
 
   private final class FakeAgent implements AgentTransport {
-    private final List<JsonNode> deliveries = new ArrayList<>();
-    private final List<JsonNode> observations = new ArrayList<>();
-    private final List<Long> acknowledgments = new ArrayList<>();
+    private final GoAgentConfig.Node agentNode;
+    private final String agentTask;
+    private final java.util.concurrent.CountDownLatch deliveryStarted =
+        new java.util.concurrent.CountDownLatch(1);
+    private final java.util.concurrent.CountDownLatch resumeDelivery =
+        new java.util.concurrent.CountDownLatch(1);
+    private volatile boolean blockRun;
+
+    FakeAgent() {
+      this(NODE, TASK);
+    }
+
+    FakeAgent(GoAgentConfig.Node agentNode, String agentTask) {
+      this.agentNode = agentNode;
+      this.agentTask = agentTask;
+    }
+    private final List<JsonNode> deliveries = new java.util.concurrent.CopyOnWriteArrayList<>();
+    private final List<JsonNode> observations = new java.util.concurrent.CopyOnWriteArrayList<>();
+    private final List<Long> acknowledgments = new java.util.concurrent.CopyOnWriteArrayList<>();
+    private final java.util.concurrent.BlockingQueue<Object> frames =
+        new java.util.concurrent.LinkedBlockingQueue<>();
+    private final List<Long> watchCursors = new java.util.concurrent.CopyOnWriteArrayList<>();
+    private final List<String> requests = new java.util.concurrent.CopyOnWriteArrayList<>();
+    private volatile String watchEpoch;
+    private volatile String watchSession;
     private boolean loseDeliveryAck;
     private boolean failSession;
     private boolean closed;
@@ -346,18 +559,21 @@ public class GoAgentDriverTest {
     @Override
     public JsonNode request(GoAgentConfig.Node node, String path, JsonNode body,
                             String epoch, String session) throws IOException {
+      if (!path.startsWith("/watch-state?")) {
+        requests.add(path);
+      }
       if ("/v1/session".equals(path)) {
         if (failSession) {
           throw new IOException("Enrollment unavailable");
         }
         return WireJson.object();
       }
-      if (path.startsWith("/v1/state?")) {
+      if (path.startsWith("/v1/state?") || path.startsWith("/watch-state?")) {
         long after = Long.parseLong(path.substring(path.indexOf('=') + 1, path.indexOf('&')));
-        ObjectNode enrolled = NODE.target().put("cluster", "cluster")
+        ObjectNode enrolled = agentNode.target().put("cluster", "cluster")
             .put("incarnation", "incarnation").put("schedulerEpoch", epoch)
             .put("session", session).put("peer", "scheduler")
-            .put("cpuMillis", NODE.cpuMillis()).put("memoryBytes", NODE.memoryBytes());
+            .put("cpuMillis", agentNode.cpuMillis()).put("memoryBytes", agentNode.memoryBytes());
         ObjectNode state = WireJson.object().put("cursor", Integer.toString(observations.size()));
         var page = state.putArray("observations");
         observations.stream().filter(value -> WireJson.counter(value, "cursor") > after)
@@ -365,7 +581,7 @@ public class GoAgentDriverTest {
         ObjectNode inventory = state.putObject("attempts");
         if (reserved || !observations.isEmpty()) {
           ObjectNode attempt = WireJson.object().put("reserved", reserved);
-          attempt.set("identity", identity());
+          attempt.set("identity", identity(agentTask));
           inventory.set("attempt", attempt);
         }
         state.putObject("commands");
@@ -380,26 +596,80 @@ public class GoAgentDriverTest {
         // This API rejects active transaction contexts, proving ACK is outside the mutation.
         assertFalse(sqlite.isCommitted("unrelated-operation"));
         long acknowledged = WireJson.counter(body, "committedCursor");
-        assertEquals(acknowledged, cursor());
+        assertEquals(acknowledged, (long) sqlite.read(stores -> sqlite.effects().committedCursor(
+            agentNode.name(), "incarnation/" + agentNode.journal())));
         acknowledgments.add(acknowledged);
         return WireJson.object();
       }
       if ("/v1/deliver".equals(path)) {
-        assertTrue(sqlite.effects().command(body.path("body").path("command").asText())
-            .isPresent());
+        assertFalse(sqlite.isCommitted("delivery-must-not-hold-a-write"));
+        assertTrue(sqlite.read(stores -> sqlite.effects()
+            .command(body.path("body").path("command").asText()).isPresent()));
         deliveries.add(body.deepCopy());
+        if (blockRun && "Run".equals(body.path("body").path("kind").asText())) {
+          blockDelivery();
+        }
         if (loseDeliveryAck) {
           loseDeliveryAck = false;
           throw new IOException("Receipt lost after acceptance");
         }
         return WireJson.object().put("command", body.path("body").path("command").asText())
-            .put("bodySha256", body.path("bodySha256").asText()).put("outcome", outcome);
+            .put("bodySha256", body.path("bodySha256").asText()).put("outcome",
+                "Run".equals(body.path("body").path("kind").asText()) ? outcome : "accepted");
       }
       throw new AssertionError("Unexpected endpoint: " + path);
     }
 
+    private void blockDelivery() throws IOException {
+      deliveryStarted.countDown();
+      try {
+        if (!resumeDelivery.await(10, TimeUnit.SECONDS)) {
+          throw new IOException("Test delivery was not released");
+        }
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new IOException(e);
+      }
+    }
+
+    private JsonNode frame(String kind, long after) throws IOException {
+      JsonNode value = request(agentNode, "/watch-state?afterCursor=" + after + "&limit=128", null,
+          watchEpoch, watchSession);
+      ((ObjectNode) value).put("kind", kind);
+      return value;
+    }
+
+    @Override
+    public Watch watch(GoAgentConfig.Node node, long after, String epoch, String session)
+        throws IOException {
+      watchEpoch = epoch;
+      watchSession = session;
+      watchCursors.add(after);
+      JsonNode initial = frame("snapshot", after);
+      return new Watch() {
+        private boolean first = true;
+        @Override
+        public JsonNode next() throws IOException, InterruptedException {
+          if (first) {
+            first = false;
+            return initial;
+          }
+          Object next = frames.take();
+          if (next instanceof IOException failure) {
+            throw failure;
+          }
+          return (JsonNode) next;
+        }
+        @Override
+        public void close() {
+          // This in-memory stream owns no external resources.
+        }
+      };
+    }
+
     @Override
     public void close() {
+      resumeDelivery.countDown();
       closed = true;
     }
   }

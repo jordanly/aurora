@@ -1,0 +1,10 @@
+{
+  "version": "aurora-job-v1",
+  "job": {"role": "fixtures", "environment": "test", "name": "process-cron"},
+  "instances": 1,
+  "service": false,
+  "cronSchedule": "0 0 * * *",
+  "cronCollisionPolicy": "CANCEL_NEW",
+  "resources": {"cpuMillis": 100, "ramMb": 32, "diskMb": 32},
+  "process": {"argv": ["/bin/echo", "Scheduled by Aurora"], "env": {}, "graceMillis": 1000}
+}

@@ -15,8 +15,6 @@ package org.apache.aurora.scheduler.base;
 
 import java.util.Set;
 
-import com.google.common.base.Function;
-import com.google.common.collect.ContiguousSet;
 import com.google.common.collect.DiscreteDomain;
 import com.google.common.collect.ImmutableRangeSet;
 import com.google.common.collect.ImmutableSet;
@@ -27,29 +25,11 @@ import com.google.common.collect.Sets;
 
 import org.apache.aurora.GuavaUtils;
 import org.apache.aurora.scheduler.storage.entities.IRange;
-import org.apache.mesos.v1.Protos;
 
 /**
  * Utility class for working with numbers.
  */
 public final class Numbers {
-  /**
-   * Convert {@link com.google.common.collect.Range} to {@link org.apache.mesos.Protos.Value.Range}.
-   */
-  public static final Function<Range<Integer>, Protos.Value.Range> RANGE_TRANSFORM =
-      input -> Protos.Value.Range.newBuilder()
-          .setBegin(input.lowerEndpoint())
-          .setEnd(input.upperEndpoint())
-          .build();
-
-  /**
-   * Convert {@link org.apache.mesos.v1.Protos.Value.Range} to set of integers.
-   */
-  public static final Function<Protos.Value.Range, Set<Integer>> RANGE_TO_MEMBERS =
-      range -> ContiguousSet.create(
-          Range.closed((int) range.getBegin(), (int) range.getEnd()),
-          DiscreteDomain.integers());
-
   private Numbers() {
     // Utility class.
   }

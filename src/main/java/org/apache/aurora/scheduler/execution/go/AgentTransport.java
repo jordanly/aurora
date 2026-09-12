@@ -21,5 +21,15 @@ import com.fasterxml.jackson.databind.JsonNode;
 interface AgentTransport extends AutoCloseable {
   JsonNode request(GoAgentConfig.Node node, String path, JsonNode body,
                    String epoch, String session) throws IOException, InterruptedException;
+  default Watch watch(GoAgentConfig.Node node, long after, String epoch, String session)
+      throws IOException, InterruptedException {
+    throw new IOException("Watch transport unavailable");
+  }
+
+  interface Watch extends AutoCloseable {
+    JsonNode next() throws IOException, InterruptedException;
+    @Override void close() throws IOException;
+  }
+
   @Override void close();
 }

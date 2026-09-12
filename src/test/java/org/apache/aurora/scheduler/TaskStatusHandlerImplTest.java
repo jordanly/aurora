@@ -21,10 +21,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.aurora.common.testing.easymock.EasyMockTest;
+import org.apache.aurora.scheduler.execution.ExecutionControl;
 import org.apache.aurora.scheduler.execution.TaskObservation;
 import org.apache.aurora.scheduler.execution.TaskUpdate;
-import org.apache.aurora.scheduler.mesos.Driver;
-import org.apache.aurora.scheduler.mesos.MesosTaskUpdate;
 import org.apache.aurora.scheduler.state.StateChangeResult;
 import org.apache.aurora.scheduler.state.StateManager;
 import org.apache.aurora.scheduler.stats.CachedCounters;
@@ -32,17 +31,12 @@ import org.apache.aurora.scheduler.storage.Storage;
 import org.apache.aurora.scheduler.storage.Storage.StorageException;
 import org.apache.aurora.scheduler.storage.testing.StorageTestUtil;
 import org.apache.aurora.scheduler.testing.FakeStatsProvider;
-import org.apache.mesos.v1.Protos.TaskID;
-import org.apache.mesos.v1.Protos.TaskState;
-import org.apache.mesos.v1.Protos.TaskStatus;
 import org.easymock.Capture;
-import org.easymock.EasyMock;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import static org.apache.aurora.gen.ScheduleStatus.FAILED;
-import static org.apache.aurora.gen.ScheduleStatus.KILLED;
 import static org.apache.aurora.gen.ScheduleStatus.RUNNING;
 import static org.apache.aurora.scheduler.TaskStatusHandlerImpl.statName;
 import static org.easymock.EasyMock.capture;
@@ -53,252 +47,98 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class TaskStatusHandlerImplTest extends EasyMockTest {
-
   private static final String TASK_ID_A = "task_id_a";
-
   private StateManager stateManager;
   private StorageTestUtil storageUtil;
-  private Driver driver;
+  private ExecutionControl driver;
   private FakeStatsProvider stats;
-
   private TaskStatusHandlerImpl statusHandler;
 
   @Before
   public void setUp() {
     stateManager = createMock(StateManager.class);
     storageUtil = new StorageTestUtil(this);
-    driver = createMock(Driver.class);
-    BlockingQueue<TaskUpdate> queue = new LinkedBlockingQueue<>();
+    driver = createMock(ExecutionControl.class);
     stats = new FakeStatsProvider();
-
-    statusHandler = new TaskStatusHandlerImpl(
-        storageUtil.storage,
-        stateManager,
-        stats,
-        driver,
-        queue,
-        1000,
-        new CachedCounters(stats));
-
+    statusHandler = new TaskStatusHandlerImpl(storageUtil.storage, stateManager, stats,
+        driver, new LinkedBlockingQueue<>(), 1000, new CachedCounters(stats));
     statusHandler.startAsync();
   }
 
   @After
   public void after() {
-    statusHandler.stopAsync();
+    if (statusHandler.state() != com.google.common.util.concurrent.Service.State.FAILED) {
+      statusHandler.stopAsync().awaitTerminated();
+    }
   }
 
   @Test
   public void testForwardsStatusUpdates() throws Exception {
-    TaskStatus status = TaskStatus.newBuilder()
-        .setState(TaskState.TASK_RUNNING)
-        .setReason(TaskStatus.Reason.REASON_RECONCILIATION)
-        .setTaskId(TaskID.newBuilder().setValue(TASK_ID_A))
-        .setMessage("fake message")
-        .build();
+    assertForwarded(Optional.of("fake message"));
+  }
 
+  @Test
+  public void testForwardsAbsentMessage() throws Exception {
+    assertForwarded(Optional.empty());
+  }
+
+  private void assertForwarded(Optional<String> message) throws Exception {
+    TaskObservation observation = new TaskObservation(TASK_ID_A, RUNNING,
+        Optional.of("reconciliation"), message);
+    TaskUpdate update = createMock(TaskUpdate.class);
+    expect(update.observe()).andReturn(observation);
     storageUtil.expectWrite();
-
-    expect(stateManager.changeState(
-        storageUtil.mutableStoreProvider,
-        TASK_ID_A,
-        Optional.empty(),
-        RUNNING,
-        Optional.of("fake message")))
-        .andReturn(StateChangeResult.SUCCESS);
-
+    expect(stateManager.changeState(storageUtil.mutableStoreProvider, TASK_ID_A,
+        Optional.empty(), RUNNING, message)).andReturn(StateChangeResult.SUCCESS);
     CountDownLatch latch = new CountDownLatch(1);
-
-    driver.acknowledgeStatusUpdate(status);
+    update.acknowledge();
     waitAndAnswer(latch);
-
     control.replay();
-
-    statusHandler.statusUpdate(new MesosTaskUpdate(status, driver));
+    statusHandler.statusUpdate(update);
     assertTrue(latch.await(5L, TimeUnit.SECONDS));
-    assertEquals(1L, stats.getValue(statName(
-        new MesosTaskUpdate(status, driver).observe(), StateChangeResult.SUCCESS)));
+    assertEquals(1L, stats.getValue(statName(observation, StateChangeResult.SUCCESS)));
   }
 
   @Test
   public void testFailedStatusUpdate() throws Exception {
+    TaskUpdate update = createMock(TaskUpdate.class);
+    expect(update.observe()).andReturn(new TaskObservation(TASK_ID_A, RUNNING,
+        Optional.empty(), Optional.of("fake message")));
     storageUtil.expectWrite();
-
     CountDownLatch latch = new CountDownLatch(1);
-
-    expect(stateManager.changeState(
-        storageUtil.mutableStoreProvider,
-        TASK_ID_A,
-        Optional.empty(),
-        RUNNING,
-        Optional.of("fake message")))
-        .andAnswer(() -> {
+    expect(stateManager.changeState(storageUtil.mutableStoreProvider, TASK_ID_A, Optional.empty(),
+        RUNNING, Optional.of("fake message"))).andAnswer(() -> {
           latch.countDown();
           throw new StorageException("Injected error");
         });
-
+    // No acknowledgement is permitted when the storage write fails.
     control.replay();
-
-    TaskStatus status = TaskStatus.newBuilder()
-        .setState(TaskState.TASK_RUNNING)
-        .setTaskId(TaskID.newBuilder().setValue(TASK_ID_A))
-        .setMessage("fake message")
-        .build();
-
-    statusHandler.statusUpdate(new MesosTaskUpdate(status, driver));
-
-    assertTrue(latch.await(5L, TimeUnit.SECONDS));
-  }
-
-  private void assertResourceLimitBehavior(
-      TaskStatus.Reason reason,
-      Optional<String> mesosMessage,
-      Optional<String> expectedMessage) throws Exception {
-
-    storageUtil.expectWrite();
-
-    TaskStatus.Builder taskStatusBuilder = TaskStatus.newBuilder()
-        .setState(TaskState.TASK_FAILED)
-        .setTaskId(TaskID.newBuilder().setValue(TASK_ID_A))
-        .setReason(reason);
-
-    if (mesosMessage.isPresent()) {
-      taskStatusBuilder.setMessage(mesosMessage.get());
-    }
-
-    TaskStatus status = taskStatusBuilder.build();
-
-    expect(stateManager.changeState(
-        storageUtil.mutableStoreProvider,
-        TASK_ID_A,
-        Optional.empty(),
-        FAILED,
-        expectedMessage))
-        .andReturn(StateChangeResult.SUCCESS);
-
-    CountDownLatch latch = new CountDownLatch(1);
-
-    driver.acknowledgeStatusUpdate(status);
-    waitAndAnswer(latch);
-
-    control.replay();
-
-    statusHandler.statusUpdate(new MesosTaskUpdate(status, driver));
-
-    assertTrue(latch.await(5L, TimeUnit.SECONDS));
-  }
-
-  @Test
-  public void testMemoryLimitTranslation() throws Exception {
-    Optional<String> message = Optional.of("Some message");
-
-    assertResourceLimitBehavior(
-        TaskStatus.Reason.REASON_CONTAINER_LIMITATION_MEMORY,
-        message,
-        message);
-  }
-
-  @Test
-  public void testMemoryLimitTranslationNoMessage() throws Exception {
-    assertResourceLimitBehavior(
-        TaskStatus.Reason.REASON_CONTAINER_LIMITATION_MEMORY,
-        Optional.empty(),
-        Optional.of(MesosTaskUpdate.MEMORY_LIMIT_DISPLAY));
-  }
-
-  @Test
-  public void testDiskLimitTranslation() throws Exception {
-    Optional<String> message = Optional.of("Some message");
-
-    assertResourceLimitBehavior(
-        TaskStatus.Reason.REASON_CONTAINER_LIMITATION_DISK,
-        message,
-        message);
-  }
-
-  @Test
-  public void testDiskLimitTranslationNoMessage() throws Exception {
-    assertResourceLimitBehavior(
-        TaskStatus.Reason.REASON_CONTAINER_LIMITATION_DISK,
-        Optional.empty(),
-        Optional.of(MesosTaskUpdate.DISK_LIMIT_DISPLAY));
-  }
-
-  @Test
-  public void testSuppressUnregisteredExecutorMessage() throws Exception {
-    storageUtil.expectWrite();
-
-    TaskStatus status = TaskStatus.newBuilder()
-        .setState(TaskState.TASK_KILLED)
-        .setTaskId(TaskID.newBuilder().setValue(TASK_ID_A))
-        .setReason(TaskStatus.Reason.REASON_EXECUTOR_UNREGISTERED)
-        .setMessage("Unregistered executor")
-        .build();
-
-    expect(stateManager.changeState(
-        storageUtil.mutableStoreProvider,
-        TASK_ID_A,
-        Optional.empty(),
-        KILLED,
-        Optional.empty()))
-        .andReturn(StateChangeResult.SUCCESS);
-
-    CountDownLatch latch = new CountDownLatch(1);
-
-    driver.acknowledgeStatusUpdate(status);
-    waitAndAnswer(latch);
-
-    control.replay();
-
-    statusHandler.statusUpdate(new MesosTaskUpdate(status, driver));
-
+    statusHandler.statusUpdate(update);
     assertTrue(latch.await(5L, TimeUnit.SECONDS));
   }
 
   @Test
   public void testThreadFailure() throws Exception {
-    // Re-create the objects from @Before, since we need to inject a mock queue.
-    statusHandler.stopAsync();
-    statusHandler.awaitTerminated();
-
-    stateManager = createMock(StateManager.class);
-    storageUtil = new StorageTestUtil(this);
-    driver = createMock(Driver.class);
+    statusHandler.stopAsync().awaitTerminated();
     BlockingQueue<TaskUpdate> queue = createMock(new Clazz<BlockingQueue<TaskUpdate>>() { });
-
-    statusHandler = new TaskStatusHandlerImpl(
-        storageUtil.storage,
-        stateManager,
-        stats,
-        driver,
-        queue,
-        1000,
-        new CachedCounters(stats));
-
-    expect(queue.add(EasyMock.anyObject())).andReturn(true);
-
-    expect(queue.take()).andAnswer(() -> {
-      throw new RuntimeException();
-    });
-
+    statusHandler = new TaskStatusHandlerImpl(storageUtil.storage, stateManager, stats,
+        driver, queue, 1000, new CachedCounters(stats));
+    TaskUpdate update = createMock(TaskUpdate.class);
+    expect(queue.add(update)).andReturn(true);
+    expect(queue.take()).andThrow(new RuntimeException());
     CountDownLatch latch = new CountDownLatch(1);
-
     driver.abort();
     waitAndAnswer(latch);
-
     control.replay();
-
     statusHandler.startAsync();
-
-    TaskStatus status = TaskStatus.newBuilder()
-        .setState(TaskState.TASK_RUNNING)
-        .setTaskId(TaskID.newBuilder().setValue(TASK_ID_A))
-        .setMessage("fake message")
-        .build();
-
-    statusHandler.statusUpdate(new MesosTaskUpdate(status, driver));
-
+    statusHandler.statusUpdate(update);
     assertTrue(latch.await(5L, TimeUnit.SECONDS));
+    try {
+      statusHandler.awaitTerminated(5, TimeUnit.SECONDS);
+      org.junit.Assert.fail("Queue failure must fail the status service");
+    } catch (IllegalStateException expected) {
+      assertEquals(com.google.common.util.concurrent.Service.State.FAILED, statusHandler.state());
+    }
   }
 
   @Test

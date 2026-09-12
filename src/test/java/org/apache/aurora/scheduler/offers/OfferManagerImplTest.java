@@ -13,6 +13,7 @@
  */
 package org.apache.aurora.scheduler.offers;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ScheduledExecutorService;
@@ -33,26 +34,19 @@ import org.apache.aurora.scheduler.base.TaskTestUtil;
 import org.apache.aurora.scheduler.base.Tasks;
 import org.apache.aurora.scheduler.events.PubsubEvent.DriverDisconnected;
 import org.apache.aurora.scheduler.events.PubsubEvent.HostAttributesChanged;
+import org.apache.aurora.scheduler.execution.ExecutionOffer;
+import org.apache.aurora.scheduler.execution.OfferTransport;
+import org.apache.aurora.scheduler.execution.TestOffer;
+import org.apache.aurora.scheduler.execution.TestPreparedTask;
 import org.apache.aurora.scheduler.filter.SchedulingFilter;
 import org.apache.aurora.scheduler.filter.SchedulingFilter.ResourceRequest;
 import org.apache.aurora.scheduler.filter.SchedulingFilter.UnusedResource;
-import org.apache.aurora.scheduler.mesos.Driver;
-import org.apache.aurora.scheduler.mesos.MesosOffer;
-import org.apache.aurora.scheduler.mesos.MesosOfferTransport;
-import org.apache.aurora.scheduler.mesos.MesosPreparedTask;
 import org.apache.aurora.scheduler.offers.Deferment.Noop;
 import org.apache.aurora.scheduler.resources.ResourceType;
 import org.apache.aurora.scheduler.storage.entities.IHostAttributes;
 import org.apache.aurora.scheduler.storage.entities.IScheduledTask;
 import org.apache.aurora.scheduler.testing.FakeScheduledExecutor;
 import org.apache.aurora.scheduler.testing.FakeStatsProvider;
-import org.apache.mesos.v1.Protos;
-import org.apache.mesos.v1.Protos.Filters;
-import org.apache.mesos.v1.Protos.Offer.Operation;
-import org.apache.mesos.v1.Protos.OfferID;
-import org.apache.mesos.v1.Protos.TaskInfo;
-import org.apache.mesos.v1.Protos.TimeInfo;
-import org.apache.mesos.v1.Protos.Unavailability;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -66,9 +60,9 @@ import static org.apache.aurora.scheduler.offers.OfferManagerImpl.OFFER_CANCEL_F
 import static org.apache.aurora.scheduler.offers.OfferManagerImpl.OUTSTANDING_OFFERS;
 import static org.apache.aurora.scheduler.offers.OfferManagerImpl.STATICALLY_BANNED_OFFERS;
 import static org.apache.aurora.scheduler.offers.OfferManagerImpl.VETO_EVALUATED_OFFERS;
-import static org.apache.aurora.scheduler.resources.ResourceTestUtil.mesosRange;
-import static org.apache.aurora.scheduler.resources.ResourceTestUtil.mesosScalar;
 import static org.apache.aurora.scheduler.resources.ResourceTestUtil.offer;
+import static org.apache.aurora.scheduler.resources.ResourceTestUtil.range;
+import static org.apache.aurora.scheduler.resources.ResourceTestUtil.scalar;
 import static org.apache.aurora.scheduler.resources.ResourceType.CPUS;
 import static org.apache.aurora.scheduler.resources.ResourceType.DISK_MB;
 import static org.apache.aurora.scheduler.resources.ResourceType.PORTS;
@@ -88,48 +82,37 @@ public class OfferManagerImplTest extends EasyMockTest {
   private static final IHostAttributes HOST_ATTRIBUTES_A =
       IHostAttributes.build(new HostAttributes().setMode(NONE).setHost(HOST_A));
   private static final HostOffer OFFER_A = new HostOffer(
-      new MesosOffer(Offers.makeOffer("OFFER_A", HOST_A)),
+      Offers.makeOffer("OFFER_A", HOST_A),
       HOST_ATTRIBUTES_A);
-  private static final Protos.OfferID OFFER_A_ID = MesosOffer.toMesos(OFFER_A.getOffer()).getId();
+  private static final String OFFER_A_ID = OFFER_A.getOfferId();
   private static final String OFFER_A_ID_VALUE = OFFER_A.getOfferId();
   private static final String HOST_B = "HOST_B";
   private static final HostOffer OFFER_B = new HostOffer(
-      new MesosOffer(Offers.makeOffer("OFFER_B", HOST_B)),
+      Offers.makeOffer("OFFER_B", HOST_B),
       IHostAttributes.build(new HostAttributes().setMode(NONE)));
   private static final String HOST_C = "HOST_C";
   private static final HostOffer OFFER_C = new HostOffer(
-      new MesosOffer(Offers.makeOffer("OFFER_C", HOST_C)),
+      Offers.makeOffer("OFFER_C", HOST_C),
       IHostAttributes.build(new HostAttributes().setMode(NONE).setHost(HOST_C)));
   private static final int PORT = 1000;
-  private static final Protos.Offer MESOS_OFFER = offer(mesosRange(PORTS, PORT));
+  private static final ExecutionOffer AGENT_OFFER = offer(range(PORTS, PORT));
   private static final IScheduledTask TASK = makeTask("id", JOB);
   private static final ResourceRequest EMPTY_REQUEST =
       TaskTestUtil.toResourceRequest(TASK.getAssignedTask().getTask());
   private static final TaskGroupKey GROUP_KEY = TaskGroupKey.from(TASK.getAssignedTask().getTask());
-  private static final TaskInfo TASK_INFO = TaskInfo.newBuilder()
-      .setName("taskName")
-      .setTaskId(Protos.TaskID.newBuilder().setValue(Tasks.id(TASK)))
-      .setAgentId(MESOS_OFFER.getAgentId())
-      .build();
-  private static final Operation LAUNCH = Operation.newBuilder()
-      .setType(Operation.Type.LAUNCH)
-      .setLaunch(Operation.Launch.newBuilder().addTaskInfos(TASK_INFO))
-      .build();
-  private static final List<Operation> OPERATIONS = ImmutableList.of(LAUNCH);
+  private static final TestPreparedTask PREPARED_TASK =
+      new TestPreparedTask(Tasks.id(TASK), AGENT_OFFER.getAgentId());
   private static final long OFFER_FILTER_SECONDS = 0;
-  private static final Filters OFFER_FILTER = Filters.newBuilder()
-      .setRefuseSeconds(OFFER_FILTER_SECONDS)
-      .build();
   private static final FakeTicker FAKE_TICKER = new FakeTicker();
 
-  private Driver driver;
+  private OfferTransport driver;
   private OfferManagerImpl offerManager;
   private FakeStatsProvider statsProvider;
   private SchedulingFilter schedulingFilter;
 
   @Before
   public void setUp() {
-    driver = createMock(Driver.class);
+    driver = createMock(OfferTransport.class);
     OfferSettings offerSettings = new OfferSettings(
         Amount.of(OFFER_FILTER_SECONDS, Time.SECONDS),
         new OfferSetImpl(OfferOrderBuilder.create(ImmutableList.of(OfferOrder.RANDOM))),
@@ -140,7 +123,7 @@ public class OfferManagerImplTest extends EasyMockTest {
     statsProvider = new FakeStatsProvider();
     schedulingFilter = createMock(SchedulingFilter.class);
 
-    offerManager = new OfferManagerImpl(new MesosOfferTransport(driver),
+    offerManager = new OfferManagerImpl(driver,
         offerSettings,
         statsProvider,
         new Noop(),
@@ -174,7 +157,7 @@ public class OfferManagerImplTest extends EasyMockTest {
     HostOffer offerA = setMode(OFFER_A, DRAINING);
     HostOffer offerC = setMode(OFFER_C, DRAINING);
 
-    driver.acceptOffers(MesosOffer.toMesos(OFFER_B.getOffer()).getId(), OPERATIONS, OFFER_FILTER);
+    driver.launch(OFFER_B.getOfferId(), PREPARED_TASK, OFFER_FILTER_SECONDS);
     expectLastCall();
 
     control.replay();
@@ -188,7 +171,7 @@ public class OfferManagerImplTest extends EasyMockTest {
     assertEquals(
         ImmutableSet.of(OFFER_B, offerA, offerC),
         ImmutableSet.copyOf(offerManager.getAll()));
-    offerManager.launchTask(OFFER_B.getOfferId(), new MesosPreparedTask(TASK_INFO));
+    offerManager.launchTask(OFFER_B.getOfferId(), PREPARED_TASK);
     assertEquals(2, statsProvider.getLongValue(OUTSTANDING_OFFERS));
   }
 
@@ -215,7 +198,7 @@ public class OfferManagerImplTest extends EasyMockTest {
 
   @Test
   public void testAddSameSlaveOffer() {
-    driver.declineOffer(OFFER_A_ID, OFFER_FILTER);
+    driver.decline(OFFER_A_ID, OFFER_FILTER_SECONDS);
     expectLastCall().times(2);
 
     control.replay();
@@ -312,20 +295,20 @@ public class OfferManagerImplTest extends EasyMockTest {
 
   @Test(expected = OfferManager.LaunchException.class)
   public void testAcceptOffersDriverThrows() throws OfferManager.LaunchException {
-    driver.acceptOffers(OFFER_A_ID, OPERATIONS, OFFER_FILTER);
+    driver.launch(OFFER_A_ID, PREPARED_TASK, OFFER_FILTER_SECONDS);
     expectLastCall().andThrow(new IllegalStateException());
 
     control.replay();
 
     offerManager.add(OFFER_A);
-    offerManager.launchTask(OFFER_A_ID.getValue(), new MesosPreparedTask(TASK_INFO));
+    offerManager.launchTask(OFFER_A_ID, PREPARED_TASK);
   }
 
   @Test
   public void testLaunchTaskOfferRaceThrows() {
     control.replay();
     try {
-      offerManager.launchTask(OFFER_A_ID.getValue(), new MesosPreparedTask(TASK_INFO));
+      offerManager.launchTask(OFFER_A_ID, PREPARED_TASK);
       fail("Method invocation is expected to throw exception.");
     } catch (OfferManager.LaunchException e) {
       assertEquals(1, statsProvider.getLongValue(OFFER_ACCEPT_RACES));
@@ -373,12 +356,8 @@ public class OfferManagerImplTest extends EasyMockTest {
   }
 
   private static HostOffer setUnavailability(HostOffer offer, long startMs) {
-    Unavailability unavailability = Unavailability.newBuilder()
-        .setStart(TimeInfo.newBuilder().setNanoseconds(startMs * 1000L)).build();
-    return new HostOffer(
-        new MesosOffer(MesosOffer.toMesos(offer.getOffer()).toBuilder()
-            .setUnavailability(unavailability).build()),
-        offer.getAttributes());
+    return new HostOffer(TestOffer.copyOf(offer.getOffer())
+        .unavailableAt(Instant.ofEpochMilli(startMs)).build(), offer.getAttributes());
   }
 
   private static HostOffer setMode(HostOffer offer, MaintenanceMode mode) {
@@ -396,7 +375,7 @@ public class OfferManagerImplTest extends EasyMockTest {
             Long.MAX_VALUE,
             FAKE_TICKER);
     return new OfferManagerImpl(
-        new MesosOfferTransport(driver), settings, statsProvider, new Noop(), schedulingFilter);
+        driver, settings, statsProvider, new Noop(), schedulingFilter);
   }
 
   @Test
@@ -404,17 +383,17 @@ public class OfferManagerImplTest extends EasyMockTest {
     OfferManager cpuManager = createOrderedManager(ImmutableList.of(OfferOrder.CPU));
 
     HostOffer small = setMode(new HostOffer(
-        new MesosOffer(offer(
+        offer(
             "host1",
-            mesosScalar(CPUS, 1.0),
-            mesosScalar(CPUS, 24.0, true),
-            mesosScalar(RAM_MB, 1024))),
+            scalar(CPUS, 1.0),
+            scalar(CPUS, 24.0, true),
+            scalar(RAM_MB, 1024)),
         HOST_ATTRIBUTES_A), DRAINING);
     HostOffer medium = setMode(new HostOffer(
-        new MesosOffer(offer("host2", mesosScalar(CPUS, 5.0), mesosScalar(RAM_MB, 1024))),
+        offer("host2", scalar(CPUS, 5.0), scalar(RAM_MB, 1024)),
         HOST_ATTRIBUTES_A), DRAINING);
     HostOffer large = setMode(new HostOffer(
-        new MesosOffer(offer("host3", mesosScalar(CPUS, 10.0), mesosScalar(RAM_MB, 1024))),
+        offer("host3", scalar(CPUS, 10.0), scalar(RAM_MB, 1024)),
         HOST_ATTRIBUTES_A), DRAINING);
 
     expectFilterNone();
@@ -437,21 +416,21 @@ public class OfferManagerImplTest extends EasyMockTest {
     OfferManager cpuManager = createOrderedManager(ImmutableList.of(OfferOrder.REVOCABLE_CPU));
 
     HostOffer small = setMode(new HostOffer(
-        new MesosOffer(offer(
+        offer(
             "host2",
-            mesosScalar(CPUS, 5.0),
-            mesosScalar(CPUS, 23.0, true),
-            mesosScalar(RAM_MB, 1024))),
+            scalar(CPUS, 5.0),
+            scalar(CPUS, 23.0, true),
+            scalar(RAM_MB, 1024)),
         HOST_ATTRIBUTES_A), DRAINING);
     HostOffer medium = setMode(new HostOffer(
-        new MesosOffer(offer(
+        offer(
             "host1",
-            mesosScalar(CPUS, 3.0),
-            mesosScalar(CPUS, 24.0, true),
-            mesosScalar(RAM_MB, 1024))),
+            scalar(CPUS, 3.0),
+            scalar(CPUS, 24.0, true),
+            scalar(RAM_MB, 1024)),
         HOST_ATTRIBUTES_A), DRAINING);
     HostOffer large = setMode(new HostOffer(
-        new MesosOffer(offer("host3", mesosScalar(CPUS, 1.0), mesosScalar(RAM_MB, 1024))),
+        offer("host3", scalar(CPUS, 1.0), scalar(RAM_MB, 1024)),
         HOST_ATTRIBUTES_A), DRAINING);
 
     expectFilterNone();
@@ -473,16 +452,16 @@ public class OfferManagerImplTest extends EasyMockTest {
     OfferManager cpuManager = createOrderedManager(ImmutableList.of(OfferOrder.DISK));
 
     HostOffer small = setMode(new HostOffer(
-        new MesosOffer(offer("host1",
-            mesosScalar(CPUS, 1), mesosScalar(RAM_MB, 1), mesosScalar(DISK_MB, 1.0))),
+        offer("host1",
+            scalar(CPUS, 1), scalar(RAM_MB, 1), scalar(DISK_MB, 1.0)),
         HOST_ATTRIBUTES_A), DRAINING);
     HostOffer medium = setMode(new HostOffer(
-        new MesosOffer(offer("host2",
-            mesosScalar(CPUS, 1), mesosScalar(RAM_MB, 1), mesosScalar(DISK_MB, 5.0))),
+        offer("host2",
+            scalar(CPUS, 1), scalar(RAM_MB, 1), scalar(DISK_MB, 5.0)),
         HOST_ATTRIBUTES_A), DRAINING);
     HostOffer large = setMode(new HostOffer(
-        new MesosOffer(offer("host3",
-            mesosScalar(CPUS, 1), mesosScalar(RAM_MB, 1), mesosScalar(DISK_MB, 10.0))),
+        offer("host3",
+            scalar(CPUS, 1), scalar(RAM_MB, 1), scalar(DISK_MB, 10.0)),
         HOST_ATTRIBUTES_A), DRAINING);
 
     expectFilterNone();
@@ -504,13 +483,13 @@ public class OfferManagerImplTest extends EasyMockTest {
     OfferManager cpuManager = createOrderedManager(ImmutableList.of(OfferOrder.MEMORY));
 
     HostOffer small = setMode(new HostOffer(
-        new MesosOffer(offer("host1", mesosScalar(CPUS, 10), mesosScalar(RAM_MB, 1.0))),
+        offer("host1", scalar(CPUS, 10), scalar(RAM_MB, 1.0)),
         HOST_ATTRIBUTES_A), DRAINING);
     HostOffer medium = setMode(new HostOffer(
-        new MesosOffer(offer("host2", mesosScalar(CPUS, 10), mesosScalar(RAM_MB, 5.0))),
+        offer("host2", scalar(CPUS, 10), scalar(RAM_MB, 5.0)),
         HOST_ATTRIBUTES_A), DRAINING);
     HostOffer large = setMode(new HostOffer(
-        new MesosOffer(offer("host3", mesosScalar(CPUS, 10), mesosScalar(RAM_MB, 10.0))),
+        offer("host3", scalar(CPUS, 10), scalar(RAM_MB, 10.0)),
         HOST_ATTRIBUTES_A), DRAINING);
 
     expectFilterNone();
@@ -533,23 +512,23 @@ public class OfferManagerImplTest extends EasyMockTest {
         ImmutableList.of(OfferOrder.CPU, OfferOrder.MEMORY));
 
     HostOffer small = setMode(new HostOffer(
-        new MesosOffer(offer("host1",
-            mesosScalar(CPUS, 1.0),
-            mesosScalar(RAM_MB, 2.0),
-            mesosScalar(DISK_MB, 3.0))),
+        offer("host1",
+            scalar(CPUS, 1.0),
+            scalar(RAM_MB, 2.0),
+            scalar(DISK_MB, 3.0)),
         HOST_ATTRIBUTES_A), DRAINING);
     HostOffer medium = setMode(new HostOffer(
-        new MesosOffer(offer("host2",
-            mesosScalar(CPUS, 1.0),
-            mesosScalar(RAM_MB, 3.0),
-            mesosScalar(DISK_MB, 2.0))),
+        offer("host2",
+            scalar(CPUS, 1.0),
+            scalar(RAM_MB, 3.0),
+            scalar(DISK_MB, 2.0)),
         HOST_ATTRIBUTES_A), DRAINING);
     HostOffer large = setMode(new HostOffer(
-        new MesosOffer(offer("host3",
-            mesosScalar(CPUS, 10.0),
-            mesosScalar(CPUS, 1.0),
-            mesosScalar(RAM_MB, 1024),
-            mesosScalar(DISK_MB, 1.0))),
+        offer("host3",
+            scalar(CPUS, 10.0),
+            scalar(CPUS, 1.0),
+            scalar(RAM_MB, 1024),
+            scalar(DISK_MB, 1.0)),
         HOST_ATTRIBUTES_A), DRAINING);
 
     expectFilterNone();
@@ -577,13 +556,13 @@ public class OfferManagerImplTest extends EasyMockTest {
     ScheduledExecutorService executorMock = createMock(ScheduledExecutorService.class);
     FakeScheduledExecutor clock = FakeScheduledExecutor.fromScheduledExecutorService(executorMock);
     addTearDown(clock::assertEmpty);
-    offerManager = new OfferManagerImpl(new MesosOfferTransport(driver),
+    offerManager = new OfferManagerImpl(driver,
         settings,
         statsProvider,
         new Deferment.DelayedDeferment(() -> RETURN_DELAY, executorMock),
         schedulingFilter);
 
-    driver.declineOffer(OFFER_A_ID, OFFER_FILTER);
+    driver.decline(OFFER_A_ID, OFFER_FILTER_SECONDS);
 
     control.replay();
 
@@ -600,16 +579,14 @@ public class OfferManagerImplTest extends EasyMockTest {
     // to violate its one-offer-per-host invariant.
 
     HostOffer sameAgent = new HostOffer(
-        new MesosOffer(MesosOffer.toMesos(OFFER_A.getOffer()).toBuilder()
-            .setId(OfferID.newBuilder().setValue("sameAgent")).build()),
+        TestOffer.copyOf(OFFER_A.getOffer()).offerId("sameAgent").build(),
         HOST_ATTRIBUTES_A);
     HostOffer sameAgent2 = new HostOffer(
-        new MesosOffer(MesosOffer.toMesos(OFFER_A.getOffer()).toBuilder()
-            .setId(OfferID.newBuilder().setValue("sameAgent2")).build()),
+        TestOffer.copyOf(OFFER_A.getOffer()).offerId("sameAgent2").build(),
         HOST_ATTRIBUTES_A);
 
-    driver.declineOffer(OFFER_A_ID, OFFER_FILTER);
-    driver.declineOffer(MesosOffer.toMesos(sameAgent.getOffer()).getId(), OFFER_FILTER);
+    driver.decline(OFFER_A_ID, OFFER_FILTER_SECONDS);
+    driver.decline(sameAgent.getOfferId(), OFFER_FILTER_SECONDS);
 
     control.replay();
 
@@ -721,10 +698,10 @@ public class OfferManagerImplTest extends EasyMockTest {
     expectFilterNone();
 
     HostOffer empty = setMode(new HostOffer(
-        new MesosOffer(offer("host1",
-            mesosScalar(CPUS, 0),
-            mesosScalar(RAM_MB, 0),
-            mesosScalar(DISK_MB, 3.0))),
+        offer("host1",
+            scalar(CPUS, 0),
+            scalar(RAM_MB, 0),
+            scalar(DISK_MB, 3.0)),
         HOST_ATTRIBUTES_A), NONE);
 
     control.replay();
