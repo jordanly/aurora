@@ -45,8 +45,11 @@ trap 'exit 130' HUP INT TERM
 bootstrap_archive=$bootstrap_cache/$bootstrap_file
 check_path "$bootstrap_archive"
 bootstrap_offline=false
+if [ "${AURORA_INPLACE_OFFLINE:-}" = 1 ] || [ "${AURORA_INPLACE_GO_OFFLINE:-}" = 1 ]; then
+  bootstrap_offline=true
+fi
 for bootstrap_arg do
-  [ "$bootstrap_arg" != --offline ] || bootstrap_offline=true
+  case "$bootstrap_arg" in --offline|--offline=true) bootstrap_offline=true ;; esac
 done
 if [ ! -e "$bootstrap_archive" ]; then
   bootstrap_seed=${AURORA_INPLACE_GO_SEED_ARCHIVES:-${AURORA_INPLACE_SEED_ARCHIVES:-$bootstrap_root/.pi-tools/downloads}}

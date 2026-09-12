@@ -29,7 +29,10 @@ when a pinned archive is not already available. Node's `.tar.xz` additionally us
 host `xz` only as a streaming decompressor; Go validates the archive entries.
 Thrift source builds require the existing host `make` and `g++` toolchain.
 
-`--offline` anywhere in the command prevents initial SDK downloads; individual
+`--offline` or `--offline=true` anywhere in the command prevents initial SDK
+downloads, as does setting either `AURORA_INPLACE_OFFLINE=1` or
+`AURORA_INPLACE_GO_OFFLINE=1`. These initial SDK checks do not change each
+downstream command's own offline flag and environment policy. Individual
 commands also disable tool downloads and, for agents, Go module downloads.
 Initial Go archives are seeded from `AURORA_INPLACE_GO_SEED_ARCHIVES`, then
 `AURORA_INPLACE_SEED_ARCHIVES`, then `.pi-tools/downloads`. Its private cache is
