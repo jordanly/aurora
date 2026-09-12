@@ -9,6 +9,7 @@
   "configure": [
     "--without-libs",
     "--without-tests",
-    "--without-tutorial"
+    "--without-tutorial",
+    "--disable-plugin"
   ]
 }

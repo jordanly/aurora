@@ -32,6 +32,14 @@ ROOT = Path(__file__).resolve().parents[2]
 
 class BootstrapThriftTest(unittest.TestCase):
 
+  def test_configure_recipe_builds_compiler_only(self):
+    self.assertEqual([
+        '--without-libs',
+        '--without-tests',
+        '--without-tutorial',
+        '--disable-plugin',
+    ], bootstrap_thrift.load_pins()['configure'])
+
   def test_extract_source_preserves_autotools_file_order(self):
     with tempfile.TemporaryDirectory() as directory:
       root = Path(directory)

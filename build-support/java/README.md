@@ -25,6 +25,12 @@ Bootstrap the compiler from the checksum-pinned official source archive (require
 compiler="$(python3 build-support/java/bootstrap-thrift.py)"
 ```
 
+The pinned Thrift configure recipe disables libraries, tests, tutorials, and the
+optional compiler plugin. Ubuntu systems with Boost headers can otherwise enable
+the plugin automatically; building that plugin expects `libthrift.la`, while this
+build only needs the standalone Thrift 0.10.0 compiler for the original Java
+generation path.
+
 The helper preserves release-file timestamps, so the generated parser and
 Autotools files work without regenerating them. It compiles with one worker to
 fit the Pi. Its receipt binds the source checksum, build recipe, exact version,
