@@ -323,6 +323,13 @@ final class SqliteDatabase implements AutoCloseable {
             + " PRIMARY KEY(agent_id,incarnation,sequence))");
         execute(connection, "PRAGMA user_version=3");
       }
+      // An additive query index keeps version-3 backups compatible and is installed when an
+      // existing database is opened, as well as when the outbox is first created.
+      execute(connection, "CREATE INDEX IF NOT EXISTS pending_commands_by_agent"
+          + " ON command_outbox(acknowledged,agent_id,sequence)");
+      execute(connection, "CREATE INDEX IF NOT EXISTS pending_stops_by_agent"
+          + " ON command_outbox(agent_id,sequence)"
+          + " WHERE acknowledged=0 AND command_type='Stop'");
       try (PreparedStatement update = connection.prepareStatement(
           "UPDATE storage_owner SET epoch=epoch+1, session_id=? WHERE singleton=1")) {
         update.setString(1, sessionId);

@@ -30,7 +30,6 @@ import org.apache.aurora.scheduler.cron.CrontabEntry;
 import org.apache.aurora.scheduler.cron.SanitizedCronJob;
 import org.apache.aurora.scheduler.storage.CronJobStore;
 import org.apache.aurora.scheduler.storage.Storage;
-import org.apache.aurora.scheduler.storage.Storage.MutateWork.NoResult;
 import org.apache.aurora.scheduler.storage.entities.IJobConfiguration;
 import org.apache.aurora.scheduler.storage.entities.IJobKey;
 import org.quartz.CronTrigger;
@@ -98,14 +97,23 @@ class CronJobManagerImpl implements CronJobManager {
     checkNoRunOverlap(config);
 
     final IJobKey jobKey = config.getSanitizedConfig().getJobConfig().getKey();
-    storage.write((NoResult<CronException>) storeProvider -> {
-      checkCronExists(jobKey, storeProvider.getCronJobStore());
+    CronException rejected = storage.write(storeProvider -> {
+      try {
+        checkCronExists(jobKey, storeProvider.getCronJobStore());
+      } catch (CronException e) {
+        // Return validation failures before mutations so nested writes remain usable.
+        return e;
+      }
 
       removeJob(jobKey, storeProvider.getCronJobStore());
       descheduleJob(jobKey);
       saveJob(config, storeProvider.getCronJobStore());
       scheduleJob(config.getCrontabEntry(), jobKey);
+      return null;
     });
+    if (rejected != null) {
+      throw rejected;
+    }
   }
 
   @Override
@@ -114,12 +122,21 @@ class CronJobManagerImpl implements CronJobManager {
     checkNoRunOverlap(cronJob);
 
     final IJobKey jobKey = cronJob.getSanitizedConfig().getJobConfig().getKey();
-    storage.write((NoResult<CronException>) storeProvider -> {
-      checkNotExists(jobKey, storeProvider.getCronJobStore());
+    CronException rejected = storage.write(storeProvider -> {
+      try {
+        checkNotExists(jobKey, storeProvider.getCronJobStore());
+      } catch (CronException e) {
+        // Return validation failures before mutations so nested writes remain usable.
+        return e;
+      }
 
       saveJob(cronJob, storeProvider.getCronJobStore());
       scheduleJob(cronJob.getCrontabEntry(), jobKey);
+      return null;
     });
+    if (rejected != null) {
+      throw rejected;
+    }
   }
 
   private void checkNotExists(IJobKey jobKey, CronJobStore cronJobStore) throws CronException {

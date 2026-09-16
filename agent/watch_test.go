@@ -243,7 +243,7 @@ func TestWatchPagedSnapshotDoesNotAdvanceReceipt(t *testing.T) {
 		t.Fatal(first)
 	}
 	secondState := second["state"].(map[string]any)
-	if second["kind"] != "delta" || second["nextCursor"] != "2" || second["hasMore"] != false || len(secondState["commands"].(map[string]any)) != 0 || len(secondState["attempts"].(map[string]any)) != 0 {
+	if second["kind"] != "delta" || second["nextCursor"] != "2" || second["hasMore"] != false || len(secondState["commands"].(map[string]any)) != 1 || len(secondState["attempts"].(map[string]any)) != 0 {
 		t.Fatal(second)
 	}
 	st, _ := s.Inspect()
@@ -258,7 +258,7 @@ func TestWatchPagedSnapshotDoesNotAdvanceReceipt(t *testing.T) {
 	response.Body.Close()
 	response = startWatch(t, client, base, config(), "1")
 	replay := frame(t, json.NewDecoder(response.Body))
-	if replay["kind"] != "snapshot" || replay["nextCursor"] != "2" || len(replay["state"].(map[string]any)["commands"].(map[string]any)) != 2 {
+	if replay["kind"] != "snapshot" || replay["nextCursor"] != "2" || len(replay["state"].(map[string]any)["commands"].(map[string]any)) != 1 {
 		t.Fatal(replay)
 	}
 }

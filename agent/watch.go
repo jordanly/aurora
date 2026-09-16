@@ -175,31 +175,11 @@ func serveWatch(w http.ResponseWriter, r *http.Request, store *Store, timing wat
 			}
 			return
 		}
-		if len(st.Attempts) > MaxInventoryAttempts || len(st.Commands) > MaxInventoryCommands {
+		if reservationCount(st) > MaxInventoryAttempts {
 			if !started {
 				transportError(w, 503, "inventory profile limit")
 			}
 			return
-		}
-		current := PublicState(st)
-		// Inventory is bounded by the transport profile. Cache only public maps,
-		// never retained observations or private execution metadata.
-		inventory := map[string]any{"attempts": current["attempts"], "commands": current["commands"]}
-		attempts, commands := current["attempts"], current["commands"]
-		if !full {
-			changedAttempts := map[string]any{}
-			for k, v := range attempts.(map[string]any) {
-				if !reflect.DeepEqual(previous["attempts"].(map[string]any)[k], v) {
-					changedAttempts[k] = v
-				}
-			}
-			changedCommands := map[string]Result{}
-			for k, v := range commands.(map[string]Result) {
-				if prior, ok := previous["commands"].(map[string]Result)[k]; !ok || prior != v {
-					changedCommands[k] = v
-				}
-			}
-			attempts, commands = changedAttempts, changedCommands
 		}
 		observations := []map[string]any{}
 		next, more := after, false
@@ -218,14 +198,35 @@ func serveWatch(w http.ResponseWriter, r *http.Request, store *Store, timing wat
 			observations = append(observations, o)
 			next = cursor
 		}
-		changed := full || len(observations) > 0 || len(attempts.(map[string]any)) > 0 || len(commands.(map[string]Result)) > 0
+		current := transportState(st, observations)
+		inventory := current["attempts"].(map[string]any)
+		// Deltas cannot remove keys. Publish a replacement snapshot on cleanup,
+		// including when a new reservation replaces one between watch reads.
+		if !full {
+			for key := range previous {
+				if _, exists := inventory[key]; !exists {
+					full = true
+					break
+				}
+			}
+		}
+		attempts := inventory
+		if !full {
+			attempts = map[string]any{}
+			for key, value := range inventory {
+				if !reflect.DeepEqual(previous[key], value) {
+					attempts[key] = value
+				}
+			}
+		}
+		current["attempts"] = attempts
+		changed := full || len(observations) > 0 || len(attempts) > 0
 		if changed {
 			kind := "delta"
 			if full {
 				kind = "snapshot"
 			}
-			state := map[string]any{"cursor": strconv.FormatUint(st.Cursor, 10), "ack": strconv.FormatUint(st.Ack, 10), "attempts": attempts, "commands": commands, "observations": observations}
-			if !write(map[string]any{"kind": kind, "config": st.Config, "state": state, "nextCursor": strconv.FormatUint(next, 10), "hasMore": more}) {
+			if !write(map[string]any{"kind": kind, "config": st.Config, "state": current, "nextCursor": strconv.FormatUint(next, 10), "hasMore": more}) {
 				return
 			}
 			after = next

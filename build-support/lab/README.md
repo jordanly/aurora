@@ -103,6 +103,7 @@ Once the original scheduler and adapter are ready:
 build-support/lab/inplace-check --root "$PWD/.pi-lab/original-integration-new" --phase smoke
 build-support/lab/inplace-check --root "$PWD/.pi-lab/original-integration-new" --phase recovery --rounds 3
 build-support/lab/inplace-check --root "$PWD/.pi-lab/original-integration-new" --phase soak
+build-support/lab/inplace-check --root "$PWD/.pi-lab/original-integration-new" --phase churn
 build-support/lab/inplace-check --root "$PWD/.pi-lab/original-integration-new" --phase policy
 ```
 
@@ -122,6 +123,27 @@ physical workload PIDs. Soak keeps two services running for at least ten minutes
 while twenty two-instance batch jobs finish. Policy checks an automatic rollback
 from a failing update, exact executor restoration, active-host draining and
 replacement, and manual execution of a scheduled cron job.
+
+Churn retains two 100mCPU services, one per agent, while 130 two-instance batch
+jobs run sequentially. Each batch uses a three-second process, 600mCPU per
+instance, and a one-instance-per-host constraint. The receipt requires exactly
+260 distinct FINISHED task IDs, exactly 130 completions on each enrolled agent,
+and unchanged service task IDs, hosts and physical PIDs after every batch.
+It also checks scheduler health and unchanged running daemon generations/PIDs
+before and after churn. Each job has a 90-second deadline; the phase has a
+30-minute deadline and usually takes several minutes. Failed in-flight batches
+and the service receive cleanup requests; finished history remains available.
+
+This phase crosses the former 128-lifetime-attempt reconciliation boundary on
+both agents without journal resets or daemon restarts. It qualifies continued
+execution and observation delivery under retained history; it does not qualify
+bounded disk growth, physical history compaction, or 128 concurrent workloads.
+
+New labs configure scheduler backups every 30 seconds and retain the latest
+three snapshots (`-backup_interval=30secs -max_saved_backups=3`). Churn records
+backup filenames/counts before and after its workload; these receipts support
+separate backup publication/retention checks, not a restore qualification.
+Existing labs keep the scheduler arguments recorded in their ownership manifest.
 
 Run these phases sequentially: maintenance and failure injection affect the
 whole owned lab. Failures retain evidence and may leave fixture state requiring
@@ -174,6 +196,9 @@ The `user` field is metadata, not an operating-system user switch. Thermos proce
 graphs, health checks and service announcement are unsupported, as are production
 isolation and multi-scheduler HA.
 
-Agents retain bounded history (128 attempts, 1,024 command results). Reaching the
-inventory limit requires an operator lifecycle/retention decision; this lab does
-not claim indefinite production operation or automatic history compaction.
+Agent reconciliation inventories contain at most 128 outstanding reservations.
+At capacity, new Runs receive retryable backpressure; replayed commands and Stops
+remain available. Completed attempts and command results stay in the durable
+journal for replay safety, while observation pages carry their required history.
+Disk history still grows; automatic physical compaction and indefinite production
+operation remain unqualified.

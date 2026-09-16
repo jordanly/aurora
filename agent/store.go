@@ -116,6 +116,10 @@ type State struct {
 	Sequences       map[string]uint64  `json:"sequences"`
 	Observations    []map[string]any   `json:"observations"`
 }
+
+// ErrInventoryCapacity is retryable after an existing reservation completes cleanup.
+var ErrInventoryCapacity = errors.New("reservation inventory full")
+
 type Store struct {
 	db              *bolt.DB
 	c               Config
@@ -387,6 +391,9 @@ func (s *Store) Admit(data []byte, caller Caller) (Result, error) {
 					out.Outcome = "rejected-attempt-exists"
 				}
 			} else {
+				if reservationCount(st) >= MaxInventoryAttempts {
+					return ErrInventoryCapacity
+				}
 				p := body["assignment"].(map[string]any)
 				r := p["resources"].(map[string]any)
 				cpu, mem := r["cpuMillis"].(uint64), r["memoryBytes"].(uint64)

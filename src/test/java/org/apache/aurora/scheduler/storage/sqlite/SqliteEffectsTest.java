@@ -105,6 +105,22 @@ public class SqliteEffectsTest {
   }
 
   @Test
+  public void testAgentPendingFiltersBeforeApplyingLimit() {
+    storage.write((NoResult.Quiet) stores -> {
+      for (int i = 0; i < 1025; i++) {
+        assertTrue(storage.effects().enqueue(new Command("backlog-" + i, "unavailable",
+            "task-" + i, "Run", 1, new byte[0])));
+      }
+      assertTrue(storage.effects().enqueue(FIRST));
+    });
+
+    assertEquals("backlog-0", storage.read(stores -> storage.effects().pending(1).get(0)
+        .command().id()));
+    assertEquals(List.of(FIRST), storage.read(stores -> storage.effects().pending("agent", 1)
+        .stream().map(PendingCommand::command).toList()));
+  }
+
+  @Test
   public void testCommandConflictsRejectEveryChangedBodyField() throws Exception {
     storage.write((NoResult.Quiet) stores -> storage.effects().enqueue(FIRST));
     List<Command> conflicts = List.of(

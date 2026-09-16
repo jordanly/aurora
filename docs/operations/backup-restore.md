@@ -1,5 +1,22 @@
 # Offline SQLite recovery and historical snapshot import
 
+The Go-agent scheduler creates a consistent SQLite backup on a fixed delay
+using `-backup_interval` (default one hour) and keeps up to
+`-max_saved_backups` (default 48). `-backup_dir` selects the backup directory;
+when omitted, backups are written to a `backups` directory beside the configured
+SQLite database. Manual backup requests use the same directory and retention
+policy. Scheduled failures are logged and retried on the next interval; monitor
+`scheduler_backup_success`, `scheduler_backup_failed`,
+`scheduler_backup_last_success_ms`, and `scheduler_backup_last_success_age_ms`.
+The last-success timestamp and age are `-1` until the first successful backup;
+retention cleanup errors have a separate `scheduler_backup_retention_failed`
+counter because the new backup remains available.
+Retention preserves the backup just published, then removes older regular files
+named `backup-<UUID>.db` by modification time and filename until the configured
+limit is met. This keeps the new recovery point when an older backup has a future
+timestamp. It leaves symbolic links, temporary and unrecognized files, and the
+live database untouched.
+
 The recovery tool publishes a new database file. It never overwrites an existing
 database or opens its source as a scheduler storage owner. Stop the scheduler
 before selecting a recovery database and keep the source backup unchanged.

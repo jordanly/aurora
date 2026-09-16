@@ -303,8 +303,8 @@ func TestTransportStrictBoundsAndSnapshotLimit(t *testing.T) {
 		return save(bucket, st)
 	})
 	code, value := httpJSON(t, client, "GET", base+"/v1/state", nil, nil)
-	if code != 503 || value["state"] != nil {
-		t.Fatal("partial oversized inventory served", code, value)
+	if code != 200 || len(value["state"].(map[string]any)["commands"].(map[string]any)) != 0 {
+		t.Fatal("retained commands blocked inventory", code, value)
 	}
 }
 func TestTLSConfigFilesEnforceMutualTLS(t *testing.T) {
@@ -415,10 +415,9 @@ func TestServeHTTPSExecutesDurablyAndReopensWithStaticEnrollment(t *testing.T) {
 				break
 			}
 			attempts := page["state"].(map[string]any)["attempts"].(map[string]any)
-			for _, raw := range attempts {
-				a := raw.(map[string]any)
-				x, _ := a["execution"].(map[string]any)
-				if x["outcome"] == "succeeded" && x["cleanup"] == "complete" && a["reserved"] == false {
+			for _, raw := range page["state"].(map[string]any)["observations"].([]any) {
+				x := raw.(map[string]any)
+				if x["state"] == "succeeded" && x["cleanup"] == "complete" && len(attempts) == 0 {
 					complete = true
 				}
 			}

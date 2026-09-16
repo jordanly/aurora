@@ -87,7 +87,6 @@ import org.apache.aurora.scheduler.state.StateChangeResult;
 import org.apache.aurora.scheduler.state.StateManager;
 import org.apache.aurora.scheduler.state.UUIDGenerator;
 import org.apache.aurora.scheduler.storage.SnapshotStore;
-import org.apache.aurora.scheduler.storage.Storage.MutateWork.NoResult;
 import org.apache.aurora.scheduler.storage.Storage.NonVolatileStorage;
 import org.apache.aurora.scheduler.storage.Storage.StoreProvider;
 import org.apache.aurora.scheduler.storage.backup.Recovery;
@@ -102,6 +101,7 @@ import org.apache.aurora.scheduler.storage.entities.IJobUpdateRequest;
 import org.apache.aurora.scheduler.storage.entities.IJobUpdateSettings;
 import org.apache.aurora.scheduler.storage.entities.IMetadata;
 import org.apache.aurora.scheduler.storage.entities.IRange;
+import org.apache.aurora.scheduler.storage.entities.IResourceAggregate;
 import org.apache.aurora.scheduler.storage.entities.IScheduledTask;
 import org.apache.aurora.scheduler.storage.entities.ITaskConfig;
 import org.apache.aurora.scheduler.thrift.aop.AnnotatedAuroraAdmin;
@@ -546,15 +546,22 @@ class SchedulerThriftInterface implements AnnotatedAuroraAdmin {
     checkNotBlank(ownerRole);
     requireNonNull(resourceAggregate);
 
+    IResourceAggregate quota;
     try {
-      storage.write((NoResult<QuotaException>) store -> quotaManager.saveQuota(
-          ownerRole,
-          ThriftBackfill.backfillResourceAggregate(resourceAggregate),
-          store));
-      return ok();
-    } catch (QuotaException e) {
+      quota = ThriftBackfill.backfillResourceAggregate(resourceAggregate);
+    } catch (IllegalArgumentException e) {
       return error(INVALID_REQUEST, e);
     }
+    return storage.write(store -> {
+      try {
+        quotaManager.saveQuota(ownerRole, quota, store);
+        return ok();
+      } catch (QuotaException e) {
+        // Quota validation precedes all mutations. Return the rejection inside the transaction
+        // so an ordinary invalid request cannot trigger the storage failure shutdown policy.
+        return error(INVALID_REQUEST, e);
+      }
+    });
   }
 
   @Override

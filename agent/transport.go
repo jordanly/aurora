@@ -125,7 +125,11 @@ func transportHandler(store *Store, timing watchTiming) http.Handler {
 		case "/v1/deliver":
 			result, e := store.Admit(data, Caller{Peer: cfg.Peer, Epoch: cfg.Epoch, Session: cfg.Session})
 			if e != nil {
-				transportError(w, 409, "delivery rejected")
+				if errors.Is(e, ErrInventoryCapacity) {
+					transportError(w, 503, "reservation inventory full")
+				} else {
+					transportError(w, 409, "delivery rejected")
+				}
 				return
 			}
 			status := 200
@@ -205,7 +209,7 @@ func serveState(w http.ResponseWriter, r *http.Request, store *Store) {
 		transportError(w, 409, "cursor scope or retention gap")
 		return
 	}
-	if len(st.Attempts) > MaxInventoryAttempts || len(st.Commands) > MaxInventoryCommands {
+	if reservationCount(st) > MaxInventoryAttempts {
 		transportError(w, 503, "inventory profile limit")
 		return
 	}
@@ -228,8 +232,7 @@ func serveState(w http.ResponseWriter, r *http.Request, store *Store) {
 		observations = append(observations, o)
 		next = cursor
 	}
-	st.Observations = observations
-	transportJSON(w, 200, map[string]any{"config": st.Config, "state": PublicState(st), "nextCursor": strconv.FormatUint(next, 10), "hasMore": more})
+	transportJSON(w, 200, map[string]any{"config": st.Config, "state": transportState(st, observations), "nextCursor": strconv.FormatUint(next, 10), "hasMore": more})
 }
 func transportError(w http.ResponseWriter, status int, message string) {
 	transportJSON(w, status, map[string]string{"error": message})

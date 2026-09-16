@@ -328,7 +328,7 @@ func containerPlan(root string, data *Data, role string) (*ContainerRecord, []st
 	var command []string
 	if role == "scheduler" {
 		mounts = append(mounts, Mount{filepath.Join(root, "artifacts/scheduler"), "/opt/scheduler", false}, Mount{filepath.Join(root, "artifacts/java"), "/opt/java", false})
-		command = []string{"/opt/scheduler/bin/aurora-scheduler", "-cluster_name=inplace", "-serverset_path=/aurora/inplace", "-zk_in_proc=true", "-zk_endpoints=localhost:2181", "-go_agent_config=/config/scheduler.json", "-http_port=8081", "-http_authentication_mechanism=NONE"}
+		command = []string{"/opt/scheduler/bin/aurora-scheduler", "-cluster_name=inplace", "-serverset_path=/aurora/inplace", "-zk_in_proc=true", "-zk_endpoints=localhost:2181", "-go_agent_config=/config/scheduler.json", "-http_port=8081", "-http_authentication_mechanism=NONE", "-backup_interval=30secs", "-max_saved_backups=3"}
 	} else {
 		command = []string{"/opt/bin/aurora-agent", "serve", "--config", "/config/agent.json", "--state", "/state/state.db", "--work-root", "/work", "--network", "agent-container", "--listen", ":8443", "--tls-cert", "/tls/cert.crt", "--tls-key", "/tls/key.pem", "--tls-ca", "/tls/ca.crt", "--supervise"}
 	}

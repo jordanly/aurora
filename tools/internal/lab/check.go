@@ -390,7 +390,7 @@ func (c *check) waitUpdate(key any, expected int64, duration time.Duration) erro
 func Check(ctx context.Context, repo string, args []string) error {
 	flags := flag.NewFlagSet("inplace-check", flag.ContinueOnError)
 	root := flags.String("root", "", "absolute owned lab root")
-	phase := flags.String("phase", "", "smoke, recovery, policy or soak")
+	phase := flags.String("phase", "", "smoke, recovery, policy, soak or churn")
 	rounds := flags.Int("rounds", 3, "recovery rounds1 through3")
 	dryRun := flags.Bool("dry-run", false, "render fixture scope without network calls or writes")
 	if err := flags.Parse(args); err != nil {
@@ -399,7 +399,7 @@ func Check(ctx context.Context, repo string, args []string) error {
 		}
 		return err
 	}
-	if flags.NArg() != 0 || (*phase != "smoke" && *phase != "recovery" && *phase != "policy" && *phase != "soak") || *rounds < 1 || *rounds > 3 {
+	if flags.NArg() != 0 || (*phase != "smoke" && *phase != "recovery" && *phase != "policy" && *phase != "soak" && *phase != "churn") || *rounds < 1 || *rounds > 3 {
 		return errors.New("supported phase and rounds1 through3 required")
 	}
 	checked, err := Safe(*root)
@@ -427,6 +427,8 @@ func Check(ctx context.Context, repo string, args []string) error {
 			err = c.policy()
 		case "soak":
 			err = c.soak()
+		case "churn":
+			err = c.churn()
 		}
 	}
 	c.report["ok"] = err == nil

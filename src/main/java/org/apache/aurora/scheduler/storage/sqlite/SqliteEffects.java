@@ -134,6 +134,25 @@ public final class SqliteEffects {
    * transaction's writes.
    */
   public List<PendingCommand> pending(int limit) {
+    return pending(null, limit, false);
+  }
+
+  /**
+   * Returns at most limit unacknowledged commands for agentId in insertion order, including the
+   * current transaction's writes.
+   */
+  public List<PendingCommand> pending(String agentId, int limit) {
+    requireIdentifier(agentId);
+    return pending(agentId, limit, false);
+  }
+
+  /** Returns pending Stops for one agent in FIFO order, independently of blocked Runs. */
+  public List<PendingCommand> pendingStops(String agentId, int limit) {
+    requireIdentifier(agentId);
+    return pending(agentId, limit, true);
+  }
+
+  private List<PendingCommand> pending(String agentId, int limit, boolean stopsOnly) {
     database.connection();
     if (limit <= 0) {
       throw new IllegalArgumentException("Pending command limit must be positive");
@@ -141,8 +160,14 @@ public final class SqliteEffects {
     try (PreparedStatement query = database.connection().prepareStatement(
         "SELECT command_id,agent_id,task_id,command_type,payload_version,payload,sequence,"
             + "owner_epoch"
-            + " FROM command_outbox WHERE acknowledged=0 ORDER BY sequence LIMIT ?")) {
-      query.setInt(1, limit);
+            + " FROM command_outbox WHERE acknowledged=0"
+            + (agentId != null ? " AND agent_id=?" : "")
+            + (stopsOnly ? " AND command_type='Stop'" : "")
+            + " ORDER BY sequence LIMIT ?")) {
+      if (agentId != null) {
+        query.setString(1, agentId);
+      }
+      query.setInt(agentId != null ? 2 : 1, limit);
       List<PendingCommand> pending = new ArrayList<>();
       try (ResultSet rows = query.executeQuery()) {
         while (rows.next()) {
@@ -152,6 +177,20 @@ public final class SqliteEffects {
       return List.copyOf(pending);
     } catch (SQLException e) {
       throw database.failTransaction("Unable to read pending commands", e);
+    }
+  }
+
+  /** Whether this command still awaits a receipt, independent of queue position. */
+  public boolean isPending(String commandId) {
+    requireIdentifier(commandId);
+    try (PreparedStatement query = database.connection().prepareStatement(
+        "SELECT 1 FROM command_outbox WHERE command_id=? AND acknowledged=0")) {
+      query.setString(1, commandId);
+      try (ResultSet rows = query.executeQuery()) {
+        return rows.next();
+      }
+    } catch (SQLException e) {
+      throw database.failTransaction("Unable to read command receipt status", e);
     }
   }
 

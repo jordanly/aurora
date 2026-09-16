@@ -77,6 +77,27 @@ public class SqliteDatabaseTest {
   }
 
   @Test
+  public void testAgentPendingIndexInstalledOnExistingDatabase() throws Exception {
+    database.write("remove-additive-index", () -> {
+      execute("DROP INDEX pending_commands_by_agent");
+      return null;
+    });
+    database.close();
+    database = SqliteDatabase.open(path);
+    database.read(() -> {
+      assertEquals("3", scalar("PRAGMA user_version"));
+      try (Statement statement = database.connection().createStatement();
+           ResultSet plan = statement.executeQuery("EXPLAIN QUERY PLAN SELECT command_id"
+               + " FROM command_outbox WHERE acknowledged=0 AND agent_id='healthy'"
+               + " ORDER BY sequence LIMIT 1")) {
+        assertTrue(plan.next());
+        assertTrue(plan.getString("detail").contains("pending_commands_by_agent"));
+      }
+      return null;
+    });
+  }
+
+  @Test
   public void testVersionSettingsAndReopen() throws Exception {
     database.read(() -> {
       assertEquals("3.53.4", scalar("SELECT sqlite_version()"));

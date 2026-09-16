@@ -47,3 +47,38 @@ func PublicExecution(e *Execution) any {
 		"stdoutDropped": e.StdoutDropped, "stderrDropped": e.StderrDropped,
 	}
 }
+
+// transportState separates bounded reconciliation inventory from permanent replay
+// history. Terminal facts travel in the observation journal; all reservations
+// remain visible until cleanup is durably complete. Command results accompany
+// their observation page and remain replayable through Admit after that page.
+func transportState(st State, observations []map[string]any) map[string]any {
+	attempts := make(map[string]Attempt)
+	for key, attempt := range st.Attempts {
+		if attempt.Reserved() {
+			attempts[key] = attempt
+		}
+	}
+	cursors := make(map[string]bool, len(observations))
+	for _, observation := range observations {
+		cursors[observation["cursor"].(string)] = true
+	}
+	commands := make(map[string]Result)
+	for key, result := range st.Commands {
+		if cursors[result.Cursor] {
+			commands[key] = result
+		}
+	}
+	st.Attempts, st.Commands, st.Observations = attempts, commands, observations
+	return PublicState(st)
+}
+
+func reservationCount(st State) int {
+	count := 0
+	for _, attempt := range st.Attempts {
+		if attempt.Reserved() {
+			count++
+		}
+	}
+	return count
+}

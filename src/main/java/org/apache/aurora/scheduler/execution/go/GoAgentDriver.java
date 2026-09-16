@@ -224,8 +224,7 @@ final class GoAgentDriver extends AbstractIdleService
   }
 
   private boolean hasPending(GoAgentConfig.Node node) {
-    return storage.read(stores -> sqlite.effects().pending(1024).stream()
-        .anyMatch(item -> item.command().agentId().equals(node.name())));
+    return storage.read(stores -> !sqlite.effects().pending(node.name(), 1).isEmpty());
   }
 
   private void dispatchIfPending(GoAgentConfig.Node node) {
@@ -609,8 +608,10 @@ final class GoAgentDriver extends AbstractIdleService
     return storage.write(stores -> {
       Optional<Command> selected = Optional.empty();
       for (int count = 0; count < 16 && isRunning() && selected.isEmpty(); count++) {
-        var next = sqlite.effects().pending(1024).stream()
-            .filter(item -> item.command().agentId().equals(node.name())).findFirst();
+        // A Run can wait for reservation capacity. Stops must still reach the agent to release
+        // that capacity, even when their intent was committed after the blocked Run.
+        var next = sqlite.effects().pendingStops(node.name(), 1).stream().findFirst()
+            .or(() -> sqlite.effects().pending(node.name(), 1).stream().findFirst());
         if (next.isEmpty()) {
           return Optional.empty();
         }
@@ -660,9 +661,7 @@ final class GoAgentDriver extends AbstractIdleService
           }
           WireJson.require(sqlite.effects().command(command.id()).filter(command::equals)
               .isPresent(), "Durable command differs from delivery");
-          boolean pending = sqlite.effects().pending(1024).stream()
-              .anyMatch(item -> item.command().equals(command));
-          if (!pending) {
+          if (!sqlite.effects().isPending(command.id())) {
             return null; // A committed Stop or another receipt already superseded this delivery.
           }
           if (!"accepted".equals(outcome)) {

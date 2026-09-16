@@ -196,7 +196,7 @@ class JobUpdateControllerImpl implements JobUpdateController {
     requireNonNull(update);
     requireNonNull(auditData);
 
-    storage.write((NoResult<UpdateStateException>) storeProvider -> {
+    UpdateStateException rejected = storage.write(storeProvider -> {
       IJobUpdateSummary summary = update.getSummary();
       IJobUpdateInstructions instructions = update.getInstructions();
       IJobKey job = summary.getKey().getJob();
@@ -218,7 +218,7 @@ class JobUpdateControllerImpl implements JobUpdateController {
         }
 
         IJobUpdateDetails activeUpdate = activeJobUpdates.stream().findFirst().get();
-        throw new UpdateInProgressException("An active update already exists for this job, "
+        return new UpdateInProgressException("An active update already exists for this job, "
             + "please terminate it before starting another. "
             + "Active updates are those in states " + Updates.ACTIVE_JOB_UPDATE_STATES,
             activeUpdate.getUpdate().getSummary());
@@ -238,7 +238,11 @@ class JobUpdateControllerImpl implements JobUpdateController {
           storeProvider,
           summary.getKey(),
           addAuditData(newEvent(status), auditData));
+      return null;
     });
+    if (rejected != null) {
+      throw rejected;
+    }
   }
 
   @Override
@@ -268,11 +272,11 @@ class JobUpdateControllerImpl implements JobUpdateController {
     requireNonNull(key);
     requireNonNull(auditData);
     LOG.info("Attempting to resume update " + key);
-    storage.write((NoResult<UpdateStateException>) storeProvider -> {
+    UpdateStateException rejected = storage.write(storeProvider -> {
       Optional<IJobUpdateDetails> details = storeProvider.getJobUpdateStore().fetchJobUpdate(key);
 
       if (!details.isPresent()) {
-        throw new UpdateStateException("Update does not exist: " + key);
+        return new UpdateStateException("Update does not exist: " + key);
       }
 
       IJobUpdate update = details.get().getUpdate();
@@ -282,11 +286,22 @@ class JobUpdateControllerImpl implements JobUpdateController {
               : GET_ACTIVE_RESUME_STATE;
 
       JobUpdateStatus newStatus = stateChange.apply(update.getSummary().getState().getStatus());
+      try {
+        if (update.getSummary().getState().getStatus() != newStatus) {
+          assertTransitionAllowed(update.getSummary().getState().getStatus(), newStatus);
+        }
+      } catch (UpdateStateException e) {
+        return e;
+      }
       changeUpdateStatus(
           storeProvider,
           update.getSummary(),
           addAuditData(newEvent(newStatus), auditData));
+      return null;
     });
+    if (rejected != null) {
+      throw rejected;
+    }
   }
 
   @Override
@@ -512,16 +527,29 @@ class JobUpdateControllerImpl implements JobUpdateController {
       final Function<? super JobUpdateStatus, JobUpdateEvent> stateChange)
       throws UpdateStateException {
 
-    storage.write((NoResult<UpdateStateException>) storeProvider -> {
+    UpdateStateException rejected = storage.write(storeProvider -> {
 
       Optional<IJobUpdateDetails> update = storeProvider.getJobUpdateStore().fetchJobUpdate(key);
       if (!update.isPresent()) {
-        throw new UpdateStateException("Update does not exist " + key);
+        return new UpdateStateException("Update does not exist " + key);
       }
 
       IJobUpdateSummary summary = update.get().getUpdate().getSummary();
-      changeUpdateStatus(storeProvider, summary, stateChange.apply(summary.getState().getStatus()));
+      JobUpdateEvent event = stateChange.apply(summary.getState().getStatus());
+      try {
+        if (summary.getState().getStatus() != event.getStatus()) {
+          assertTransitionAllowed(summary.getState().getStatus(), event.getStatus());
+        }
+      } catch (UpdateStateException e) {
+        // Only validation is recoverable; mutations and updater callbacks below remain fail-stop.
+        return e;
+      }
+      changeUpdateStatus(storeProvider, summary, event);
+      return null;
     });
+    if (rejected != null) {
+      throw rejected;
+    }
   }
 
   private void changeUpdateStatus(

@@ -18,6 +18,7 @@ import java.lang.reflect.Proxy;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
@@ -91,6 +92,7 @@ import org.apache.aurora.scheduler.state.StateChangeResult;
 import org.apache.aurora.scheduler.state.StateManager;
 import org.apache.aurora.scheduler.state.UUIDGenerator;
 import org.apache.aurora.scheduler.storage.SnapshotStore;
+import org.apache.aurora.scheduler.storage.Storage.NonVolatileStorage;
 import org.apache.aurora.scheduler.storage.Storage.StorageException;
 import org.apache.aurora.scheduler.storage.backup.Recovery;
 import org.apache.aurora.scheduler.storage.backup.StorageBackup;
@@ -102,6 +104,7 @@ import org.apache.aurora.scheduler.storage.entities.IRange;
 import org.apache.aurora.scheduler.storage.entities.IResourceAggregate;
 import org.apache.aurora.scheduler.storage.entities.IScheduledTask;
 import org.apache.aurora.scheduler.storage.entities.ITaskConfig;
+import org.apache.aurora.scheduler.storage.sqlite.SqliteStorage;
 import org.apache.aurora.scheduler.storage.testing.StorageTestUtil;
 import org.apache.aurora.scheduler.testing.FakeStatsProvider;
 import org.apache.aurora.scheduler.updater.JobUpdateController;
@@ -113,7 +116,9 @@ import org.apache.thrift.TException;
 import org.easymock.EasyMock;
 import org.easymock.IExpectationSetters;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
 import static org.apache.aurora.gen.MaintenanceMode.DRAINING;
 import static org.apache.aurora.gen.MaintenanceMode.NONE;
@@ -177,6 +182,8 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class SchedulerThriftInterfaceTest extends EasyMockTest {
+  @Rule
+  public TemporaryFolder temporary = new TemporaryFolder();
 
   private static final String AUDIT_MESSAGE = "message";
   private static final AuditData AUDIT = new AuditData(USER, Optional.of(AUDIT_MESSAGE));
@@ -219,17 +226,21 @@ public class SchedulerThriftInterfaceTest extends EasyMockTest {
     taskReconciler = createMock(TaskReconciler.class);
     statsProvider = new FakeStatsProvider();
 
-    thrift = getResponseProxy(
+    thrift = createThrift(storageUtil.storage, quotaManager);
+  }
+
+  private AuroraAdmin.Iface createThrift(NonVolatileStorage storage, QuotaManager quota) {
+    return getResponseProxy(
         new SchedulerThriftInterface(
             TaskTestUtil.CONFIGURATION_MANAGER,
             THRESHOLDS,
-            storageUtil.storage,
+            storage,
             snapshotStore,
             backup,
             recovery,
             cronJobManager,
             maintenance,
-            quotaManager,
+            quota,
             stateManager,
             uuidGenerator,
             jobUpdateController,
@@ -773,6 +784,61 @@ public class SchedulerThriftInterfaceTest extends EasyMockTest {
     control.replay();
 
     assertResponse(INVALID_REQUEST, thrift.setQuota(ROLE, resourceAggregate));
+  }
+
+  @Test
+  public void testNegativeQuotasLeaveSqliteAvailable() throws Exception {
+    try (SqliteStorage sqlite = SqliteStorage.open(
+        temporary.getRoot().toPath().resolve("quota.db"))) {
+      AtomicInteger failures = new AtomicInteger();
+      sqlite.setWriteFailureHandler(failure -> failures.incrementAndGet());
+      thrift = createThrift(sqlite, new QuotaManager.QuotaManagerImpl());
+      control.replay();
+
+      ResourceAggregate valid = new ResourceAggregate()
+          .setResources(Set.of(numCpus(2), ramMb(2048), diskMb(2048)));
+      assertOkResponse(thrift.setQuota(ROLE, valid));
+      for (Set<Resource> invalid : Set.of(
+          Set.of(numCpus(-1), ramMb(2048), diskMb(2048)),
+          Set.of(numCpus(2), ramMb(-1), diskMb(2048)),
+          Set.of(numCpus(2), ramMb(2048), diskMb(-1)),
+          Set.of(numCpus(2)),
+          Set.of(numCpus(2), numCpus(3), ramMb(2048), diskMb(2048)))) {
+        assertResponse(INVALID_REQUEST,
+            thrift.setQuota(ROLE, new ResourceAggregate().setResources(invalid)));
+        assertEquals(IResourceAggregate.build(valid), sqlite.read(stores ->
+            stores.getQuotaStore().fetchQuota(ROLE).orElseThrow()));
+        assertOkResponse(thrift.setQuota(ROLE, valid));
+      }
+      assertEquals(0, failures.get());
+    }
+  }
+
+  @Test
+  public void testQuotaBelowConsumptionLeavesSqliteAvailable() throws Exception {
+    try (SqliteStorage sqlite = SqliteStorage.open(
+        temporary.getRoot().toPath().resolve("consumed-quota.db"))) {
+      AtomicInteger failures = new AtomicInteger();
+      sqlite.setWriteFailureHandler(failure -> failures.incrementAndGet());
+      thrift = createThrift(sqlite, new QuotaManager.QuotaManagerImpl());
+      control.replay();
+
+      String role = TaskTestUtil.JOB.getRole();
+      ResourceAggregate valid = new ResourceAggregate()
+          .setResources(Set.of(numCpus(2), ramMb(2048), diskMb(2048)));
+      assertOkResponse(thrift.setQuota(role, valid));
+      sqlite.write(stores -> {
+        stores.getUnsafeTaskStore().saveTasks(
+            Set.of(TaskTestUtil.makeTask("consuming", TaskTestUtil.JOB, 0, true)));
+        return null;
+      });
+      assertResponse(INVALID_REQUEST, thrift.setQuota(role, new ResourceAggregate()
+          .setResources(Set.of(numCpus(0), ramMb(0), diskMb(0)))));
+      assertEquals(IResourceAggregate.build(valid), sqlite.read(stores ->
+          stores.getQuotaStore().fetchQuota(role).orElseThrow()));
+      assertOkResponse(thrift.setQuota(role, valid));
+      assertEquals(0, failures.get());
+    }
   }
 
   @Test

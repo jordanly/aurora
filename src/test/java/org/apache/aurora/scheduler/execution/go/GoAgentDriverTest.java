@@ -35,7 +35,9 @@ import org.apache.aurora.scheduler.resources.ResourceType;
 import org.apache.aurora.scheduler.state.StateChangeResult;
 import org.apache.aurora.scheduler.state.StateManager;
 import org.apache.aurora.scheduler.storage.Storage.MutableStoreProvider;
+import org.apache.aurora.scheduler.storage.Storage.MutateWork.NoResult;
 import org.apache.aurora.scheduler.storage.entities.IScheduledTask;
+import org.apache.aurora.scheduler.storage.sqlite.SqliteEffects.Command;
 import org.apache.aurora.scheduler.storage.sqlite.SqliteStorage;
 import org.easymock.EasyMock;
 import org.junit.After;
@@ -74,6 +76,8 @@ public class GoAgentDriverTest {
   private final List<ScheduleStatus> transitions =
       new java.util.concurrent.CopyOnWriteArrayList<>();
   private volatile boolean failTransition;
+  private final java.util.concurrent.CountDownLatch transitionFailed =
+      new java.util.concurrent.CountDownLatch(1);
 
   @Before
   public void setUp() {
@@ -95,10 +99,12 @@ public class GoAgentDriverTest {
           MutableStoreProvider stores = EasyMock.getCurrentArgument(0);
           String task = EasyMock.getCurrentArgument(1);
           ScheduleStatus next = EasyMock.getCurrentArgument(3);
+          boolean shouldFail = failTransition;
           transitions.add(next);
           stores.getUnsafeTaskStore().mutateTask(task,
               original -> IScheduledTask.build(original.newBuilder().setStatus(next)));
-          if (failTransition) {
+          if (shouldFail) {
+            transitionFailed.countDown();
             throw new IllegalStateException("Policy failed after mutating task");
           }
           return StateChangeResult.SUCCESS;
@@ -186,6 +192,97 @@ public class GoAgentDriverTest {
     assertEquals(1, agent.deliveries.size());
     assertEquals("Stop", agent.deliveries.get(0).path("body").path("kind").asText());
     assertEquals(0, pending());
+  }
+
+  @Test
+  public void testHealthyAgentRunAndStopDispatchBehindLargeUnavailableBacklog() throws Exception {
+    startWatch();
+    sqlite.write((NoResult.Quiet) stores -> {
+      for (int i = 0; i < 1025; i++) {
+        assertTrue(sqlite.effects().enqueue(new Command("unavailable-" + i, "unavailable-agent",
+            "backlog-task-" + i, "Run", 1, new byte[0])));
+      }
+    });
+
+    commitLaunch();
+    notifyAssignment();
+    eventually(() -> agent.deliveries.size() == 1
+        && sqlite.read(stores -> sqlite.effects().pending(NODE.name(), 1).isEmpty()));
+    assertEquals(1, agent.deliveries.size());
+    assertEquals("Run", agent.deliveries.get(0).path("body").path("kind").asText());
+
+    sqlite.write(stores -> {
+      driver.killTask(TASK);
+      stores.getUnsafeTaskStore().mutateTask(TASK, original -> IScheduledTask.build(
+          original.newBuilder().setStatus(ScheduleStatus.KILLING)));
+      return null;
+    });
+    notifyAssignment();
+    eventually(() -> agent.deliveries.size() == 2
+        && sqlite.read(stores -> sqlite.effects().pending(NODE.name(), 1).isEmpty()));
+    assertEquals(2, agent.deliveries.size());
+    assertEquals("Stop", agent.deliveries.get(1).path("body").path("kind").asText());
+    assertEquals(1025, (int) sqlite.read(stores -> sqlite.effects().pending(2000).size()));
+  }
+
+  @Test
+  public void testStopBypassesBackpressuredRunForSameAgent() throws Exception {
+    startWatch();
+    commitLaunch();
+    notifyAssignment();
+    eventually(() -> agent.deliveries.size() == 1 && pending() == 0);
+
+    String waitingTask = "task-waiting-for-inventory";
+    String waitingRun = GoTaskFactory.identity("r-", waitingTask);
+    agent.backpressureRuns = true;
+    sqlite.write(stores -> {
+      assign(stores, NODE, waitingTask);
+      driver.launch("waiting-offer", launch(NODE, waitingTask), 0);
+      return null;
+    });
+    notifyAssignment();
+    eventually(() -> agent.deliveries.stream().anyMatch(delivery ->
+        waitingRun.equals(delivery.path("body").path("command").asText())));
+    assertEquals(1, pending());
+
+    // Place the Stop beyond the old 1024-row receipt window as well as the blocked Run.
+    sqlite.write(stores -> {
+      for (int i = 0; i < 1025; i++) {
+        assertTrue(sqlite.effects().enqueue(new Command("same-agent-backlog-" + i,
+            NODE.name(), "backlog-task-" + i, "Run", 1, new byte[0])));
+      }
+      driver.killTask(TASK);
+      stores.getUnsafeTaskStore().mutateTask(TASK, original -> IScheduledTask.build(
+          original.newBuilder().setStatus(ScheduleStatus.KILLING)));
+      return null;
+    });
+    notifyAssignment();
+    String stop = GoTaskFactory.identity("s-", TASK);
+    eventually(() -> agent.deliveries.stream().anyMatch(delivery ->
+        stop.equals(delivery.path("body").path("command").asText()))
+        && sqlite.read(stores -> {
+          var pending = sqlite.effects().pending(NODE.name(), 2000);
+          return pending.size() == 1026 && pending.get(0).command().id().equals(waitingRun)
+              && pending.stream().noneMatch(command -> command.command().id().equals(stop));
+        }));
+    assertEquals(ScheduleStatus.ASSIGNED, sqlite.read(stores ->
+        stores.getTaskStore().fetchTask(waitingTask).orElseThrow().getStatus()));
+    assertTrue(sqlite.read(stores -> sqlite.effects()
+        .command(GoTaskFactory.identity("r-", TASK)).isPresent()));
+    assertTrue(sqlite.read(stores -> sqlite.effects().command(waitingRun).isPresent()));
+
+    // Remove synthetic backlog fixtures before allowing the valid pending Run through.
+    sqlite.write(stores -> {
+      for (int i = 0; i < 1025; i++) {
+        sqlite.effects().acknowledge("same-agent-backlog-" + i);
+      }
+      return null;
+    });
+    assertEquals(1, pending());
+    agent.backpressureRuns = false;
+    notifyAssignment();
+    eventually(() -> pending() == 0);
+    assertTrue(transitions.isEmpty());
   }
 
   @Test
@@ -347,6 +444,30 @@ public class GoAgentDriverTest {
   }
 
   @Test
+  public void testWatchSnapshotReplacesCompletedHistoryBeforeNextReservation() throws Exception {
+    startWatch();
+    commitLaunch();
+    notifyAssignment();
+    eventually(() -> pending() == 0);
+
+    JsonNode oldSnapshot = agent.frame("snapshot", 0);
+    ObjectNode oldAttempts = (ObjectNode) oldSnapshot.path("state").path("attempts");
+    for (int i = 0; i < 128; i++) {
+      oldAttempts.set("completed-" + i, WireJson.object().put("reserved", false));
+    }
+    agent.frames.add(oldSnapshot);
+    agent.reserved = true;
+    agent.observations.add(observation(1, "running", "pending", true));
+    agent.frames.add(agent.frame("snapshot", 0));
+
+    eventually(() -> agent.acknowledgments.contains(1L) && currentOffer != null
+        && currentOffer.getResourceBag(false).valueOf(ResourceType.CPUS) == 1.0);
+    assertEquals(List.of(0L), agent.watchCursors);
+    assertEquals(ScheduleStatus.RUNNING, status());
+    assertEquals(List.of(ScheduleStatus.RUNNING), transitions);
+  }
+
+  @Test
   public void testWatchRollbackDoesNotAcknowledgeFailedObservation() throws Exception {
     startWatch();
     commitLaunch();
@@ -355,7 +476,7 @@ public class GoAgentDriverTest {
     failTransition = true;
     agent.observations.add(observation(1, "running", "pending", true));
     agent.frames.add(agent.frame("delta", 0));
-    eventually(() -> !transitions.isEmpty());
+    assertTrue(transitionFailed.await(2, TimeUnit.SECONDS));
     assertEquals(0L, cursor());
     assertEquals(List.of(0L), agent.acknowledgments);
     failTransition = false;
@@ -532,6 +653,7 @@ public class GoAgentDriverTest {
     private final java.util.concurrent.CountDownLatch resumeDelivery =
         new java.util.concurrent.CountDownLatch(1);
     private volatile boolean blockRun;
+    private volatile boolean backpressureRuns;
 
     FakeAgent() {
       this(NODE, TASK);
@@ -606,6 +728,9 @@ public class GoAgentDriverTest {
         assertTrue(sqlite.read(stores -> sqlite.effects()
             .command(body.path("body").path("command").asText()).isPresent()));
         deliveries.add(body.deepCopy());
+        if (backpressureRuns && "Run".equals(body.path("body").path("kind").asText())) {
+          throw new IOException("HTTP 503: reservation inventory full");
+        }
         if (blockRun && "Run".equals(body.path("body").path("kind").asText())) {
           blockDelivery();
         }

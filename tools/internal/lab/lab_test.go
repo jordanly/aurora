@@ -138,6 +138,9 @@ func TestContainerPlanRetainsExactSandboxAndEntrypoint(t *testing.T) {
 			t.Fatal(record.Args)
 		}
 		joined := strings.Join(args, "\n")
+		if role == "scheduler" && (!strings.Contains(joined, "-backup_interval=30secs") || !strings.Contains(joined, "-max_saved_backups=3")) {
+			t.Fatal("missing lab backup schedule/retention")
+		}
 		for _, required := range []string{"--read-only", "--cap-drop\nALL", "--security-opt\nno-new-privileges:true", "--pull\nnever", "--entrypoint\n/opt/bin/cluster-helper"} {
 			if !strings.Contains(joined, required) {
 				t.Fatal("missing boundary", required)
@@ -213,6 +216,8 @@ type apiFixture struct {
 	calls                                          []string
 	updating, killed, draining, ended, cronStarted bool
 	prefix                                         string
+	churnFault                                     string
+	churnBatchReads                                int
 }
 
 func responseResult(fieldID int, value any) Object {
@@ -226,6 +231,9 @@ func taskRecord(id, host string, status int64, config Object) Object {
 	return Object{"1": field("rec", assigned), "2": field("i32", status)}
 }
 func (f *apiFixture) serve(request *http.Request) (*http.Response, error) {
+	if request.Method == "GET" && request.URL.Path == "/health" {
+		return &http.Response{StatusCode: 200, Body: io.NopCloser(strings.NewReader("OK")), Header: http.Header{}}, nil
+	}
 	if request.Method != "POST" || request.Header.Get("Content-Type") != "application/x-thrift" {
 		f.t.Fatal("wrong Thrift transport")
 	}
@@ -243,6 +251,21 @@ func (f *apiFixture) serve(request *http.Request) (*http.Response, error) {
 	args := wire[4]
 	switch method {
 	case "createJob":
+		if f.phase == "churn" {
+			config := get(get(args, 1), 6)
+			constraints, err := collection(get(config, 20), "rec")
+			if err != nil || len(constraints) != 1 || get(constraints[0], 1) != "host" || number(get(get(get(constraints[0], 2), 2), 1)) != 1 {
+				f.t.Fatal("churn job did not constrain one instance per host", config)
+			}
+			resources, err := collection(get(config, 32), "rec")
+			cpu := "0.6"
+			if number(get(config, 7)) == 1 {
+				cpu = "0.1"
+			}
+			if err != nil || len(resources) != 3 || jsonText(get(resources[0], 1)) != cpu {
+				f.t.Fatal("churn CPU reservation differs", config)
+			}
+		}
 		f.killed = false
 	case "startJobUpdate":
 		f.updating = true
@@ -283,6 +306,18 @@ func (f *apiFixture) serve(request *http.Request) (*http.Response, error) {
 			idA = name + "-a"
 			idB = name + "-b"
 		}
+		if strings.Contains(name, "churn-service") {
+			duration = 3603
+			if f.churnFault == "service-id" && f.churnBatchReads > 0 {
+				idA = "replacement-service"
+			}
+		}
+		if strings.Contains(name, "churn-batch") {
+			f.churnBatchReads++
+			if f.churnFault == "reused-id" {
+				idA = "reused-batch-id"
+			}
+		}
 		if strings.Contains(name, "soak-service") {
 			duration = 3601
 		}
@@ -314,7 +349,11 @@ func (f *apiFixture) serve(request *http.Request) (*http.Response, error) {
 		if idA != "omit" {
 			records = append(records, taskRecord(idA, "agent-a", status, config))
 		}
-		records = append(records, taskRecord(idB, "agent-b", status, config))
+		hostB := "agent-b"
+		if f.churnFault == "same-host" && strings.Contains(name, "churn-batch") {
+			hostB = "agent-a"
+		}
+		records = append(records, taskRecord(idB, hostB, status, config))
 		collection := append([]any{"rec", len(records)}, records...)
 		result = responseResult(3, Object{"1": field("set", collection)})
 	case "setQuota", "getQuota", "scheduleCronJob", "descheduleCronJob":
@@ -363,6 +402,8 @@ func fixtureCheck(t *testing.T, phase string) (*check, *apiFixture) {
 				duration = 3600
 			case "soak":
 				duration = 3601
+			case "churn":
+				duration = 3603
 			}
 			return "PID ARGS\n100 /bin/sleep " + strconvI(duration), nil
 		}
@@ -439,5 +480,71 @@ func TestSoakRequiresFortyDistinctTasksAndTenMinutesOfSamples(t *testing.T) {
 	record := cases[0].(Object)
 	if record["elapsedSeconds"].(float64) != 600 || len(record["finishedTasks"].([]Task)) != 40 || record["samples"].(int) < 120 {
 		t.Fatal(record)
+	}
+}
+
+func TestChurnPhaseParsesWithoutMutatingLab(t *testing.T) {
+	root := filepath.Join(t.TempDir(), "not-created")
+	if err := Check(context.Background(), root, []string{"--root", root, "--phase", "churn", "--dry-run"}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(root); !os.IsNotExist(err) {
+		t.Fatal("dry run created lab", err)
+	}
+}
+
+func TestChurnCrossesHistoryBoundaryOnBothAgents(t *testing.T) {
+	c, f := fixtureCheck(t, "churn")
+	if err := c.churn(); err != nil {
+		t.Fatal(err)
+	}
+	cases := c.report["cases"].([]any)
+	if len(cases) != 1 {
+		t.Fatal(cases)
+	}
+	result := cases[0].(Object)
+	if result["batches"] != 130 || len(result["finishedTasks"].([]Task)) != 260 || result["samples"] != 130 {
+		t.Fatal(result)
+	}
+	if !reflect.DeepEqual(result["finishedPerHost"], map[string]int{"agent-a": 130, "agent-b": 130}) || !f.killed {
+		t.Fatal(result)
+	}
+	creates := 0
+	for _, method := range f.calls {
+		if method == "createJob" {
+			creates++
+		}
+	}
+	if creates != 131 {
+		t.Fatal("missing batch/service job", creates)
+	}
+}
+
+func TestChurnRejectsFalseHistoryEvidenceAndCleansUp(t *testing.T) {
+	for _, fault := range []string{"same-host", "reused-id", "service-id", "physical-pid"} {
+		t.Run(fault, func(t *testing.T) {
+			c, f := fixtureCheck(t, "churn")
+			f.churnFault = fault
+			if fault == "physical-pid" {
+				runner := c.runner
+				tops := 0
+				c.runner = func(ctx context.Context, args ...string) (string, error) {
+					result, err := runner(ctx, args...)
+					if len(args) > 1 && args[1] == "top" {
+						tops++
+						if tops > 2 {
+							result = strings.Replace(result, "100 /bin/sleep", "101 /bin/sleep", 1)
+						}
+					}
+					return result, err
+				}
+			}
+			if err := c.churn(); err == nil {
+				t.Fatal("invalid churn evidence accepted")
+			}
+			if !f.killed || len(c.report["cases"].([]any)) != 0 {
+				t.Fatal("failed churn was reported successful or not cleaned up")
+			}
+		})
 	}
 }

@@ -37,15 +37,20 @@ import org.apache.aurora.scheduler.execution.TaskReconciliation;
 import org.apache.aurora.scheduler.resources.ResourceBag;
 import org.apache.aurora.scheduler.storage.CallOrderEnforcingStorage;
 import org.apache.aurora.scheduler.storage.SnapshotStore;
+import org.apache.aurora.scheduler.storage.backup.BackupModule;
 import org.apache.aurora.scheduler.storage.backup.Recovery;
 import org.apache.aurora.scheduler.storage.backup.StorageBackup;
 import org.apache.aurora.scheduler.storage.sqlite.SqliteStorage;
 
+import static org.apache.aurora.scheduler.SchedulerServicesModule.addSchedulerActiveServiceBinding;
+
 /** Selects Go execution and SQLite inside the existing SchedulerMain application. */
 public final class GoAgentModule extends AbstractModule {
   private final GoAgentConfig config;
+  private final BackupModule.Options backupOptions;
 
   public GoAgentModule(CliOptions options) {
+    backupOptions = options.backup;
     try {
       config = GoAgentConfig.read(options.main.goAgentConfig.toPath(), options.main.clusterName);
     } catch (IOException e) {
@@ -56,6 +61,7 @@ public final class GoAgentModule extends AbstractModule {
   @Override
   protected void configure() {
     bind(GoAgentConfig.class).toInstance(config);
+    bind(BackupModule.Options.class).toInstance(backupOptions);
     install(CallOrderEnforcingStorage.wrappingModule(SqliteStorage.class));
     bind(GoAgentDriver.class).in(Singleton.class);
     bind(ExecutionDriver.class).to(GoAgentDriver.class);
@@ -73,6 +79,7 @@ public final class GoAgentModule extends AbstractModule {
     bind(StorageBackup.class).to(GoStorageBackup.class);
     bind(SnapshotStore.class).to(GoStorageBackup.class);
     bind(Recovery.class).to(GoStorageBackup.class);
+    addSchedulerActiveServiceBinding(binder()).to(GoStorageBackup.class);
   }
 
   @Provides
