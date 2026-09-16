@@ -1,0 +1,4524 @@
+{
+  "acceptance": {
+    "churn": {
+      "cases": [
+        {
+          "backupCountAfter": 3,
+          "backupCountBefore": 3,
+          "backupFilesAfter": [
+            "backup-358d84cc-9961-4def-aaf0-69b441b63353.db",
+            "backup-4f853fd2-762a-4def-a0cf-9bfb02a9eb7c.db",
+            "backup-6b1fe409-8e64-43d7-8eb8-d0027d55debc.db"
+          ],
+          "backupFilesBefore": [
+            "backup-677c3f9c-ec24-4f34-b872-92ea48c6c8e6.db",
+            "backup-996eed81-14cf-4c32-a36a-3596e17d9a08.db",
+            "backup-dd9e4b4f-d520-4bf4-a0dc-17281d9be63f.db"
+          ],
+          "batches": 130,
+          "daemons": {
+            "agent-a": {
+              "generation": 3,
+              "paused": false,
+              "pid": 86
+            },
+            "agent-b": {
+              "generation": 2,
+              "paused": false,
+              "pid": 78
+            },
+            "scheduler": {
+              "generation": 7,
+              "paused": false,
+              "pid": 852
+            }
+          },
+          "elapsedSeconds": 752.718069685,
+          "finishedPerHost": {
+            "agent-a": 130,
+            "agent-b": 130
+          },
+          "finishedTasks": [
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-0-0-c3b45b26-df69-4f99-ab78-f47ba15a879a",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-0-1-1f8f450c-64a1-4ac7-8fa8-d6dfb2eef257",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-1-0-0eb8d2c0-20f5-4de8-8eb7-685e936364f2",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-1-1-5d8fa102-67fa-47ba-af6c-4f1eb03d111c",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-2-0-a1a0eb82-943b-4419-858f-96a50f43adfc",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-2-1-140ecd2e-e7b7-4fb6-ab3f-4ef2da35ad65",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-3-0-5f33b141-9fa4-494a-9d3b-5a7ac27dddab",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-3-1-735398c7-bdd5-4feb-9cce-9996d0fd1238",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-4-0-c57a498c-61ef-4e49-8119-c811a02e84df",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-4-1-28520b3c-c31b-4961-b0e5-e12d2871dfeb",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-5-0-a71eef0a-e21b-493f-876f-6cbea853e7e1",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-5-1-bc130591-e1cb-4cdd-9c8b-045b624a7022",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-6-0-a4553250-0e69-4717-a0e8-b84b15499954",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-6-1-fe802223-3559-4ab0-8710-143c587502c2",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-7-0-93a8bcb6-7f6c-4925-80af-7c1202c84cb0",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-7-1-5d740552-ff0d-4399-9c66-8f1be0b2dd62",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-8-0-e200b59b-be1f-4312-b6d2-d08e17e237d6",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-8-1-77397e2d-1a1d-468e-856f-500bec74cc70",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-9-0-b48e7c00-da47-41eb-bd3b-49ed42402cb8",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-9-1-3e224a74-cb2e-46e7-8ddc-3f4eeaf8fc4b",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-10-0-bb2f2679-a360-4841-b239-2f3cf16b871d",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-10-1-cdf70f85-bd8f-4c02-8212-2adb3c368363",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-11-0-f108ac86-2568-494a-959e-c6c5528db43f",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-11-1-c45bb66d-d7c9-413b-be08-f2eb13640a18",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-12-0-ce42b4ef-db6a-48f7-9bfa-4e1966306de3",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-12-1-a26ecaec-4396-4eb6-970e-e059fbe230a6",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-13-0-c60736bf-846c-4ac2-ab90-1f8d2d17695c",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-13-1-614a9730-f19b-4e98-a849-643bd929722b",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-14-0-f7952a26-0f27-41b0-9ced-10ddb78bff9c",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-14-1-fe515d63-dbff-4ca6-ab20-a8facd7573ed",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-15-0-3eb720ed-9ce6-45bb-83a7-0b856d527621",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-15-1-68345275-a19d-43f1-8438-f5b71d64cd40",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-16-0-712777ac-839c-468b-8100-6aae4910ed46",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-16-1-52147243-d7e1-4ce2-9252-ddd4b78bb8f1",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-17-0-06423a6d-770c-4864-a15f-df06f73c0621",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-17-1-d48a1e46-c5e6-4a85-b7ca-e1fbf1c2f072",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-18-0-b633d96f-14ff-4e10-bf06-89cb12dc5d9e",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-18-1-9b87ad7b-d33a-41fe-8660-fe973deb188c",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-19-0-906a9e52-05c2-4c3a-bef0-2fa82f365c63",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-19-1-d6a57714-8938-4e5f-8ac3-ac5340159b27",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-20-0-fa2d4e9b-4bea-4ac9-8545-01dfca91ceeb",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-20-1-c16f03b1-a64a-4b35-9b8a-5ae0cf497442",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-21-0-f109c4de-abe1-4b39-bacd-8884572e9be2",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-21-1-5ed2ee60-3e13-42bc-886c-451f474602f8",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-22-0-864c9ee4-78ea-4976-bc2b-e3cc40fa6ade",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-22-1-422c28c8-a17a-4330-aa69-407d4b3ae2de",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-23-0-3419495f-81b8-4693-9dda-c53733d1ca7e",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-23-1-91f0f510-0884-48a6-808f-7d1613f92a40",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-24-0-bc9ef23a-8232-4801-9afa-4660be3c2118",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-24-1-ff98c5d2-c1b3-48c5-9de2-f4fe5dac483e",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-25-0-3499eb75-794d-4ce4-82f8-0eeb619607de",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-25-1-174f8702-a716-478e-8521-adead2d193ca",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-26-0-1d2af8e0-210d-4a6f-9216-0e5ef9f4eaf6",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-26-1-3ea4ab52-be6c-4ec0-9d2d-5b28cd60058f",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-27-0-96b30e20-cc2f-496c-8d02-9dfe7c42c614",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-27-1-338e8672-4ece-410a-926c-84bf7c60570b",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-28-0-4e9f4d58-7870-4471-8a5c-4cf54d695812",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-28-1-7e3379df-374e-4301-b3bb-68a0f3357925",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-29-0-3d8b7570-b31d-407f-81f4-9bd2e4c2ace0",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-29-1-08943e90-9866-476f-b999-b481afe91424",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-30-0-db7d9507-523f-4cf3-8b63-c2d69b770011",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-30-1-78ecfe89-52f4-4851-96c2-f62c6c1e3867",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-31-0-c9444dc2-9714-456b-b706-010f9df14b8d",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-31-1-a0e17266-7db9-4ef0-8e19-e997a3d9e01a",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-32-0-2037ad16-cdf9-4267-8ea7-265d1ec393b2",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-32-1-e15de291-b23e-452e-87e8-ff499f1a2638",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-33-0-15fd31bc-637b-4900-bf99-9ec441f9e8f4",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-33-1-eb492e6a-3a1c-4e36-adc5-f642bcd2f899",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-34-0-6183c38e-f508-49cc-a540-fc6cc331c789",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-34-1-68ecb05a-2841-415c-a5c2-d9b9d3736677",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-35-0-8989719e-6575-4dc3-9c10-08caccb5bd0b",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-35-1-3b652d59-15c1-4dfa-95c0-bf9dec14098e",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-36-0-5878dc6a-f64c-4595-950b-55e9a9779cec",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-36-1-ae0827fe-0bc7-4ea6-9b61-20a4433e0902",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-37-0-797972bf-808a-4791-81d1-2888d4112ff0",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-37-1-9b8c1c6e-36d0-4cff-a38a-441ab9084b9a",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-38-0-09a0f486-1ad5-4d19-97a5-6b60bf5fe1f5",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-38-1-228b6180-0420-4e2f-b849-398b425d6729",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-39-0-564a3c60-1c67-4e55-a097-38b8ff015e51",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-39-1-581e5f51-ebe0-472a-bd15-9854cf7ffbc0",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-40-0-54c8fa6c-81c8-47e0-8359-280729a1e92d",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-40-1-512c4b63-3249-4270-897b-2c62bc2ec3ce",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-41-0-bf56825d-4289-4a40-8464-a9ed14145313",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-41-1-9e9e0c8b-6961-42a8-9300-37230fd0f3f9",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-42-0-8f908956-585c-49e4-975d-fe434dd979be",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-42-1-bfbbb591-0613-48a2-b329-411fc3d45dea",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-43-0-9dc7bd98-34f8-467a-a86b-3de7f565005b",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-43-1-ec3ed79d-e06e-4e5c-ba5d-323679c66a15",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-44-0-f3720a59-044d-4c74-964d-9148d32de541",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-44-1-551ccbcf-d656-4293-afb4-92ebaf25d766",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-45-0-7306f9b7-fcde-4ad8-8967-c4612c177e84",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-45-1-dfbed99c-89e9-4e16-8fb7-2faee1d7f4b4",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-46-0-d5a23366-5317-4469-8a30-d7b3c14e719b",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-46-1-d1fb8eae-98df-450a-b5a5-2fdd233c80b7",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-47-0-833dd21a-fd3d-48fc-8c8c-e5c55b89879a",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-47-1-74b5dd1b-9ed4-4718-a6a0-d430b6e31061",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-48-0-7caf9d8b-cf09-4875-bbcd-41f178d04b63",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-48-1-6ef91b32-b447-49c7-adc0-196f019ac478",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-49-0-4ab7626a-b82e-4a64-a48a-b52c726f17d3",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-49-1-9665fd53-d576-44e1-b065-5b680ad8c458",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-50-0-e6a0dae6-55de-480e-9bab-c45a34f9b35f",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-50-1-b424eadd-a64e-4326-b5fe-922fd84230d6",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-51-0-29e30159-0ba6-416d-a7de-dc173db0ef06",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-51-1-9005204f-0285-4fe7-bd69-016de2753a45",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-52-0-81758d8c-3f4e-443c-8881-02194fe97f0e",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-52-1-b83dc4a2-4967-493f-8657-7a7ed70534e5",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-53-0-be69b677-3743-4170-80e4-fe6543366b25",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-53-1-91e95e38-fe8c-440e-ba1e-73355d1413cc",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-54-0-376f7257-8e13-4724-905d-4c42d09ec1e4",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-54-1-ea1fcc12-5e12-451e-a6d3-4178ed164cac",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-55-0-be2b9d08-a786-44c7-84c7-a7ffbfd7dae8",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-55-1-bbd3c4af-731f-46f0-87cc-789c38beee64",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-56-0-c4e62071-960f-4369-9830-50a90c8d8d5c",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-56-1-2d0a49b5-aa17-4b5e-a2c6-b041460c3a5c",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-57-0-ba5fc3ef-6b4d-480c-87f2-158c31e127c1",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-57-1-4b735ab5-e15e-4fbb-852d-10b715ef2714",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-58-0-2aaf3846-423a-42c8-bf28-d8c48bffd896",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-58-1-81635343-14bc-4fa8-afcf-d99b3a493e35",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-59-0-a5c43861-32e7-4d1b-beb9-ca5fab1bdfb9",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-59-1-85ec1ab3-944b-4d82-827a-a627eea39cb0",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-60-0-349366b9-9fe4-42b7-b76f-3fefdf9bd86c",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-60-1-7612cc56-25c3-48ca-9ca4-b833be66f3c1",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-61-0-5d927b86-9969-4613-8832-89f88aad66eb",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-61-1-8c10d5ca-0f3a-4cba-b6cf-5f470cbe368f",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-62-0-7a0ef7dd-a247-4a9c-ad11-3adf6b03afd2",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-62-1-b4e72b99-a91d-4dd1-97ef-d8ee760c7f12",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-63-0-1fa84741-58ca-4154-9a04-399d3523e921",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-63-1-e79022cf-e74c-4b0c-aa52-130df1c8e349",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-64-0-51613113-9dc3-405a-9c44-0363e39861f8",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-64-1-9eb4c4d4-9e26-4bca-92cd-f24fcf125407",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-65-0-62a785be-2b2d-4003-989d-757ce100aad9",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-65-1-69e7c32c-f289-431e-a53a-614e4668ae5d",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-66-0-b6ed6c3d-8300-4173-9c0d-b9ad0d2fb761",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-66-1-284a74f4-64e5-41ec-9ba8-b1bb39ade5f3",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-67-0-fe06c963-15da-434f-bfc0-a101f194ab4b",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-67-1-4e371c6a-1c78-451f-a2d0-16626d037fa2",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-68-0-bc190da3-00cc-49e3-bce2-257a620d9de5",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-68-1-895954c0-f71d-472b-afe6-a607312ea715",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-69-0-0b412ecf-2314-4b16-8014-234a3ecf8611",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-69-1-6fcea196-555c-4ef9-8363-674bfb91b515",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-70-0-8826d7e2-9466-4155-a8d5-257be59fd5e2",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-70-1-f1efe7c5-5c45-4b26-ae85-bfda8cdf3fdc",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-71-0-9b4eaab7-1e0e-43e9-b078-6a3c11e758cf",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-71-1-2cf6748d-a2e5-4038-a0c3-eadb5c5780fe",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-72-0-dacaa4e8-ab34-4bdf-b190-1dc862456b35",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-72-1-6fc7f5e3-196a-4ccd-9fe4-0b7d1c2585c0",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-73-0-d42c3ca2-3bfe-4294-a161-b1c7829a8490",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-73-1-6c1fb561-ad44-468b-a2fc-0a47d9ab3a5f",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-74-0-5db6089a-5d6d-4163-b0aa-cf20ec9e193f",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-74-1-f541c9c6-57b1-41f9-ae97-be0c64fab712",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-75-0-785b33d4-19e1-4f75-ae48-c8bf45e606df",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-75-1-f064d039-a291-41ec-898f-f18549ffa48e",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-76-0-1189e55d-f24e-4031-a966-40f9b3dac790",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-76-1-51fa9538-7764-4fa1-a7cd-4f2705f7fb61",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-77-0-d199a7c5-c99b-45a5-bc58-98ea0c3a49d1",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-77-1-327348b5-34ab-4655-a54b-83f7c816e4d8",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-78-0-6657038f-7370-4460-b5ae-20c17cf6a1a4",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-78-1-946ee3f4-a5bd-4725-bde3-785e52e5ff78",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-79-0-83b8c652-dc6f-482a-8d35-589a693339ee",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-79-1-dfad1d17-797d-47b5-8bd1-dfb3f1623ca5",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-80-0-7a06bc3f-71dd-4fb2-82f5-fa05ca902cdb",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-80-1-bedcb505-566e-41c4-9a94-11141f4c5f66",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-81-0-8b35800c-7699-45cc-9c62-afccc1011530",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-81-1-60bed893-e2c7-4d42-8a44-e9da02e4df29",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-82-0-d86daaf3-b276-42f9-a085-7bd1566f1850",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-82-1-e5b54524-255d-49e9-92e4-501cfa943b1b",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-83-0-cff92ddf-d86f-4905-a2d0-32bed883ffef",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-83-1-bdd5b128-5c94-458d-90d9-693af2126658",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-84-0-c27c42da-a811-4f44-bd21-9aa9c9b838e2",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-84-1-75670716-e9f7-4f5e-82f1-be122edde40d",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-85-0-c202da2f-e700-4961-918e-c0604bae81c7",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-85-1-6e3f5084-edc3-438c-87ec-5091c496b028",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-86-0-b11a7efa-48d2-47d9-bb47-78ec3b20fdf2",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-86-1-82b4ea3e-beb2-4469-909b-d5f9d96c559a",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-87-0-c63670e1-93ad-4906-9ee1-2e265cc7a1dd",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-87-1-82824847-d305-4303-a682-10be428ba2a1",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-88-0-9fcc33cb-5ba1-4c8c-b084-e0436dbfb6d6",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-88-1-55efe616-3c8a-453b-a07c-ee0da2052345",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-89-0-cc826c68-103f-467c-ab61-cb4c48f8e1be",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-89-1-31813be2-dc56-4612-9d28-0fae797237ed",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-90-0-46e8938d-a3fb-4ab4-b7ef-1ea61d62af66",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-90-1-2057eda3-4cc4-46d9-9e69-1fa528c59e64",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-91-0-ea1b715e-1edf-4826-a6dd-b5919a2ef83f",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-91-1-2d8a7753-d7f5-411d-9e00-e21fdf994c4d",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-92-0-d39363d6-b6f2-4b4a-b752-9a5d269ff025",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-92-1-9cd45214-19f4-4775-a823-680f3e40393c",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-93-0-7e5c9095-9c7f-44c1-8ddc-1596d8d128a4",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-93-1-fb143583-6ed4-4bc4-aea9-dcb81f85a033",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-94-0-b00640b9-2d1d-4be5-a138-a29f0c125f94",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-94-1-d57fde50-d5b6-45fe-858c-acd5da0e33a8",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-95-0-15c9abdf-d730-40d3-b6ce-497670a8a232",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-95-1-d237bd23-3fca-409e-8f97-d8a3c8f5a89d",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-96-0-b6406a3e-1ae1-4f85-ba05-1ae345d78638",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-96-1-2deb6de2-3f19-44d3-988f-12286a6d36f4",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-97-0-f09f8d7e-0c2b-4c72-bef1-eaba184ac1d7",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-97-1-a0158155-1b57-44c6-bd03-4b928b67f36e",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-98-0-e084f362-e17a-4da7-836b-7116daac10fa",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-98-1-3d700d12-c8ba-4dbb-9a20-6c3701c414cc",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-99-0-12b72d39-f39d-43e5-a737-f0b04b5b5e6d",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-99-1-bd3042e7-da79-44ef-a86e-8b51808af2ba",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-100-0-fb21fc0f-8ab9-4592-b11c-85fcffaa6921",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-100-1-a87f820d-114b-40de-9c14-01eaeb5cf8a6",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-101-0-7157d961-149e-4be6-8a07-c085101b8645",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-101-1-8f438558-9674-44b9-87cd-c59622a5a530",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-102-0-f15d3cb3-c56f-45a1-8c64-a801af721535",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-102-1-ccfa8451-5828-41f2-83fd-26c16edd1d27",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-103-0-1e989a5c-c15e-4c5f-8c48-26b073710466",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-103-1-2703e2c2-468e-4e25-a157-ce1f3a1ef171",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-104-0-0847c7e0-900f-4ae4-bc43-6d75c919a450",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-104-1-63339eba-4f62-472f-8c2c-a098341e75c8",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-105-0-8344f568-32b3-487f-9540-ff00fc0d820c",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-105-1-7f043468-1e75-422b-8e0e-10b710b93d49",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-106-0-1a628bf9-2d22-4e2c-bbe0-90ce09d089c4",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-106-1-d637ce6f-7676-4936-bff6-9d3af739ecbc",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-107-0-b9dff91d-1377-4dc3-87d8-6d340d7c9c11",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-107-1-098b4556-c5ea-4389-b81d-8cef9c381122",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-108-0-7e259bc3-9f2a-4398-ab1c-e5b31ab3e8a8",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-108-1-19b25873-c5dc-417a-8732-9afcf1d15db6",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-109-0-9d98505a-02a0-42f4-a867-8bdd8bf16651",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-109-1-6b0cb8a6-2bb8-457c-bdf9-bb49e021f981",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-110-0-c0b4c2a9-fd7d-43b6-a37f-c84a856f9685",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-110-1-477b8e13-276c-4d6d-8214-572e9af07637",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-111-0-12f9b873-e127-4aa9-9b7d-6c7ae4cefc4e",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-111-1-be8d8087-f3d6-487f-acac-fac32fa73dfc",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-112-0-5b286c83-75e4-46c6-b5d8-babdee18de71",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-112-1-1af07262-beec-4812-8904-d9ee20fc7bbc",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-113-0-828eb87d-1004-46b3-b0a3-c3173536c8d7",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-113-1-532218cc-2140-4306-aba2-339aef64cde3",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-114-0-636a9770-dd84-41a9-b3d2-50b2f6f0a473",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-114-1-352c6752-1706-402e-8a1e-f5da059ecb14",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-115-0-07074493-a54a-4f3d-bbf9-62e9d4c13535",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-115-1-6f52fbe5-de0d-4002-8216-56262411ae18",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-116-0-070239ab-ab57-40b4-b2e8-c8f0a94ce2a2",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-116-1-d7e93e58-cc82-4e55-a12a-f943a84051a7",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-117-0-113606e4-2b1a-4bb2-8a46-64138f0e45a1",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-117-1-e4ba3070-14ab-48c9-a07b-610d39e231c3",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-118-0-d0dc40d1-5664-4d78-9818-f7660e7ae263",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-118-1-47e5aa47-3cd1-44ab-8b12-aacd20e395ed",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-119-0-0315807b-e0aa-4111-9ebf-6bd120db1dcf",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-119-1-40c3662d-4960-47a6-9a9e-ba9c56136956",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-120-0-d5db5fa9-03e9-49e4-a394-f7f9ac9b35f3",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-120-1-5462620d-1f89-4ecd-9328-7f01da687e05",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-121-0-b54277ea-5cc3-48bd-a75e-10d6e8741319",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-121-1-bd21d443-5ee6-4415-a364-e1a322b99a6e",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-122-0-cdba01e1-faa0-4e1f-9c68-0ff1eab0b97e",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-122-1-c63710cb-9c6d-48e6-a3b2-ab6a87d463f6",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-123-0-96f43429-0707-4a38-9c67-0873a8fc8357",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-123-1-7ca2e187-7829-4287-9709-e20c11e22d6d",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-124-0-40b1399f-853b-4740-a7f2-9a4df63b6c2a",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-124-1-82c6d41c-4293-4bab-b927-d1c1a62caad2",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-125-0-b4768ca1-196f-4041-83d5-5ee0ca97c032",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-125-1-f4ec8ccc-3717-4498-925f-03926137e06e",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-126-0-439b773c-2d97-44fc-a7dc-f032a283b326",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-126-1-100e50be-27cc-4793-8274-9c84aac0f70c",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-127-0-bf925197-40df-4145-b484-32b65afc0aa5",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-127-1-a65445c9-a243-4df0-bf84-2f6ea0e85f21",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-128-0-374c936a-aca5-49ff-a49c-f50bb847957e",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-128-1-9faec4e0-49f1-441d-b0bf-87d6b26a5e29",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-129-0-25e5615a-5dd4-4db0-9134-c4f60f21965e",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-batch-129-1-e9156569-4a59-4d4c-9421-8cf202010962",
+              "status": 3
+            }
+          ],
+          "name": "retained-history-churn",
+          "physical": {
+            "agent-a": [
+              "2330412             /bin/sleep 3603"
+            ],
+            "agent-b": [
+              "2330418             /bin/sleep 3603"
+            ]
+          },
+          "samples": 130,
+          "serviceTasks": [
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-service-0-39117743-abd2-4d0e-89d0-b85ed17c0459",
+              "status": 2
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524935-2f5c434e9972-churn-service-1-21add593-84e7-4070-9fc8-a4b3df711a19",
+              "status": 2
+            }
+          ]
+        }
+      ],
+      "ok": true,
+      "path": ".pi-lab/hardening01/check-churn-1789524935529923434.json",
+      "phase": "churn",
+      "prefix": "check-1789524935-2f5c434e9972",
+      "recoveryRounds": null,
+      "sha256": "e48cd2283f2ce0184b3973560b091989cb8a6e89bea5043a11a9741d63cbd043"
+    },
+    "policy": {
+      "cases": [
+        {
+          "executorRestored": true,
+          "name": "automatic-rollback",
+          "tasks": [
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524840-e597ce70fa57-policy-service-0-25210ad0-df8a-401d-83c6-1572408e0d94",
+              "status": 4
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524840-e597ce70fa57-policy-service-0-7b1de615-880b-45a3-903c-db3a45f29348",
+              "status": 5
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524840-e597ce70fa57-policy-service-0-b3f83ee7-1097-44a7-8cf5-c54f9959957f",
+              "status": 2
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524840-e597ce70fa57-policy-service-1-e95658c8-4b2a-42d5-aa98-c41121e6d7ab",
+              "status": 2
+            }
+          ],
+          "updateStatus": 5
+        },
+        {
+          "drainedTasks": [
+            {
+              "host": null,
+              "id": "fixtures-test-check-1789524840-e597ce70fa57-policy-service-0-13667144-a971-4f98-bd97-350516905275",
+              "status": 0
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524840-e597ce70fa57-policy-service-0-25210ad0-df8a-401d-83c6-1572408e0d94",
+              "status": 4
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524840-e597ce70fa57-policy-service-0-7b1de615-880b-45a3-903c-db3a45f29348",
+              "status": 5
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524840-e597ce70fa57-policy-service-0-b3f83ee7-1097-44a7-8cf5-c54f9959957f",
+              "status": 5
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524840-e597ce70fa57-policy-service-1-e95658c8-4b2a-42d5-aa98-c41121e6d7ab",
+              "status": 2
+            }
+          ],
+          "host": "agent-a",
+          "name": "active-drain-replacement",
+          "replacedTasks": [
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524840-e597ce70fa57-policy-service-0-13667144-a971-4f98-bd97-350516905275",
+              "status": 2
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524840-e597ce70fa57-policy-service-0-25210ad0-df8a-401d-83c6-1572408e0d94",
+              "status": 4
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524840-e597ce70fa57-policy-service-0-7b1de615-880b-45a3-903c-db3a45f29348",
+              "status": 5
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524840-e597ce70fa57-policy-service-0-b3f83ee7-1097-44a7-8cf5-c54f9959957f",
+              "status": 5
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524840-e597ce70fa57-policy-service-1-e95658c8-4b2a-42d5-aa98-c41121e6d7ab",
+              "status": 2
+            }
+          ]
+        },
+        {
+          "name": "manual-cron-finished",
+          "tasks": [
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524840-e597ce70fa57-policy-cron-0-07b6baaa-7d92-4471-a8ad-f92e7b74c239",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524840-e597ce70fa57-policy-cron-1-8bdb3649-48c8-4698-94bd-69dad191df78",
+              "status": 3
+            }
+          ]
+        }
+      ],
+      "ok": true,
+      "path": ".pi-lab/hardening01/check-policy-1789524840882537392.json",
+      "phase": "policy",
+      "prefix": "check-1789524840-e597ce70fa57",
+      "recoveryRounds": null,
+      "sha256": "2d7cb917d45a0e1a4fa853e5c11462e52622c97855da32433feadabd29c1cedc"
+    },
+    "recovery": {
+      "cases": [
+        {
+          "afterGeneration": 2,
+          "beforeGeneration": 1,
+          "name": "restart-scheduler",
+          "node": "scheduler",
+          "physical": {
+            "agent-a": [
+              "2328095             /bin/sleep 3600"
+            ],
+            "agent-b": [
+              "2328089             /bin/sleep 3600"
+            ]
+          },
+          "round": 1,
+          "tasks": [
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524715-73ebb41c6ead-recovery-0-d4144ecd-1799-47f4-bf53-38d64155760f",
+              "status": 2
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524715-73ebb41c6ead-recovery-1-97dcff35-0bae-4704-a872-bd02790203d4",
+              "status": 2
+            }
+          ]
+        },
+        {
+          "afterGeneration": 3,
+          "beforeGeneration": 2,
+          "name": "crash-scheduler",
+          "node": "scheduler",
+          "physical": {
+            "agent-a": [
+              "2328095             /bin/sleep 3600"
+            ],
+            "agent-b": [
+              "2328089             /bin/sleep 3600"
+            ]
+          },
+          "round": 1,
+          "tasks": [
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524715-73ebb41c6ead-recovery-0-d4144ecd-1799-47f4-bf53-38d64155760f",
+              "status": 2
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524715-73ebb41c6ead-recovery-1-97dcff35-0bae-4704-a872-bd02790203d4",
+              "status": 2
+            }
+          ]
+        },
+        {
+          "afterGeneration": 2,
+          "beforeGeneration": 1,
+          "name": "crash-agent",
+          "node": "agent-a",
+          "physical": {
+            "agent-a": [
+              "2328095             /bin/sleep 3600"
+            ],
+            "agent-b": [
+              "2328089             /bin/sleep 3600"
+            ]
+          },
+          "round": 1,
+          "tasks": [
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524715-73ebb41c6ead-recovery-0-d4144ecd-1799-47f4-bf53-38d64155760f",
+              "status": 2
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524715-73ebb41c6ead-recovery-1-97dcff35-0bae-4704-a872-bd02790203d4",
+              "status": 2
+            }
+          ]
+        },
+        {
+          "afterGeneration": 4,
+          "beforeGeneration": 3,
+          "name": "restart-scheduler",
+          "node": "scheduler",
+          "physical": {
+            "agent-a": [
+              "2328095             /bin/sleep 3600"
+            ],
+            "agent-b": [
+              "2328089             /bin/sleep 3600"
+            ]
+          },
+          "round": 2,
+          "tasks": [
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524715-73ebb41c6ead-recovery-0-d4144ecd-1799-47f4-bf53-38d64155760f",
+              "status": 2
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524715-73ebb41c6ead-recovery-1-97dcff35-0bae-4704-a872-bd02790203d4",
+              "status": 2
+            }
+          ]
+        },
+        {
+          "afterGeneration": 5,
+          "beforeGeneration": 4,
+          "name": "crash-scheduler",
+          "node": "scheduler",
+          "physical": {
+            "agent-a": [
+              "2328095             /bin/sleep 3600"
+            ],
+            "agent-b": [
+              "2328089             /bin/sleep 3600"
+            ]
+          },
+          "round": 2,
+          "tasks": [
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524715-73ebb41c6ead-recovery-0-d4144ecd-1799-47f4-bf53-38d64155760f",
+              "status": 2
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524715-73ebb41c6ead-recovery-1-97dcff35-0bae-4704-a872-bd02790203d4",
+              "status": 2
+            }
+          ]
+        },
+        {
+          "afterGeneration": 2,
+          "beforeGeneration": 1,
+          "name": "crash-agent",
+          "node": "agent-b",
+          "physical": {
+            "agent-a": [
+              "2328095             /bin/sleep 3600"
+            ],
+            "agent-b": [
+              "2328089             /bin/sleep 3600"
+            ]
+          },
+          "round": 2,
+          "tasks": [
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524715-73ebb41c6ead-recovery-0-d4144ecd-1799-47f4-bf53-38d64155760f",
+              "status": 2
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524715-73ebb41c6ead-recovery-1-97dcff35-0bae-4704-a872-bd02790203d4",
+              "status": 2
+            }
+          ]
+        },
+        {
+          "afterGeneration": 6,
+          "beforeGeneration": 5,
+          "name": "restart-scheduler",
+          "node": "scheduler",
+          "physical": {
+            "agent-a": [
+              "2328095             /bin/sleep 3600"
+            ],
+            "agent-b": [
+              "2328089             /bin/sleep 3600"
+            ]
+          },
+          "round": 3,
+          "tasks": [
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524715-73ebb41c6ead-recovery-0-d4144ecd-1799-47f4-bf53-38d64155760f",
+              "status": 2
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524715-73ebb41c6ead-recovery-1-97dcff35-0bae-4704-a872-bd02790203d4",
+              "status": 2
+            }
+          ]
+        },
+        {
+          "afterGeneration": 7,
+          "beforeGeneration": 6,
+          "name": "crash-scheduler",
+          "node": "scheduler",
+          "physical": {
+            "agent-a": [
+              "2328095             /bin/sleep 3600"
+            ],
+            "agent-b": [
+              "2328089             /bin/sleep 3600"
+            ]
+          },
+          "round": 3,
+          "tasks": [
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524715-73ebb41c6ead-recovery-0-d4144ecd-1799-47f4-bf53-38d64155760f",
+              "status": 2
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524715-73ebb41c6ead-recovery-1-97dcff35-0bae-4704-a872-bd02790203d4",
+              "status": 2
+            }
+          ]
+        },
+        {
+          "afterGeneration": 3,
+          "beforeGeneration": 2,
+          "name": "crash-agent",
+          "node": "agent-a",
+          "physical": {
+            "agent-a": [
+              "2328095             /bin/sleep 3600"
+            ],
+            "agent-b": [
+              "2328089             /bin/sleep 3600"
+            ]
+          },
+          "round": 3,
+          "tasks": [
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524715-73ebb41c6ead-recovery-0-d4144ecd-1799-47f4-bf53-38d64155760f",
+              "status": 2
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524715-73ebb41c6ead-recovery-1-97dcff35-0bae-4704-a872-bd02790203d4",
+              "status": 2
+            }
+          ]
+        }
+      ],
+      "ok": true,
+      "path": ".pi-lab/hardening01/check-recovery-1789524715687403098.json",
+      "phase": "recovery",
+      "prefix": "check-1789524715-73ebb41c6ead",
+      "recoveryRounds": 3,
+      "sha256": "820f8e0b79e3db27bb86012c831f9cee8f8ef0803292a5f3ddd1b002fa271701"
+    },
+    "smoke": {
+      "cases": [
+        {
+          "name": "batch-finished",
+          "tasks": [
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524589-77e73de9d9e3-batch-0-2d2cf1d1-b5c6-4821-9243-b6ecfe99e85b",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524589-77e73de9d9e3-batch-1-c6572532-cdb2-47e8-a812-adc0d333b112",
+              "status": 3
+            }
+          ]
+        },
+        {
+          "name": "two-agent-service",
+          "physical": {
+            "agent-a": [
+              "2327628             /bin/sleep 300"
+            ],
+            "agent-b": [
+              "2327620             /bin/sleep 300"
+            ]
+          },
+          "tasks": [
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524589-77e73de9d9e3-service-0-60a6fa75-369a-41c8-9a3e-519ae327f866",
+              "status": 2
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524589-77e73de9d9e3-service-1-88cffcad-166d-40a5-beea-15f029523c08",
+              "status": 2
+            }
+          ]
+        },
+        {
+          "name": "rolling-update",
+          "tasks": [
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524589-77e73de9d9e3-service-0-60a6fa75-369a-41c8-9a3e-519ae327f866",
+              "status": 5
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789524589-77e73de9d9e3-service-0-60b18deb-269c-4117-9e28-66ff6e488728",
+              "status": 2
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524589-77e73de9d9e3-service-1-8052d760-0279-4931-a523-94314c53cb86",
+              "status": 2
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789524589-77e73de9d9e3-service-1-88cffcad-166d-40a5-beea-15f029523c08",
+              "status": 5
+            }
+          ],
+          "updateStatus": 4
+        },
+        {
+          "name": "service-killed"
+        },
+        {
+          "name": "quota-and-cron-api"
+        },
+        {
+          "name": "drain-empty-hosts-api"
+        }
+      ],
+      "ok": true,
+      "path": ".pi-lab/hardening01/check-smoke-1789524589943729410.json",
+      "phase": "smoke",
+      "prefix": "check-1789524589-77e73de9d9e3",
+      "recoveryRounds": null,
+      "sha256": "7370c0b06332c6666d9c21ecd31df91c8d2a0f83403fe6f18bc12590c290a89d"
+    }
+  },
+  "backupRecovery": {
+    "path": ".pi-lab/hardening01/backup-recovery.json",
+    "report": {
+      "finished": 1789525717.7645996,
+      "ok": true,
+      "restored": {
+        "integrity": [
+          [
+            "ok"
+          ]
+        ],
+        "rows": {
+          "attributes": 2,
+          "command_outbox": 289,
+          "cron_jobs": 0,
+          "host_maintenance": 0,
+          "job_updates": 2,
+          "observation_receipts": 3348,
+          "quotas": 2,
+          "scheduler_metadata": 0,
+          "sqlite_sequence": 1,
+          "storage_owner": 1,
+          "storage_transactions": 6249,
+          "tasks": 277
+        },
+        "schema": 3
+      },
+      "restoredSha256": "97fd7151fb9a33ea99bd87515e183b66a78747e3d9677fe300703d9686c7f838",
+      "retainedBackups": [
+        "backup-6b1fe409-8e64-43d7-8eb8-d0027d55debc.db",
+        "backup-358d84cc-9961-4def-aaf0-69b441b63353.db",
+        "backup-acefd492-3dfc-4d24-8b6a-fcaa151720fe.db"
+      ],
+      "scope": "Offline full-database publication and content validation; restored copy is not started as a scheduler or connected to live agents.",
+      "selectedBackup": "backup-acefd492-3dfc-4d24-8b6a-fcaa151720fe.db",
+      "source": {
+        "integrity": [
+          [
+            "ok"
+          ]
+        ],
+        "rows": {
+          "attributes": 2,
+          "command_outbox": 289,
+          "cron_jobs": 0,
+          "host_maintenance": 0,
+          "job_updates": 2,
+          "observation_receipts": 3348,
+          "quotas": 2,
+          "scheduler_metadata": 0,
+          "sqlite_sequence": 1,
+          "storage_owner": 1,
+          "storage_transactions": 6249,
+          "tasks": 277
+        },
+        "schema": 3
+      },
+      "sourceSha256": "97fd7151fb9a33ea99bd87515e183b66a78747e3d9677fe300703d9686c7f838",
+      "started": 1789525714.7348762,
+      "statsAfter": {
+        "scheduler_backup_failed": 0,
+        "scheduler_backup_last_success_age_ms": 18276,
+        "scheduler_backup_last_success_ms": 1789525699479,
+        "scheduler_backup_retention_failed": 0,
+        "scheduler_backup_success": 29
+      },
+      "statsBefore": {
+        "scheduler_backup_failed": 0,
+        "scheduler_backup_last_success_age_ms": 15264,
+        "scheduler_backup_last_success_ms": 1789525699479,
+        "scheduler_backup_retention_failed": 0,
+        "scheduler_backup_success": 29
+      }
+    },
+    "sha256": "d354c46bcc038ebf918876c003347b42444a9dd8c9ad72c70b35b5709968e451"
+  },
+  "baseline": "0ade4c3fdec123aaa3a1ac687dfcf70ffef4c98f",
+  "checks": {
+    "hardening01-full-02.log": {
+      "path": ".cache/hardening01-full-02.log",
+      "sha256": "fad8b44e7b7983a12eadca12f8f6af68c39e3a7a649601eb409eb5d2bc8c7613"
+    },
+    "hardening01-go-build.log": {
+      "path": ".cache/hardening01-go-build.log",
+      "sha256": "5d7d2033d732065b160bd11b599181084eb3b22516b9c71a22d8c36e2b10c390"
+    },
+    "hardening01-tools-check.log": {
+      "path": ".cache/hardening01-tools-check.log",
+      "sha256": "beabc8d0469744dca1ff56ee93c504dc87c537836ee83d12262bcd888572fc12"
+    }
+  },
+  "ci": {
+    "path": ".cache/hardening01-ci.json",
+    "report": {
+      "conclusion": "success",
+      "headSha": "144f2b641fe0e27d36c3f603f01ac8a86b3df5bc",
+      "id": 35047052624,
+      "jobs": [
+        {
+          "completed_at": "2026-09-16T02:12:59Z",
+          "conclusion": "success",
+          "html_url": "https://github.com/jordanly/aurora/actions/runs/35047052624/job/104639048042",
+          "id": 104639048042,
+          "name": "Go agent / tests and provenance",
+          "started_at": "2026-09-16T02:12:04Z",
+          "status": "completed"
+        },
+        {
+          "completed_at": "2026-09-16T02:19:07Z",
+          "conclusion": "success",
+          "html_url": "https://github.com/jordanly/aurora/actions/runs/35047052624/job/104639048207",
+          "id": 104639048207,
+          "name": "Java 25 / behavior-and-distribution",
+          "started_at": "2026-09-16T02:12:02Z",
+          "status": "completed"
+        },
+        {
+          "completed_at": "2026-09-16T02:18:54Z",
+          "conclusion": "success",
+          "html_url": "https://github.com/jordanly/aurora/actions/runs/35047052624/job/104639048229",
+          "id": 104639048229,
+          "name": "Java 25 / quality",
+          "started_at": "2026-09-16T02:12:02Z",
+          "status": "completed"
+        }
+      ],
+      "status": "completed",
+      "url": "https://github.com/jordanly/aurora/actions/runs/35047052624"
+    },
+    "sha256": "2d37d3ef14807ad297a928006b72d8200e126a3e9fbe53324c70d9e846aacc5d"
+  },
+  "coverage": {
+    "BRANCH": {
+      "covered": 2764,
+      "missed": 635
+    },
+    "CLASS": {
+      "covered": 589,
+      "missed": 32
+    },
+    "COMPLEXITY": {
+      "covered": 3946,
+      "missed": 853
+    },
+    "INSTRUCTION": {
+      "covered": 52607,
+      "missed": 4869
+    },
+    "LINE": {
+      "covered": 11710,
+      "missed": 1151
+    },
+    "METHOD": {
+      "covered": 2782,
+      "missed": 274
+    }
+  },
+  "coverageThresholds": {
+    "BRANCH": 0.79,
+    "INSTRUCTION": 0.87
+  },
+  "created": "2026-09-16T02:29:53.116598+00:00",
+  "diagnosedFailures": {
+    "counterCollision": {
+      "path": ".cache/hardening01-diagnostics/backup-counter-collision.xml",
+      "reason": "Legacy backup tests had already registered identical global Stats names; the static Go backup counters were not the counters observed by the scheduled retry test. Service counters now use the injected StatsProvider.",
+      "sha256": "aaf9f5c013c7ebe4120a03ccbbfa14d178ec17e335c06377422b9a1f053b9b58"
+    }
+  },
+  "distribution": {
+    "path": ".cache/inplace-build/build/scheduler/distribution-verification.json",
+    "report": {
+      "artifacts": {
+        "activation-1.1.1.jar": {
+          "sha256": "ae475120e9fcd99b4b00b38329bd61cdc5eb754eee03fe66c01f50e137724f99",
+          "size": 69409
+        },
+        "antlr-2.7.7.jar": {
+          "sha256": "88fbda4b912596b9f56e8e12e580cc954bacfb51776ecfddd3e18fc1cf56dc4c",
+          "size": 445288
+        },
+        "aopalliance-1.0.jar": {
+          "sha256": "0addec670fedcd3f113c5c8091d783280d23f75e3acb841b61a9cdb079376a08",
+          "size": 4467
+        },
+        "asm-9.8.jar": {
+          "sha256": "876eab6a83daecad5ca67eb9fcabb063c97b5aeb8cf1fca7a989ecde17522051",
+          "size": 126113
+        },
+        "async-http-client-2.0.37.jar": {
+          "sha256": "cb1c6583c18b7e180e59584c8ef1d5c8064939af861a4c898661ba6e3014df3f",
+          "size": 433590
+        },
+        "async-http-client-netty-utils-2.0.37.jar": {
+          "sha256": "6c9e79cf4f3eac56fa01ca4a31d18b2a95c5636142760a517e74bff4fe58925d",
+          "size": 7287
+        },
+        "aurora-0.23.0-SNAPSHOT.jar": {
+          "auroraClassCount": 762,
+          "bytecodeMajor": 69,
+          "requiredEntries": [
+            "org/apache/aurora/scheduler/storage/durability/RecoveryTool.class",
+            "scheduler/assets/scheduler/index.html",
+            "scheduler/assets/js/bundle.js",
+            "scheduler/assets/js/bundle.js.map",
+            "scheduler/assets/js/thrift.js",
+            "scheduler/assets/bower_components/jquery/dist/jquery.min.js"
+          ],
+          "sha256": "11316de76186cb1d375c394d65b19df2c670a3ae9c346445f4b46cb46e6d7f4f",
+          "size": 3617555
+        },
+        "aurora-api-0.23.0-SNAPSHOT.jar": {
+          "auroraClassCount": 1547,
+          "bytecodeMajor": 69,
+          "requiredEntries": [
+            "org/apache/aurora/gen/AuroraAdmin.class",
+            "org/apache/aurora/scheduler/storage/entities/IScheduledTask.class",
+            "org/apache/aurora/scheduler/gen/client/ReadOnlyScheduler.js",
+            "org/apache/aurora/scheduler/gen/client/AuroraAdmin.js",
+            "org/apache/aurora/scheduler/gen/client/api_types.js",
+            "org/apache/aurora/scheduler/gen/client/api.html"
+          ],
+          "sha256": "daea331459e39255df142a92fc73e148fd9291fc67976c223d4d9289e72ab4a1",
+          "size": 2989975
+        },
+        "byte-buddy-1.17.5.jar": {
+          "sha256": "71568c9f8396677219f650268fbf6493ded484edcdbdf2dae6129ca5be81e8db",
+          "size": 8953594
+        },
+        "c3p0-0.9.1.1.jar": {
+          "sha256": "a3c772033d43c85f2635596e2421496d55840abbde64ad64b8d0298cacbba466",
+          "size": 608376
+        },
+        "checker-qual-3.12.0.jar": {
+          "sha256": "ff10785ac2a357ec5de9c293cb982a2cbb605c0309ea4cc1cb9b9bc6dbe7f3cb",
+          "size": 208835
+        },
+        "commons-0.23.0-SNAPSHOT.jar": {
+          "auroraClassCount": 150,
+          "bytecodeMajor": 69,
+          "sha256": "9221503c961065a94f718b494ac301927ecbf0d9875728763111dc69611fa807",
+          "size": 160237
+        },
+        "commons-beanutils-1.9.3.jar": {
+          "sha256": "c058e39c7c64203d3a448f3adb588cb03d6378ed808485618f26e137f29dae73",
+          "size": 246174
+        },
+        "commons-codec-1.9.jar": {
+          "sha256": "ad19d2601c3abf0b946b5c3a4113e226a8c1e3305e395b90013b78dd94a723ce",
+          "size": 263965
+        },
+        "commons-collections-3.2.2.jar": {
+          "sha256": "eeeae917917144a68a741d4c0dff66aa5c5c5fd85593ff217bced3fc8ca783b8",
+          "size": 588337
+        },
+        "commons-io-2.5.jar": {
+          "sha256": "a10418348d234968600ccb1d988efcbbd08716e1d96936ccc1880e7d22513474",
+          "size": 208700
+        },
+        "commons-lang-2.6.jar": {
+          "sha256": "50f11b09f877c294d56f24463f47d28f929cf5044f648661c0f0cfbae9a2f49c",
+          "size": 284220
+        },
+        "commons-logging-1.2.jar": {
+          "sha256": "daddea1ea0be0f56978ab3006b8ac92834afeefbd9b7e4e6316fca57df0fa636",
+          "size": 61829
+        },
+        "curator-client-2.12.0.jar": {
+          "sha256": "683c5410fba7fe622f2aec6cfaff335838204d5bcd569157a548e3c1506c16aa",
+          "size": 2423138
+        },
+        "curator-framework-2.12.0.jar": {
+          "sha256": "8c5e2ccdd94088f7db3669b8183345d88c6d3dca931542a39fe15304a3c1b278",
+          "size": 201953
+        },
+        "curator-recipes-2.12.0.jar": {
+          "sha256": "4166d93e88c3a7bbc890e21cb927108d6efc9435c57fb5ceac9665e17fbccec2",
+          "size": 283598
+        },
+        "easymock-5.6.0.jar": {
+          "sha256": "63efc00da99774fb0253330ef9b5788b261022ba73f36bf76889ce7edf3d2b31",
+          "size": 148389
+        },
+        "error_prone_annotations-2.18.0.jar": {
+          "sha256": "9e6814cb71816988a4fd1b07a993a8f21bb7058d522c162b1de849e19bea54ae",
+          "size": 16017
+        },
+        "failureaccess-1.0.1.jar": {
+          "sha256": "a171ee4c734dd2da837e4b16be9df4661afab72a41adaf31eb84dfdaf936ca26",
+          "size": 4617
+        },
+        "gson-2.3.1.jar": {
+          "sha256": "13f44a2f6ead058da80a91ee650c073871942468e684a9bf6a0d0319138924ce",
+          "size": 210856
+        },
+        "guava-31.0.1-jre.jar": {
+          "sha256": "d5be94d65e87bd219fb3193ad1517baa55a3b88fc91d21cf735826ab5af087b9",
+          "size": 2974216
+        },
+        "guice-6.0.0.jar": {
+          "sha256": "b4d4f7ec5e8fc17b4f98dee9d3f6cf6ae3ae13e2e5ed4b2f7bbf09bc4bb675d5",
+          "size": 805724
+        },
+        "guice-assistedinject-6.0.0.jar": {
+          "sha256": "f4d264534f213af7beb493273f72f02ef9eb4b229d71a0a80f003b7349dee6f9",
+          "size": 51293
+        },
+        "guice-servlet-6.0.0.jar": {
+          "sha256": "0450043d0770b816957856ff9d08209c31f801a31e820e53e45ac29468514002",
+          "size": 82123
+        },
+        "hamcrest-core-1.3.jar": {
+          "sha256": "66fdef91e9739348df7a096aa384a5685f4e875584cce89386a7a47251c4d8e9",
+          "size": 45024
+        },
+        "httpclient-4.5.2.jar": {
+          "sha256": "0dffc621400d6c632f55787d996b8aeca36b30746a716e079a985f24d8074057",
+          "size": 736658
+        },
+        "httpcore-4.4.4.jar": {
+          "sha256": "f7bc09dc8a7003822d109634ffd3845d579d12e725ae54673e323a7ce7f5e325",
+          "size": 326724
+        },
+        "j2objc-annotations-1.3.jar": {
+          "sha256": "21af30c92267bd6122c0e0b4d20cccb6641a37eaf956c6540ec471d584e64a7b",
+          "size": 8781
+        },
+        "jackson-annotations-2.5.1.jar": {
+          "sha256": "836a18d49b1cc515dde8b14cb7ea2b3ac3fd26b1c914b5a399bca0ecc9fbf4bc",
+          "size": 39817
+        },
+        "jackson-core-2.5.1.jar": {
+          "sha256": "ba80bd8304bc268a573ac424b692f465a7c087db2207daa50979d7ab2751baf6",
+          "size": 229860
+        },
+        "jackson-core-asl-1.9.13.jar": {
+          "sha256": "440a9cb5ca95b215f953d3a20a6b1a10da1f09b529a9ddea5f8a4905ddab4f5a",
+          "size": 232248
+        },
+        "jackson-databind-2.5.1.jar": {
+          "sha256": "0d817bad8b533a61fe0e50b53303d89a1f71b2f92b237d9fe2e314bc4a9b0f90",
+          "size": 1138921
+        },
+        "jackson-jaxrs-1.9.13.jar": {
+          "sha256": "1770570a6ba5c87a4795c0aeb40ee7c5fe5e31df64ef1d4795a0d427796b84bb",
+          "size": 18336
+        },
+        "jackson-mapper-asl-1.9.13.jar": {
+          "sha256": "74e7a07a76f2edbade29312a5a2ebccfa019128bc021ece3856d76197e9be0c2",
+          "size": 780664
+        },
+        "jackson-xc-1.9.13.jar": {
+          "sha256": "2d2905fcec7d1c55b775995617685dbb03672350704d9e40b492eab5b54d0be7",
+          "size": 27084
+        },
+        "jakarta.inject-api-2.0.1.jar": {
+          "sha256": "f7dc98062fccf14126abb751b64fab12c312566e8cbdc8483598bffcea93af7c",
+          "size": 10681
+        },
+        "javax.activation-api-1.2.0.jar": {
+          "sha256": "43fdef0b5b6ceb31b0424b208b930c74ab58fac2ceeb7b3f6fd3aeb8b5ca4393",
+          "size": 56674
+        },
+        "javax.annotation-api-1.3.2.jar": {
+          "sha256": "e04ba5195bcd555dc95650f7cc614d151e4bcd52d29a10b8aa2197f3ab89ab9b",
+          "size": 26586
+        },
+        "javax.inject-1.jar": {
+          "sha256": "91c77044a50c481636c32d916fd89c9118a72195390452c81065080f957de7ff",
+          "size": 2497
+        },
+        "javax.servlet-api-3.1.0.jar": {
+          "sha256": "af456b2dd41c4e82cf54f3e743bc678973d9fe35bd4d3071fa05c7e5333b8482",
+          "size": 95806
+        },
+        "javax.ws.rs-api-2.0.jar": {
+          "sha256": "ca88fcb9ce85aac4f77e42eac486aa7fde6ead6a545d74ccef6089241c84db53",
+          "size": 112758
+        },
+        "jaxb-api-2.3.1.jar": {
+          "sha256": "88b955a0df57880a26a74708bc34f74dcaf8ebf4e78843a28b50eae945732b06",
+          "size": 128076
+        },
+        "jboss-annotations-api_1.2_spec-1.0.0.Final.jar": {
+          "sha256": "bb979cac95ef2748bc85d4b8151bef88b9a203d03068fbe799c6e6162c950780",
+          "size": 19197
+        },
+        "jboss-jaxrs-api_2.0_spec-1.0.1.Beta1.jar": {
+          "sha256": "1218fa20acae20a0cfb618b452e01c9bf2bfa9cb12fadb308a7a3adbdc45d2b5",
+          "size": 120531
+        },
+        "jboss-logging-3.3.0.Final.jar": {
+          "sha256": "e0e0595e7f70c464609095aef9e47a8484e05f2f621c0aa5081c18e3db2d498c",
+          "size": 66802
+        },
+        "jcip-annotations-1.0.jar": {
+          "sha256": "be5805392060c71474bf6c9a67a099471274d30b83eef84bfc4e0889a4f1dcc0",
+          "size": 2254
+        },
+        "jcommander-1.72.jar": {
+          "sha256": "e0de160b129b2414087e01fe845609cd55caec6820cfd4d0c90fabcc7bdb8c1e",
+          "size": 69254
+        },
+        "jetty-client-9.3.11.v20160721.jar": {
+          "sha256": "6ead2ce0e191e105b036db9a44abc99edc78c165077a21bbab73a150cd1d9424",
+          "size": 260660
+        },
+        "jetty-continuation-9.3.11.v20160721.jar": {
+          "sha256": "fe3297049fc1bed6800cf50793645ef035be157b7207655e70131a2dcaf5fa1b",
+          "size": 15769
+        },
+        "jetty-http-9.3.11.v20160721.jar": {
+          "sha256": "067808638b6129cfbd7445d100344eb05d4f375be8bfa547bd4e35cce316fe77",
+          "size": 148566
+        },
+        "jetty-io-9.3.11.v20160721.jar": {
+          "sha256": "33c7429413ea999fcd8fdf8f4590eaf2437e3189a8799478001928b8848491f9",
+          "size": 112071
+        },
+        "jetty-rewrite-9.3.11.v20160721.jar": {
+          "sha256": "4219807d37b2268df09eff6b7eb7ba5ca1a5b14df150526764300fe0a407fe4f",
+          "size": 34019
+        },
+        "jetty-security-9.3.11.v20160721.jar": {
+          "sha256": "6ad79d7edc8205ab0a8e95fcb205b60d8ac0d818c6e6afa05ba1b1bbb22299c9",
+          "size": 94503
+        },
+        "jetty-server-9.3.11.v20160721.jar": {
+          "sha256": "dc8f2e0e1f167aa6aa9b077c26f6147f0c634a8cc87a3144dd3f62bac82d1ab7",
+          "size": 494012
+        },
+        "jetty-servlet-9.3.11.v20160721.jar": {
+          "sha256": "03409dcf7b0d85d29f7d7603e5fe8900462df80496b9f6cd11bf1da6d52e9997",
+          "size": 116571
+        },
+        "jetty-servlets-9.3.11.v20160721.jar": {
+          "sha256": "8d9df4d916d9a602b20c6182d056ae934a636877b7560598f7124d3dd754c2da",
+          "size": 86413
+        },
+        "jetty-util-9.3.11.v20160721.jar": {
+          "sha256": "d5bda0c878cf2b36f74fa000535abdbcfec6a6704ae6791ed6b34a0be0d0c728",
+          "size": 431954
+        },
+        "jline-0.9.94.jar": {
+          "sha256": "d8df0ffb12d87ca876271cda4d59b3feb94123882c1be1763b7faf2e0a0b0cbb",
+          "size": 87325
+        },
+        "jsr305-3.0.2.jar": {
+          "sha256": "766ad2a0783f2687962c8ad74ceecc38a28b9f72a2d085ee438b7813e928d0c7",
+          "size": 19936
+        },
+        "junit-4.12.jar": {
+          "sha256": "59721f0805e223d84b90677887d9ff567dc534d7c502ca903c0c2b17f05c116a",
+          "size": 314932
+        },
+        "libthrift-0.10.0.jar": {
+          "sha256": "8591718c1884ac8001b4c5ca80f349c0a6deec691de0af720c5e3bc3a581dada",
+          "size": 236865
+        },
+        "listenablefuture-9999.0-empty-to-avoid-conflict-with-guava.jar": {
+          "sha256": "b372a037d4230aa57fbeffdef30fd6123f9c0c2db85d0aced00c91b974f33f99",
+          "size": 2199
+        },
+        "logback-classic-1.2.3.jar": {
+          "sha256": "fb53f8539e7fcb8f093a56e138112056ec1dc809ebb020b59d8a36a5ebac37e0",
+          "size": 290339
+        },
+        "logback-core-1.2.3.jar": {
+          "sha256": "5946d837fe6f960c02a53eda7a6926ecc3c758bbdd69aa453ee429f858217f22",
+          "size": 471901
+        },
+        "netty-3.7.0.Final.jar": {
+          "sha256": "aa44be64442b9cbc5edd521476b9f1c272eec6a53dca104cf3032f42ad20ff89",
+          "size": 1208356
+        },
+        "netty-buffer-4.0.52.Final.jar": {
+          "sha256": "ff765973f863cbfc7137ff2ca0d3765224b6d5370ed421a4f3c4c66b24626e11",
+          "size": 234592
+        },
+        "netty-codec-4.0.52.Final.jar": {
+          "sha256": "55825f3e34b20f9fb0e78dc2e2c9f7d00e13d14657418e88e5431562d0386dd2",
+          "size": 151008
+        },
+        "netty-codec-dns-2.0.37.jar": {
+          "sha256": "39c3b61c546444b33690500da1203ee60294ef9a7c5b5f567cfb2cc717ccd9be",
+          "size": 55155
+        },
+        "netty-codec-http-4.0.52.Final.jar": {
+          "sha256": "99e3a087d0347e30c30d5a8d829abba5f8fdc9e66c43a17a70e4d25a5cbf9526",
+          "size": 460925
+        },
+        "netty-common-4.0.52.Final.jar": {
+          "sha256": "5b154c5424807b62a51f3278530c5eaf2c6dfa9c1a4417c2fb8e4e7ceda0bfbc",
+          "size": 398158
+        },
+        "netty-handler-4.0.52.Final.jar": {
+          "sha256": "9695d34837da27d307e860b445b0c922c8eb5cf1837a0f7f0077cb050c830ab7",
+          "size": 358962
+        },
+        "netty-reactive-streams-1.0.8.jar": {
+          "sha256": "a368c024079971086d83c89ff7fbd6a028e6a8185faafd6ab8339e760f0f7aa2",
+          "size": 20938
+        },
+        "netty-resolver-2.0.37.jar": {
+          "sha256": "90c1271f0fc80ea785334c2d04598f305c9cd0871fd41e32bc9ca60c52043be7",
+          "size": 36585
+        },
+        "netty-resolver-dns-2.0.37.jar": {
+          "sha256": "e8320966446ada2ffaee05b38f138cba1ef9c22e33b944d3efb13a566dcd01b4",
+          "size": 89181
+        },
+        "netty-transport-4.0.52.Final.jar": {
+          "sha256": "7a3aed2ae297318eba6d713cc867313220fe1d41608ce6a9627871f58ed7a989",
+          "size": 387718
+        },
+        "netty-transport-native-epoll-4.0.52.Final-linux-x86_64.jar": {
+          "sha256": "0b9ea2848c2cec2c72453d425bb2f96dc744027aba2b8ecf64e343c21b6fbad1",
+          "size": 151894
+        },
+        "objenesis-3.4.jar": {
+          "sha256": "95488102feaf2e2858adf6b299353677dac6c15294006f8ed1c5556f8e3cd251",
+          "size": 49076
+        },
+        "quartz-2.2.2.jar": {
+          "sha256": "739b70bc472f91cbaa8e3e4ce5ec5c8354a43b0d4b16516319f3ffcd7b05920a",
+          "size": 660382
+        },
+        "reactive-streams-1.0.0.jar": {
+          "sha256": "ef867702a614b96eb6c64fb65a8f5e14bdfcabbc1ae056f78a1643f7b79ca0eb",
+          "size": 2042
+        },
+        "resteasy-client-3.1.4.Final.jar": {
+          "sha256": "51a608a464697a68ebcbdd382c2bf46428b5942de4ae1ebc3c9d2ae45b0d8bd7",
+          "size": 175335
+        },
+        "resteasy-guice-3.1.4.Final.jar": {
+          "sha256": "3efac44fa687778c526213fbd7f6afe1e4502a619060932af1b95cf7f2775d92",
+          "size": 20841
+        },
+        "resteasy-jackson-provider-3.1.4.Final.jar": {
+          "sha256": "e9649ce493378e741da9639a47be360547196a4ccdab34f3a67b7ef716148ba0",
+          "size": 7996
+        },
+        "resteasy-jaxrs-3.1.4.Final.jar": {
+          "sha256": "3da64ce6622d037dbb1cb4ae0098429f5b9930199794c42a9e49cd4b9f37e102",
+          "size": 698875
+        },
+        "resteasy-jaxrs-services-3.1.4.Final.jar": {
+          "sha256": "e8512a73bf5d5f911c1d38a8367ffb1b92d604aff3b67914c9c62c895797f461",
+          "size": 2564
+        },
+        "shiro-cache-1.4.0.jar": {
+          "sha256": "abab87532d6139cea5a48aee34a20daa15757917a65c7032976fdc014dd4c46a",
+          "size": 13601
+        },
+        "shiro-config-core-1.4.0.jar": {
+          "sha256": "77e2cf1d210f334cba0e8902d01fd2acbf61b599c39c6cf023241fc6784a82a0",
+          "size": 18037
+        },
+        "shiro-config-ogdl-1.4.0.jar": {
+          "sha256": "d21bf04b78c69748db2fcf0315df00347bda43b65ef0aa83a7e496070c8e34f9",
+          "size": 43303
+        },
+        "shiro-core-1.4.0.jar": {
+          "sha256": "1c1aa41af7a3314678154ff0456d7592bbd00f298ce3a94a417a1bd4bcfd1104",
+          "size": 410541
+        },
+        "shiro-crypto-cipher-1.4.0.jar": {
+          "sha256": "67f8bc6f9dfa11a9c4959284f2f591dbd238ca20e1fbd1964d0c2daa69cf9ec0",
+          "size": 24024
+        },
+        "shiro-crypto-core-1.4.0.jar": {
+          "sha256": "1cba00a55eb65858ba0fd76e515d2177e6b834f37277a76afecd1cad0957d36c",
+          "size": 10873
+        },
+        "shiro-crypto-hash-1.4.0.jar": {
+          "sha256": "3a40fb67aa4c118cb3e47ca339a3094707778f0ea0c9fedca2147c9bfdb8647f",
+          "size": 34298
+        },
+        "shiro-event-1.4.0.jar": {
+          "sha256": "eed623e101d2bc5b29be2c93679504d411eedb2261b95a478cd5140d82734e7c",
+          "size": 19210
+        },
+        "shiro-guice-1.4.0.jar": {
+          "sha256": "a742efd9355202c07987893a28a82b4c7f0044e3cb76634b30e36db1ba669392",
+          "size": 52382
+        },
+        "shiro-lang-1.4.0.jar": {
+          "sha256": "8d78850ff764f72803568bbe0789eee513e2dcee990f465adbfdf0916a10ea9d",
+          "size": 51122
+        },
+        "shiro-web-1.4.0.jar": {
+          "sha256": "92f3fbb4f3425d6aa7cdd5f5fc3160cfeb561ada968b360c86c6fd7afb168364",
+          "size": 150341
+        },
+        "slf4j-api-1.7.25.jar": {
+          "sha256": "18c4a0095d5c1da6b817592e767bb23d29dd2f560ad74df75ff3961dbde25b79",
+          "size": 41203
+        },
+        "sqlite-jdbc-3.53.4.0.jar": {
+          "sha256": "bcb1f51e36f940867e83342f9efbf5968ac44a6bef4d397bb4af7b17b45cd2fb",
+          "size": 12002370
+        },
+        "stringtemplate-3.2.1.jar": {
+          "sha256": "f66ce72e965e5301cb0f020e54d2ba6ad76feb91b3cbfc30dbbf00c06a6df6d7",
+          "size": 148627
+        },
+        "zookeeper-3.4.8.jar": {
+          "sha256": "d47d35b9a10af53b7967ff4851bff832778539eed1e43fae6bfcb1f13576bdf5",
+          "size": 804601
+        }
+      },
+      "checkedAt": "2026-09-16T02:08:02.994298563Z",
+      "distribution": "/home/jordanly/.codex/worktrees/da231709-add9-4468-b3a5-712561554031/aurora/.cache/inplace-build/build/scheduler/install/aurora-scheduler",
+      "java": {
+        "command": [
+          "/home/jordanly/.codex/worktrees/da231709-add9-4468-b3a5-712561554031/aurora/.cache/inplace-build/tools-3259055590/java/jdk-25.0.4.1+1/bin/java",
+          "--version"
+        ],
+        "exitCode": 0,
+        "javaHome": "/home/jordanly/.codex/worktrees/da231709-add9-4468-b3a5-712561554031/aurora/.cache/inplace-build/tools-3259055590/java/jdk-25.0.4.1+1",
+        "output": "openjdk 25.0.4.1 2026-08-18 LTS\nOpenJDK Runtime Environment Temurin-25.0.4.1+1 (build 25.0.4.1+1-LTS)\nOpenJDK 64-Bit Server VM Temurin-25.0.4.1+1 (build 25.0.4.1+1-LTS, mixed mode, sharing)\n",
+        "outputSha256": "2ea09eaf7b3c2db5256b076f18d3758d1f2a5746384c9f6b58a2c5d244864971"
+      },
+      "launchers": {
+        "aurora-scheduler": {
+          "classpathJars": [
+            "aurora-0.23.0-SNAPSHOT.jar",
+            "aurora-api-0.23.0-SNAPSHOT.jar",
+            "commons-0.23.0-SNAPSHOT.jar",
+            "guice-assistedinject-6.0.0.jar",
+            "guice-servlet-6.0.0.jar",
+            "resteasy-guice-3.1.4.Final.jar",
+            "shiro-guice-1.4.0.jar",
+            "guice-6.0.0.jar",
+            "aopalliance-1.0.jar",
+            "logback-classic-1.2.3.jar",
+            "jcommander-1.72.jar",
+            "jackson-databind-2.5.1.jar",
+            "jackson-core-2.5.1.jar",
+            "resteasy-jackson-provider-3.1.4.Final.jar",
+            "resteasy-client-3.1.4.Final.jar",
+            "resteasy-jaxrs-3.1.4.Final.jar",
+            "javax.inject-1.jar",
+            "jetty-rewrite-9.3.11.v20160721.jar",
+            "jetty-servlet-9.3.11.v20160721.jar",
+            "jetty-security-9.3.11.v20160721.jar",
+            "jetty-server-9.3.11.v20160721.jar",
+            "javax.servlet-api-3.1.0.jar",
+            "stringtemplate-3.2.1.jar",
+            "curator-recipes-2.12.0.jar",
+            "curator-framework-2.12.0.jar",
+            "curator-client-2.12.0.jar",
+            "async-http-client-2.0.37.jar",
+            "shiro-web-1.4.0.jar",
+            "zookeeper-3.4.8.jar",
+            "jetty-servlets-9.3.11.v20160721.jar",
+            "quartz-2.2.2.jar",
+            "jaxb-api-2.3.1.jar",
+            "sqlite-jdbc-3.53.4.0.jar",
+            "libthrift-0.10.0.jar",
+            "javax.annotation-api-1.3.2.jar",
+            "gson-2.3.1.jar",
+            "guava-31.0.1-jre.jar",
+            "commons-lang-2.6.jar",
+            "javax.ws.rs-api-2.0.jar",
+            "easymock-5.6.0.jar",
+            "junit-4.12.jar",
+            "logback-core-1.2.3.jar",
+            "async-http-client-netty-utils-2.0.37.jar",
+            "netty-resolver-dns-2.0.37.jar",
+            "netty-resolver-2.0.37.jar",
+            "netty-codec-dns-2.0.37.jar",
+            "shiro-core-1.4.0.jar",
+            "shiro-cache-1.4.0.jar",
+            "shiro-crypto-hash-1.4.0.jar",
+            "shiro-crypto-cipher-1.4.0.jar",
+            "shiro-config-ogdl-1.4.0.jar",
+            "shiro-config-core-1.4.0.jar",
+            "shiro-event-1.4.0.jar",
+            "shiro-crypto-core-1.4.0.jar",
+            "shiro-lang-1.4.0.jar",
+            "slf4j-api-1.7.25.jar",
+            "jakarta.inject-api-2.0.1.jar",
+            "error_prone_annotations-2.18.0.jar",
+            "jackson-annotations-2.5.1.jar",
+            "jboss-annotations-api_1.2_spec-1.0.0.Final.jar",
+            "jboss-logging-3.3.0.Final.jar",
+            "jackson-jaxrs-1.9.13.jar",
+            "jackson-xc-1.9.13.jar",
+            "jackson-mapper-asl-1.9.13.jar",
+            "jackson-core-asl-1.9.13.jar",
+            "jboss-jaxrs-api_2.0_spec-1.0.1.Beta1.jar",
+            "resteasy-jaxrs-services-3.1.4.Final.jar",
+            "activation-1.1.1.jar",
+            "httpclient-4.5.2.jar",
+            "commons-io-2.5.jar",
+            "jcip-annotations-1.0.jar",
+            "antlr-2.7.7.jar",
+            "netty-codec-http-4.0.52.Final.jar",
+            "netty-reactive-streams-1.0.8.jar",
+            "netty-handler-4.0.52.Final.jar",
+            "netty-transport-native-epoll-4.0.52.Final-linux-x86_64.jar",
+            "reactive-streams-1.0.0.jar",
+            "jline-0.9.94.jar",
+            "netty-3.7.0.Final.jar",
+            "jetty-client-9.3.11.v20160721.jar",
+            "jetty-http-9.3.11.v20160721.jar",
+            "jetty-io-9.3.11.v20160721.jar",
+            "jetty-continuation-9.3.11.v20160721.jar",
+            "jetty-util-9.3.11.v20160721.jar",
+            "c3p0-0.9.1.1.jar",
+            "javax.activation-api-1.2.0.jar",
+            "httpcore-4.4.4.jar",
+            "failureaccess-1.0.1.jar",
+            "listenablefuture-9999.0-empty-to-avoid-conflict-with-guava.jar",
+            "jsr305-3.0.2.jar",
+            "checker-qual-3.12.0.jar",
+            "j2objc-annotations-1.3.jar",
+            "byte-buddy-1.17.5.jar",
+            "asm-9.8.jar",
+            "objenesis-3.4.jar",
+            "hamcrest-core-1.3.jar",
+            "commons-logging-1.2.jar",
+            "commons-codec-1.9.jar",
+            "netty-codec-4.0.52.Final.jar",
+            "netty-transport-4.0.52.Final.jar",
+            "netty-buffer-4.0.52.Final.jar",
+            "netty-common-4.0.52.Final.jar",
+            "commons-beanutils-1.9.3.jar",
+            "commons-collections-3.2.2.jar"
+          ],
+          "command": [
+            "/home/jordanly/.codex/worktrees/da231709-add9-4468-b3a5-712561554031/aurora/.cache/inplace-build/build/scheduler/install/aurora-scheduler/bin/aurora-scheduler",
+            "-help"
+          ],
+          "exitCode": 1,
+          "expectedExitCode": 1,
+          "output": "22:08:07,880 |-INFO in ch.qos.logback.classic.LoggerContext[default] - Could NOT find resource [logback-test.xml]\n22:08:07,882 |-INFO in ch.qos.logback.classic.LoggerContext[default] - Could NOT find resource [logback.groovy]\n22:08:07,883 |-INFO in ch.qos.logback.classic.LoggerContext[default] - Found resource [logback.xml] at [jar:file:/home/jordanly/.codex/worktrees/da231709-add9-4468-b3a5-712561554031/aurora/.cache/inplace-build/build/scheduler/install/aurora-scheduler/lib/aurora-0.23.0-SNAPSHOT.jar!/logback.xml]\n22:08:07,922 |-INFO in ch.qos.logback.core.joran.spi.ConfigurationWatchList@3567135c - URL [jar:file:/home/jordanly/.codex/worktrees/da231709-add9-4468-b3a5-712561554031/aurora/.cache/inplace-build/build/scheduler/install/aurora-scheduler/lib/aurora-0.23.0-SNAPSHOT.jar!/logback.xml] is not of type file\n22:08:08,160 |-INFO in ch.qos.logback.core.joran.action.AppenderAction - About to instantiate appender of type [ch.qos.logback.core.ConsoleAppender]\n22:08:08,167 |-INFO in ch.qos.logback.core.joran.action.AppenderAction - Naming appender as [STDERR]\n22:08:08,196 |-INFO in ch.qos.logback.core.joran.action.NestedComplexPropertyIA - Assuming default type [ch.qos.logback.classic.encoder.PatternLayoutEncoder] for [encoder] property\n22:08:08,234 |-INFO in ch.qos.logback.classic.joran.action.LoggerAction - Setting level of logger [h2database] to WARN\n22:08:08,234 |-INFO in ch.qos.logback.classic.joran.action.RootLoggerAction - Setting level of ROOT logger to INFO\n22:08:08,235 |-INFO in ch.qos.logback.core.joran.action.AppenderRefAction - Attaching appender named [STDERR] to Logger[ROOT]\n22:08:08,236 |-INFO in ch.qos.logback.classic.joran.action.ConfigurationAction - End of configuration.\n22:08:08,237 |-INFO in ch.qos.logback.classic.joran.JoranConfigurator@369f73a2 - Registering current configuration as safe fallback point\nUsage: org.apache.aurora.scheduler.app.SchedulerMain [options]\n  Options:\n    -allow_container_volumes\n      Allow passing in volumes in the job. Enabling this could pose a \n      privilege escalation threat.\n      Default: false\n    -allow_docker_parameters\n      Allow to pass docker container parameters in the job.\n      Default: false\n    -allow_gpu_resource\n      Allow jobs to request GPU resources.\n      Default: false\n    -allowed_container_types\n      Container types that are allowed to be used by jobs.\n      Default: [MESOS]\n    -allowed_job_environments\n      Regular expression describing the environments that are allowed to be \n      used by jobs.\n      Default: ^(prod|devel|test|staging\\d*)$\n    -async_slot_stat_update_interval\n      Interval on which to try to update open slot stats.\n      Default: (1, mins)\n    -async_task_stat_update_interval\n      Interval on which to try to update resource consumption stats.\n      Default: (1, hrs)\n    -async_worker_threads\n      The number of worker threads to process async task operations with.\n      Default: 8\n    -backup_dir\n      Directory to store backups under. Will be created if it does not exist.\n    -backup_interval\n      Minimum interval on which to write a storage backup.\n      Default: (1, hrs)\n  * -cluster_name\n      Name to identify the cluster being served.\n    -cron_scheduler_num_threads\n      Number of threads to use for the cron scheduler thread pool.\n      Default: 10\n    -cron_scheduling_max_batch_size\n      The maximum number of triggered cron jobs that can be processed in a \n      batch. \n      Default: 10\n    -cron_start_initial_backoff\n      Initial backoff delay while waiting for a previous cron run to be \n      killed. \n      Default: (5, secs)\n    -cron_start_max_backoff\n      Max backoff delay while waiting for a previous cron run to be killed.\n      Default: (1, mins)\n    -cron_timezone\n      TimeZone to use for cron predictions.\n      Default: GMT\n    -default_docker_parameters\n      Default docker parameters for any job that does not explicitly declare \n      parameters. \n      Default: []\n    -dlog_max_entry_size\n      Specifies the maximum entry size to append to the log. Larger entries \n      will be split across entry Frames.\n      Default: (512, KB)\n    -dlog_snapshot_interval\n      Specifies the frequency at which snapshots of local storage are taken \n      and written to the log.\n      Default: (1, hrs)\n    -enable_cors_for\n      List of domains for which CORS support should be enabled.\n    -enable_mesos_fetcher\n      Allow jobs to pass URIs to the Mesos Fetcher. Note that enabling this \n      feature could pose a privilege escalation threat.\n      Default: false\n    -enable_preemptor\n      Enable the preemptor and preemption\n      Default: true\n    -enable_revocable_cpus\n      Treat CPUs as a revocable resource.\n      Default: true\n    -enable_revocable_ram\n      Treat RAM as a revocable resource.\n      Default: false\n    -enable_update_affinity\n      Enable best-effort affinity of task updates.\n      Default: false\n    -first_schedule_delay\n      Initial amount of time to wait before first attempting to schedule a \n      PENDING task.\n      Default: (1, ms)\n    -flapping_task_threshold\n      A task that repeatedly runs for less than this time is considered to be \n      flapping. \n      Default: (5, mins)\n  * -go_agent_config\n      Go process agent enrollment and SQLite configuration file.\n    -history_max_per_job_threshold\n      Maximum number of terminated tasks to retain in a job history.\n      Default: 100\n    -history_min_retention_threshold\n      Minimum guaranteed time for task history retention before any pruning is \n      attempted. \n      Default: (1, hrs)\n    -history_prune_threshold\n      Time after which the scheduler will prune terminated task history.\n      Default: (2, days)\n    -hold_offers_forever\n      Hold resource offers indefinitely, disabling automatic offer decline \n      settings. \n      Default: false\n    -host_maintenance_polling_interval\n      Interval between polling for pending host maintenance requests.\n      Default: (1, mins)\n    -hostname\n      The hostname to advertise in ZooKeeper instead of the locally-resolved \n      hostname. \n    -http_authentication_mechanism\n      HTTP Authentication mechanism to use.\n      Default: NONE\n      Possible Values: [NONE, BASIC, NEGOTIATE]\n    -http_port\n      The port to start an HTTP server on.  Default value will choose a random \n      port. \n      Default: 0\n    -initial_flapping_task_delay\n      Initial amount of time to wait before attempting to schedule a flapping \n      task. \n      Default: (30, secs)\n    -initial_schedule_penalty\n      Initial amount of time to wait before attempting to schedule a task that \n      has failed to schedule.\n      Default: (1, secs)\n    -initial_task_kill_retry_interval\n      When killing a task, retry after this delay if the agent has not \n      responded, backing off up to transient_task_state_timeout\n      Default: (15, secs)\n    -ip\n      The ip address to listen. If not set, the scheduler will listen on all \n      interfaces. \n    -job_update_history_per_job_threshold\n      Maximum number of completed job updates to retain in a job update \n      history. \n      Default: 10\n    -job_update_history_pruning_interval\n      Job update history pruning interval.\n      Default: (15, mins)\n    -job_update_history_pruning_threshold\n      Time after which the scheduler will prune completed job update history.\n      Default: (30, days)\n    -kerberos_debug\n      Produce additional Kerberos debugging output.\n      Default: false\n    -kerberos_server_keytab\n      Path to the server keytab.\n    -kerberos_server_principal\n      Kerberos server principal to use, usually of the form \n      HTTP/aurora.example.com@EXAMPLE.COM \n    -max_flapping_task_delay\n      Maximum delay between attempts to schedule a flapping task.\n      Default: (5, mins)\n    -max_leading_duration\n      After leading for this duration, the scheduler should commit suicide.\n      Default: (1, days)\n    -max_parallel_coordinated_maintenance\n      Maximum number of coordinators that can be contacted in parallel.\n      Default: 10\n    -max_registration_delay\n      Max allowable delay to allow the driver to register before aborting\n      Default: (1, mins)\n    -max_reschedule_task_delay_on_startup\n      Upper bound of random delay for pending task rescheduling on scheduler \n      startup. \n      Default: (30, secs)\n    -max_saved_backups\n      Maximum number of backups to retain before deleting the oldest backups.\n      Default: 48\n    -max_schedule_attempts_per_sec\n      Maximum number of scheduling attempts to make per second.\n      Default: 40.0\n    -max_schedule_penalty\n      Maximum delay between attempts to schedule a PENDING tasks.\n      Default: (1, mins)\n    -max_sla_duration_secs\n      Maximum duration window for which SLA requirements are to be \n      satisfied.This does not apply to jobs that have a CoordinatorSlaPolicy.\n      Default: (2, hrs)\n    -max_status_update_batch_size\n      The maximum number of status updates that can be processed in a batch.\n      Default: 1000\n    -max_task_event_batch_size\n      The maximum number of task state change events that can be processed in \n      a batch.\n      Default: 300\n    -max_tasks_per_job\n      Maximum number of allowed tasks in a single job.\n      Default: 4000\n    -max_tasks_per_schedule_attempt\n      The maximum number of tasks to pick in a single scheduling attempt.\n      Default: 5\n    -max_update_instance_failures\n      Upper limit on the number of failures allowed during a job update. This \n      helps cap potentially unbounded entries into storage.\n      Default: 20000\n    -min_offer_hold_time\n      Minimum amount of time to hold a resource offer before declining.\n      Default: (5, mins)\n    -min_required_instances_for_sla_check\n      Minimum number of instances required for a job to be eligible for SLA \n      check. This does not apply to jobs that have a CoordinatorSlaPolicy.\n      Default: 20\n    -offer_filter_duration\n      Requested retry delay supplied to the offer transport when resources are \n      declined. Go agents refresh cached offers on demand without applying \n      this delay.\n      Default: (5, secs)\n    -offer_hold_jitter_window\n      Maximum amount of random jitter to add to the offer hold time window.\n      Default: (1, mins)\n    -offer_order\n      Iteration order for offers, to influence task scheduling. Multiple \n      orderings will be compounded together. E.g. CPU,MEMORY,RANDOM would sort \n      first by cpus offered, then memory and finally would randomize any equal \n      offers. \n      Default: [RANDOM]\n    -offer_reservation_duration\n      Time to reserve a agent's offers while trying to satisfy a task \n      preempting another.\n      Default: (3, mins)\n    -offer_set_module\n      Custom Guice module to provide a custom OfferSet.\n      Default: class org.apache.aurora.scheduler.offers.OfferManagerModule$OfferSetModule\n    -offer_static_ban_cache_max_size\n      The number of offers to hold in the static ban cache. If no value is \n      specified, the cache will grow indefinitely. However, entries will \n      expire within 'min_offer_hold_time' + 'offer_hold_jitter_window' of \n      being written.\n      Default: 9223372036854775807\n    -preemption_delay\n      Time interval after which a pending task becomes eligible to preempt \n      other tasks\n      Default: (3, mins)\n    -preemption_reservation_max_batch_size\n      The maximum number of reservations for a task group to be made in a \n      batch. \n      Default: 5\n    -preemption_slot_finder_modules\n      Guice modules for custom preemption slot searching for pending tasks.\n      Default: [class org.apache.aurora.scheduler.preemptor.PendingTaskProcessorModule, class org.apache.aurora.scheduler.preemptor.PreemptionVictimFilterModule]\n    -preemption_slot_hold_time\n      Time to hold a preemption slot found before it is discarded.\n      Default: (5, mins)\n    -preemption_slot_search_initial_delay\n      Initial amount of time to delay preemption slot searching after \n      scheduler start up.\n      Default: (3, mins)\n    -preemption_slot_search_interval\n      Time interval between pending task preemption slot searches.\n      Default: (1, mins)\n    -reconciliation_explicit_batch_interval\n      Interval between explicit batch reconciliation requests.\n      Default: (5, secs)\n    -reconciliation_explicit_batch_size\n      Number of tasks in each explicit execution driver reconciliation \n      request. \n      Default: 1000\n    -reconciliation_explicit_interval\n      Interval for explicit execution driver reconciliation of non-terminal \n      tasks known to the scheduler. Go agents reconcile through watch \n      snapshots. \n      Default: (60, mins)\n    -reconciliation_implicit_interval\n      Interval for implicit execution driver reconciliation of tasks known to \n      agents. Go agents reconcile through watch snapshots.\n      Default: (60, mins)\n    -reconciliation_initial_delay\n      Initial amount of time to delay task reconciliation after scheduler \n      start up.\n      Default: (1, mins)\n    -reconciliation_schedule_spread\n      Difference between explicit and implicit reconciliation intervals \n      intended to create a non-overlapping task reconciliation schedule.\n      Default: (30, mins)\n    -require_docker_use_executor\n      If false, Docker tasks may run without an executor (EXPERIMENTAL)\n      Default: true\n    -scheduling_max_batch_size\n      The maximum number of scheduling attempts that can be processed in a \n      batch. \n      Default: 3\n    -serverset_endpoint_name\n      Name of the scheduler endpoint published in ZooKeeper.\n      Default: http\n  * -serverset_path\n      ZooKeeper ServerSet path to register at.\n    -shiro_after_auth_filter\n      Fully qualified class name of the servlet filter to be applied after the \n      shiro auth filters are applied.\n    -shiro_credentials_matcher\n      The shiro credentials matcher to use (will be constructed by Guice).\n      Default: class org.apache.shiro.authc.credential.SimpleCredentialsMatcher\n    -shiro_ini_path\n      Path to shiro.ini for authentication and authorization configuration.\n    -shiro_realm_modules\n      Guice modules for configuring Shiro Realms.\n      Default: [class org.apache.aurora.scheduler.http.api.security.IniShiroRealmModule]\n    -sla_aware_action_max_batch_size\n      The maximum number of sla aware update actions that can be processed in \n      a batch.\n      Default: 300\n    -sla_aware_kill_non_prod\n      Enables SLA awareness for drain and and update for non-production tasks\n      Default: false\n    -sla_aware_kill_retry_max_delay\n      Maximum amount of time to wait between attempting to perform an \n      SLA-Aware kill on a task.\n      Default: (5, mins)\n    -sla_aware_kill_retry_min_delay\n      Minimum amount of time to wait between attempting to perform an \n      SLA-Aware kill on a task.\n      Default: (1, mins)\n    -sla_coordinator_timeout\n      Timeout interval for communicating with Coordinator.\n      Default: (1, mins)\n    -sla_non_prod_metrics\n      Metric categories collected for non production tasks.\n      Default: []\n    -sla_prod_metrics\n      Metric categories collected for production tasks.\n      Default: [JOB_UPTIMES, PLATFORM_UPTIME, MEDIANS]\n    -sla_stat_refresh_interval\n      The SLA stat refresh interval.\n      Default: (1, mins)\n    -stat_retention_period\n      Time for a stat to be retained in memory before expiring.\n      Default: (1, hrs)\n    -stat_sampling_interval\n      Statistic value sampling interval.\n      Default: (1, secs)\n    -task_assigner_modules\n      Guice modules for customizing task assignment.\n      Default: [class org.apache.aurora.scheduler.scheduling.TaskAssignerImplModule]\n    -thrift_method_interceptor_modules\n      Custom Guice module(s) to provide additional Thrift method interceptors.\n      Default: []\n    -tier_config\n      Configuration file defining supported task tiers, task traits and \n      behaviors. \n    -transient_task_state_timeout\n      The amount of time after which to treat a task stuck in a transient \n      state as LOST.\n      Default: (5, mins)\n    -unavailability_threshold\n      Threshold time, when running tasks should be drained from a host, before \n      a host becomes unavailable. Should be greater than min_offer_hold_time + \n      offer_hold_jitter_window. \n      Default: (6, mins)\n    -update_affinity_reservation_hold_time\n      How long to wait for a reserved agent to reoffer freed up resources.\n      Default: (3, mins)\n    -viz_job_url_prefix\n      URL prefix for job container stats.\n      Default: <empty string>\n    -webhook_config\n      Path to webhook configuration file.\n    -zk_chroot_path\n      chroot path to use for the ZooKeeper connections\n    -zk_connection_timeout\n      The ZooKeeper connection timeout.\n      Default: (10, secs)\n    -zk_digest_credentials\n      user:password to use when authenticating with ZooKeeper.\n  * -zk_endpoints\n      Endpoint specification for the ZooKeeper servers.\n    -zk_in_proc\n      Launches an embedded zookeeper server for local testing causing \n      -zk_endpoints to be ignored if specified.\n      Default: false\n    -zk_session_timeout\n      The ZooKeeper session timeout.\n      Default: (15, secs)\n\nE0915 22:08:08.596 [main, CommandLine] Was passed main parameter '-help' but no main parameter was defined in your arg class \n",
+          "outputSha256": "d587b0191ff0497c55d360f29316bb722c4604b58039478dbaa213896254fa95",
+          "unixSha256": "8bab8c8e27140618b021362da81ec4b4e2477e2b024e3a9855c257a77e97436f",
+          "usageVerified": true,
+          "windowsSha256": "e7fbd2251eecaf473161cc59e916e5e203d22103a1ee666ce41c47720f07d62f"
+        },
+        "recovery-tool": {
+          "classpathJars": [
+            "aurora-0.23.0-SNAPSHOT.jar",
+            "aurora-api-0.23.0-SNAPSHOT.jar",
+            "commons-0.23.0-SNAPSHOT.jar",
+            "guice-assistedinject-6.0.0.jar",
+            "guice-servlet-6.0.0.jar",
+            "resteasy-guice-3.1.4.Final.jar",
+            "shiro-guice-1.4.0.jar",
+            "guice-6.0.0.jar",
+            "aopalliance-1.0.jar",
+            "logback-classic-1.2.3.jar",
+            "jcommander-1.72.jar",
+            "jackson-databind-2.5.1.jar",
+            "jackson-core-2.5.1.jar",
+            "resteasy-jackson-provider-3.1.4.Final.jar",
+            "resteasy-client-3.1.4.Final.jar",
+            "resteasy-jaxrs-3.1.4.Final.jar",
+            "javax.inject-1.jar",
+            "jetty-rewrite-9.3.11.v20160721.jar",
+            "jetty-servlet-9.3.11.v20160721.jar",
+            "jetty-security-9.3.11.v20160721.jar",
+            "jetty-server-9.3.11.v20160721.jar",
+            "javax.servlet-api-3.1.0.jar",
+            "stringtemplate-3.2.1.jar",
+            "curator-recipes-2.12.0.jar",
+            "curator-framework-2.12.0.jar",
+            "curator-client-2.12.0.jar",
+            "async-http-client-2.0.37.jar",
+            "shiro-web-1.4.0.jar",
+            "zookeeper-3.4.8.jar",
+            "jetty-servlets-9.3.11.v20160721.jar",
+            "quartz-2.2.2.jar",
+            "jaxb-api-2.3.1.jar",
+            "sqlite-jdbc-3.53.4.0.jar",
+            "libthrift-0.10.0.jar",
+            "javax.annotation-api-1.3.2.jar",
+            "gson-2.3.1.jar",
+            "guava-31.0.1-jre.jar",
+            "commons-lang-2.6.jar",
+            "javax.ws.rs-api-2.0.jar",
+            "easymock-5.6.0.jar",
+            "junit-4.12.jar",
+            "logback-core-1.2.3.jar",
+            "async-http-client-netty-utils-2.0.37.jar",
+            "netty-resolver-dns-2.0.37.jar",
+            "netty-resolver-2.0.37.jar",
+            "netty-codec-dns-2.0.37.jar",
+            "shiro-core-1.4.0.jar",
+            "shiro-cache-1.4.0.jar",
+            "shiro-crypto-hash-1.4.0.jar",
+            "shiro-crypto-cipher-1.4.0.jar",
+            "shiro-config-ogdl-1.4.0.jar",
+            "shiro-config-core-1.4.0.jar",
+            "shiro-event-1.4.0.jar",
+            "shiro-crypto-core-1.4.0.jar",
+            "shiro-lang-1.4.0.jar",
+            "slf4j-api-1.7.25.jar",
+            "jakarta.inject-api-2.0.1.jar",
+            "error_prone_annotations-2.18.0.jar",
+            "jackson-annotations-2.5.1.jar",
+            "jboss-annotations-api_1.2_spec-1.0.0.Final.jar",
+            "jboss-logging-3.3.0.Final.jar",
+            "jackson-jaxrs-1.9.13.jar",
+            "jackson-xc-1.9.13.jar",
+            "jackson-mapper-asl-1.9.13.jar",
+            "jackson-core-asl-1.9.13.jar",
+            "jboss-jaxrs-api_2.0_spec-1.0.1.Beta1.jar",
+            "resteasy-jaxrs-services-3.1.4.Final.jar",
+            "activation-1.1.1.jar",
+            "httpclient-4.5.2.jar",
+            "commons-io-2.5.jar",
+            "jcip-annotations-1.0.jar",
+            "antlr-2.7.7.jar",
+            "netty-codec-http-4.0.52.Final.jar",
+            "netty-reactive-streams-1.0.8.jar",
+            "netty-handler-4.0.52.Final.jar",
+            "netty-transport-native-epoll-4.0.52.Final-linux-x86_64.jar",
+            "reactive-streams-1.0.0.jar",
+            "jline-0.9.94.jar",
+            "netty-3.7.0.Final.jar",
+            "jetty-client-9.3.11.v20160721.jar",
+            "jetty-http-9.3.11.v20160721.jar",
+            "jetty-io-9.3.11.v20160721.jar",
+            "jetty-continuation-9.3.11.v20160721.jar",
+            "jetty-util-9.3.11.v20160721.jar",
+            "c3p0-0.9.1.1.jar",
+            "javax.activation-api-1.2.0.jar",
+            "httpcore-4.4.4.jar",
+            "failureaccess-1.0.1.jar",
+            "listenablefuture-9999.0-empty-to-avoid-conflict-with-guava.jar",
+            "jsr305-3.0.2.jar",
+            "checker-qual-3.12.0.jar",
+            "j2objc-annotations-1.3.jar",
+            "byte-buddy-1.17.5.jar",
+            "asm-9.8.jar",
+            "objenesis-3.4.jar",
+            "hamcrest-core-1.3.jar",
+            "commons-logging-1.2.jar",
+            "commons-codec-1.9.jar",
+            "netty-codec-4.0.52.Final.jar",
+            "netty-transport-4.0.52.Final.jar",
+            "netty-buffer-4.0.52.Final.jar",
+            "netty-common-4.0.52.Final.jar",
+            "commons-beanutils-1.9.3.jar",
+            "commons-collections-3.2.2.jar"
+          ],
+          "command": [
+            "/home/jordanly/.codex/worktrees/da231709-add9-4468-b3a5-712561554031/aurora/.cache/inplace-build/build/scheduler/install/aurora-scheduler/bin/recovery-tool",
+            "--help"
+          ],
+          "exitCode": 1,
+          "expectedExitCode": 1,
+          "output": "Usage: org.apache.aurora.scheduler.storage.durability.RecoveryTool [options]\n  Options:\n    --help\n      Print usage\n  * -backup\n      Read-only source backup file\n  * -from\n      BACKUP for a drained Thrift snapshot; SQLITE for a standalone backup\n      Possible Values: [BACKUP, SQLITE]\n  * -sqlite-destination\n      New file in an existing offline directory; never replaces a database\n  * -to\n      Destination type (SQLITE only)\n      Possible Values: [BACKUP, SQLITE]\n\n",
+          "outputSha256": "08e6674ccaf1fb6ce0f71ee4760f526a578a1c456d9a95e665382ff14a77a2d2",
+          "unixSha256": "736cecddc2a1acbf20cff24b9a0a6ba32e30d4e186d1303a788cafc48a2d5fb7",
+          "usageVerified": true,
+          "windowsSha256": "cc2da7927fef76e0142275f7ce42e36be91ba447b5df2be7f5d83dc0b767d646"
+        }
+      },
+      "runtimeDependencies": {
+        "com/google/common/collect/ImmutableList.class": "guava-31.0.1-jre.jar",
+        "com/google/gson/Gson.class": "gson-2.3.1.jar",
+        "com/google/inject/Guice.class": "guice-6.0.0.jar",
+        "javax/xml/bind/annotation/XmlElement.class": "jaxb-api-2.3.1.jar",
+        "org/apache/thrift/TBase.class": "libthrift-0.10.0.jar",
+        "org/apache/zookeeper/ZooKeeper.class": "zookeeper-3.4.8.jar",
+        "org/eclipse/jetty/server/Server.class": "jetty-server-9.3.11.v20160721.jar",
+        "org/sqlite/JDBC.class": "sqlite-jdbc-3.53.4.0.jar"
+      },
+      "schema": 1,
+      "status": "passed"
+    },
+    "sha256": "935f837c9f28d9a0140a842b58189c8b16d10cf6804c2abc5b91fac536281e9d"
+  },
+  "implementationCommit": "144f2b641fe0e27d36c3f603f01ac8a86b3df5bc",
+  "javaTests": {
+    "commons": {
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0,
+      "tests": 124
+    },
+    "scheduler": {
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0,
+      "tests": 1358
+    }
+  },
+  "lab": {
+    "binaries": {
+      "agent": {
+        "binarySha256": "77ea221bb606295379ae4d7ff984b4bd586b7fde1a9056a6abbcc57ef87bf125",
+        "build": [
+          "CGO_ENABLED=0",
+          "GOOS=linux",
+          "GOARCH=arm64",
+          "GOTOOLCHAIN=local",
+          "-trimpath",
+          "-buildvcs=false",
+          "-ldflags=-s -w"
+        ],
+        "goVersion": "go version go1.27.1 linux/arm64",
+        "schema": 1,
+        "sourceSha256": "9e530445df82d05085c409a28a9c2bd25a9c7e17e360956b95366211a38217c2"
+      },
+      "helper": {
+        "binarySha256": "4f4a288467fea2689871497eb5a4e32312e968b80db08c2a514a8a2bd58459ec",
+        "build": [
+          "CGO_ENABLED=0",
+          "GOOS=linux",
+          "GOARCH=arm64",
+          "GOTOOLCHAIN=local",
+          "-trimpath",
+          "-buildvcs=false",
+          "-ldflags=-s -w"
+        ],
+        "goVersion": "go version go1.27.1 linux/arm64",
+        "schema": 1,
+        "sourceSha256": "da069ff44924ae6baba7a71a58409eb41091c5fa95373a7aea60c386aed612e6"
+      }
+    },
+    "image": "sha256:32d322b19846336d25f755f73618a448e3621982d52c48064e95af8b3dcbc2d9",
+    "jdk": {
+      "release": "IMPLEMENTOR=\"Eclipse Adoptium\"\nIMPLEMENTOR_VERSION=\"Temurin-25.0.4.1+1\"\nJAVA_RUNTIME_VERSION=\"25.0.4.1+1-LTS\"\nJAVA_VERSION=\"25.0.4.1\"\nJAVA_VERSION_DATE=\"2026-08-18\"\nLIBC=\"gnu\"\nMODULES=\"java.base java.compiler java.datatransfer java.xml java.prefs java.desktop java.instrument java.logging java.management java.security.sasl java.naming java.rmi java.management.rmi java.net.http java.scripting java.security.jgss java.transaction.xa java.sql java.sql.rowset java.xml.crypto java.se java.smartcardio jdk.accessibility jdk.internal.jvmstat jdk.attach jdk.charsets jdk.internal.opt jdk.zipfs jdk.compiler jdk.crypto.cryptoki jdk.crypto.ec jdk.dynalink jdk.internal.ed jdk.editpad jdk.internal.vm.ci jdk.graal.compiler jdk.graal.compiler.management jdk.hotspot.agent jdk.httpserver jdk.incubator.vector jdk.internal.le jdk.internal.md jdk.jartool jdk.javadoc jdk.jcmd jdk.management jdk.management.agent jdk.jconsole jdk.jdeps jdk.jdwp.agent jdk.jdi jdk.jfr jdk.jlink jdk.jpackage jdk.jshell jdk.jsobject jdk.jstatd jdk.localedata jdk.management.jfr jdk.naming.dns jdk.naming.rmi jdk.net jdk.nio.mapmode jdk.sctp jdk.security.auth jdk.security.jgss jdk.unsupported jdk.unsupported.desktop jdk.xml.dom\"\nOS_ARCH=\"aarch64\"\nOS_NAME=\"Linux\"\nSOURCE=\".:git:520406d87195\"\nBUILD_SOURCE=\"git:e6ba7dec3d07654074559310376a3ae89da5f4ac\"\nBUILD_SOURCE_REPO=\"https://github.com/adoptium/temurin-build.git\"\nSOURCE_REPO=\"https://github.com/adoptium/jdk25u.git\"\nFULL_VERSION=\"25.0.4.1+1-LTS\"\nSEMANTIC_VERSION=\"25.0.4.1+1\"\nBUILD_INFO=\"OS: Linux Version: 6.8.0-71-generic\"\nJVM_VARIANT=\"Hotspot\"\nJVM_VERSION=\"25.0.4.1+1-LTS\"\nIMAGE_TYPE=\"JDK\"\n",
+      "releaseSha256": "5d5e02af20088898661ea03a17304b2e10c028cb0471820f344c4576c1c59424",
+      "treeSha256": "b3cc501021753578ad473ebf90efed8cb34e37435dd4ba1b8b36589577863ca2"
+    },
+    "path": ".pi-lab/hardening01/lab.json",
+    "schedulerDistributionSha256": "8b29dcd4cc8c6e12c1df781560dabbbbd1f046de9a7656efd3121af012f7d342",
+    "sha256": "4757b75764603d3804a875008c87ba0a17b42c7a5dfe666084f7d563f0c78858",
+    "sourceHashes": {
+      "agent": "9e530445df82d05085c409a28a9c2bd25a9c7e17e360956b95366211a38217c2",
+      "helper": "da069ff44924ae6baba7a71a58409eb41091c5fa95373a7aea60c386aed612e6"
+    },
+    "token": "58dd7adb5b975d54"
+  },
+  "limits": [
+    "Single scheduler; production HA deferred.",
+    "Trusted process profile: application health and workload isolation remain unsupported.",
+    "Permanent command/attempt history is retained; physical compaction and bounded disk growth remain unqualified.",
+    "Offline restore validates complete backup publication, not stale-database adoption of live workloads.",
+    "Two-agent ARM64 Pi qualification is not large-cluster performance evidence."
+  ],
+  "qualifiedStatus": {
+    "path": ".pi-lab/hardening01/qualified-status.json",
+    "report": {
+      "containers": {
+        "agent-a": {
+          "address": "172.20.0.2",
+          "id": "dd227264c1ff584decf44a4e650eaea0dafcca1f20c29950499845c1a470326a",
+          "running": true
+        },
+        "agent-b": {
+          "address": "172.20.0.3",
+          "id": "c2a1f31e3df12d3b5da75e36af03c34e67655767d0f49a7d2e516bb3c739305d",
+          "running": true
+        },
+        "scheduler": {
+          "address": "172.20.0.4",
+          "id": "71db0a2fed2a6c8fd96e5e943c64c86fd16355d879273dc463e658aa4d54a99d",
+          "running": true
+        }
+      },
+      "root": "/home/jordanly/.codex/worktrees/da231709-add9-4468-b3a5-712561554031/aurora/.pi-lab/hardening01"
+    },
+    "sha256": "3afe751eee624f787b6b93eef81043b8cd5b6bbe68bb0cb6468fb430dc66e697"
+  },
+  "requestValidation": {
+    "path": ".pi-lab/hardening01/validation-errors.json",
+    "report": {
+      "daemonAfter": {
+        "generation": 1,
+        "paused": false,
+        "pid": 14,
+        "startedAt": "2026-09-16T02:09:12.946651558Z"
+      },
+      "daemonBefore": {
+        "generation": 1,
+        "paused": false,
+        "pid": 14,
+        "startedAt": "2026-09-16T02:09:12.946651558Z"
+      },
+      "finished": 1789524704.321718,
+      "health": "OK",
+      "ok": true,
+      "requests": [
+        {
+          "args": {
+            "1": {
+              "str": "hardening-validation"
+            },
+            "2": {
+              "rec": {
+                "4": {
+                  "set": [
+                    "rec",
+                    3,
+                    {
+                      "1": {
+                        "dbl": 2
+                      }
+                    },
+                    {
+                      "2": {
+                        "i64": 2048
+                      }
+                    },
+                    {
+                      "3": {
+                        "i64": 2048
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "method": "setQuota",
+          "response": {
+            "1": {
+              "i32": 1
+            },
+            "5": {
+              "rec": {
+                "1": {
+                  "str": "inplace"
+                },
+                "3": {
+                  "str": ""
+                }
+              }
+            },
+            "6": {
+              "lst": [
+                "rec",
+                0
+              ]
+            }
+          }
+        },
+        {
+          "args": {
+            "1": {
+              "str": "hardening-validation"
+            },
+            "2": {
+              "rec": {
+                "4": {
+                  "set": [
+                    "rec",
+                    3,
+                    {
+                      "1": {
+                        "dbl": -1
+                      }
+                    },
+                    {
+                      "2": {
+                        "i64": 2048
+                      }
+                    },
+                    {
+                      "3": {
+                        "i64": 2048
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "method": "setQuota",
+          "response": {
+            "1": {
+              "i32": 0
+            },
+            "5": {
+              "rec": {
+                "1": {
+                  "str": "inplace"
+                },
+                "3": {
+                  "str": ""
+                }
+              }
+            },
+            "6": {
+              "lst": [
+                "rec",
+                1,
+                {
+                  "1": {
+                    "str": "Negative values in: IResourceAggregate{resources=[IResource{setField=RAM_MB, value=2048}, IResource{setField=DISK_MB, value=2048}, IResource{setField=NUM_CPUS, value=-1.0}]}"
+                  }
+                }
+              ]
+            }
+          }
+        },
+        {
+          "args": {
+            "1": {
+              "str": "hardening-validation"
+            },
+            "2": {
+              "rec": {
+                "4": {
+                  "set": [
+                    "rec",
+                    3,
+                    {
+                      "1": {
+                        "dbl": 2
+                      }
+                    },
+                    {
+                      "2": {
+                        "i64": 2048
+                      }
+                    },
+                    {
+                      "3": {
+                        "i64": 2048
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "method": "setQuota",
+          "response": {
+            "1": {
+              "i32": 1
+            },
+            "5": {
+              "rec": {
+                "1": {
+                  "str": "inplace"
+                },
+                "3": {
+                  "str": ""
+                }
+              }
+            },
+            "6": {
+              "lst": [
+                "rec",
+                0
+              ]
+            }
+          }
+        },
+        {
+          "args": {
+            "1": {
+              "str": "hardening-validation"
+            },
+            "2": {
+              "rec": {
+                "4": {
+                  "set": [
+                    "rec",
+                    3,
+                    {
+                      "1": {
+                        "dbl": 2
+                      }
+                    },
+                    {
+                      "2": {
+                        "i64": -1
+                      }
+                    },
+                    {
+                      "3": {
+                        "i64": 2048
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "method": "setQuota",
+          "response": {
+            "1": {
+              "i32": 0
+            },
+            "5": {
+              "rec": {
+                "1": {
+                  "str": "inplace"
+                },
+                "3": {
+                  "str": ""
+                }
+              }
+            },
+            "6": {
+              "lst": [
+                "rec",
+                1,
+                {
+                  "1": {
+                    "str": "Negative values in: IResourceAggregate{resources=[IResource{setField=RAM_MB, value=-1}, IResource{setField=DISK_MB, value=2048}, IResource{setField=NUM_CPUS, value=2.0}]}"
+                  }
+                }
+              ]
+            }
+          }
+        },
+        {
+          "args": {
+            "1": {
+              "str": "hardening-validation"
+            },
+            "2": {
+              "rec": {
+                "4": {
+                  "set": [
+                    "rec",
+                    3,
+                    {
+                      "1": {
+                        "dbl": 2
+                      }
+                    },
+                    {
+                      "2": {
+                        "i64": 2048
+                      }
+                    },
+                    {
+                      "3": {
+                        "i64": 2048
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "method": "setQuota",
+          "response": {
+            "1": {
+              "i32": 1
+            },
+            "5": {
+              "rec": {
+                "1": {
+                  "str": "inplace"
+                },
+                "3": {
+                  "str": ""
+                }
+              }
+            },
+            "6": {
+              "lst": [
+                "rec",
+                0
+              ]
+            }
+          }
+        },
+        {
+          "args": {
+            "1": {
+              "str": "hardening-validation"
+            },
+            "2": {
+              "rec": {
+                "4": {
+                  "set": [
+                    "rec",
+                    3,
+                    {
+                      "1": {
+                        "dbl": 2
+                      }
+                    },
+                    {
+                      "2": {
+                        "i64": 2048
+                      }
+                    },
+                    {
+                      "3": {
+                        "i64": -1
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "method": "setQuota",
+          "response": {
+            "1": {
+              "i32": 0
+            },
+            "5": {
+              "rec": {
+                "1": {
+                  "str": "inplace"
+                },
+                "3": {
+                  "str": ""
+                }
+              }
+            },
+            "6": {
+              "lst": [
+                "rec",
+                1,
+                {
+                  "1": {
+                    "str": "Negative values in: IResourceAggregate{resources=[IResource{setField=RAM_MB, value=2048}, IResource{setField=DISK_MB, value=-1}, IResource{setField=NUM_CPUS, value=2.0}]}"
+                  }
+                }
+              ]
+            }
+          }
+        },
+        {
+          "args": {
+            "1": {
+              "str": "hardening-validation"
+            },
+            "2": {
+              "rec": {
+                "4": {
+                  "set": [
+                    "rec",
+                    3,
+                    {
+                      "1": {
+                        "dbl": 2
+                      }
+                    },
+                    {
+                      "2": {
+                        "i64": 2048
+                      }
+                    },
+                    {
+                      "3": {
+                        "i64": 2048
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "method": "setQuota",
+          "response": {
+            "1": {
+              "i32": 1
+            },
+            "5": {
+              "rec": {
+                "1": {
+                  "str": "inplace"
+                },
+                "3": {
+                  "str": ""
+                }
+              }
+            },
+            "6": {
+              "lst": [
+                "rec",
+                0
+              ]
+            }
+          }
+        },
+        {
+          "args": {
+            "1": {
+              "str": "hardening-validation"
+            },
+            "2": {
+              "rec": {
+                "4": {
+                  "set": [
+                    "rec",
+                    1,
+                    {
+                      "1": {
+                        "dbl": 2
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "method": "setQuota",
+          "response": {
+            "1": {
+              "i32": 0
+            },
+            "5": {
+              "rec": {
+                "1": {
+                  "str": "inplace"
+                },
+                "3": {
+                  "str": ""
+                }
+              }
+            },
+            "6": {
+              "lst": [
+                "rec",
+                1,
+                {
+                  "1": {
+                    "str": "Quota resources must be exactly: [CPUS, RAM_MB, DISK_MB]"
+                  }
+                }
+              ]
+            }
+          }
+        },
+        {
+          "args": {
+            "1": {
+              "str": "hardening-validation"
+            },
+            "2": {
+              "rec": {
+                "4": {
+                  "set": [
+                    "rec",
+                    3,
+                    {
+                      "1": {
+                        "dbl": 2
+                      }
+                    },
+                    {
+                      "2": {
+                        "i64": 2048
+                      }
+                    },
+                    {
+                      "3": {
+                        "i64": 2048
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "method": "setQuota",
+          "response": {
+            "1": {
+              "i32": 1
+            },
+            "5": {
+              "rec": {
+                "1": {
+                  "str": "inplace"
+                },
+                "3": {
+                  "str": ""
+                }
+              }
+            },
+            "6": {
+              "lst": [
+                "rec",
+                0
+              ]
+            }
+          }
+        },
+        {
+          "args": {
+            "1": {
+              "str": "hardening-validation"
+            },
+            "2": {
+              "rec": {
+                "4": {
+                  "set": [
+                    "rec",
+                    4,
+                    {
+                      "1": {
+                        "dbl": 2
+                      }
+                    },
+                    {
+                      "2": {
+                        "i64": 2048
+                      }
+                    },
+                    {
+                      "3": {
+                        "i64": 2048
+                      }
+                    },
+                    {
+                      "1": {
+                        "dbl": 3
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "method": "setQuota",
+          "response": {
+            "1": {
+              "i32": 0
+            },
+            "5": {
+              "rec": {
+                "1": {
+                  "str": "inplace"
+                },
+                "3": {
+                  "str": ""
+                }
+              }
+            },
+            "6": {
+              "lst": [
+                "rec",
+                1,
+                {
+                  "1": {
+                    "str": "Too many resource values in quota."
+                  }
+                }
+              ]
+            }
+          }
+        },
+        {
+          "args": {
+            "1": {
+              "str": "hardening-validation"
+            },
+            "2": {
+              "rec": {
+                "4": {
+                  "set": [
+                    "rec",
+                    3,
+                    {
+                      "1": {
+                        "dbl": 2
+                      }
+                    },
+                    {
+                      "2": {
+                        "i64": 2048
+                      }
+                    },
+                    {
+                      "3": {
+                        "i64": 2048
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "method": "setQuota",
+          "response": {
+            "1": {
+              "i32": 1
+            },
+            "5": {
+              "rec": {
+                "1": {
+                  "str": "inplace"
+                },
+                "3": {
+                  "str": ""
+                }
+              }
+            },
+            "6": {
+              "lst": [
+                "rec",
+                0
+              ]
+            }
+          }
+        },
+        {
+          "args": {
+            "1": {
+              "rec": {
+                "4": {
+                  "str": "0 0 1 1 *"
+                },
+                "5": {
+                  "i32": 0
+                },
+                "6": {
+                  "rec": {
+                    "11": {
+                      "i32": 0
+                    },
+                    "13": {
+                      "i32": 1
+                    },
+                    "17": {
+                      "rec": {
+                        "2": {
+                          "str": "fixture"
+                        }
+                      }
+                    },
+                    "20": {
+                      "set": [
+                        "rec",
+                        0
+                      ]
+                    },
+                    "25": {
+                      "rec": {
+                        "1": {
+                          "str": "go-process"
+                        },
+                        "2": {
+                          "str": "{\"version\": \"aurora-process-v1\", \"argv\": [\"/bin/true\"], \"env\": {}, \"graceMillis\": 1000}"
+                        }
+                      }
+                    },
+                    "28": {
+                      "rec": {
+                        "1": {
+                          "str": "fixtures"
+                        },
+                        "2": {
+                          "str": "test"
+                        },
+                        "3": {
+                          "str": "validation-1789524703"
+                        }
+                      }
+                    },
+                    "29": {
+                      "rec": {
+                        "1": {
+                          "rec": {
+                            "2": {
+                              "lst": [
+                                "rec",
+                                0
+                              ]
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "30": {
+                      "str": "preferred"
+                    },
+                    "32": {
+                      "set": [
+                        "rec",
+                        3,
+                        {
+                          "1": {
+                            "dbl": 0.6
+                          }
+                        },
+                        {
+                          "2": {
+                            "i64": 32
+                          }
+                        },
+                        {
+                          "3": {
+                            "i64": 32
+                          }
+                        }
+                      ]
+                    },
+                    "34": {
+                      "rec": {
+                        "1": {
+                          "tf": 0
+                        }
+                      }
+                    },
+                    "7": {
+                      "tf": 0
+                    }
+                  }
+                },
+                "7": {
+                  "rec": {
+                    "2": {
+                      "str": "fixture"
+                    }
+                  }
+                },
+                "8": {
+                  "i32": 1
+                },
+                "9": {
+                  "rec": {
+                    "1": {
+                      "str": "fixtures"
+                    },
+                    "2": {
+                      "str": "test"
+                    },
+                    "3": {
+                      "str": "validation-1789524703"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "method": "replaceCronTemplate",
+          "response": {
+            "1": {
+              "i32": 0
+            },
+            "5": {
+              "rec": {
+                "1": {
+                  "str": "inplace"
+                },
+                "3": {
+                  "str": ""
+                }
+              }
+            },
+            "6": {
+              "lst": [
+                "rec",
+                1,
+                {
+                  "1": {
+                    "str": "No cron job found for fixtures/test/validation-1789524703."
+                  }
+                }
+              ]
+            }
+          }
+        },
+        {
+          "args": {
+            "1": {
+              "rec": {
+                "4": {
+                  "str": "0 0 1 1 *"
+                },
+                "5": {
+                  "i32": 0
+                },
+                "6": {
+                  "rec": {
+                    "11": {
+                      "i32": 0
+                    },
+                    "13": {
+                      "i32": 1
+                    },
+                    "17": {
+                      "rec": {
+                        "2": {
+                          "str": "fixture"
+                        }
+                      }
+                    },
+                    "20": {
+                      "set": [
+                        "rec",
+                        0
+                      ]
+                    },
+                    "25": {
+                      "rec": {
+                        "1": {
+                          "str": "go-process"
+                        },
+                        "2": {
+                          "str": "{\"version\": \"aurora-process-v1\", \"argv\": [\"/bin/true\"], \"env\": {}, \"graceMillis\": 1000}"
+                        }
+                      }
+                    },
+                    "28": {
+                      "rec": {
+                        "1": {
+                          "str": "fixtures"
+                        },
+                        "2": {
+                          "str": "test"
+                        },
+                        "3": {
+                          "str": "validation-1789524703"
+                        }
+                      }
+                    },
+                    "29": {
+                      "rec": {
+                        "1": {
+                          "rec": {
+                            "2": {
+                              "lst": [
+                                "rec",
+                                0
+                              ]
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "30": {
+                      "str": "preferred"
+                    },
+                    "32": {
+                      "set": [
+                        "rec",
+                        3,
+                        {
+                          "1": {
+                            "dbl": 0.6
+                          }
+                        },
+                        {
+                          "2": {
+                            "i64": 32
+                          }
+                        },
+                        {
+                          "3": {
+                            "i64": 32
+                          }
+                        }
+                      ]
+                    },
+                    "34": {
+                      "rec": {
+                        "1": {
+                          "tf": 0
+                        }
+                      }
+                    },
+                    "7": {
+                      "tf": 0
+                    }
+                  }
+                },
+                "7": {
+                  "rec": {
+                    "2": {
+                      "str": "fixture"
+                    }
+                  }
+                },
+                "8": {
+                  "i32": 1
+                },
+                "9": {
+                  "rec": {
+                    "1": {
+                      "str": "fixtures"
+                    },
+                    "2": {
+                      "str": "test"
+                    },
+                    "3": {
+                      "str": "validation-1789524703"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "method": "scheduleCronJob",
+          "response": {
+            "1": {
+              "i32": 1
+            },
+            "5": {
+              "rec": {
+                "1": {
+                  "str": "inplace"
+                },
+                "3": {
+                  "str": ""
+                }
+              }
+            },
+            "6": {
+              "lst": [
+                "rec",
+                0
+              ]
+            }
+          }
+        },
+        {
+          "args": {
+            "1": {
+              "rec": {
+                "4": {
+                  "str": "0 0 1 1 *"
+                },
+                "5": {
+                  "i32": 0
+                },
+                "6": {
+                  "rec": {
+                    "11": {
+                      "i32": 0
+                    },
+                    "13": {
+                      "i32": 1
+                    },
+                    "17": {
+                      "rec": {
+                        "2": {
+                          "str": "fixture"
+                        }
+                      }
+                    },
+                    "20": {
+                      "set": [
+                        "rec",
+                        0
+                      ]
+                    },
+                    "25": {
+                      "rec": {
+                        "1": {
+                          "str": "go-process"
+                        },
+                        "2": {
+                          "str": "{\"version\": \"aurora-process-v1\", \"argv\": [\"/bin/true\"], \"env\": {}, \"graceMillis\": 1000}"
+                        }
+                      }
+                    },
+                    "28": {
+                      "rec": {
+                        "1": {
+                          "str": "fixtures"
+                        },
+                        "2": {
+                          "str": "test"
+                        },
+                        "3": {
+                          "str": "validation-1789524703"
+                        }
+                      }
+                    },
+                    "29": {
+                      "rec": {
+                        "1": {
+                          "rec": {
+                            "2": {
+                              "lst": [
+                                "rec",
+                                0
+                              ]
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "30": {
+                      "str": "preferred"
+                    },
+                    "32": {
+                      "set": [
+                        "rec",
+                        3,
+                        {
+                          "1": {
+                            "dbl": 0.6
+                          }
+                        },
+                        {
+                          "2": {
+                            "i64": 32
+                          }
+                        },
+                        {
+                          "3": {
+                            "i64": 32
+                          }
+                        }
+                      ]
+                    },
+                    "34": {
+                      "rec": {
+                        "1": {
+                          "tf": 0
+                        }
+                      }
+                    },
+                    "7": {
+                      "tf": 0
+                    }
+                  }
+                },
+                "7": {
+                  "rec": {
+                    "2": {
+                      "str": "fixture"
+                    }
+                  }
+                },
+                "8": {
+                  "i32": 1
+                },
+                "9": {
+                  "rec": {
+                    "1": {
+                      "str": "fixtures"
+                    },
+                    "2": {
+                      "str": "test"
+                    },
+                    "3": {
+                      "str": "validation-1789524703"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "method": "scheduleCronJob",
+          "response": {
+            "1": {
+              "i32": 1
+            },
+            "5": {
+              "rec": {
+                "1": {
+                  "str": "inplace"
+                },
+                "3": {
+                  "str": ""
+                }
+              }
+            },
+            "6": {
+              "lst": [
+                "rec",
+                0
+              ]
+            }
+          }
+        },
+        {
+          "args": {
+            "1": {
+              "rec": {
+                "4": {
+                  "str": "0 0 1 1 *"
+                },
+                "5": {
+                  "i32": 0
+                },
+                "6": {
+                  "rec": {
+                    "11": {
+                      "i32": 0
+                    },
+                    "13": {
+                      "i32": 1
+                    },
+                    "17": {
+                      "rec": {
+                        "2": {
+                          "str": "fixture"
+                        }
+                      }
+                    },
+                    "20": {
+                      "set": [
+                        "rec",
+                        0
+                      ]
+                    },
+                    "25": {
+                      "rec": {
+                        "1": {
+                          "str": "go-process"
+                        },
+                        "2": {
+                          "str": "{\"version\": \"aurora-process-v1\", \"argv\": [\"/bin/true\"], \"env\": {}, \"graceMillis\": 1000}"
+                        }
+                      }
+                    },
+                    "28": {
+                      "rec": {
+                        "1": {
+                          "str": "fixtures"
+                        },
+                        "2": {
+                          "str": "test"
+                        },
+                        "3": {
+                          "str": "validation-1789524703"
+                        }
+                      }
+                    },
+                    "29": {
+                      "rec": {
+                        "1": {
+                          "rec": {
+                            "2": {
+                              "lst": [
+                                "rec",
+                                0
+                              ]
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "30": {
+                      "str": "preferred"
+                    },
+                    "32": {
+                      "set": [
+                        "rec",
+                        3,
+                        {
+                          "1": {
+                            "dbl": 0.6
+                          }
+                        },
+                        {
+                          "2": {
+                            "i64": 32
+                          }
+                        },
+                        {
+                          "3": {
+                            "i64": 32
+                          }
+                        }
+                      ]
+                    },
+                    "34": {
+                      "rec": {
+                        "1": {
+                          "tf": 0
+                        }
+                      }
+                    },
+                    "7": {
+                      "tf": 0
+                    }
+                  }
+                },
+                "7": {
+                  "rec": {
+                    "2": {
+                      "str": "fixture"
+                    }
+                  }
+                },
+                "8": {
+                  "i32": 1
+                },
+                "9": {
+                  "rec": {
+                    "1": {
+                      "str": "fixtures"
+                    },
+                    "2": {
+                      "str": "test"
+                    },
+                    "3": {
+                      "str": "validation-1789524703"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "method": "replaceCronTemplate",
+          "response": {
+            "1": {
+              "i32": 1
+            },
+            "5": {
+              "rec": {
+                "1": {
+                  "str": "inplace"
+                },
+                "3": {
+                  "str": ""
+                }
+              }
+            },
+            "6": {
+              "lst": [
+                "rec",
+                0
+              ]
+            }
+          }
+        },
+        {
+          "args": {
+            "4": {
+              "rec": {
+                "1": {
+                  "str": "fixtures"
+                },
+                "2": {
+                  "str": "test"
+                },
+                "3": {
+                  "str": "validation-1789524703"
+                }
+              }
+            }
+          },
+          "method": "descheduleCronJob",
+          "response": {
+            "1": {
+              "i32": 1
+            },
+            "5": {
+              "rec": {
+                "1": {
+                  "str": "inplace"
+                },
+                "3": {
+                  "str": ""
+                }
+              }
+            },
+            "6": {
+              "lst": [
+                "rec",
+                0
+              ]
+            }
+          }
+        },
+        {
+          "args": {
+            "1": {
+              "rec": {
+                "1": {
+                  "rec": {
+                    "1": {
+                      "str": "fixtures"
+                    },
+                    "2": {
+                      "str": "test"
+                    },
+                    "3": {
+                      "str": "validation-1789524703"
+                    }
+                  }
+                },
+                "2": {
+                  "str": "missing-update"
+                }
+              }
+            }
+          },
+          "method": "pauseJobUpdate",
+          "response": {
+            "1": {
+              "i32": 0
+            },
+            "5": {
+              "rec": {
+                "1": {
+                  "str": "inplace"
+                },
+                "3": {
+                  "str": ""
+                }
+              }
+            },
+            "6": {
+              "lst": [
+                "rec",
+                1,
+                {
+                  "1": {
+                    "str": "Update does not exist IJobUpdateKey{job=IJobKey{role=fixtures, environment=test, name=validation-1789524703}, id=missing-update}"
+                  }
+                }
+              ]
+            }
+          }
+        },
+        {
+          "args": {
+            "1": {
+              "str": "hardening-validation"
+            },
+            "2": {
+              "rec": {
+                "4": {
+                  "set": [
+                    "rec",
+                    3,
+                    {
+                      "1": {
+                        "dbl": 2
+                      }
+                    },
+                    {
+                      "2": {
+                        "i64": 2048
+                      }
+                    },
+                    {
+                      "3": {
+                        "i64": 2048
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "method": "setQuota",
+          "response": {
+            "1": {
+              "i32": 1
+            },
+            "5": {
+              "rec": {
+                "1": {
+                  "str": "inplace"
+                },
+                "3": {
+                  "str": ""
+                }
+              }
+            },
+            "6": {
+              "lst": [
+                "rec",
+                0
+              ]
+            }
+          }
+        },
+        {
+          "args": {
+            "1": {
+              "rec": {
+                "1": {
+                  "rec": {
+                    "1": {
+                      "str": "fixtures"
+                    },
+                    "2": {
+                      "str": "test"
+                    },
+                    "3": {
+                      "str": "validation-1789524703"
+                    }
+                  }
+                },
+                "2": {
+                  "str": "missing-update"
+                }
+              }
+            }
+          },
+          "method": "resumeJobUpdate",
+          "response": {
+            "1": {
+              "i32": 0
+            },
+            "5": {
+              "rec": {
+                "1": {
+                  "str": "inplace"
+                },
+                "3": {
+                  "str": ""
+                }
+              }
+            },
+            "6": {
+              "lst": [
+                "rec",
+                1,
+                {
+                  "1": {
+                    "str": "Update does not exist: IJobUpdateKey{job=IJobKey{role=fixtures, environment=test, name=validation-1789524703}, id=missing-update}"
+                  }
+                }
+              ]
+            }
+          }
+        },
+        {
+          "args": {
+            "1": {
+              "str": "hardening-validation"
+            },
+            "2": {
+              "rec": {
+                "4": {
+                  "set": [
+                    "rec",
+                    3,
+                    {
+                      "1": {
+                        "dbl": 2
+                      }
+                    },
+                    {
+                      "2": {
+                        "i64": 2048
+                      }
+                    },
+                    {
+                      "3": {
+                        "i64": 2048
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "method": "setQuota",
+          "response": {
+            "1": {
+              "i32": 1
+            },
+            "5": {
+              "rec": {
+                "1": {
+                  "str": "inplace"
+                },
+                "3": {
+                  "str": ""
+                }
+              }
+            },
+            "6": {
+              "lst": [
+                "rec",
+                0
+              ]
+            }
+          }
+        },
+        {
+          "args": {
+            "1": {
+              "rec": {
+                "1": {
+                  "rec": {
+                    "1": {
+                      "str": "fixtures"
+                    },
+                    "2": {
+                      "str": "test"
+                    },
+                    "3": {
+                      "str": "validation-1789524703"
+                    }
+                  }
+                },
+                "2": {
+                  "str": "missing-update"
+                }
+              }
+            }
+          },
+          "method": "abortJobUpdate",
+          "response": {
+            "1": {
+              "i32": 0
+            },
+            "5": {
+              "rec": {
+                "1": {
+                  "str": "inplace"
+                },
+                "3": {
+                  "str": ""
+                }
+              }
+            },
+            "6": {
+              "lst": [
+                "rec",
+                1,
+                {
+                  "1": {
+                    "str": "Update does not exist IJobUpdateKey{job=IJobKey{role=fixtures, environment=test, name=validation-1789524703}, id=missing-update}"
+                  }
+                }
+              ]
+            }
+          }
+        },
+        {
+          "args": {
+            "1": {
+              "str": "hardening-validation"
+            },
+            "2": {
+              "rec": {
+                "4": {
+                  "set": [
+                    "rec",
+                    3,
+                    {
+                      "1": {
+                        "dbl": 2
+                      }
+                    },
+                    {
+                      "2": {
+                        "i64": 2048
+                      }
+                    },
+                    {
+                      "3": {
+                        "i64": 2048
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "method": "setQuota",
+          "response": {
+            "1": {
+              "i32": 1
+            },
+            "5": {
+              "rec": {
+                "1": {
+                  "str": "inplace"
+                },
+                "3": {
+                  "str": ""
+                }
+              }
+            },
+            "6": {
+              "lst": [
+                "rec",
+                0
+              ]
+            }
+          }
+        },
+        {
+          "args": {
+            "1": {
+              "rec": {
+                "1": {
+                  "rec": {
+                    "1": {
+                      "str": "fixtures"
+                    },
+                    "2": {
+                      "str": "test"
+                    },
+                    "3": {
+                      "str": "validation-1789524703"
+                    }
+                  }
+                },
+                "2": {
+                  "str": "missing-update"
+                }
+              }
+            }
+          },
+          "method": "rollbackJobUpdate",
+          "response": {
+            "1": {
+              "i32": 0
+            },
+            "5": {
+              "rec": {
+                "1": {
+                  "str": "inplace"
+                },
+                "3": {
+                  "str": ""
+                }
+              }
+            },
+            "6": {
+              "lst": [
+                "rec",
+                1,
+                {
+                  "1": {
+                    "str": "Update does not exist IJobUpdateKey{job=IJobKey{role=fixtures, environment=test, name=validation-1789524703}, id=missing-update}"
+                  }
+                }
+              ]
+            }
+          }
+        },
+        {
+          "args": {
+            "1": {
+              "str": "hardening-validation"
+            },
+            "2": {
+              "rec": {
+                "4": {
+                  "set": [
+                    "rec",
+                    3,
+                    {
+                      "1": {
+                        "dbl": 2
+                      }
+                    },
+                    {
+                      "2": {
+                        "i64": 2048
+                      }
+                    },
+                    {
+                      "3": {
+                        "i64": 2048
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "method": "setQuota",
+          "response": {
+            "1": {
+              "i32": 1
+            },
+            "5": {
+              "rec": {
+                "1": {
+                  "str": "inplace"
+                },
+                "3": {
+                  "str": ""
+                }
+              }
+            },
+            "6": {
+              "lst": [
+                "rec",
+                0
+              ]
+            }
+          }
+        }
+      ],
+      "started": 1789524703.3539414
+    },
+    "sha256": "68e306d08c02da3d74514d46f0e7df5049bf3d7c1980e6fbb6043966ac7f8fbe"
+  },
+  "schema": 1,
+  "sourceInputs": {
+    "path": "docs/reimagining/hardening01-inputs.json",
+    "sha256": "982757670abbf051aa26429b8d0b9090c9e7adc87f0353756921423d5bc7feea"
+  },
+  "suiteLedger": {
+    "path": "docs/reimagining/hardening01-tests.jsonl",
+    "sha256": "7629071549c174722879d41bbcaa7b8e4215b39e4e243a4b333589b70250a950"
+  },
+  "ui": {
+    "failures": 0,
+    "source": "hardening01-full-02.log",
+    "suites": 33,
+    "tests": 144
+  },
+  "upstreamMaster": "11ebaeeb071cb182c388a40755e84f60dda32260"
+}

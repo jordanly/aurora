@@ -1,0 +1,50 @@
+{
+  "baseline": "11ebaeeb071cb182c388a40755e84f60dda32260",
+  "reviewedHead": "0ade4c3fdec123aaa3a1ac687dfcf70ffef4c98f",
+  "method": "Tracked text files at each Git revision; physical lines including comments and tests. Language rows exclude 3rdparty/. Binary files excluded from text totals.",
+  "before": {
+    "textFiles": 1477,
+    "textLines": 227761,
+    "trackedPythonFiles": 260,
+    "languages": {
+      ".py": {
+        "files": 259,
+        "lines": 43506
+      },
+      ".java": {
+        "files": 634,
+        "lines": 99202
+      },
+      ".js": {
+        "files": 108,
+        "lines": 16335
+      }
+    }
+  },
+  "after": {
+    "textFiles": 1324,
+    "textLines": 237092,
+    "trackedPythonFiles": 0,
+    "languages": {
+      ".go": {
+        "files": 62,
+        "lines": 18613
+      },
+      ".java": {
+        "files": 659,
+        "lines": 100985
+      },
+      ".js": {
+        "files": 105,
+        "lines": 6385
+      }
+    }
+  },
+  "qualifiedInputsChecked": 1265,
+  "qualifiedInputHashMismatches": [],
+  "reviewReproductions": {
+    "quota": "Actual SqliteStorage + QuotaManagerImpl: negative quota raises QuotaException, calls failure handler once, subsequent no-op write requires scheduler restart. Parent inspected and reran harness.",
+    "history": "Actual Go Store + TransportHandler: 128 acknowledged Stop tombstones -> state HTTP 200; 129 accepted tombstones, zero reservations/observations -> state/watch HTTP 503. Parent inspected and reran harness.",
+    "outbox": "Actual SqliteEffects: first 1024 durable pending commands assigned to unavailable nodes hide a later durable healthy-node command from driver filter. Query-level reproduction, not a live 1025-task load test."
+  }
+}
