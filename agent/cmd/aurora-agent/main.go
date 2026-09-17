@@ -44,7 +44,7 @@ func read(path string) ([]byte, error) {
 }
 func run() (err error) {
 	if len(os.Args) < 2 {
-		return fmt.Errorf("version|validate|admit|inspect|serve-local|serve")
+		return fmt.Errorf("version|validate|admit|inspect|compact|serve-local|serve")
 	}
 	if os.Args[1] == "version" {
 		return json.NewEncoder(os.Stdout).Encode(map[string]string{"version": "native-v1alpha1-admission", "store": "bbolt-v1.5.0"})
@@ -67,6 +67,7 @@ func run() (err error) {
 	f := flag.NewFlagSet(os.Args[1], flag.ContinueOnError)
 	config := f.String("config", "", "trusted local enrollment configuration")
 	state := f.String("state", "", "exclusive local state file")
+	output := f.String("output", "", "new destination journal for offline compact")
 	command := f.String("command", "", "Delivery JSON file")
 	document := f.String("document", "", "protocol JSON file")
 	workRoot := f.String("work-root", "", "absolute private runtime work and log root")
@@ -95,7 +96,7 @@ func run() (err error) {
 		_, e = os.Stdout.Write(append(protocol.Canonical(v), '\n'))
 		return e
 	}
-	if os.Args[1] != "admit" && os.Args[1] != "inspect" && os.Args[1] != "serve-local" && os.Args[1] != "serve" {
+	if os.Args[1] != "compact" && os.Args[1] != "admit" && os.Args[1] != "inspect" && os.Args[1] != "serve-local" && os.Args[1] != "serve" {
 		return fmt.Errorf("unknown action")
 	}
 	b, e := read(*config)
@@ -105,6 +106,13 @@ func run() (err error) {
 	c, e := agent.ReadConfig(b)
 	if e != nil {
 		return e
+	}
+	if os.Args[1] == "compact" {
+		result, err := agent.CompactJournal(*state, *output, c)
+		if err != nil {
+			return err
+		}
+		return json.NewEncoder(os.Stdout).Encode(result)
 	}
 	var s *agent.Store
 	if os.Args[1] == "serve" {

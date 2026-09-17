@@ -322,6 +322,8 @@ func TestHelperProcess(t *testing.T) {
 	}
 	var err error
 	switch args[0] {
+	case "health":
+		err = health(args[1:])
 	case "keeper":
 		err = keeper(args[1:])
 	case "proxy":
@@ -334,4 +336,36 @@ func TestHelperProcess(t *testing.T) {
 		os.Exit(2)
 	}
 	os.Exit(0)
+}
+
+func TestHealthListenerLossKeepsProcessAlive(t *testing.T) {
+	listener, err := net.Listen("tcp4", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	address := listener.Addr().String()
+	port := listener.Addr().(*net.TCPAddr).Port
+	listener.Close()
+	cmd := startHelper(t, "health", "--port", strconv.Itoa(port), "--delay-ms", "100", "--close-after-ms", "300", "--log-bytes", "128")
+	connects := func() bool {
+		connection, err := net.DialTimeout("tcp4", address, 30*time.Millisecond)
+		if err != nil {
+			return false
+		}
+		connection.Close()
+		return true
+	}
+	until(t, connects)
+	until(t, func() bool { return !connects() })
+	if err = cmd.Process.Signal(syscall.Signal(0)); err != nil {
+		t.Fatal("listener loss exited workload:", err)
+	}
+}
+
+func TestHealthBounds(t *testing.T) {
+	for _, args := range [][]string{{"--port", "0"}, {"--port", "65536"}, {"--delay-ms", "600001"}, {"--close-after-ms", "-1"}, {"--log-bytes", "2097153"}, {"extra"}} {
+		if err := health(args); err == nil {
+			t.Fatalf("invalid accepted: %v", args)
+		}
+	}
 }

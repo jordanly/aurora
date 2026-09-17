@@ -55,6 +55,7 @@ import org.apache.aurora.scheduler.execution.ExecutionOffer;
 import org.apache.aurora.scheduler.execution.OfferTransport;
 import org.apache.aurora.scheduler.execution.PreparedTask;
 import org.apache.aurora.scheduler.execution.ReconciliationTarget;
+import org.apache.aurora.scheduler.execution.TaskLogReader;
 import org.apache.aurora.scheduler.execution.TaskReconciliation;
 import org.apache.aurora.scheduler.offers.HostOffer;
 import org.apache.aurora.scheduler.offers.OfferManager;
@@ -73,7 +74,7 @@ import org.slf4j.LoggerFactory;
 
 /** Durable execution adapter beneath Aurora's existing offers and state machine. */
 final class GoAgentDriver extends AbstractIdleService
-    implements ExecutionDriver, OfferTransport, TaskReconciliation, EventSubscriber {
+    implements ExecutionDriver, OfferTransport, TaskReconciliation, EventSubscriber, TaskLogReader {
   private static final Logger LOG = LoggerFactory.getLogger(GoAgentDriver.class);
   private static final AtomicLong WATCH_CONNECTIONS =
       Stats.exportLong("go_agent_watch_connections");
@@ -136,6 +137,71 @@ final class GoAgentDriver extends AbstractIdleService
     this.registered = registered;
     this.client = client;
     epoch = Long.toString(sqlite.ownerEpoch());
+  }
+
+  @Override
+  public Optional<TaskLogReader.Page> readLog(String taskId, String stream, long offset, int limit)
+      throws IOException, InterruptedException {
+    WireJson.require(taskId != null && !taskId.isEmpty() && taskId.length() <= 512
+        && ("stdout".equals(stream) || "stderr".equals(stream))
+        && offset >= 0 && offset <= MAX_OFFSET && limit > 0 && limit <= MAX_PAGE_BYTES,
+        "Invalid log request");
+    // The immutable persisted Run binds task, enrolled node and attempt. No host/path from HTTP
+    // participates in routing. Release the read transaction before contacting the agent.
+    Optional<Command> command = storage.read(stores ->
+        sqlite.effects().command(GoTaskFactory.identity("r-", taskId)));
+    if (command.isEmpty()) {
+      return Optional.empty();
+    }
+    Command run = command.get();
+    WireJson.require(taskId.equals(run.taskId()) && "Run".equals(run.type())
+        && run.payloadVersion() == 1, "Invalid retained Run");
+    var node = config.nodes().stream().filter(item -> item.name().equals(run.agentId()))
+        .findFirst();
+    if (node.isEmpty()) {
+      return Optional.empty();
+    }
+    JsonNode body = WireJson.parse(run.payload());
+    WireJson.require(node.get().target().equals(body.path("target")), "Run enrollment mismatch");
+    JsonNode identity = body.path("identity");
+    ObjectNode key = WireJson.object();
+    for (String field : List.of("cluster", "incarnation", "jobKey", "instance", "attempt")) {
+      WireJson.require(identity.hasNonNull(field), "Missing retained task identity");
+      key.set(field, identity.get(field));
+    }
+    String attempt = WireJson.hash(WireJson.bytes(key));
+    JsonNode result;
+    try {
+      result = client.request(node.get(), "/v1/logs?attempt=" + attempt + "&stream=" + stream
+          + "&offset=" + offset + "&limit=" + limit, null, epoch, session);
+    } catch (AgentTransport.ResponseException e) {
+      if (e.status() == 404) {
+        return Optional.empty();
+      }
+      throw e;
+    }
+    try {
+      WireJson.fields(result, "attempt", "stream", "offset", "nextOffset", "hasMore",
+          "truncated", "complete", "data");
+      WireJson.require(attempt.equals(WireJson.text(result, "attempt"))
+          && stream.equals(WireJson.text(result, "stream"))
+          && result.path("offset").isIntegralNumber()
+          && result.path("offset").canConvertToLong() && result.path("offset").asLong() == offset
+          && result.path("nextOffset").isIntegralNumber()
+          && result.path("nextOffset").canConvertToLong(), "Log response identity or offset");
+      long next = result.path("nextOffset").asLong();
+      WireJson.require(next >= offset && next <= offset + limit && next <= MAX_OFFSET
+          && result.path("data").isTextual()
+          && result.path("data").asText().length() <= next - offset
+          && result.path("hasMore").isBoolean() && result.path("truncated").isBoolean()
+          && result.path("complete").isBoolean()
+          && (next > offset || !result.path("hasMore").asBoolean()), "Invalid log page");
+      return Optional.of(new TaskLogReader.Page(taskId, stream, offset, next,
+          result.path("hasMore").asBoolean(), result.path("truncated").asBoolean(),
+          result.path("complete").asBoolean(), result.path("data").asText()));
+    } catch (IllegalArgumentException e) {
+      throw new IOException("Invalid agent log response", e);
+    }
   }
 
   @Override
@@ -420,7 +486,7 @@ final class GoAgentDriver extends AbstractIdleService
 
   private void validateObservation(GoAgentConfig.Node node, JsonNode observation) {
     WireJson.fields(observation, "version", "kind", "identity", "source", "sequence", "cursor",
-        "state", "ready", "cleanup");
+        "state", "ready", "cleanup", "reason");
     WireJson.require("native-v1alpha1".equals(observation.path("version").asText())
         && "Observation".equals(observation.path("kind").asText())
         && node.target().equals(observation.path("source"))
@@ -429,6 +495,9 @@ final class GoAgentDriver extends AbstractIdleService
             .contains(observation.path("state").asText())
         && Set.of("pending", "complete", "unknown").contains(observation.path("cleanup").asText()),
         "Invalid observation");
+    WireJson.require(!observation.has("reason")
+        || Set.of("health-startup-timeout", "health-check-failed", "health-exited-before-ready")
+            .contains(observation.path("reason").asText()), "Invalid health reason");
     WireJson.counter(observation, "sequence");
     WireJson.bytes(observation);
   }
@@ -470,13 +539,15 @@ final class GoAgentDriver extends AbstractIdleService
     if (status != null && (status == ScheduleStatus.RUNNING
         || "complete".equals(observation.path("cleanup").asText()))) {
       stateManager.get().changeState(stores, command.taskId(), Optional.empty(), status,
-          Optional.of("Go agent: " + observation.path("state").asText()));
+          Optional.of("Go agent: " + observation.path("state").asText()
+              + (observation.has("reason") ? ": " + observation.path("reason").asText() : "")));
     }
   }
 
   private void offer(GoAgentConfig.Node node, JsonNode inventory) {
     storage.write(stores -> {
       Set<String> reserved = new HashSet<>();
+      Set<String> occupiedPorts = new HashSet<>();
       for (JsonNode attempt : inventory) {
         WireJson.require(attempt.path("reserved").isBoolean(), "Incomplete reservation inventory");
         if (attempt.path("reserved").asBoolean()) {
@@ -496,6 +567,8 @@ final class GoAgentDriver extends AbstractIdleService
                 || reserved.contains(task.getAssignedTask().getTaskId()))) {
           available = available.subtract(ResourceManager.bagFromResources(
               task.getAssignedTask().getTask().getResources()));
+          GoTaskFactory.healthSocket(task.getAssignedTask().getTask())
+              .ifPresent(occupiedPorts::add);
           reserved.remove(task.getAssignedTask().getTaskId());
         }
       }
@@ -514,13 +587,16 @@ final class GoAgentDriver extends AbstractIdleService
       }
       var current = offers.get().get(node.name());
       if (current.isPresent() && current.get().getResourceBag(false).equals(available)
+          && current.get().getOffer() instanceof AgentOffer prior
+          && prior.occupiedPorts().equals(occupiedPorts)
           && System.nanoTime() - offeredAt.getOrDefault(node.name(), 0L)
               < TimeUnit.MINUTES.toNanos(1)) {
         return null;
       }
       cancelOffer(node);
       offers.get().add(new HostOffer(
-          new AgentOffer(node.name(), "offer-" + UUID.randomUUID(), available), attributes));
+          new AgentOffer(node.name(), "offer-" + UUID.randomUUID(), available,
+              Set.copyOf(occupiedPorts)), attributes));
       offeredAt.put(node.name(), System.nanoTime());
       return null;
     });
@@ -530,8 +606,15 @@ final class GoAgentDriver extends AbstractIdleService
     offers.get().get(node.name()).ifPresent(offer -> offers.get().cancel(offer.getOfferId()));
   }
 
-  private record AgentOffer(String agent, String id, ResourceBag resources)
-      implements ExecutionOffer {
+  private record AgentOffer(String agent, String id, ResourceBag resources,
+                            Set<String> occupiedPorts) implements ExecutionOffer.TaskAware {
+    @Override
+    public Optional<String> placementVeto(
+        org.apache.aurora.scheduler.storage.entities.ITaskConfig task) {
+      return GoTaskFactory.healthSocket(task).filter(occupiedPorts::contains)
+          .map(socket -> "health TCP port " + socket + " is reserved");
+    }
+
     @Override
     public String getOfferId() {
       return id;

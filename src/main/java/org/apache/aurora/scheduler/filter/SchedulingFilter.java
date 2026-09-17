@@ -23,6 +23,7 @@ import com.google.common.base.MoreObjects;
 
 import org.apache.aurora.scheduler.TierManager;
 import org.apache.aurora.scheduler.configuration.executor.ExecutorSettings;
+import org.apache.aurora.scheduler.execution.ExecutionOffer;
 import org.apache.aurora.scheduler.offers.HostOffer;
 import org.apache.aurora.scheduler.resources.ResourceBag;
 import org.apache.aurora.scheduler.resources.ResourceManager;
@@ -256,6 +257,7 @@ public interface SchedulingFilter {
     private final ResourceBag offer;
     private final IHostAttributes attributes;
     private final Optional<Instant> unavailabilityStart;
+    private final ExecutionOffer.TaskAware taskAware;
 
     @VisibleForTesting
     public UnusedResource(ResourceBag offer, IHostAttributes attributes) {
@@ -263,13 +265,24 @@ public interface SchedulingFilter {
     }
 
     public UnusedResource(HostOffer offer, boolean revocable) {
-      this(offer.getResourceBag(revocable), offer.getAttributes(), offer.getUnavailabilityStart());
+      this(offer.getResourceBag(revocable), offer.getAttributes(), offer.getUnavailabilityStart(),
+          offer.getOffer() instanceof ExecutionOffer.TaskAware aware ? aware : null);
     }
 
     public UnusedResource(ResourceBag offer, IHostAttributes attributes, Optional<Instant> start) {
+      this(offer, attributes, start, null);
+    }
+
+    private UnusedResource(ResourceBag offer, IHostAttributes attributes, Optional<Instant> start,
+                           ExecutionOffer.TaskAware taskAware) {
+      this.taskAware = taskAware;
       this.offer = offer;
       this.attributes = attributes;
       this.unavailabilityStart = start;
+    }
+
+    public Optional<String> placementVeto(ITaskConfig task) {
+      return taskAware == null ? Optional.empty() : taskAware.placementVeto(task);
     }
 
     public ResourceBag getResourceBag() {
@@ -291,12 +304,13 @@ public interface SchedulingFilter {
       }
       return Objects.equals(offer, other.offer)
           && Objects.equals(attributes, other.attributes)
-          && Objects.equals(unavailabilityStart, other.unavailabilityStart);
+          && Objects.equals(unavailabilityStart, other.unavailabilityStart)
+          && Objects.equals(taskAware, other.taskAware);
     }
 
     @Override
     public int hashCode() {
-      return Objects.hash(offer, attributes, unavailabilityStart);
+      return Objects.hash(offer, attributes, unavailabilityStart, taskAware);
     }
   }
 

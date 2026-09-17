@@ -31,5 +31,18 @@ interface AgentTransport extends AutoCloseable {
     @Override void close() throws IOException;
   }
 
+  final class ResponseException extends IOException {
+    private final int httpStatus;
+
+    ResponseException(int status) {
+      super("Agent returned HTTP " + status);
+      httpStatus = status;
+    }
+
+    int status() {
+      return httpStatus;
+    }
+  }
+
   @Override void close();
 }

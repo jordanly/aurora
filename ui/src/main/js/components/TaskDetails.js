@@ -1,4 +1,6 @@
 import React from 'react';
+import { taskLogsPath } from 'pages/TaskLogs';
+import { isGoProcess } from 'utils/Task';
 
 export default function TaskDetails({ task }) {
   return (<div className='active-task-details'>
@@ -10,9 +12,9 @@ export default function TaskDetails({ task }) {
     {task.assignedTask.slaveHost ? <div className='active-task-details-host'>
       <h5>Host</h5>
       <span className='debug-data'>{task.assignedTask.slaveHost}</span>
-      <a href={`http://${task.assignedTask.slaveHost}:1338/task/${task.assignedTask.taskId}`}>
-        view sandbox
-      </a>
+      {isGoProcess(task.assignedTask.task)
+        ? <a href={taskLogsPath(task.assignedTask.taskId)}>view logs</a>
+        : null}
     </div> : null}
   </div>);
 }

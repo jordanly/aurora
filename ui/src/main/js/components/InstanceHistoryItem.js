@@ -1,5 +1,6 @@
 import moment from 'moment';
 import React from 'react';
+import { taskLogsPath } from 'pages/TaskLogs';
 
 import Icon from 'components/Icon';
 import StateMachine from 'components/StateMachine';
@@ -7,6 +8,7 @@ import StateMachine from 'components/StateMachine';
 import {
   getClassForScheduleStatus,
   getDuration,
+  isGoProcess,
   taskToStateMachine
 } from 'utils/Task';
 import { SCHEDULE_STATUS } from 'utils/Thrift';
@@ -43,9 +45,9 @@ export function InstanceHistoryHeader({ task, toggle }) {
       </div>
     </div>
     <ul className='instance-history-item-actions'>
-      <li><a href={`http://${task.assignedTask.slaveHost}:1338/task/${task.assignedTask.taskId}`}>
-        {task.assignedTask.slaveHost}
-      </a></li>
+      <li>{isGoProcess(task.assignedTask.task)
+        ? <a href={taskLogsPath(task.assignedTask.taskId)}>{task.assignedTask.slaveHost}</a>
+        : <strong>{task.assignedTask.slaveHost}</strong>}</li>
       <li>
         <a
           className='tip'

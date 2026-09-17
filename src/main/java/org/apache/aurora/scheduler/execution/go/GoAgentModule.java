@@ -33,6 +33,7 @@ import org.apache.aurora.scheduler.execution.OfferTransport;
 import org.apache.aurora.scheduler.execution.TaskConfigValidator;
 import org.apache.aurora.scheduler.execution.TaskFactory;
 import org.apache.aurora.scheduler.execution.TaskKiller;
+import org.apache.aurora.scheduler.execution.TaskLogReader;
 import org.apache.aurora.scheduler.execution.TaskReconciliation;
 import org.apache.aurora.scheduler.resources.ResourceBag;
 import org.apache.aurora.scheduler.storage.CallOrderEnforcingStorage;
@@ -67,6 +68,7 @@ public final class GoAgentModule extends AbstractModule {
     bind(ExecutionDriver.class).to(GoAgentDriver.class);
     bind(ExecutionControl.class).to(GoAgentDriver.class);
     bind(TaskKiller.class).to(GoAgentDriver.class);
+    bind(TaskLogReader.class).to(GoAgentDriver.class);
     bind(OfferTransport.class).to(GoAgentDriver.class);
     bind(TaskReconciliation.class).to(GoAgentDriver.class);
     bind(GoTaskFactory.class).in(Singleton.class);

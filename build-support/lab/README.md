@@ -45,7 +45,8 @@ Omit `--offline` on a clean checkout to obtain the checksum-pinned Go archive;
 the helper keeps its archive and temporary tool workspace under
 `.cache/inplace-go`.
 
-The helper supplies only lab lifetime management and certificate generation.
+The helper supplies lab lifetime management, certificate generation and bounded
+health-check fixture workloads.
 The helper is built from `fixtures/cluster-helper` using pinned Go1.27.1.
 Both Go binaries require adjacent `.provenance.json` build records matching
 the current source tree and binary SHA256. All inputs are copied into the new
@@ -144,6 +145,19 @@ three snapshots (`-backup_interval=30secs -max_saved_backups=3`). Churn records
 backup filenames/counts before and after its workload; these receipts support
 separate backup publication/retention checks, not a restore qualification.
 Existing labs keep the scheduler arguments recorded in their ownership manifest.
+
+Health qualifies optional TCP readiness in the original process executor: two
+200mCPU services sharing a health socket must use different agents, a delayed
+listener causes a startup failure and automatic rollback to the exact original
+executor config, and a listener that closes while its process stays alive causes
+FAILED with a health diagnostic. Run it with `inplace-check --phase health`.
+
+Logs qualifies the scheduler's Go-backed log route on both agents: two completed
+batch tasks emit more than 1 MiB to each stream, all retained pages and truncation
+are verified against expected output hashes, and completed logs remain readable
+after each agent and the scheduler restart. Run it with `inplace-check --phase logs`.
+See [health configuration](../../docs/operations/go-process-health.md) and
+[task logs](../../docs/operations/task-logs.md) for the supported contracts.
 
 Run these phases sequentially: maintenance and failure injection affect the
 whole owned lab. Failures retain evidence and may leave fixture state requiring

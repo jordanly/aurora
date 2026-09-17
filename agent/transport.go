@@ -69,16 +69,18 @@ func transportHandler(store *Store, timing watchTiming) http.Handler {
 			transportError(w, 403, "peer rejected")
 			return
 		}
-		if r.URL.Path != "/v1/watch" && r.URL.Path != "/v1/state" && r.URL.Path != "/v1/session" && r.URL.Path != "/v1/deliver" && r.URL.Path != "/v1/ack" {
+		if r.URL.Path != "/v1/watch" && r.URL.Path != "/v1/state" && r.URL.Path != "/v1/session" && r.URL.Path != "/v1/deliver" && r.URL.Path != "/v1/ack" && r.URL.Path != "/v1/logs" {
 			transportError(w, 404, "unknown endpoint")
 			return
 		}
-		if r.URL.Path == "/v1/state" || r.URL.Path == "/v1/watch" {
+		if r.URL.Path == "/v1/state" || r.URL.Path == "/v1/watch" || r.URL.Path == "/v1/logs" {
 			if r.Method != "GET" {
 				transportError(w, 405, "method rejected")
 				return
 			}
-			if r.URL.Path == "/v1/watch" {
+			if r.URL.Path == "/v1/logs" {
+				serveLogs(w, r, store)
+			} else if r.URL.Path == "/v1/watch" {
 				serveWatch(w, r, store, timing)
 			} else {
 				serveState(w, r, store)
@@ -200,7 +202,7 @@ func serveState(w http.ResponseWriter, r *http.Request, store *Store) {
 			return
 		}
 	}
-	st, e := store.Inspect()
+	st, e := store.InspectHot()
 	if e != nil {
 		transportError(w, 503, "state unavailable")
 		return

@@ -87,7 +87,39 @@ func TestRuntimeWorkload(t *testing.T) {
 		b, _ := json.Marshal(os.Environ())
 		os.WriteFile(marker+".env", b, 0600)
 		os.Exit(0)
-	case "service", "ignore":
+	case "health-flap":
+		for {
+			ln, err := net.Listen("tcp4", "127.0.0.1:"+os.Args[index+3])
+			if err != nil {
+				os.Exit(83)
+			}
+			go func(listener net.Listener) {
+				for {
+					if _, err := os.Stat(marker + ".unhealthy"); err == nil {
+						listener.Close()
+						return
+					}
+					time.Sleep(5 * time.Millisecond)
+				}
+			}(ln)
+			for {
+				conn, err := ln.Accept()
+				if err != nil {
+					break
+				}
+				conn.Close()
+			}
+			for {
+				if _, err := os.Stat(marker + ".unhealthy"); os.IsNotExist(err) {
+					break
+				}
+				time.Sleep(5 * time.Millisecond)
+			}
+		}
+	case "late-service", "service", "ignore", "health-loss":
+		if mode == "late-service" {
+			time.Sleep(300 * time.Millisecond)
+		}
 		if mode == "ignore" {
 			signal.Ignore(syscall.SIGTERM)
 		}
@@ -96,6 +128,17 @@ func TestRuntimeWorkload(t *testing.T) {
 			os.Exit(83)
 		}
 		defer ln.Close()
+		if mode == "health-loss" {
+			go func() {
+				for {
+					if _, err := os.Stat(marker + ".unhealthy"); err == nil {
+						ln.Close()
+						return
+					}
+					time.Sleep(5 * time.Millisecond)
+				}
+			}()
+		}
 		if mode == "service" {
 			signals := make(chan os.Signal, 1)
 			signal.Notify(signals, syscall.SIGTERM)
@@ -104,6 +147,9 @@ func TestRuntimeWorkload(t *testing.T) {
 		for {
 			conn, e := ln.Accept()
 			if e != nil {
+				if mode == "health-loss" {
+					time.Sleep(time.Minute)
+				}
 				os.Exit(84)
 			}
 			conn.Close()
@@ -125,7 +171,10 @@ func TestRuntimeWorkload(t *testing.T) {
 			os.Exit(88)
 		}
 		os.Exit(0)
-	case "sleep":
+	case "ignore-sleep", "sleep":
+		if mode == "ignore-sleep" {
+			signal.Ignore(syscall.SIGTERM)
+		}
 		time.Sleep(time.Minute)
 		os.Exit(0)
 	}
@@ -817,6 +866,219 @@ func TestRuntimeAdmissionPreservesTerminalObservations(t *testing.T) {
 				t.Fatal(e)
 			}
 			check()
+		})
+	}
+}
+
+// Exercise both the direct engine and the production per-attempt supervisor.
+func TestRuntimeHealthFailure(t *testing.T) {
+	for _, supervised := range []bool{false, true} {
+		for _, mode := range []string{"sleep", "batch", "health-loss"} {
+			t.Run(fmt.Sprintf("supervised-%v/%s", supervised, mode), func(t *testing.T) {
+				dir := t.TempDir()
+				c := config()
+				s := open(t, filepath.Join(dir, "state"), c)
+				defer s.Close()
+				opts := testRuntimeOpts(t, filepath.Join(dir, "work"))
+				if supervised {
+					opts = supervisorOpts(t, opts.Root)
+				}
+				r, err := NewRuntime(s, opts)
+				if err != nil {
+					t.Fatal(err)
+				}
+				defer r.Close()
+				marker := filepath.Join(dir, "effects")
+				b := runtimeBody(t, mode, marker, freePort(t))
+				health := b["assignment"].(map[string]any)["readiness"].(map[string]any)
+				health["startupTimeoutMillis"] = uint64(500)
+				health["failureThreshold"] = uint64(3)
+				if _, err = s.Admit(delivery(c, b), caller(c)); err != nil {
+					t.Fatal(err)
+				}
+				reason := "health-startup-timeout"
+				if mode == "batch" {
+					reason = "health-exited-before-ready"
+				}
+				if mode == "health-loss" {
+					reason = "health-check-failed"
+					runUntil(t, r, func(st State) bool { a := onlyAttempt(st); return a.Execution != nil && a.Execution.Ready })
+					if err = os.WriteFile(marker+".unhealthy", nil, 0600); err != nil {
+						t.Fatal(err)
+					}
+				}
+				runUntil(t, r, func(st State) bool {
+					a := onlyAttempt(st)
+					return a.Execution != nil && a.Execution.Cleanup == "complete"
+				})
+				st, err := s.Inspect()
+				if err != nil {
+					t.Fatal(err)
+				}
+				a := onlyAttempt(st)
+				if a.Execution.Outcome != "failed" || a.Execution.HealthFailure != reason || a.Reserved() || a.Execution.Ready {
+					t.Fatalf("bad health failure: %+v", a)
+				}
+				seenReady := false
+				for _, observation := range st.Observations {
+					if observation["ready"] == true {
+						seenReady = true
+					}
+					if observation["state"] == "failed" && observation["reason"] != reason {
+						t.Fatal(observation)
+					}
+				}
+				if mode == "sleep" && seenReady {
+					t.Fatal("unhealthy startup became RUNNING")
+				}
+				stop := fixture(t, "stop")
+				if _, err = s.Admit(delivery(c, stop), caller(c)); err != nil {
+					t.Fatal(err)
+				}
+				if err = r.Tick(context.Background()); err != nil {
+					t.Fatal(err)
+				}
+				st, _ = s.Inspect()
+				if onlyAttempt(st).Execution.Outcome != "failed" {
+					t.Fatal("late Stop replaced health failure")
+				}
+			})
+		}
+	}
+}
+
+func TestSupervisorHealthTransientRecovery(t *testing.T) {
+	dir := t.TempDir()
+	c := config()
+	s := open(t, filepath.Join(dir, "state"), c)
+	defer s.Close()
+	r, err := NewRuntime(s, supervisorOpts(t, filepath.Join(dir, "work")))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer r.Close()
+	marker := filepath.Join(dir, "effects")
+	b := runtimeBody(t, "health-flap", marker, freePort(t))
+	health := b["assignment"].(map[string]any)["readiness"].(map[string]any)
+	health["startupTimeoutMillis"] = uint64(1000)
+	health["failureThreshold"] = uint64(20)
+	if _, err = s.Admit(delivery(c, b), caller(c)); err != nil {
+		t.Fatal(err)
+	}
+	for cycle := 0; cycle < 2; cycle++ {
+		runUntil(t, r, func(st State) bool { a := onlyAttempt(st); return a.Execution != nil && a.Execution.Ready })
+		if err = os.WriteFile(marker+".unhealthy", nil, 0600); err != nil {
+			t.Fatal(err)
+		}
+		runUntil(t, r, func(st State) bool { return !onlyAttempt(st).Execution.Ready })
+		if err = os.Remove(marker + ".unhealthy"); err != nil {
+			t.Fatal(err)
+		}
+	}
+	runUntil(t, r, func(st State) bool { return onlyAttempt(st).Execution.Ready })
+	st, _ := s.Inspect()
+	if onlyAttempt(st).Execution.HealthFailure != "" {
+		t.Fatal("transient failure became terminal")
+	}
+	if err = r.Shutdown(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	st, err = s.Inspect()
+	if err != nil || onlyAttempt(st).Execution.Cleanup != "complete" {
+		t.Fatalf("shutdown did not clean recovered service: %v", err)
+	}
+}
+
+func TestHealthStartupDeadlineIndependentOfProbeInterval(t *testing.T) {
+	for _, supervised := range []bool{false, true} {
+		t.Run(fmt.Sprint(supervised), func(t *testing.T) {
+			dir := t.TempDir()
+			c := config()
+			s := open(t, filepath.Join(dir, "state"), c)
+			defer s.Close()
+			opts := testRuntimeOpts(t, filepath.Join(dir, "work"))
+			if supervised {
+				opts = supervisorOpts(t, opts.Root)
+			}
+			r, err := NewRuntime(s, opts)
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer r.Close()
+			b := runtimeBody(t, "late-service", filepath.Join(dir, "effect"), freePort(t))
+			readiness := b["assignment"].(map[string]any)["readiness"].(map[string]any)
+			readiness["intervalMillis"] = uint64(60000)
+			readiness["startupTimeoutMillis"] = uint64(100)
+			readiness["failureThreshold"] = uint64(3)
+			if _, err = s.Admit(delivery(c, b), caller(c)); err != nil {
+				t.Fatal(err)
+			}
+			runUntil(t, r, func(st State) bool {
+				a := onlyAttempt(st)
+				return a.Execution != nil && a.Execution.Cleanup == "complete"
+			})
+			st, _ := s.Inspect()
+			if onlyAttempt(st).Execution.HealthFailure != "health-startup-timeout" {
+				t.Fatal(onlyAttempt(st))
+			}
+			for _, observation := range st.Observations {
+				if observation["ready"] == true {
+					t.Fatal("late listener became ready")
+				}
+			}
+		})
+	}
+}
+
+func TestHealthStopMonotonicDeadline(t *testing.T) {
+	for _, supervised := range []bool{false, true} {
+		t.Run(fmt.Sprint(supervised), func(t *testing.T) {
+			dir := t.TempDir()
+			c := config()
+			s := open(t, filepath.Join(dir, "state"), c)
+			defer s.Close()
+			opts := testRuntimeOpts(t, filepath.Join(dir, "work"))
+			if supervised {
+				opts = supervisorOpts(t, opts.Root)
+			}
+			r, err := NewRuntime(s, opts)
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer r.Close()
+			b := runtimeBody(t, "ignore-sleep", filepath.Join(dir, "effect"), freePort(t))
+			assignment := b["assignment"].(map[string]any)
+			assignment["stop"].(map[string]any)["graceMillis"] = uint64(200)
+			health := assignment["readiness"].(map[string]any)
+			health["startupTimeoutMillis"] = uint64(500)
+			health["failureThreshold"] = uint64(3)
+			if _, err = s.Admit(delivery(c, b), caller(c)); err != nil {
+				t.Fatal(err)
+			}
+			runUntil(t, r, func(st State) bool {
+				a := onlyAttempt(st)
+				return a.Execution != nil && a.Execution.HealthFailure != ""
+			})
+			if !supervised {
+				// Moving only wall time's deadline models a backward clock step. This
+				// engine is also the supervisor's child runtime.
+				key := attemptKey(b["identity"].(map[string]any))
+				if err = r.update(key, func(a *Attempt) error {
+					if a.DeadlineMono <= 0 {
+						return errors.New("health stop lacks monotonic deadline")
+					}
+					a.Deadline = time.Now().Add(time.Hour).UnixMilli()
+					return nil
+				}, false); err != nil {
+					t.Fatal(err)
+				}
+			}
+			runUntil(t, r, func(st State) bool { return onlyAttempt(st).Execution.Cleanup == "complete" })
+			st, _ := s.Inspect()
+			a := onlyAttempt(st)
+			if a.Execution.Outcome != "failed" || a.Execution.Signal != int(syscall.SIGKILL) || a.Reserved() {
+				t.Fatalf("health escalation did not kill and clean process: %+v", a.Execution)
+			}
 		})
 	}
 }

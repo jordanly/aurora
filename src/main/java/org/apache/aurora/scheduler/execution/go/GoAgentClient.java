@@ -108,7 +108,7 @@ final class GoAgentClient implements AgentTransport {
           && "/v1/deliver".equals(path) && result.path("command").isTextual()
           && result.path("bodySha256").isTextual() && result.path("outcome").isTextual();
       if (response.statusCode() != 200 && !commandRejection) {
-        throw new IOException("Agent " + node.name() + " returned " + response.statusCode());
+        throw new AgentTransport.ResponseException(response.statusCode());
       }
       return result;
     } catch (TimeoutException e) {

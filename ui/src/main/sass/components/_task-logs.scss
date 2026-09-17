@@ -1,0 +1,15 @@
+.task-logs {
+  margin: 20px;
+
+  .task-logs-streams a.active {
+    font-weight: 700;
+  }
+
+  .task-logs-output {
+    min-height: 120px;
+    max-height: 70vh;
+    overflow: auto;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+}

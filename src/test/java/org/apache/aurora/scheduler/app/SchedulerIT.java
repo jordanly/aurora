@@ -74,6 +74,7 @@ import org.apache.aurora.scheduler.execution.OfferTransport;
 import org.apache.aurora.scheduler.execution.TaskConfigValidator;
 import org.apache.aurora.scheduler.execution.TaskFactory;
 import org.apache.aurora.scheduler.execution.TaskKiller;
+import org.apache.aurora.scheduler.execution.TaskLogReader;
 import org.apache.aurora.scheduler.execution.TaskReconciliation;
 import org.apache.aurora.scheduler.log.Log;
 import org.apache.aurora.scheduler.log.Log.Entry;
@@ -168,6 +169,7 @@ public class SchedulerIT extends BaseZooKeeperTest {
         bind(TaskFactory.class).toInstance(EasyMock.createNiceMock(TaskFactory.class));
         bind(TaskReconciliation.class).toInstance(targets -> { });
         bind(TaskConfigValidator.class).toInstance(task -> { });
+        bind(TaskLogReader.class).toInstance((task, stream, offset, limit) -> Optional.empty());
         bind(Log.class).toInstance(log);
         bind(ExecutorSettings.class)
             .toInstance(TestExecutorSettings.thermosOnlyWithOverhead(

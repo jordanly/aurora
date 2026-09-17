@@ -124,3 +124,33 @@ func TestSchemaInitializationFailsClosed(t *testing.T) {
 		t.Fatal("absolute end semantics", err)
 	}
 }
+
+func TestHealthBoundsAndPairedPolicy(t *testing.T) {
+	raw, err := os.ReadFile("../../protocol/native-v1alpha1/fixtures/valid/service-run-a.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, item := range []struct {
+		startup, failures uint64
+		valid             bool
+	}{
+		{1, 1, true}, {600000, 100, true}, {0, 1, false}, {1, 0, false},
+		{600001, 1, false}, {1, 101, false},
+	} {
+		value, err := Validate(raw)
+		if err != nil {
+			t.Fatal(err)
+		}
+		health := value["assignment"].(map[string]any)["readiness"].(map[string]any)
+		health["startupTimeoutMillis"] = item.startup
+		health["failureThreshold"] = item.failures
+		_, err = Validate(Canonical(value))
+		if (err == nil) != item.valid {
+			t.Fatalf("%+v: %v", item, err)
+		}
+		delete(health, "startupTimeoutMillis")
+		if _, err = Validate(Canonical(value)); err == nil {
+			t.Fatal("unpaired health policy accepted")
+		}
+	}
+}

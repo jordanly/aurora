@@ -226,6 +226,16 @@
                   "type": "integer",
                   "minimum": 1,
                   "maximum": 60000
+                },
+                "startupTimeoutMillis": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 600000
+                },
+                "failureThreshold": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 100
                 }
               },
               "required": [
@@ -234,7 +244,15 @@
                 "intervalMillis",
                 "timeoutMillis"
               ],
-              "additionalProperties": false
+              "additionalProperties": false,
+              "dependentRequired": {
+                "startupTimeoutMillis": [
+                  "failureThreshold"
+                ],
+                "failureThreshold": [
+                  "startupTimeoutMillis"
+                ]
+              }
             }
           ]
         },
@@ -590,6 +608,13 @@
             "complete",
             "unknown"
           ]
+        },
+        "reason": {
+          "enum": [
+            "health-startup-timeout",
+            "health-check-failed",
+            "health-exited-before-ready"
+          ]
         }
       },
       "required": [
@@ -866,6 +891,16 @@
                   "type": "integer",
                   "minimum": 1,
                   "maximum": 60000
+                },
+                "startupTimeoutMillis": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 600000
+                },
+                "failureThreshold": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 100
                 }
               },
               "required": [
@@ -874,7 +909,15 @@
                 "intervalMillis",
                 "timeoutMillis"
               ],
-              "additionalProperties": false
+              "additionalProperties": false,
+              "dependentRequired": {
+                "startupTimeoutMillis": [
+                  "failureThreshold"
+                ],
+                "failureThreshold": [
+                  "startupTimeoutMillis"
+                ]
+              }
             }
           ]
         },

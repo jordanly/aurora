@@ -1,17 +1,12 @@
 import React from 'react';
+import { taskLogsPath } from 'pages/TaskLogs';
 
-import { isThermos } from 'utils/Task';
+import { isGoProcess } from 'utils/Task';
 
 export default function ({ task }) {
-  if (isThermos(task.assignedTask.task)) {
-    return (<div className='task-list-item-host'>
-      <a href={`http://${task.assignedTask.slaveHost}:1338/task/${task.assignedTask.taskId}`}>
-        {task.assignedTask.slaveHost}
-      </a>
-    </div>);
-  } else {
-    return (<div className='task-list-item-host'>
-      <strong>{task.assignedTask.slaveHost}</strong>
-    </div>);
-  }
+  return (<div className='task-list-item-host'>
+    {isGoProcess(task.assignedTask.task)
+      ? <a href={taskLogsPath(task.assignedTask.taskId)}>{task.assignedTask.slaveHost}</a>
+      : <strong>{task.assignedTask.slaveHost}</strong>}
+  </div>);
 }

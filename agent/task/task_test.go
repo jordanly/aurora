@@ -281,14 +281,68 @@ func TestMissingJournalStillRefusesConsumedDirectory(t *testing.T) {
 	}
 }
 func TestFinalizerSharedDeadline(t *testing.T) {
-	f := proc("final", "exec /bin/sleep 5")
-	f.Finalizer = true
-	m := manifest(proc("a", "exit 0"), f)
+	first := proc("final-a", "exec /bin/sleep 20")
+	second := proc("final-b", "printf unexpected > second-finalizer")
+	first.Finalizer, second.Finalizer = true, true
+	m := manifest(proc("a", "exit 0"), first, second)
+	m.MaxConcurrency = 1
 	m.FinalizationWaitMillis = 60
-	start := time.Now()
-	r, _, e := execute(t, m)
-	if e != nil || r.PrimaryResult != "succeeded" || r.FinalizationResult != "timeout" || time.Since(start) > time.Second {
-		t.Fatal(r, e, time.Since(start))
+	dir := t.TempDir()
+	if err := os.Chmod(dir, 0700); err != nil {
+		t.Fatal(err)
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	r, e := Execute(ctx, m, Options{StateDir: dir, HelperPath: os.Args[0]})
+	if ctx.Err() != nil {
+		t.Fatal("outer task cancellation, rather than the shared finalization budget, ended the task", ctx.Err())
+	}
+	if e != nil || r.PrimaryResult != "succeeded" || r.FinalizationResult != "timeout" || r.Cleanup != "complete" {
+		t.Fatal(r, e)
+	}
+	// The shared budget starts after primary execution and permits a further
+	// cleanup interval. Total Execute duration also includes primary startup and
+	// journal fsyncs, so it is not a valid bound on the finalization deadline.
+	// Instead prove that the first finalizer exhausted that budget and the next
+	// serial finalizer never received a fresh budget or admission.
+	if r.States[first.Name].Runs != 1 || r.States[second.Name].Runs != 0 {
+		t.Fatal("finalizers did not share one exhausted budget", r.States)
+	}
+	if _, e := os.Stat(filepath.Join(dir, "second-finalizer")); !os.IsNotExist(e) {
+		t.Fatal("queued finalizer executed after the shared deadline", e)
+	}
+	data, e := os.ReadFile(filepath.Join(dir, "task.journal"))
+	if e != nil {
+		t.Fatal(e)
+	}
+	decoder := json.NewDecoder(strings.NewReader(string(data)))
+	firstStopped := false
+	for {
+		var event Event
+		if e := decoder.Decode(&event); e == io.EOF {
+			break
+		} else if e != nil {
+			t.Fatal(e)
+		}
+		if event.Name == second.Name {
+			t.Fatal("queued finalizer was admitted after the shared deadline", event)
+		}
+		if event.Name == first.Name {
+			switch event.Kind {
+			case "exit":
+				if event.Signal != 9 {
+					t.Fatal("finalizer was not killed at deadline", event)
+				}
+				firstStopped = true
+			case "start-failed":
+				// Exhausting the budget during helper readiness also aborts
+				// and reaps that helper, without releasing the workload.
+				firstStopped = true
+			}
+		}
+	}
+	if !firstStopped {
+		t.Fatal("timeout did not durably record finalizer termination")
 	}
 }
 func TestBoundedLogs(t *testing.T) {

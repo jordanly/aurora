@@ -18,9 +18,15 @@ import java.util.List;
 import java.util.Optional;
 
 import org.apache.aurora.scheduler.resources.ResourceBag;
+import org.apache.aurora.scheduler.storage.entities.ITaskConfig;
 
 /** Resource and identity views needed by scheduling, independent of transport. */
 public interface ExecutionOffer {
+  /** Optional executor-specific placement checks, applied before assigning resources. */
+  interface TaskAware extends ExecutionOffer {
+    Optional<String> placementVeto(ITaskConfig task);
+  }
+
   String getOfferId();
   String getAgentId();
   String getHostname();

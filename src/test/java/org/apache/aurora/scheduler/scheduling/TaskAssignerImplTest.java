@@ -378,6 +378,54 @@ public class TaskAssignerImplTest extends EasyMockTest {
     assertEquals(0L, statsProvider.getLongValue(ASSIGNER_LAUNCH_FAILURES));
   }
 
+  private HostOffer occupiedHealthOffer() {
+    ExecutionOffer.TaskAware offer = org.easymock.EasyMock.createNiceMock(
+        ExecutionOffer.TaskAware.class);
+    expect(offer.getTotalResources()).andReturn(AGENT_OFFER.getTotalResources()).anyTimes();
+    expect(offer.getOfferId()).andReturn(AGENT_OFFER.getOfferId()).anyTimes();
+    expect(offer.getAgentId()).andReturn(AGENT_OFFER.getAgentId()).anyTimes();
+    expect(offer.placementVeto(TASK.getTask()))
+        .andReturn(Optional.of("health TCP port agent-container:8080 is reserved")).anyTimes();
+    org.easymock.EasyMock.replay(offer);
+    return new HostOffer(offer, OFFER.getAttributes());
+  }
+
+  @Test
+  public void testHealthPortConflictTriesNextAgent() throws Exception {
+    HostOffer occupied = occupiedHealthOffer();
+    expectNoUpdateReservations(2);
+    expect(offerManager.getAllMatching(GROUP_KEY, resourceRequest))
+        .andReturn(java.util.List.of(occupied, OFFER_2));
+    expectAssignTask(OFFER_2.getOffer());
+    expect(taskFactory.prepare(TASK, OFFER_2.getOffer(), false)).andReturn(PREPARED_TASK);
+    offerManager.launchTask(OFFER_2.getOfferId(), PREPARED_TASK);
+    control.replay();
+    assertEquals(ImmutableSet.of(TASK.getTaskId()), assigner.maybeAssign(storeProvider,
+        resourceRequest, GROUP_KEY, ImmutableSet.of(TASK), NO_RESERVATION));
+  }
+
+  @Test
+  public void testHealthPortConflictRemainsPending() {
+    HostOffer occupied = occupiedHealthOffer();
+    expectNoUpdateReservations(1);
+    expect(offerManager.getAllMatching(GROUP_KEY, resourceRequest))
+        .andReturn(java.util.List.of(occupied));
+    control.replay();
+    assertEquals(NO_ASSIGNMENT, assigner.maybeAssign(storeProvider,
+        resourceRequest, GROUP_KEY, ImmutableSet.of(TASK), NO_RESERVATION));
+  }
+
+  @Test
+  public void testHealthPortConflictPreservesUpdateReservation() {
+    HostOffer occupied = occupiedHealthOffer();
+    expect(updateAgentReserver.getAgent(INSTANCE_KEY)).andReturn(Optional.of(SLAVE_ID));
+    expect(offerManager.getMatching(SLAVE_ID, resourceRequest))
+        .andReturn(Optional.of(occupied));
+    control.replay();
+    assertEquals(NO_ASSIGNMENT, assigner.maybeAssign(storeProvider,
+        resourceRequest, GROUP_KEY, ImmutableSet.of(TASK), NO_RESERVATION));
+  }
+
   private void expectAssignTask(ExecutionOffer offer) {
     expectAssignTask(offer, TASK);
   }

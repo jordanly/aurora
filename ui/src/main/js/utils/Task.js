@@ -69,3 +69,7 @@ export function getResources(resources, key) {
 export function isThermos(task) {
   return task && task.executorConfig && task.executorConfig.name === 'AuroraExecutor';
 }
+
+export function isGoProcess(task) {
+  return task && task.executorConfig && task.executorConfig.name === 'go-process';
+}

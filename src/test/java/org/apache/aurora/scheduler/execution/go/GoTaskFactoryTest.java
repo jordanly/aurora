@@ -128,6 +128,25 @@ public class GoTaskFactoryTest extends EasyMockTest {
         GoTaskFactory.identity("a-", "task-2"));
   }
 
+  @Test
+  public void validatesBoundedOptionalHealth() throws Exception {
+    control.replay();
+    String health = "{\"kind\":\"tcp\",\"port\":8080,\"network\":\"agent-container\","
+        + "\"intervalMillis\":1000,\"timeoutMillis\":100,"
+        + "\"startupTimeoutMillis\":30000,\"failureThreshold\":3}";
+    String data = PROCESS.substring(0, PROCESS.length() - 1) + ",\"health\":" + health + "}";
+    factory().validate(task(data));
+    for (String invalid : List.of(
+        data.replace("8080", "0"), data.replace("8080", "65536"),
+        data.replace("\"tcp\"", "\"http\""),
+        data.replace("\"timeoutMillis\":100", "\"timeoutMillis\":251"),
+        data.replace("\"startupTimeoutMillis\":30000", "\"startupTimeoutMillis\":600001"),
+        data.replace("\"failureThreshold\":3", "\"failureThreshold\":0"),
+        data.replace(",\"failureThreshold\":3", ""))) {
+      assertRejected(invalid);
+    }
+  }
+
   private static GoTaskFactory factory() {
     return new GoTaskFactory(null, TaskTestUtil.TIER_MANAGER);
   }

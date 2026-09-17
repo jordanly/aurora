@@ -42,12 +42,46 @@ on `delta`. A client must consume and commit all observation pages before treati
 the reservation inventory as reconciled. The existing scheduler follows these
 rules. Local inspection continues to expose full retained history.
 
-Durable command results, attempt tombstones, and sequence counters remain
-permanent for replay protection across ACK and restart. This change bounds the
-wire inventory, not disk usage or the cost of reading/writing the journal; safe
-physical history compaction remains future work. Legacy journals with arbitrary
-terminal history reconcile without migration. A legacy journal with more than
+Durable command results, complete historical attempt bodies, tombstones, and
+sequence counters remain permanent for replay protection across ACK and restart.
+Opening an older journal atomically migrates its monolithic snapshot to indexed,
+checksummed bbolt history buckets. Older binaries reject the new storage layout.
+Admission and daemon polling read the hot snapshot plus targeted history entries;
+unchanged history entries are not rewritten. Hot state contains reservations,
+pending Stop processing and supervisor acknowledgments, and unpruned observations
+with their command results. ACK prunes that observation backlog, never replay
+metadata. Local full inspection and startup integrity validation still scan all
+history; indexed attempt lookup also supports completed-attempt log reads.
+
+This bounds lifetime-history costs in the running daemon once pending work and
+observations are drained. It does not bound disk usage: full cold attempt bodies,
+command results, and sequence counters grow permanently. bbolt reuses freed pages
+but does not shrink the database file automatically. Bounded bulky-history
+retention remains future work. Per-attempt supervisor execution-event
+history also remains retained in its child journal. A legacy journal with more than
 128 actual reservations still returns 503 for state/watch rather than hiding
 reservations. Stop delivery and execution cleanup remain available; inventory
 recovers after cleanup reduces reservations to the bound. Do not delete its
 journal or tombstones to recover capacity.
+
+Offline physical compaction reclaims unused bbolt pages without deleting history:
+
+```sh
+aurora-agent compact --config agent.json --state state.db --output compacted.db
+```
+
+Stop the daemon first. Compaction requires an exclusive source lock and refuses
+an existing output database or `.owner` marker. It validates all retained history,
+copies every bucket and counter, syncs the new files, and reports source and output
+byte sizes. Small databases may not shrink. Neither the source bytes nor stored
+authority are changed, and the copy is never activated automatically. To use the
+copy, explicitly start the daemon with `--state compacted.db`, the same enrollment
+config, and the same runtime work root; keep `compacted.db.owner` alongside it.
+Never run the source and copy concurrently: they carry the same journal identity.
+
+Publication persists the new owner marker before publishing the database. A crash
+between those steps can leave a marker-only output, which deliberately cannot be
+opened or silently re-enrolled. The source remains usable; choose another unused
+output path to retry. A crash can also leave a private `.aurora-compact-*` staging
+directory. Compaction does not delete workload logs, bound permanent replay history,
+or automatically reclaim space in separate per-attempt supervisor journals.

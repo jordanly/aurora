@@ -125,6 +125,7 @@ type Store struct {
 	c               Config
 	beforeCommit    func() error
 	effectMu        sync.Mutex
+	runtimeRoot     string
 	runtimeActive   bool
 	runtimeDraining bool
 	watchMu         sync.Mutex
@@ -247,14 +248,9 @@ func (s *Store) Close() error {
 	s.watchMu.Unlock()
 	return s.db.Close()
 }
-func save(b *bolt.Bucket, st State) error {
-	data := protocol.Canonical(st)
-	if e := b.Put([]byte("snapshot"), data); e != nil {
-		return e
-	}
-	return b.Put([]byte("sha256"), []byte(fmt.Sprintf("%x", sha256.Sum256(data))))
-}
-func read(b *bolt.Bucket) (State, error) {
+func read(b *bolt.Bucket) (State, error)    { return readJournal(b, true) }
+func readHot(b *bolt.Bucket) (State, error) { return readJournal(b, false) }
+func readJournal(b *bolt.Bucket, full bool) (State, error) {
 	var st State
 	if b == nil {
 		return st, errors.New("missing state")
@@ -271,8 +267,21 @@ func read(b *bolt.Bucket) (State, error) {
 	}
 	d = json.NewDecoder(bytes.NewReader(data))
 	d.DisallowUnknownFields()
-	if e := d.Decode(&st); e != nil {
+	var snapshot journalSnapshot
+	if e := d.Decode(&snapshot); e != nil {
 		return st, e
+	}
+	st = snapshot.State
+	if st.Sequences == nil || st.Commands == nil || st.Attempts == nil || st.Observations == nil {
+		return st, errors.New("corrupt state collections")
+	}
+	if snapshot.JournalLayout != 0 && snapshot.JournalLayout != 1 {
+		return st, errors.New("unsupported journal layout")
+	}
+	if snapshot.JournalLayout == 1 {
+		if err := loadHistory(b, &st, full, snapshot.HistoryCounts); err != nil {
+			return st, err
+		}
 	}
 	if st.FormatVersion != 1 && st.FormatVersion != 2 && st.FormatVersion != 3 {
 		return st, errors.New("unsupported store format")
@@ -360,13 +369,17 @@ func (s *Store) Admit(data []byte, caller Caller) (Result, error) {
 	}
 	e = s.update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte("state"))
-		st, e := read(b)
+		st, e := readForAttempt(b, attemptKey(id))
 		if e != nil {
 			return e
 		}
 		command := body["command"].(string)
 		hash := protocol.Digest(body)
-		if prior, ok := st.Commands[command]; ok {
+		prior, ok, e := loadCommand(b, command, st)
+		if e != nil {
+			return e
+		}
+		if ok {
 			if prior.Hash != hash {
 				return errors.New("conflicting command reuse")
 			}
@@ -472,6 +485,9 @@ func (s *Store) Admit(data []byte, caller Caller) (Result, error) {
 			obs["state"] = attempt.Execution.Outcome
 			obs["ready"] = attempt.Execution.Ready
 			obs["cleanup"] = attempt.Execution.Cleanup
+			if attempt.Execution.HealthFailure != "" {
+				obs["reason"] = attempt.Execution.HealthFailure
+			}
 		}
 		st.Observations = append(st.Observations, obs)
 		st.Commands[command] = out
@@ -511,7 +527,7 @@ func (s *Store) Ack(data []byte, c Caller, limit int) error {
 	n, _ := strconv.ParseUint(v["committedCursor"].(string), 10, 64)
 	return s.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte("state"))
-		st, e := read(b)
+		st, e := readHot(b)
 		if e != nil {
 			return e
 		}
@@ -623,7 +639,7 @@ func (s *Store) RefreshSession(peer, epoch, session string) (Config, error) {
 	}
 	err := s.update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte("state"))
-		st, e := read(b)
+		st, e := readHot(b)
 		if e != nil {
 			return e
 		}

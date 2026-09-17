@@ -178,6 +178,91 @@ public class GoAgentDriverTest {
   }
 
   @Test
+  public void testHealthPortReservedThroughDeliveryAndCleanup() throws Exception {
+    start();
+    commitLaunch();
+    String profile = "{\"version\":\"aurora-process-v1\",\"argv\":[\"/bin/sleep\",\"60\"],"
+        + "\"env\":{},\"graceMillis\":100,\"health\":{\"kind\":\"tcp\",\"port\":8080,"
+        + "\"network\":\"agent-container\",\"intervalMillis\":100,\"timeoutMillis\":100,"
+        + "\"startupTimeoutMillis\":1000,\"failureThreshold\":3}}";
+    sqlite.write(stores -> {
+      stores.getUnsafeTaskStore().mutateTask(TASK, original -> {
+        var task = original.newBuilder();
+        task.getAssignedTask().getTask().setExecutorConfig(
+            new org.apache.aurora.gen.ExecutorConfig("go-process", profile));
+        return IScheduledTask.build(task);
+      });
+      return null;
+    });
+    var task = sqlite.read(stores -> stores.getTaskStore().fetchTask(TASK).orElseThrow()
+        .getAssignedTask().getTask());
+    agent.loseDeliveryAck = true;
+    driver.tick();
+    assertEquals(1, pending());
+    assertTrue(((org.apache.aurora.scheduler.execution.ExecutionOffer.TaskAware)
+        currentOffer.getOffer()).placementVeto(task).orElseThrow().contains("8080"));
+    // Agent cleanup alone cannot free a scheduler-active task's socket.
+    agent.reserved = false;
+    driver.tick();
+    assertTrue(((org.apache.aurora.scheduler.execution.ExecutionOffer.TaskAware)
+        currentOffer.getOffer()).placementVeto(task).isPresent());
+    sqlite.write(stores -> {
+      stores.getUnsafeTaskStore().mutateTask(TASK, original ->
+          IScheduledTask.build(original.newBuilder().setStatus(ScheduleStatus.FAILED)));
+      return null;
+    });
+    agent.reserved = true;
+    driver.tick();
+    assertTrue(((org.apache.aurora.scheduler.execution.ExecutionOffer.TaskAware)
+        currentOffer.getOffer()).placementVeto(task).isPresent());
+    agent.reserved = false;
+    driver.tick();
+    assertTrue(((org.apache.aurora.scheduler.execution.ExecutionOffer.TaskAware)
+        currentOffer.getOffer()).placementVeto(task).isEmpty());
+  }
+
+  @Test
+  public void testHealthReadinessAndFailureWaitForCleanup() throws Exception {
+    start();
+    commitLaunch();
+    driver.tick();
+    agent.observations.add(observation(1, "running", "pending", false));
+    driver.tick();
+    assertEquals(ScheduleStatus.ASSIGNED, status());
+    agent.observations.add(observation(2, "running", "pending", true));
+    driver.tick();
+    assertEquals(ScheduleStatus.RUNNING, status());
+    agent.observations.add(observation(3, "running", "pending", false));
+    driver.tick();
+    assertEquals(ScheduleStatus.RUNNING, status());
+    ObjectNode failure = (ObjectNode) observation(4, "failed", "pending", false);
+    failure.put("reason", "health-check-failed");
+    agent.observations.add(failure);
+    driver.tick();
+    assertEquals(ScheduleStatus.RUNNING, status());
+    ObjectNode cleaned = (ObjectNode) observation(5, "failed", "complete", false);
+    cleaned.put("reason", "health-check-failed");
+    agent.observations.add(cleaned);
+    driver.tick();
+    assertEquals(ScheduleStatus.FAILED, status());
+    assertEquals(List.of(ScheduleStatus.RUNNING, ScheduleStatus.FAILED), transitions);
+  }
+
+  @Test
+  public void testHealthStartupFailureNeverBecomesRunning() throws Exception {
+    start();
+    commitLaunch();
+    driver.tick();
+    agent.observations.add(observation(1, "running", "pending", false));
+    ObjectNode failed = (ObjectNode) observation(2, "failed", "complete", false);
+    failed.put("reason", "health-startup-timeout");
+    agent.observations.add(failed);
+    driver.tick();
+    assertEquals(ScheduleStatus.FAILED, status());
+    assertEquals(List.of(ScheduleStatus.FAILED), transitions);
+  }
+
+  @Test
   public void testCancellationBeforeDispatchSendsOnlyStop() throws Exception {
     start();
     commitLaunch();

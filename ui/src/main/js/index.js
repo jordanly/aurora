@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import { BrowserRouter as Router, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
 
 import SchedulerClient from 'client/scheduler-client';
 import Navigation from 'components/Navigation';
@@ -9,6 +9,7 @@ import Instance from 'pages/Instance';
 import Job from 'pages/Job';
 import Jobs from 'pages/Jobs';
 import Task from 'pages/Task';
+import TaskLogs from 'pages/TaskLogs';
 import Update from 'pages/Update';
 import Updates from 'pages/Updates';
 
@@ -22,23 +23,29 @@ const SchedulerUI = () => (
   <Router>
     <div>
       <Navigation />
-      <Route component={injectApi(Home)} exact path='/scheduler' />
-      <Route component={injectApi(Jobs)} exact path='/scheduler/:role' />
-      <Route component={injectApi(Jobs)} exact path='/scheduler/:role/:environment' />
-      <Route component={injectApi(Job)} exact path='/scheduler/:role/:environment/:name' />
-      <Route
-        component={injectApi(Instance)}
-        exact
-        path='/scheduler/:role/:environment/:name/:instance' />
-      <Route
-        component={injectApi(Task)}
-        exact
-        path='/scheduler/:role/:environment/:name/task/:taskId' />
-      <Route
-        component={injectApi(Update)}
-        exact
-        path='/scheduler/:role/:environment/:name/update/:uid' />
-      <Route component={injectApi(Updates)} exact path='/updates' />
+      <Switch>
+        <Route
+          component={injectApi(TaskLogs)}
+          exact
+          path='/scheduler/logs/task/:taskId/stream/:stream' />
+        <Route component={injectApi(Home)} exact path='/scheduler' />
+        <Route component={injectApi(Jobs)} exact path='/scheduler/:role' />
+        <Route component={injectApi(Jobs)} exact path='/scheduler/:role/:environment' />
+        <Route component={injectApi(Job)} exact path='/scheduler/:role/:environment/:name' />
+        <Route
+          component={injectApi(Instance)}
+          exact
+          path='/scheduler/:role/:environment/:name/:instance' />
+        <Route
+          component={injectApi(Task)}
+          exact
+          path='/scheduler/:role/:environment/:name/task/:taskId' />
+        <Route
+          component={injectApi(Update)}
+          exact
+          path='/scheduler/:role/:environment/:name/update/:uid' />
+        <Route component={injectApi(Updates)} exact path='/updates' />
+      </Switch>
     </div>
   </Router>
 );

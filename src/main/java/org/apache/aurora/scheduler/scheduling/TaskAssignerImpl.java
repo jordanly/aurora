@@ -173,7 +173,7 @@ public class TaskAssignerImpl implements TaskAssigner {
     }
     Optional<HostOffer> offer = offerManager.getMatching(
         agentId.get(),
-        resourceRequest);
+        resourceRequest).filter(value -> accepts(value, task));
     if (offer.isPresent()) {
       LOG.info("Used update reservation for {} on {}", key, agentId.get());
       updateAgentReserver.release(agentId.get(), key);
@@ -214,6 +214,11 @@ public class TaskAssignerImpl implements TaskAssigner {
     }
   }
 
+  private static boolean accepts(HostOffer offer, IAssignedTask task) {
+    return !(offer.getOffer() instanceof ExecutionOffer.TaskAware aware)
+        || aware.placementVeto(task.getTask()).isEmpty();
+  }
+
   private Collection<SchedulingMatch> findMatches(
       ResourceRequest resourceRequest,
       TaskGroupKey groupKey,
@@ -235,7 +240,8 @@ public class TaskAssignerImpl implements TaskAssigner {
         Iterable<HostOffer> matchingOffers = Iterables.filter(
             offerManager.getAllMatching(groupKey, resourceRequest),
             o -> !matchesByOffer.containsKey(o.getOfferId())
-                && !isAgentReserved(o, groupKey, preemptionReservations));
+                && !isAgentReserved(o, groupKey, preemptionReservations)
+                && accepts(o, task));
 
         chosenOffer = Optional.ofNullable(Iterables.getFirst(matchingOffers, null));
       }

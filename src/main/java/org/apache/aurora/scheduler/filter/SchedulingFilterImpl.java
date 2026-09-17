@@ -171,6 +171,11 @@ public class SchedulingFilterImpl implements SchedulingFilter {
       return ImmutableSet.of(hostUnavailabilityVeto.get());
     }
 
+    Optional<String> placementVeto = resource.placementVeto(request.getTask());
+    if (placementVeto.isPresent()) {
+      return ImmutableSet.of(Veto.unsatisfiedLimit(placementVeto.get()));
+    }
+
     // 3. Value and limit constraint check.
     Optional<Veto> constraintVeto = getConstraintVeto(
         request.getConstraints(),

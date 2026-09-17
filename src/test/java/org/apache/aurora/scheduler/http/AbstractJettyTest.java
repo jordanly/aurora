@@ -54,6 +54,7 @@ import org.apache.aurora.scheduler.config.CliOptions;
 import org.apache.aurora.scheduler.cron.CronJobManager;
 import org.apache.aurora.scheduler.discovery.ServiceInstance;
 import org.apache.aurora.scheduler.discovery.ServiceInstance.Endpoint;
+import org.apache.aurora.scheduler.execution.TaskLogReader;
 import org.apache.aurora.scheduler.http.api.GsonMessageBodyHandler;
 import org.apache.aurora.scheduler.offers.OfferManager;
 import org.apache.aurora.scheduler.scheduling.RescheduleCalculator;
@@ -131,6 +132,7 @@ public abstract class AbstractJettyTest extends EasyMockTest {
             bindMock(OfferManager.class);
             bindMock(RescheduleCalculator.class);
             bindMock(TaskScheduler.class);
+            bindMock(TaskLogReader.class);
             bindMock(TierManager.class);
             bindMock(Thread.UncaughtExceptionHandler.class);
             bindMock(TaskGroups.TaskGroupBatchWorker.class);

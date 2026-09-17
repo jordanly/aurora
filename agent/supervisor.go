@@ -43,8 +43,9 @@ import (
 
 const supervisorVersion = 1
 
-// supervisorUnavailable is deliberately limited to transport availability.
-// Authentication, protocol and durable-state failures must remain fatal.
+// supervisorUnavailable is limited to transport availability and transient
+// journal lock contention. Authentication, protocol and corrupt durable state
+// must remain fatal.
 type supervisorUnavailable struct{ cause error }
 
 func (e *supervisorUnavailable) Error() string { return e.cause.Error() }
@@ -539,11 +540,14 @@ func (r *Runtime) pollSupervisor(key string, a Attempt) error {
 		if r.hooks.beforeSupervisorAck != nil {
 			r.hooks.beforeSupervisorAck()
 		}
-		st, e := r.store.Inspect()
+		attempt, found, e := r.store.InspectAttempt(key)
 		if e != nil {
 			return e
 		}
-		return r.pollSupervisor(key, st.Attempts[key])
+		if !found {
+			return errors.New("missing supervisor attempt")
+		}
+		return r.pollSupervisor(key, attempt)
 	}
 	return nil
 }
@@ -581,6 +585,12 @@ func (r *Runtime) supervisorLost(key string, a Attempt) error {
 	if _, e := os.Stat(path); e == nil {
 		db, e := bolt.Open(path, 0600, &bolt.Options{ReadOnly: true, Timeout: 100 * time.Millisecond})
 		if e != nil {
+			// A dead supervisor identity does not prove every holder has
+			// released its journal lock. Keep its reservation and retry through
+			// backoff; no cleanup or import has been committed yet.
+			if errors.Is(e, bolt.ErrTimeout) {
+				return &supervisorUnavailable{fmt.Errorf("supervisor journal busy; reservation retained: %w", e)}
+			}
 			return e
 		}
 		var st State

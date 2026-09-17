@@ -30,10 +30,12 @@ import (
 
 func main() {
 	if len(os.Args) < 2 {
-		die("keeper, proxy, or certgen")
+		die("keeper, proxy, certgen, or health")
 	}
 	var err error
 	switch os.Args[1] {
+	case "health":
+		err = health(os.Args[2:])
 	case "keeper":
 		err = keeper(os.Args[2:])
 	case "proxy":

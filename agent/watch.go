@@ -162,7 +162,7 @@ func serveWatch(w http.ResponseWriter, r *http.Request, store *Store, timing wat
 		if closed {
 			return
 		}
-		st, err := store.Inspect()
+		st, err := store.InspectHot()
 		if err != nil {
 			if !started {
 				transportError(w, 503, "state unavailable")

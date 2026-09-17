@@ -32,6 +32,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -186,11 +187,35 @@ func TestSupervisorImportFailureAndLoss(t *testing.T) {
 			if _, e := s.Admit(delivery(c, stop), caller(c)); e != nil {
 				t.Fatal(e)
 			}
-			r.hooks.beforePersist = func(Attempt) error { return errors.New("injected node journal failure") }
-			_ = r.Tick(context.Background())
-			time.Sleep(100 * time.Millisecond)
-			if e = r.Tick(context.Background()); e == nil {
-				t.Fatal("failed import accepted")
+			before, err := s.Inspect()
+			if err != nil {
+				t.Fatal(err)
+			}
+			injected := errors.New("injected node journal failure")
+			var attempted *Attempt
+			r.hooks.beforePersist = func(candidate Attempt) error {
+				attempted = &candidate
+				return injected
+			}
+			deadline := time.Now().Add(5 * time.Second)
+			for attempted == nil && time.Now().Before(deadline) {
+				err = r.Tick(context.Background())
+				if err != nil && !errors.Is(err, injected) {
+					t.Fatal(err)
+				}
+				if attempted == nil {
+					time.Sleep(10 * time.Millisecond)
+				}
+			}
+			if attempted == nil || !errors.Is(err, injected) {
+				t.Fatal("supervisor import did not reach the injected persistence failure", err)
+			}
+			if attempted.Supervisor.Imported <= onlyAttempt(before).Supervisor.Imported {
+				t.Fatal("injected failure did not exercise event import")
+			}
+			unchanged, err := s.Inspect()
+			if err != nil || !reflect.DeepEqual(before, unchanged) {
+				t.Fatal("failed import advanced durable state or observations", err)
 			}
 			r.hooks.beforePersist = nil
 			runUntil(t, r, func(st State) bool { return onlyAttempt(st).Execution.Cleanup == "complete" })
@@ -198,6 +223,10 @@ func TestSupervisorImportFailureAndLoss(t *testing.T) {
 			a = onlyAttempt(st)
 			if a.Execution.Outcome != "stopped" || a.Execution.Signal != int(unix.SIGTERM) {
 				t.Fatalf("lost exact signal after failed import %+v", a.Execution)
+			}
+			imported := a.Supervisor.Imported - onlyAttempt(before).Supervisor.Imported
+			if a.Supervisor.Imported < attempted.Supervisor.Imported || st.Cursor-before.Cursor != imported || uint64(len(st.Observations)-len(before.Observations)) != imported {
+				t.Fatal("retried imports did not export exactly once")
 			}
 		})
 	}

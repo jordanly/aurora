@@ -56,6 +56,7 @@ type ProcessIdentity struct {
 	Start string `json:"start"`
 }
 type Execution struct {
+	HealthFailure string `json:"healthFailure,omitempty"`
 	Phase         string `json:"phase"`
 	PID           int    `json:"pid"`
 	Start         string `json:"start"`
@@ -71,6 +72,9 @@ type Execution struct {
 }
 
 func validateExecution(e *Execution) error {
+	if e.HealthFailure != "" && e.HealthFailure != "health-startup-timeout" && e.HealthFailure != "health-check-failed" && e.HealthFailure != "health-exited-before-ready" {
+		return errors.New("invalid persisted health failure")
+	}
 	switch e.Phase {
 	case "intent", "spawned", "released", "terminal":
 	default:
@@ -133,6 +137,9 @@ type liveProcess struct {
 	finished       bool
 	waitErr        error
 	lastProbe      time.Time
+	startedAt      time.Time
+	healthFailures uint64
+	everReady      bool
 }
 
 func observedScope() (RuntimeScope, error) {
@@ -224,7 +231,7 @@ func NewRuntime(s *Store, opts RuntimeOptions) (*Runtime, error) {
 	}
 	e = s.update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte("state"))
-		st, e := read(b)
+		st, e := readHot(b)
 		if e != nil {
 			return e
 		}
@@ -247,12 +254,13 @@ func NewRuntime(s *Store, opts RuntimeOptions) (*Runtime, error) {
 	if e = r.recover(); e != nil {
 		return nil, e
 	}
+	s.runtimeRoot = opts.Root
 	s.runtimeActive = true
 	s.runtimeDraining = false
 	return r, nil
 }
 func (r *Runtime) recover() error {
-	st, e := r.store.Inspect()
+	st, e := r.store.InspectHot()
 	if e != nil {
 		return e
 	}
@@ -317,7 +325,7 @@ func (r *Runtime) Tick(ctx context.Context) error {
 	if e := ctx.Err(); e != nil {
 		return e
 	}
-	st, e := r.store.Inspect()
+	st, e := r.store.InspectHot()
 	if e != nil {
 		return e
 	}
@@ -385,7 +393,7 @@ func (r *Runtime) retrySupervisor(key string, err error) bool {
 func (r *Runtime) update(key string, change func(*Attempt) error, observe bool) error {
 	return r.store.update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte("state"))
-		st, e := read(b)
+		st, e := readForAttempt(b, key)
 		if e != nil {
 			return e
 		}
@@ -425,6 +433,9 @@ func observeAttempt(st *State, key string, a *Attempt) error {
 		return errors.New("missing execution observation")
 	}
 	st.Observations = append(st.Observations, map[string]any{"version": "native-v1alpha1", "kind": "Observation", "identity": a.Body["identity"], "source": a.Body["target"], "sequence": strconv.FormatUint(a.Sequence, 10), "cursor": strconv.FormatUint(st.Cursor, 10), "state": x.Outcome, "ready": x.Ready, "cleanup": x.Cleanup})
+	if x.HealthFailure != "" {
+		st.Observations[len(st.Observations)-1]["reason"] = x.HealthFailure
+	}
 	return nil
 }
 
@@ -564,6 +575,7 @@ func (r *Runtime) start(key string) error {
 		case <-time.After(time.Second):
 		}
 		if !finished {
+			live.startedAt = time.Now()
 			r.live[key] = live
 			return r.update(key, func(a *Attempt) error {
 				a.Stopped = true
@@ -641,6 +653,7 @@ func (r *Runtime) start(key string) error {
 		return abort(e)
 	}
 	gateWrite.Close()
+	live.startedAt = time.Now()
 	r.live[key] = live
 	if r.hooks.afterRelease != nil {
 		r.hooks.afterRelease()
@@ -662,7 +675,7 @@ func (r *Runtime) poll(ctx context.Context, key string, a Attempt, p *liveProces
 	}
 	if a.Stopped && !p.finished {
 		signal := unix.SIGTERM
-		if time.Now().UnixMilli() >= a.Deadline {
+		if time.Now().UnixMilli() >= a.Deadline || (a.DeadlineMono > 0 && monoMillis() >= a.DeadlineMono) {
 			signal = unix.SIGKILL
 		}
 		if !p.termSent || signal == unix.SIGKILL {
@@ -701,6 +714,14 @@ func (r *Runtime) poll(ctx context.Context, key string, a Attempt, p *liveProces
 		if a.Stopped {
 			outcome = "stopped"
 		}
+		healthFailure := a.Execution.HealthFailure
+		readiness := a.Body["assignment"].(map[string]any)["readiness"].(map[string]any)
+		if _, enabled := readiness["startupTimeoutMillis"]; enabled && !a.Stopped && !p.everReady {
+			healthFailure = "health-exited-before-ready"
+		}
+		if healthFailure != "" {
+			outcome = "failed"
+		}
 		if e := errors.Join(p.stdout.Close(), p.stderr.Close()); e != nil {
 			return e
 		}
@@ -710,6 +731,7 @@ func (r *Runtime) poll(ctx context.Context, key string, a Attempt, p *liveProces
 			x := a.Execution
 			x.Phase = "terminal"
 			x.Outcome = outcome
+			x.HealthFailure = healthFailure
 			x.Ready = false
 			x.Cleanup = "unknown"
 			if complete {
@@ -731,7 +753,16 @@ func (r *Runtime) poll(ctx context.Context, key string, a Attempt, p *liveProces
 		return nil
 	}
 	readiness := a.Body["assignment"].(map[string]any)["readiness"].(map[string]any)
-	if readiness["kind"] == "tcp" {
+	if readiness["kind"] == "tcp" && !a.Stopped {
+		startupExpired := func() bool {
+			startup, enabled := readiness["startupTimeoutMillis"].(uint64)
+			return enabled && !p.everReady && time.Since(p.startedAt) >= time.Duration(startup)*time.Millisecond
+		}
+		// Startup is a deadline, independent of probe frequency. A probe that
+		// finishes after the deadline cannot make an overdue process ready.
+		if startupExpired() {
+			return r.failHealth(key, "health-startup-timeout")
+		}
 		interval := time.Duration(readiness["intervalMillis"].(uint64)) * time.Millisecond
 		if time.Since(p.lastProbe) >= interval {
 			p.lastProbe = time.Now()
@@ -756,6 +787,18 @@ func (r *Runtime) poll(ctx context.Context, key string, a Attempt, p *liveProces
 					conn.Close()
 				}
 			}
+			if startupExpired() {
+				return r.failHealth(key, "health-startup-timeout")
+			}
+			if ready {
+				p.everReady = true
+				p.healthFailures = 0
+			} else {
+				p.healthFailures++
+			}
+			if _, enabled := readiness["startupTimeoutMillis"]; enabled && p.everReady && p.healthFailures >= readiness["failureThreshold"].(uint64) {
+				return r.failHealth(key, "health-check-failed")
+			}
 			if ready != a.Execution.Ready {
 				return r.update(key, func(a *Attempt) error {
 					if !a.Stopped && a.Execution.Phase != "terminal" {
@@ -767,6 +810,20 @@ func (r *Runtime) poll(ctx context.Context, key string, a Attempt, p *liveProces
 		}
 	}
 	return nil
+}
+
+func (r *Runtime) failHealth(key, reason string) error {
+	return r.update(key, func(a *Attempt) error {
+		if !a.Stopped {
+			a.Stopped = true
+			grace := int64(a.Body["assignment"].(map[string]any)["stop"].(map[string]any)["graceMillis"].(uint64))
+			a.Deadline = time.Now().UnixMilli() + grace
+			a.DeadlineMono = monoMillis() + grace
+			a.Execution.HealthFailure = reason
+			a.Execution.Ready = false
+		}
+		return nil
+	}, true)
 }
 
 // Shutdown persists local stop intent without inventing scheduler command IDs.
@@ -783,7 +840,7 @@ func (r *Runtime) Shutdown(ctx context.Context) error {
 	r.store.runtimeDraining = true
 	e := r.store.update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte("state"))
-		st, e := read(b)
+		st, e := readHot(b)
 		if e != nil {
 			return e
 		}
@@ -821,7 +878,7 @@ func (r *Runtime) Shutdown(ctx context.Context) error {
 		active := len(r.live)
 		r.mu.Unlock()
 		if active == 0 {
-			st, err := r.store.Inspect()
+			st, err := r.store.InspectHot()
 			if err != nil {
 				return err
 			}
