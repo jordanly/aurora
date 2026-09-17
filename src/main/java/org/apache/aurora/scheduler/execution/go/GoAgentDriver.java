@@ -822,6 +822,12 @@ final class GoAgentDriver extends AbstractIdleService
               stateManager.get().changeState(stores, command.taskId(), Optional.empty(),
                   ScheduleStatus.LOST, Optional.of("Go agent refused launch: " + outcome));
             }
+            // A definite admission refusal creates no execution or terminal observation.
+            // A stopped attempt can still be cleaning up; await its terminal observation.
+            JsonNode identity = parse(command).path("identity");
+            if (!"rejected-stopped".equals(outcome) && identity.has("ticket")) {
+              sqlite.effects().completeTicket(node.name(), WireJson.counter(identity, "ticket"));
+            }
           }
           sqlite.effects().acknowledge(command.id());
           return null;

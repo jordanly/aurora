@@ -139,21 +139,7 @@ public class GoAgentDriverTest {
 
   @Test
   public void testLateSupersededRunReplyAfterRetirementIsHarmless() throws Exception {
-    driver.stopAsync().awaitTerminated();
-    String prior = System.getProperty("aurora.go.retained-completed");
-    System.setProperty("aurora.go.retained-completed", "0");
-    try {
-      GoAgentConfig config = new GoAgentConfig("cluster", "incarnation", null, null, "", null, "",
-          List.of(NODE));
-      driver = new GoAgentDriver(config, sqlite, sqlite, () -> offers, () -> states,
-          registered::add, agent, false);
-    } finally {
-      if (prior == null) {
-        System.clearProperty("aurora.go.retained-completed");
-      } else {
-        System.setProperty("aurora.go.retained-completed", prior);
-      }
-    }
+    disableCompletedHistory();
     start();
     commitLaunch();
     agent.blockRun = true;
@@ -175,6 +161,65 @@ public class GoAgentDriverTest {
       agent.resumeDelivery.countDown();
       delivery.get(2, TimeUnit.SECONDS);
     }
+  }
+
+  private void disableCompletedHistory() {
+    driver.stopAsync().awaitTerminated();
+    String prior = System.getProperty("aurora.go.retained-completed");
+    System.setProperty("aurora.go.retained-completed", "0");
+    try {
+      GoAgentConfig config = new GoAgentConfig("cluster", "incarnation", null, null, "", null, "",
+          List.of(NODE));
+      driver = new GoAgentDriver(config, sqlite, sqlite, () -> offers, () -> states,
+          registered::add, agent, false);
+    } finally {
+      if (prior == null) {
+        System.clearProperty("aurora.go.retained-completed");
+      } else {
+        System.setProperty("aurora.go.retained-completed", prior);
+      }
+    }
+  }
+
+  @Test
+  public void testDefiniteRejectionsRetireWithoutTerminalObservations() throws Exception {
+    disableCompletedHistory();
+    start();
+    int tickets = 0;
+    for (String outcome : List.of(
+        "rejected-capacity", "rejected-capability", "rejected-socket")) {
+      sqlite.write(stores -> {
+        assign(stores, NODE, outcome);
+        driver.launch("offer", launch(NODE, outcome), 0);
+        return null;
+      });
+      agent.outcome = outcome;
+      driver.tick();
+      assertEquals(ScheduleStatus.LOST, sqlite.read(stores -> stores.getTaskStore()
+          .fetchTask(outcome).orElseThrow().getStatus()));
+      assertEquals(0, pending());
+      driver.tick();
+      assertFalse(sqlite.read(stores -> sqlite.effects()
+          .command(GoTaskFactory.identity("r-", outcome)).isPresent()));
+      tickets++;
+      assertEquals(tickets, agent.retiredTickets.size());
+    }
+  }
+
+  @Test
+  public void testStoppedRejectionWaitsForTerminalCleanup() throws Exception {
+    disableCompletedHistory();
+    start();
+    commitLaunch();
+    agent.outcome = "rejected-stopped";
+    driver.tick();
+    driver.tick();
+    assertTrue(agent.retiredTickets.isEmpty());
+    assertTrue(sqlite.read(stores -> sqlite.effects()
+        .command(GoTaskFactory.identity("r-", TASK)).isPresent()));
+    agent.observations.add(observation(1, "stopped", "complete", false));
+    driver.tick();
+    assertEquals(Set.of(1L), agent.retiredTickets);
   }
 
   @Test

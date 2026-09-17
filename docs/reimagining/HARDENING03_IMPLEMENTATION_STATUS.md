@@ -11,6 +11,9 @@ coordinates retirement with that agent. Compact retired-ticket intervals remain
 durable after command bodies, observation receipts, supervisor journals and log
 directories are deleted. A delayed launch cannot recreate a retired attempt.
 Long-lived services do not prevent newer completed attempts from retiring.
+Definite capacity, capability and socket refusals become eligible after command
+acknowledgment because they create no execution or terminal observation. A stopped
+attempt still awaits confirmed terminal cleanup.
 
 The default completed-history window is 64 attempts per node. The agent bounds
 retained tickets and retired intervals at 1,024 each. A durable garbage queue
