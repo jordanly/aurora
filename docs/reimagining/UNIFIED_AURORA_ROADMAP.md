@@ -1,5 +1,9 @@
 # Aurora modernization roadmap
 
+The next three hardening items—journal compaction, application health and task
+logs—are tracked in the [follow-up status](HARDENING02_IMPLEMENTATION_STATUS.md).
+Earlier qualification results below remain tied to their recorded revisions.
+
 The active roadmap is the [in-place modernization plan](IN_PLACE_MODERNIZATION_PLAN.md),
 with its [ordered implementation backlog](IMPLEMENTATION_BACKLOG.md).
 

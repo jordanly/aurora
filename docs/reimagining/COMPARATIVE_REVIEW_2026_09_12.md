@@ -1,5 +1,9 @@
 # Comparative review: modernized and pre-modern Aurora
 
+The next three hardening items—journal compaction, application health and task
+logs—are tracked in the [follow-up status](HARDENING02_IMPLEMENTATION_STATUS.md).
+Earlier qualification results below remain tied to their recorded revisions.
+
 Reviewed on 2026-09-12. Baseline: upstream master
 `11ebaeeb071cb182c388a40755e84f60dda32260`. Modernized branch:
 `codex/in-place-java25`, `0ade4c3fdec123aaa3a1ac687dfcf70ffef4c98f`.

@@ -1,5 +1,9 @@
 # Continuous-operation hardening
 
+The next three hardening items—journal compaction, application health and task
+logs—are tracked in the [follow-up status](HARDENING02_IMPLEMENTATION_STATUS.md).
+Earlier qualification results below remain tied to their recorded revisions.
+
 This slice addresses the validation, agent history, outbox fairness and automatic
 backup defects identified in the
 [comparative review](COMPARATIVE_REVIEW_2026_09_12.md). It changes the existing
