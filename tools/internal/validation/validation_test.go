@@ -222,7 +222,7 @@ func TestJarArtifactsDependenciesAndBytecode(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(artifacts) != 4 || len(deps) != 8 || artifacts["scheduler.jar"]["auroraClassCount"] != 2 || artifacts["api.jar"]["bytecodeMajor"] != 69 {
+	if len(artifacts) != 4 || len(deps) != 16 || artifacts["scheduler.jar"]["auroraClassCount"] != 2 || artifacts["api.jar"]["bytecodeMajor"] != 69 {
 		t.Fatal(artifacts, deps)
 	}
 	data, err := os.ReadFile(filepath.Join(dir, "lib/api.jar"))
@@ -235,7 +235,7 @@ func TestJarArtifactsDependenciesAndBytecode(t *testing.T) {
 }
 
 func TestMalformedAndForbiddenJarsFail(t *testing.T) {
-	for _, name := range []string{"missing asset", "empty asset", "duplicate entry", "duplicate owner", "invalid magic", "old bytecode", "bad zip", "mesos", "scheduler mesos", "log mesos", "traversal", "absolute", "backslash"} {
+	for _, name := range []string{"missing asset", "empty asset", "duplicate entry", "duplicate owner", "invalid magic", "old bytecode", "bad zip", "mesos", "scheduler mesos", "log mesos", "legacy servlet", "legacy rest", "legacy inject", "jackson1", "traversal", "absolute", "backslash"} {
 		t.Run(name, func(t *testing.T) {
 			dir, contents := packaged(t)
 			target := "scheduler.jar"
@@ -268,6 +268,14 @@ func TestMalformedAndForbiddenJarsFail(t *testing.T) {
 				entries["org/apache/aurora/scheduler/mesos/Driver.class"] = class()
 			case "log mesos":
 				entries["org/apache/aurora/scheduler/log/mesos/Log.class"] = class()
+			case "legacy servlet":
+				entries["javax/servlet/http/HttpServlet.class"] = "dependency"
+			case "legacy rest":
+				entries["javax/ws/rs/Path.class"] = "dependency"
+			case "legacy inject":
+				entries["javax/inject/Inject.class"] = "dependency"
+			case "jackson1":
+				entries["org/codehaus/jackson/map/ObjectMapper.class"] = "dependency"
 			case "traversal":
 				entries["../Outside.class"] = class()
 			case "absolute":

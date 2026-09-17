@@ -147,7 +147,13 @@ var apiEntries = []string{
 var dependencyEntries = []string{
 	"org/sqlite/JDBC.class", "com/google/inject/Guice.class", "com/google/common/collect/ImmutableList.class",
 	"org/apache/thrift/TBase.class", "org/apache/zookeeper/ZooKeeper.class", "org/eclipse/jetty/server/Server.class",
-	"com/google/gson/Gson.class", "javax/xml/bind/annotation/XmlElement.class",
+	"com/google/gson/Gson.class", "jakarta/xml/bind/annotation/XmlElement.class",
+	"jakarta/activation/DataHandler.class", "jakarta/servlet/http/HttpServlet.class",
+	"jakarta/ws/rs/Path.class", "jakarta/inject/Inject.class",
+	"com/fasterxml/jackson/databind/ObjectMapper.class",
+	"org/jboss/resteasy/plugins/server/servlet/ResteasyBootstrap.class",
+	"org/apache/shiro/web/servlet/AbstractShiroFilter.class",
+	"org/eclipse/jetty/ee11/servlet/ResourceServlet.class",
 }
 
 func inspectJars(distribution string) (map[string]map[string]any, map[string]string, error) {
@@ -185,6 +191,11 @@ func inspectJars(distribution string) (map[string]map[string]any, map[string]str
 			for _, prefix := range []string{"org/apache/mesos/", "org/apache/aurora/scheduler/mesos/", "org/apache/aurora/scheduler/log/mesos/"} {
 				if strings.HasPrefix(file.Name, prefix) {
 					return nil, nil, fmt.Errorf("Mesos classes remain in %s", filepath.Base(jar))
+				}
+			}
+			for _, prefix := range []string{"javax/servlet/", "javax/ws/rs/", "javax/inject/", "org/codehaus/jackson/"} {
+				if strings.HasPrefix(file.Name, prefix) {
+					return nil, nil, fmt.Errorf("retired web API classes remain in %s: %s", filepath.Base(jar), file.Name)
 				}
 			}
 			entries[file.Name] = file
