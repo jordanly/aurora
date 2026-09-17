@@ -35,9 +35,25 @@ import (
 
 func watchClient(t *testing.T, s *Store, timing watchTiming) (*http.Client, string) {
 	t.Helper()
+	return watchClientWithDeadline(t, s, timing, 0)
+}
+func watchClientWithDeadline(t *testing.T, s *Store, timing watchTiming, deadline time.Duration) (*http.Client, string) {
+	t.Helper()
 	pki := newPKI(t)
-	server := httptest.NewUnstartedServer(transportHandler(s, timing))
-	server.Config.WriteTimeout = 20 * time.Millisecond
+	handler := transportHandler(s, timing)
+	server := httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if deadline > 0 {
+			// Apply the short response deadline after TLS negotiation. A global
+			// WriteTimeout also bounds the handshake, which this test does not measure.
+			if err := http.NewResponseController(w).SetWriteDeadline(time.Now().Add(deadline)); err != nil {
+				t.Error(err)
+				http.Error(w, "test deadline unavailable", http.StatusInternalServerError)
+				return
+			}
+		}
+		handler.ServeHTTP(w, r)
+	}))
+	server.Config.WriteTimeout = 5 * time.Second
 	server.TLS = &tls.Config{Certificates: []tls.Certificate{pki.leaf(t, "agent-a", true)}, ClientAuth: tls.RequireAndVerifyClientCert, ClientCAs: pki.pool, MinVersion: tls.VersionTLS13}
 	server.StartTLS()
 	t.Cleanup(server.Close)
@@ -123,7 +139,7 @@ func TestWatchHeartbeatPeriodicSnapshotAndAckSilence(t *testing.T) {
 	s := open(t, filepath.Join(t.TempDir(), "state"), config())
 	defer s.Close()
 	timing := watchTiming{40 * time.Millisecond, time.Second, func() time.Duration { return 150 * time.Millisecond }}
-	client, base := watchClient(t, s, timing)
+	client, base := watchClientWithDeadline(t, s, timing, 20*time.Millisecond)
 	if _, err := s.Admit(delivery(config(), fixture(t, "run")), caller(config())); err != nil {
 		t.Fatal(err)
 	}
@@ -145,7 +161,7 @@ func TestWatchHeartbeatPeriodicSnapshotAndAckSilence(t *testing.T) {
 	if f["kind"] != "heartbeat" || f["nextCursor"] != "1" || f["state"] != nil || len(f) != 3 {
 		t.Fatal(f)
 	}
-	// Heartbeat survives the server's global 20ms write timeout, and eventually
+	// Heartbeat survives the initial 20ms response write timeout, and eventually
 	// a jitter timer, not polling, produces a new full inventory.
 	for f["kind"] == "heartbeat" {
 		f = frame(t, d)
