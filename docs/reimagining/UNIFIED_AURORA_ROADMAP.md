@@ -1,7 +1,7 @@
 # Aurora modernization roadmap
 
-Journal compaction, application health and task logs are implemented and qualified
-in the [follow-up status](HARDENING02_IMPLEMENTATION_STATUS.md).
+Execution retention, enforced process isolation and Jakarta framework migration
+are tracked in the [latest status](HARDENING03_IMPLEMENTATION_STATUS.md).
 Earlier qualification results below remain tied to their recorded revisions.
 
 The active roadmap is the [in-place modernization plan](IN_PLACE_MODERNIZATION_PLAN.md),

@@ -1,7 +1,7 @@
 # Modernize Aurora in place
 
-Journal compaction, application health and task logs are implemented and qualified
-in the [follow-up status](HARDENING02_IMPLEMENTATION_STATUS.md).
+Execution retention, enforced process isolation and Jakarta framework migration
+are tracked in the [latest status](HARDENING03_IMPLEMENTATION_STATUS.md).
 Earlier qualification results below remain tied to their recorded revisions.
 
 Active plan, updated 2026-09-12. This supersedes the parallel scheduler strategy and the

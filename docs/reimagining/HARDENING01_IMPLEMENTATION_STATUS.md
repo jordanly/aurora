@@ -1,7 +1,7 @@
 # Continuous-operation hardening
 
-Journal compaction, application health and task logs are implemented and qualified
-in the [follow-up status](HARDENING02_IMPLEMENTATION_STATUS.md).
+Execution retention, enforced process isolation and Jakarta framework migration
+are tracked in the [latest status](HARDENING03_IMPLEMENTATION_STATUS.md).
 Earlier qualification results below remain tied to their recorded revisions.
 
 This slice addresses the validation, agent history, outbox fairness and automatic

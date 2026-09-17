@@ -1,5 +1,10 @@
 # Journal, health and task-log hardening
 
+Execution retention, enforced process isolation and Jakarta framework migration
+are tracked in the [latest status](HARDENING03_IMPLEMENTATION_STATUS.md).
+The unbounded-retention limitation below describes this earlier slice; the next
+slice adds durable retirement fences and bounded execution history.
+
 This slice implements the next three items after
 [continuous-operation hardening](HARDENING01_IMPLEMENTATION_STATUS.md), inside the
 original SchedulerMain application on `codex/in-place-java25`.

@@ -98,5 +98,69 @@ remain separate modernization work. HA remains last.
 
 ## Qualification
 
-Final Java gates and fresh-cluster acceptance are in progress. This document will
-record source-bound results and limitations when those runs finish.
+Implementation commit `6752e460a52474412c98483fe676969026e774cc` passed all three
+[CI jobs](https://github.com/jordanly/aurora/actions/runs/35251139796): Go tests and
+provenance, Java behavior/UI/distribution, and Java quality. The Java quality job
+includes the existing Checkstyle, PMD and SpotBugs gates without relaxing them.
+The original instruction/branch coverage floors remain 87% and 79%.
+
+The final ARM64 agent and helper passed uncached tests and vet on the Pi. The
+installed Java 25 distribution passed launcher, runtime dependency, bytecode and
+resource verification. Its live UI entry point and generated `AuroraAdmin.js`
+matched their packaged bytes exactly.
+
+The preceding local full behavior run at `57da2d9b1` passed 1,509 tests with no
+failures or skips and measured 91.28% instruction / 80.45% branch coverage. Its
+remaining duplicate quality work was deliberately stopped after CI passed. The
+final refusal-retirement fix then passed all 25 driver tests locally, including
+two new regressions; the complete final source passed CI as linked above.
+
+Fresh-cluster smoke, health and log acceptance passed. On this loaded Pi, two
+log-test runs reached the scheduler's ACTIVE state at about the old 90-second
+acceptance deadline. The logs were intact. Commit `7487f94e8` gives the lab three
+minutes for daemon recovery, preserving all workload identity/content assertions
+and product health deadlines. The final log phase passed with this allowance;
+the tools tests and vet also passed.
+
+All three recovery rounds passed: graceful scheduler restart, scheduler crash
+and alternating agent crash preserved the original task identities, placements
+and workload PIDs. Policy acceptance also passed failed-update rollback with
+exact executor restoration, active-host drain replacement and manual cron.
+All three [follow-up CI jobs](https://github.com/jordanly/aurora/actions/runs/35252983712)
+passed after the lab recovery allowance changed.
+
+All six acceptance phases passed on `.pi-lab/hardening03-final`. The churn
+workload completed 130 batches / 260 tasks in 743 seconds, one instance per agent
+per batch. Both long-lived service identities/PIDs and all daemon generations
+remained stable; automatic backup retention remained at three files.
+
+The retention sampler captured 79 observations without errors. Retired intervals
+advanced beyond the still-live service tickets (18 on agent A, 12 on agent B).
+Temporary retirement overlap is visible in the samples; after the service was
+stopped, both agents settled at the configured window:
+
+| Idle-state measurement | Agent A | Agent B |
+| --- | ---: | ---: |
+| Tickets issued | 148 | 142 |
+| Completed tickets retained | 64 | 64 |
+| Attempt directories retained | 64 | 64 |
+| Supervisor directories retained | 64 | 64 |
+| Retired ticket interval | 1–84 | 1–78 |
+| Attempt artifact bytes | 16,965,150 | 16,965,138 |
+| Agent journal bytes | 1,048,576 | 1,048,576 |
+
+SQLite retained one automatic transaction outcome and zero explicit transaction
+receipts. The artifact plateau is evidence of retirement under this workload,
+not a total disk quota; database allocation need not shrink after deletion.
+
+The lab remains running at `http://172.25.0.4:8081` on the Pi's private Docker
+bridge. `fixtures/test/health-hardening03-demo` has one healthy service on each
+agent with readable stdout/stderr. The isolation VM is stopped with its evidence
+preserved; pre-existing labs and host boot configuration were left intact.
+
+See the [qualification receipt](hardening03-evidence.json),
+[source hashes](hardening03-inputs.json), [Java suite ledger](hardening03-tests.jsonl),
+[retention samples](hardening03-retention.json) and
+[kernel qualification](hardening03-kernel.json). The package contains application
+commit `6752e460a`; qualification commit `7487f94e8` changes only the lab recovery
+allowance and its documentation. The receipt records those exact input changes.

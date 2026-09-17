@@ -1,0 +1,4428 @@
+{
+  "checks": {
+    "automaticOutcomeRows": 1,
+    "completedWindowPerNode": 64,
+    "explicitOutcomeRows": 0,
+    "retirementAdvancedBeyondLiveTickets": {
+      "agent-a": true,
+      "agent-b": true
+    },
+    "samplingErrors": 0,
+    "stableServiceTickets": {
+      "agent-a": [
+        18
+      ],
+      "agent-b": [
+        12
+      ]
+    },
+    "steadyArtifactsPerNode": 64,
+    "steadyObservedAt": "2026-09-17T17:56:42.783947+00:00"
+  },
+  "samples": [
+    {
+      "nodes": {
+        "agent-a": {
+          "activeTickets": [],
+          "attemptDirectories": 0,
+          "completed": 0,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 1,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 0,
+          "tickets": 0,
+          "workBytes": 0
+        },
+        "agent-b": {
+          "activeTickets": [],
+          "attemptDirectories": 0,
+          "completed": 0,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 1,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 0,
+          "tickets": 0,
+          "workBytes": 0
+        }
+      },
+      "observedAt": "2026-09-17T17:20:08.786340+00:00",
+      "phase": "smoke-before",
+      "rows": {
+        "attempt_retention": 0,
+        "automatic_outcome": 1,
+        "command_outbox": 0,
+        "observation_receipts": 0,
+        "receipt_watermarks": 2,
+        "storage_transactions": 0
+      },
+      "schema": 4
+    },
+    {
+      "nodes": {
+        "agent-a": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789665619-2e5a15ecc4df-service-0-65a8a91d-dc32-4737-922d-5555ab74e974",
+              "ticket": 2
+            }
+          ],
+          "attemptDirectories": 2,
+          "completed": 1,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 3,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 2,
+          "tickets": 2,
+          "workBytes": 530112
+        },
+        "agent-b": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789665619-2e5a15ecc4df-service-1-ba74d246-3017-4559-8f91-3d9ddae9d7ba",
+              "ticket": 2
+            }
+          ],
+          "attemptDirectories": 2,
+          "completed": 1,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 3,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 2,
+          "tickets": 2,
+          "workBytes": 530112
+        }
+      },
+      "observedAt": "2026-09-17T17:20:38.855476+00:00",
+      "phase": "smoke-running",
+      "rows": {
+        "attempt_retention": 4,
+        "automatic_outcome": 1,
+        "command_outbox": 4,
+        "observation_receipts": 0,
+        "receipt_watermarks": 6,
+        "storage_transactions": 0
+      },
+      "schema": 4
+    },
+    {
+      "nodes": {
+        "agent-a": {
+          "activeTickets": [],
+          "attemptDirectories": 3,
+          "completed": 3,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 4,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 3,
+          "tickets": 3,
+          "workBytes": 795177
+        },
+        "agent-b": {
+          "activeTickets": [],
+          "attemptDirectories": 3,
+          "completed": 3,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 4,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 3,
+          "tickets": 3,
+          "workBytes": 795177
+        }
+      },
+      "observedAt": "2026-09-17T17:20:54.324274+00:00",
+      "phase": "smoke-after",
+      "rows": {
+        "attempt_retention": 6,
+        "automatic_outcome": 1,
+        "command_outbox": 10,
+        "observation_receipts": 0,
+        "receipt_watermarks": 8,
+        "storage_transactions": 0
+      },
+      "schema": 4
+    },
+    {
+      "nodes": {
+        "agent-a": {
+          "activeTickets": [],
+          "attemptDirectories": 3,
+          "completed": 3,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 4,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 3,
+          "tickets": 3,
+          "workBytes": 795177
+        },
+        "agent-b": {
+          "activeTickets": [],
+          "attemptDirectories": 3,
+          "completed": 3,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 4,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 3,
+          "tickets": 3,
+          "workBytes": 795177
+        }
+      },
+      "observedAt": "2026-09-17T17:20:54.386826+00:00",
+      "phase": "health-before",
+      "rows": {
+        "attempt_retention": 6,
+        "automatic_outcome": 1,
+        "command_outbox": 10,
+        "observation_receipts": 0,
+        "receipt_watermarks": 8,
+        "storage_transactions": 0
+      },
+      "schema": 4
+    },
+    {
+      "nodes": {
+        "agent-a": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789665664-7d44bda66bee-health-0-59cb3f35-3459-48a9-8799-8d46676bcbc0",
+              "ticket": 5
+            }
+          ],
+          "attemptDirectories": 4,
+          "completed": 4,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 6,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 5,
+          "tickets": 5,
+          "workBytes": 1325475
+        },
+        "agent-b": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789665664-7d44bda66bee-health-1-89be4bbc-76c7-4af5-9b10-53ca28883e88",
+              "ticket": 4
+            }
+          ],
+          "attemptDirectories": 4,
+          "completed": 3,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 5,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 4,
+          "tickets": 4,
+          "workBytes": 1061120
+        }
+      },
+      "observedAt": "2026-09-17T17:21:24.679520+00:00",
+      "phase": "health-running",
+      "rows": {
+        "attempt_retention": 9,
+        "automatic_outcome": 1,
+        "command_outbox": 14,
+        "observation_receipts": 1,
+        "receipt_watermarks": 11,
+        "storage_transactions": 0
+      },
+      "schema": 4
+    },
+    {
+      "nodes": {
+        "agent-a": {
+          "activeTickets": [],
+          "attemptDirectories": 7,
+          "completed": 8,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 9,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 7,
+          "tickets": 8,
+          "workBytes": 1858973
+        },
+        "agent-b": {
+          "activeTickets": [],
+          "attemptDirectories": 5,
+          "completed": 5,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 6,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 5,
+          "tickets": 5,
+          "workBytes": 1327079
+        }
+      },
+      "observedAt": "2026-09-17T17:21:50.027791+00:00",
+      "phase": "health-after",
+      "rows": {
+        "attempt_retention": 13,
+        "automatic_outcome": 1,
+        "command_outbox": 21,
+        "observation_receipts": 0,
+        "receipt_watermarks": 15,
+        "storage_transactions": 0
+      },
+      "schema": 4
+    },
+    {
+      "nodes": {
+        "agent-a": {
+          "activeTickets": [],
+          "attemptDirectories": 7,
+          "completed": 8,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 9,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 7,
+          "tickets": 8,
+          "workBytes": 1858973
+        },
+        "agent-b": {
+          "activeTickets": [],
+          "attemptDirectories": 5,
+          "completed": 5,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 6,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 5,
+          "tickets": 5,
+          "workBytes": 1327079
+        }
+      },
+      "observedAt": "2026-09-17T17:21:50.097607+00:00",
+      "phase": "logs-before",
+      "rows": {
+        "attempt_retention": 13,
+        "automatic_outcome": 1,
+        "command_outbox": 21,
+        "observation_receipts": 0,
+        "receipt_watermarks": 15,
+        "storage_transactions": 0
+      },
+      "schema": 4
+    },
+    {
+      "nodes": {
+        "agent-a": {
+          "activeTickets": [],
+          "attemptDirectories": 8,
+          "completed": 9,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 10,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 8,
+          "tickets": 9,
+          "workBytes": 4221590
+        },
+        "agent-b": {
+          "activeTickets": [],
+          "attemptDirectories": 6,
+          "completed": 6,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 7,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 6,
+          "tickets": 6,
+          "workBytes": 3689696
+        }
+      },
+      "observedAt": "2026-09-17T17:22:20.383358+00:00",
+      "phase": "logs-running",
+      "rows": {
+        "attempt_retention": 15,
+        "automatic_outcome": 1,
+        "command_outbox": 23,
+        "observation_receipts": 0,
+        "receipt_watermarks": 17,
+        "storage_transactions": 0
+      },
+      "schema": 4
+    },
+    {
+      "nodes": {
+        "agent-a": {
+          "activeTickets": [],
+          "attemptDirectories": 8,
+          "completed": 9,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 10,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 8,
+          "tickets": 9,
+          "workBytes": 4221590
+        },
+        "agent-b": {
+          "activeTickets": [],
+          "attemptDirectories": 6,
+          "completed": 6,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 7,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 6,
+          "tickets": 6,
+          "workBytes": 3689696
+        }
+      },
+      "observedAt": "2026-09-17T17:22:50.497545+00:00",
+      "phase": "logs-running",
+      "rows": {
+        "attempt_retention": 15,
+        "automatic_outcome": 1,
+        "command_outbox": 23,
+        "observation_receipts": 0,
+        "receipt_watermarks": 17,
+        "storage_transactions": 0
+      },
+      "schema": 4
+    },
+    {
+      "nodes": {
+        "agent-a": {
+          "activeTickets": [],
+          "attemptDirectories": 8,
+          "completed": 9,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 10,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 8,
+          "tickets": 9,
+          "workBytes": 4221590
+        },
+        "agent-b": {
+          "activeTickets": [],
+          "attemptDirectories": 6,
+          "completed": 6,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 7,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 6,
+          "tickets": 6,
+          "workBytes": 3689696
+        }
+      },
+      "observedAt": "2026-09-17T17:23:20.686786+00:00",
+      "phase": "logs-running",
+      "rows": {
+        "attempt_retention": 15,
+        "automatic_outcome": 1,
+        "command_outbox": 23,
+        "observation_receipts": 0,
+        "receipt_watermarks": 17,
+        "storage_transactions": 0
+      },
+      "schema": 4
+    },
+    {
+      "nodes": {
+        "agent-a": {
+          "activeTickets": [],
+          "attemptDirectories": 8,
+          "completed": 9,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 10,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 8,
+          "tickets": 9,
+          "workBytes": 4221590
+        },
+        "agent-b": {
+          "activeTickets": [],
+          "attemptDirectories": 6,
+          "completed": 6,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 7,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 6,
+          "tickets": 6,
+          "workBytes": 3689696
+        }
+      },
+      "observedAt": "2026-09-17T17:23:50.754978+00:00",
+      "phase": "logs-running",
+      "rows": {
+        "attempt_retention": 15,
+        "automatic_outcome": 1,
+        "command_outbox": 23,
+        "observation_receipts": 0,
+        "receipt_watermarks": 17,
+        "storage_transactions": 0
+      },
+      "schema": 4
+    },
+    {
+      "nodes": {
+        "agent-a": {
+          "activeTickets": [],
+          "attemptDirectories": 8,
+          "completed": 9,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 10,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 8,
+          "tickets": 9,
+          "workBytes": 4221590
+        },
+        "agent-b": {
+          "activeTickets": [],
+          "attemptDirectories": 6,
+          "completed": 6,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 7,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 6,
+          "tickets": 6,
+          "workBytes": 3689696
+        }
+      },
+      "observedAt": "2026-09-17T17:23:55.218052+00:00",
+      "phase": "logs-after",
+      "rows": {
+        "attempt_retention": 15,
+        "automatic_outcome": 1,
+        "command_outbox": 23,
+        "observation_receipts": 0,
+        "receipt_watermarks": 17,
+        "storage_transactions": 0
+      },
+      "schema": 4
+    },
+    {
+      "nodes": {
+        "agent-a": {
+          "activeTickets": [],
+          "attemptDirectories": 8,
+          "completed": 9,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 10,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 8,
+          "tickets": 9,
+          "workBytes": 4221590
+        },
+        "agent-b": {
+          "activeTickets": [],
+          "attemptDirectories": 6,
+          "completed": 6,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 7,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 6,
+          "tickets": 6,
+          "workBytes": 3689696
+        }
+      },
+      "observedAt": "2026-09-17T17:24:41.641004+00:00",
+      "phase": "logs-before",
+      "rows": {
+        "attempt_retention": 15,
+        "automatic_outcome": 1,
+        "command_outbox": 23,
+        "observation_receipts": 0,
+        "receipt_watermarks": 17,
+        "storage_transactions": 0
+      },
+      "schema": 4
+    },
+    {
+      "nodes": {
+        "agent-a": {
+          "activeTickets": [],
+          "attemptDirectories": 9,
+          "completed": 10,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 11,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 9,
+          "tickets": 10,
+          "workBytes": 6584209
+        },
+        "agent-b": {
+          "activeTickets": [],
+          "attemptDirectories": 7,
+          "completed": 7,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 8,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 7,
+          "tickets": 7,
+          "workBytes": 6052313
+        }
+      },
+      "observedAt": "2026-09-17T17:25:11.710891+00:00",
+      "phase": "logs-running",
+      "rows": {
+        "attempt_retention": 17,
+        "automatic_outcome": 1,
+        "command_outbox": 25,
+        "observation_receipts": 0,
+        "receipt_watermarks": 19,
+        "storage_transactions": 0
+      },
+      "schema": 4
+    },
+    {
+      "nodes": {
+        "agent-a": {
+          "activeTickets": [],
+          "attemptDirectories": 9,
+          "completed": 10,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 11,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 9,
+          "tickets": 10,
+          "workBytes": 6584209
+        },
+        "agent-b": {
+          "activeTickets": [],
+          "attemptDirectories": 7,
+          "completed": 7,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 8,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 7,
+          "tickets": 7,
+          "workBytes": 6052313
+        }
+      },
+      "observedAt": "2026-09-17T17:25:41.776491+00:00",
+      "phase": "logs-running",
+      "rows": {
+        "attempt_retention": 17,
+        "automatic_outcome": 1,
+        "command_outbox": 25,
+        "observation_receipts": 0,
+        "receipt_watermarks": 19,
+        "storage_transactions": 0
+      },
+      "schema": 4
+    },
+    {
+      "nodes": {
+        "agent-a": {
+          "activeTickets": [],
+          "attemptDirectories": 9,
+          "completed": 10,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 11,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 9,
+          "tickets": 10,
+          "workBytes": 6584209
+        },
+        "agent-b": {
+          "activeTickets": [],
+          "attemptDirectories": 7,
+          "completed": 7,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 8,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 7,
+          "tickets": 7,
+          "workBytes": 6052313
+        }
+      },
+      "observedAt": "2026-09-17T17:26:11.856489+00:00",
+      "phase": "logs-running",
+      "rows": {
+        "attempt_retention": 17,
+        "automatic_outcome": 1,
+        "command_outbox": 25,
+        "observation_receipts": 0,
+        "receipt_watermarks": 19,
+        "storage_transactions": 0
+      },
+      "schema": 4
+    },
+    {
+      "nodes": {
+        "agent-a": {
+          "activeTickets": [],
+          "attemptDirectories": 9,
+          "completed": 10,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 11,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 9,
+          "tickets": 10,
+          "workBytes": 6584209
+        },
+        "agent-b": {
+          "activeTickets": [],
+          "attemptDirectories": 7,
+          "completed": 7,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 8,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 7,
+          "tickets": 7,
+          "workBytes": 6052313
+        }
+      },
+      "observedAt": "2026-09-17T17:26:41.923066+00:00",
+      "phase": "logs-running",
+      "rows": {
+        "attempt_retention": 17,
+        "automatic_outcome": 1,
+        "command_outbox": 25,
+        "observation_receipts": 0,
+        "receipt_watermarks": 19,
+        "storage_transactions": 0
+      },
+      "schema": 4
+    },
+    {
+      "nodes": {
+        "agent-a": {
+          "activeTickets": [],
+          "attemptDirectories": 9,
+          "completed": 10,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 11,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 9,
+          "tickets": 10,
+          "workBytes": 6584209
+        },
+        "agent-b": {
+          "activeTickets": [],
+          "attemptDirectories": 7,
+          "completed": 7,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 8,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 7,
+          "tickets": 7,
+          "workBytes": 6052313
+        }
+      },
+      "observedAt": "2026-09-17T17:26:50.830879+00:00",
+      "phase": "logs-after",
+      "rows": {
+        "attempt_retention": 17,
+        "automatic_outcome": 1,
+        "command_outbox": 25,
+        "observation_receipts": 0,
+        "receipt_watermarks": 19,
+        "storage_transactions": 0
+      },
+      "schema": 4
+    },
+    {
+      "nodes": {
+        "agent-a": {
+          "activeTickets": [],
+          "attemptDirectories": 9,
+          "completed": 10,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 11,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 9,
+          "tickets": 10,
+          "workBytes": 6584209
+        },
+        "agent-b": {
+          "activeTickets": [],
+          "attemptDirectories": 7,
+          "completed": 7,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 8,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 7,
+          "tickets": 7,
+          "workBytes": 6052313
+        }
+      },
+      "observedAt": "2026-09-17T17:28:46.630256+00:00",
+      "phase": "logs-before",
+      "rows": {
+        "attempt_retention": 17,
+        "automatic_outcome": 1,
+        "command_outbox": 25,
+        "observation_receipts": 0,
+        "receipt_watermarks": 19,
+        "storage_transactions": 0
+      },
+      "schema": 4
+    },
+    {
+      "nodes": {
+        "agent-a": {
+          "activeTickets": [],
+          "attemptDirectories": 10,
+          "completed": 11,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 12,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 10,
+          "tickets": 11,
+          "workBytes": 8946828
+        },
+        "agent-b": {
+          "activeTickets": [],
+          "attemptDirectories": 8,
+          "completed": 8,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 9,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 8,
+          "tickets": 8,
+          "workBytes": 8414930
+        }
+      },
+      "observedAt": "2026-09-17T17:29:16.765534+00:00",
+      "phase": "logs-running",
+      "rows": {
+        "attempt_retention": 19,
+        "automatic_outcome": 1,
+        "command_outbox": 27,
+        "observation_receipts": 0,
+        "receipt_watermarks": 21,
+        "storage_transactions": 0
+      },
+      "schema": 4
+    },
+    {
+      "nodes": {
+        "agent-a": {
+          "activeTickets": [],
+          "attemptDirectories": 10,
+          "completed": 11,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 12,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 10,
+          "tickets": 11,
+          "workBytes": 8946828
+        },
+        "agent-b": {
+          "activeTickets": [],
+          "attemptDirectories": 8,
+          "completed": 8,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 9,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 8,
+          "tickets": 8,
+          "workBytes": 8414930
+        }
+      },
+      "observedAt": "2026-09-17T17:29:46.840771+00:00",
+      "phase": "logs-running",
+      "rows": {
+        "attempt_retention": 19,
+        "automatic_outcome": 1,
+        "command_outbox": 27,
+        "observation_receipts": 0,
+        "receipt_watermarks": 21,
+        "storage_transactions": 0
+      },
+      "schema": 4
+    },
+    {
+      "nodes": {
+        "agent-a": {
+          "activeTickets": [],
+          "attemptDirectories": 10,
+          "completed": 11,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 12,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 10,
+          "tickets": 11,
+          "workBytes": 8946828
+        },
+        "agent-b": {
+          "activeTickets": [],
+          "attemptDirectories": 8,
+          "completed": 8,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 9,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 8,
+          "tickets": 8,
+          "workBytes": 8414930
+        }
+      },
+      "observedAt": "2026-09-17T17:30:16.907357+00:00",
+      "phase": "logs-running",
+      "rows": {
+        "attempt_retention": 19,
+        "automatic_outcome": 1,
+        "command_outbox": 27,
+        "observation_receipts": 0,
+        "receipt_watermarks": 21,
+        "storage_transactions": 0
+      },
+      "schema": 4
+    },
+    {
+      "nodes": {
+        "agent-a": {
+          "activeTickets": [],
+          "attemptDirectories": 10,
+          "completed": 11,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 12,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 10,
+          "tickets": 11,
+          "workBytes": 8946828
+        },
+        "agent-b": {
+          "activeTickets": [],
+          "attemptDirectories": 8,
+          "completed": 8,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 9,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 8,
+          "tickets": 8,
+          "workBytes": 8414930
+        }
+      },
+      "observedAt": "2026-09-17T17:30:47.071982+00:00",
+      "phase": "logs-running",
+      "rows": {
+        "attempt_retention": 19,
+        "automatic_outcome": 1,
+        "command_outbox": 27,
+        "observation_receipts": 0,
+        "receipt_watermarks": 21,
+        "storage_transactions": 0
+      },
+      "schema": 4
+    },
+    {
+      "nodes": {
+        "agent-a": {
+          "activeTickets": [],
+          "attemptDirectories": 10,
+          "completed": 11,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 12,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 10,
+          "tickets": 11,
+          "workBytes": 8946828
+        },
+        "agent-b": {
+          "activeTickets": [],
+          "attemptDirectories": 8,
+          "completed": 8,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 9,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 8,
+          "tickets": 8,
+          "workBytes": 8414930
+        }
+      },
+      "observedAt": "2026-09-17T17:31:12.624168+00:00",
+      "phase": "logs-after",
+      "rows": {
+        "attempt_retention": 19,
+        "automatic_outcome": 1,
+        "command_outbox": 27,
+        "observation_receipts": 0,
+        "receipt_watermarks": 21,
+        "storage_transactions": 0
+      },
+      "schema": 4
+    },
+    {
+      "nodes": {
+        "agent-a": {
+          "activeTickets": [],
+          "attemptDirectories": 10,
+          "completed": 11,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 12,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 10,
+          "tickets": 11,
+          "workBytes": 8946828
+        },
+        "agent-b": {
+          "activeTickets": [],
+          "attemptDirectories": 8,
+          "completed": 8,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 9,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 8,
+          "tickets": 8,
+          "workBytes": 8414930
+        }
+      },
+      "observedAt": "2026-09-17T17:31:12.693716+00:00",
+      "phase": "recovery-before",
+      "rows": {
+        "attempt_retention": 19,
+        "automatic_outcome": 1,
+        "command_outbox": 27,
+        "observation_receipts": 0,
+        "receipt_watermarks": 21,
+        "storage_transactions": 0
+      },
+      "schema": 4
+    },
+    {
+      "nodes": {
+        "agent-a": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789666280-d0ceb8810fe2-recovery-1-eb57a522-2bdb-4599-9365-e6254950cd2a",
+              "ticket": 12
+            }
+          ],
+          "attemptDirectories": 11,
+          "completed": 11,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 13,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 11,
+          "tickets": 12,
+          "workBytes": 9211899
+        },
+        "agent-b": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789666280-d0ceb8810fe2-recovery-0-b3558c60-c41a-47a0-839d-a678de16a1c6",
+              "ticket": 9
+            }
+          ],
+          "attemptDirectories": 9,
+          "completed": 8,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 10,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 9,
+          "tickets": 9,
+          "workBytes": 8679999
+        }
+      },
+      "observedAt": "2026-09-17T17:31:42.772744+00:00",
+      "phase": "recovery-running",
+      "rows": {
+        "attempt_retention": 21,
+        "automatic_outcome": 1,
+        "command_outbox": 29,
+        "observation_receipts": 0,
+        "receipt_watermarks": 23,
+        "storage_transactions": 0
+      },
+      "schema": 4
+    },
+    {
+      "nodes": {
+        "agent-a": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789666280-d0ceb8810fe2-recovery-1-eb57a522-2bdb-4599-9365-e6254950cd2a",
+              "ticket": 12
+            }
+          ],
+          "attemptDirectories": 11,
+          "completed": 11,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 13,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 11,
+          "tickets": 12,
+          "workBytes": 9211899
+        },
+        "agent-b": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789666280-d0ceb8810fe2-recovery-0-b3558c60-c41a-47a0-839d-a678de16a1c6",
+              "ticket": 9
+            }
+          ],
+          "attemptDirectories": 9,
+          "completed": 8,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 10,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 9,
+          "tickets": 9,
+          "workBytes": 8679999
+        }
+      },
+      "observedAt": "2026-09-17T17:32:12.887230+00:00",
+      "phase": "recovery-running",
+      "rows": {
+        "attempt_retention": 21,
+        "automatic_outcome": 1,
+        "command_outbox": 29,
+        "observation_receipts": 0,
+        "receipt_watermarks": 23,
+        "storage_transactions": 0
+      },
+      "schema": 4
+    },
+    {
+      "nodes": {
+        "agent-a": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789666280-d0ceb8810fe2-recovery-1-eb57a522-2bdb-4599-9365-e6254950cd2a",
+              "ticket": 12
+            }
+          ],
+          "attemptDirectories": 11,
+          "completed": 11,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 13,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 11,
+          "tickets": 12,
+          "workBytes": 9211899
+        },
+        "agent-b": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789666280-d0ceb8810fe2-recovery-0-b3558c60-c41a-47a0-839d-a678de16a1c6",
+              "ticket": 9
+            }
+          ],
+          "attemptDirectories": 9,
+          "completed": 8,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 10,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 9,
+          "tickets": 9,
+          "workBytes": 8679999
+        }
+      },
+      "observedAt": "2026-09-17T17:32:42.972601+00:00",
+      "phase": "recovery-running",
+      "rows": {
+        "attempt_retention": 21,
+        "automatic_outcome": 1,
+        "command_outbox": 29,
+        "observation_receipts": 0,
+        "receipt_watermarks": 23,
+        "storage_transactions": 0
+      },
+      "schema": 4
+    },
+    {
+      "nodes": {
+        "agent-a": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789666280-d0ceb8810fe2-recovery-1-eb57a522-2bdb-4599-9365-e6254950cd2a",
+              "ticket": 12
+            }
+          ],
+          "attemptDirectories": 11,
+          "completed": 11,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 13,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 11,
+          "tickets": 12,
+          "workBytes": 9211899
+        },
+        "agent-b": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789666280-d0ceb8810fe2-recovery-0-b3558c60-c41a-47a0-839d-a678de16a1c6",
+              "ticket": 9
+            }
+          ],
+          "attemptDirectories": 9,
+          "completed": 8,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 10,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 9,
+          "tickets": 9,
+          "workBytes": 8679999
+        }
+      },
+      "observedAt": "2026-09-17T17:33:13.091574+00:00",
+      "phase": "recovery-running",
+      "rows": {
+        "attempt_retention": 21,
+        "automatic_outcome": 1,
+        "command_outbox": 29,
+        "observation_receipts": 0,
+        "receipt_watermarks": 23,
+        "storage_transactions": 0
+      },
+      "schema": 4
+    },
+    {
+      "nodes": {
+        "agent-a": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789666280-d0ceb8810fe2-recovery-1-eb57a522-2bdb-4599-9365-e6254950cd2a",
+              "ticket": 12
+            }
+          ],
+          "attemptDirectories": 11,
+          "completed": 11,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 13,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 11,
+          "tickets": 12,
+          "workBytes": 9211899
+        },
+        "agent-b": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789666280-d0ceb8810fe2-recovery-0-b3558c60-c41a-47a0-839d-a678de16a1c6",
+              "ticket": 9
+            }
+          ],
+          "attemptDirectories": 9,
+          "completed": 8,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 10,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 9,
+          "tickets": 9,
+          "workBytes": 8679999
+        }
+      },
+      "observedAt": "2026-09-17T17:33:43.162995+00:00",
+      "phase": "recovery-running",
+      "rows": {
+        "attempt_retention": 21,
+        "automatic_outcome": 1,
+        "command_outbox": 29,
+        "observation_receipts": 0,
+        "receipt_watermarks": 23,
+        "storage_transactions": 0
+      },
+      "schema": 4
+    },
+    {
+      "nodes": {
+        "agent-a": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789666280-d0ceb8810fe2-recovery-1-eb57a522-2bdb-4599-9365-e6254950cd2a",
+              "ticket": 12
+            }
+          ],
+          "attemptDirectories": 11,
+          "completed": 11,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 13,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 11,
+          "tickets": 12,
+          "workBytes": 9211899
+        },
+        "agent-b": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789666280-d0ceb8810fe2-recovery-0-b3558c60-c41a-47a0-839d-a678de16a1c6",
+              "ticket": 9
+            }
+          ],
+          "attemptDirectories": 9,
+          "completed": 8,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 10,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 9,
+          "tickets": 9,
+          "workBytes": 8679999
+        }
+      },
+      "observedAt": "2026-09-17T17:34:13.251002+00:00",
+      "phase": "recovery-running",
+      "rows": {
+        "attempt_retention": 21,
+        "automatic_outcome": 1,
+        "command_outbox": 29,
+        "observation_receipts": 0,
+        "receipt_watermarks": 23,
+        "storage_transactions": 0
+      },
+      "schema": 4
+    },
+    {
+      "nodes": {
+        "agent-a": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789666280-d0ceb8810fe2-recovery-1-eb57a522-2bdb-4599-9365-e6254950cd2a",
+              "ticket": 12
+            }
+          ],
+          "attemptDirectories": 11,
+          "completed": 11,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 13,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 11,
+          "tickets": 12,
+          "workBytes": 9211899
+        },
+        "agent-b": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789666280-d0ceb8810fe2-recovery-0-b3558c60-c41a-47a0-839d-a678de16a1c6",
+              "ticket": 9
+            }
+          ],
+          "attemptDirectories": 9,
+          "completed": 8,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 10,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 9,
+          "tickets": 9,
+          "workBytes": 8679999
+        }
+      },
+      "observedAt": "2026-09-17T17:34:43.325281+00:00",
+      "phase": "recovery-running",
+      "rows": {
+        "attempt_retention": 21,
+        "automatic_outcome": 1,
+        "command_outbox": 29,
+        "observation_receipts": 0,
+        "receipt_watermarks": 23,
+        "storage_transactions": 0
+      },
+      "schema": 4
+    },
+    {
+      "nodes": {
+        "agent-a": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789666280-d0ceb8810fe2-recovery-1-eb57a522-2bdb-4599-9365-e6254950cd2a",
+              "ticket": 12
+            }
+          ],
+          "attemptDirectories": 11,
+          "completed": 11,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 13,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 11,
+          "tickets": 12,
+          "workBytes": 9211899
+        },
+        "agent-b": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789666280-d0ceb8810fe2-recovery-0-b3558c60-c41a-47a0-839d-a678de16a1c6",
+              "ticket": 9
+            }
+          ],
+          "attemptDirectories": 9,
+          "completed": 8,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 10,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 9,
+          "tickets": 9,
+          "workBytes": 8679999
+        }
+      },
+      "observedAt": "2026-09-17T17:35:13.428007+00:00",
+      "phase": "recovery-running",
+      "rows": {
+        "attempt_retention": 21,
+        "automatic_outcome": 1,
+        "command_outbox": 29,
+        "observation_receipts": 0,
+        "receipt_watermarks": 23,
+        "storage_transactions": 0
+      },
+      "schema": 4
+    },
+    {
+      "nodes": {
+        "agent-a": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789666280-d0ceb8810fe2-recovery-1-eb57a522-2bdb-4599-9365-e6254950cd2a",
+              "ticket": 12
+            }
+          ],
+          "attemptDirectories": 11,
+          "completed": 11,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 13,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 11,
+          "tickets": 12,
+          "workBytes": 9211899
+        },
+        "agent-b": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789666280-d0ceb8810fe2-recovery-0-b3558c60-c41a-47a0-839d-a678de16a1c6",
+              "ticket": 9
+            }
+          ],
+          "attemptDirectories": 9,
+          "completed": 8,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 10,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 9,
+          "tickets": 9,
+          "workBytes": 8679999
+        }
+      },
+      "observedAt": "2026-09-17T17:35:43.508332+00:00",
+      "phase": "recovery-running",
+      "rows": {
+        "attempt_retention": 21,
+        "automatic_outcome": 1,
+        "command_outbox": 29,
+        "observation_receipts": 0,
+        "receipt_watermarks": 23,
+        "storage_transactions": 0
+      },
+      "schema": 4
+    },
+    {
+      "nodes": {
+        "agent-a": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789666280-d0ceb8810fe2-recovery-1-eb57a522-2bdb-4599-9365-e6254950cd2a",
+              "ticket": 12
+            }
+          ],
+          "attemptDirectories": 11,
+          "completed": 11,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 13,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 11,
+          "tickets": 12,
+          "workBytes": 9211899
+        },
+        "agent-b": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789666280-d0ceb8810fe2-recovery-0-b3558c60-c41a-47a0-839d-a678de16a1c6",
+              "ticket": 9
+            }
+          ],
+          "attemptDirectories": 9,
+          "completed": 8,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 10,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 9,
+          "tickets": 9,
+          "workBytes": 8679999
+        }
+      },
+      "observedAt": "2026-09-17T17:36:13.687113+00:00",
+      "phase": "recovery-running",
+      "rows": {
+        "attempt_retention": 21,
+        "automatic_outcome": 1,
+        "command_outbox": 29,
+        "observation_receipts": 0,
+        "receipt_watermarks": 23,
+        "storage_transactions": 0
+      },
+      "schema": 4
+    },
+    {
+      "nodes": {
+        "agent-a": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789666280-d0ceb8810fe2-recovery-1-eb57a522-2bdb-4599-9365-e6254950cd2a",
+              "ticket": 12
+            }
+          ],
+          "attemptDirectories": 11,
+          "completed": 11,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 13,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 11,
+          "tickets": 12,
+          "workBytes": 9211899
+        },
+        "agent-b": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789666280-d0ceb8810fe2-recovery-0-b3558c60-c41a-47a0-839d-a678de16a1c6",
+              "ticket": 9
+            }
+          ],
+          "attemptDirectories": 9,
+          "completed": 8,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 10,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 9,
+          "tickets": 9,
+          "workBytes": 8679999
+        }
+      },
+      "observedAt": "2026-09-17T17:36:43.836263+00:00",
+      "phase": "recovery-running",
+      "rows": {
+        "attempt_retention": 21,
+        "automatic_outcome": 1,
+        "command_outbox": 29,
+        "observation_receipts": 0,
+        "receipt_watermarks": 23,
+        "storage_transactions": 0
+      },
+      "schema": 4
+    },
+    {
+      "nodes": {
+        "agent-a": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789666280-d0ceb8810fe2-recovery-1-eb57a522-2bdb-4599-9365-e6254950cd2a",
+              "ticket": 12
+            }
+          ],
+          "attemptDirectories": 11,
+          "completed": 11,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 13,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 11,
+          "tickets": 12,
+          "workBytes": 9211899
+        },
+        "agent-b": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789666280-d0ceb8810fe2-recovery-0-b3558c60-c41a-47a0-839d-a678de16a1c6",
+              "ticket": 9
+            }
+          ],
+          "attemptDirectories": 9,
+          "completed": 8,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 10,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 9,
+          "tickets": 9,
+          "workBytes": 8679999
+        }
+      },
+      "observedAt": "2026-09-17T17:37:13.902576+00:00",
+      "phase": "recovery-running",
+      "rows": {
+        "attempt_retention": 21,
+        "automatic_outcome": 1,
+        "command_outbox": 29,
+        "observation_receipts": 0,
+        "receipt_watermarks": 23,
+        "storage_transactions": 0
+      },
+      "schema": 4
+    },
+    {
+      "nodes": {
+        "agent-a": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789666280-d0ceb8810fe2-recovery-1-eb57a522-2bdb-4599-9365-e6254950cd2a",
+              "ticket": 12
+            }
+          ],
+          "attemptDirectories": 11,
+          "completed": 11,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 13,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 11,
+          "tickets": 12,
+          "workBytes": 9211899
+        },
+        "agent-b": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789666280-d0ceb8810fe2-recovery-0-b3558c60-c41a-47a0-839d-a678de16a1c6",
+              "ticket": 9
+            }
+          ],
+          "attemptDirectories": 9,
+          "completed": 8,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 10,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 9,
+          "tickets": 9,
+          "workBytes": 8679999
+        }
+      },
+      "observedAt": "2026-09-17T17:37:44.128068+00:00",
+      "phase": "recovery-running",
+      "rows": {
+        "attempt_retention": 21,
+        "automatic_outcome": 1,
+        "command_outbox": 29,
+        "observation_receipts": 0,
+        "receipt_watermarks": 23,
+        "storage_transactions": 0
+      },
+      "schema": 4
+    },
+    {
+      "nodes": {
+        "agent-a": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789666280-d0ceb8810fe2-recovery-1-eb57a522-2bdb-4599-9365-e6254950cd2a",
+              "ticket": 12
+            }
+          ],
+          "attemptDirectories": 11,
+          "completed": 11,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 13,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 11,
+          "tickets": 12,
+          "workBytes": 9211899
+        },
+        "agent-b": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789666280-d0ceb8810fe2-recovery-0-b3558c60-c41a-47a0-839d-a678de16a1c6",
+              "ticket": 9
+            }
+          ],
+          "attemptDirectories": 9,
+          "completed": 8,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 10,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 9,
+          "tickets": 9,
+          "workBytes": 8679999
+        }
+      },
+      "observedAt": "2026-09-17T17:38:14.215383+00:00",
+      "phase": "recovery-running",
+      "rows": {
+        "attempt_retention": 21,
+        "automatic_outcome": 1,
+        "command_outbox": 29,
+        "observation_receipts": 0,
+        "receipt_watermarks": 23,
+        "storage_transactions": 0
+      },
+      "schema": 4
+    },
+    {
+      "nodes": {
+        "agent-a": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789666280-d0ceb8810fe2-recovery-1-eb57a522-2bdb-4599-9365-e6254950cd2a",
+              "ticket": 12
+            }
+          ],
+          "attemptDirectories": 11,
+          "completed": 11,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 13,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 11,
+          "tickets": 12,
+          "workBytes": 9211899
+        },
+        "agent-b": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789666280-d0ceb8810fe2-recovery-0-b3558c60-c41a-47a0-839d-a678de16a1c6",
+              "ticket": 9
+            }
+          ],
+          "attemptDirectories": 9,
+          "completed": 8,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 10,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 9,
+          "tickets": 9,
+          "workBytes": 8679999
+        }
+      },
+      "observedAt": "2026-09-17T17:38:44.327629+00:00",
+      "phase": "recovery-running",
+      "rows": {
+        "attempt_retention": 21,
+        "automatic_outcome": 1,
+        "command_outbox": 29,
+        "observation_receipts": 0,
+        "receipt_watermarks": 23,
+        "storage_transactions": 0
+      },
+      "schema": 4
+    },
+    {
+      "nodes": {
+        "agent-a": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789666280-d0ceb8810fe2-recovery-1-eb57a522-2bdb-4599-9365-e6254950cd2a",
+              "ticket": 12
+            }
+          ],
+          "attemptDirectories": 11,
+          "completed": 11,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 13,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 11,
+          "tickets": 12,
+          "workBytes": 9211899
+        },
+        "agent-b": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789666280-d0ceb8810fe2-recovery-0-b3558c60-c41a-47a0-839d-a678de16a1c6",
+              "ticket": 9
+            }
+          ],
+          "attemptDirectories": 9,
+          "completed": 8,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 10,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 9,
+          "tickets": 9,
+          "workBytes": 8679999
+        }
+      },
+      "observedAt": "2026-09-17T17:39:14.442965+00:00",
+      "phase": "recovery-running",
+      "rows": {
+        "attempt_retention": 21,
+        "automatic_outcome": 1,
+        "command_outbox": 29,
+        "observation_receipts": 0,
+        "receipt_watermarks": 23,
+        "storage_transactions": 0
+      },
+      "schema": 4
+    },
+    {
+      "nodes": {
+        "agent-a": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789666280-d0ceb8810fe2-recovery-1-eb57a522-2bdb-4599-9365-e6254950cd2a",
+              "ticket": 12
+            }
+          ],
+          "attemptDirectories": 11,
+          "completed": 11,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 13,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 11,
+          "tickets": 12,
+          "workBytes": 9211899
+        },
+        "agent-b": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789666280-d0ceb8810fe2-recovery-0-b3558c60-c41a-47a0-839d-a678de16a1c6",
+              "ticket": 9
+            }
+          ],
+          "attemptDirectories": 9,
+          "completed": 8,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 10,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 9,
+          "tickets": 9,
+          "workBytes": 8679999
+        }
+      },
+      "observedAt": "2026-09-17T17:39:44.540016+00:00",
+      "phase": "recovery-running",
+      "rows": {
+        "attempt_retention": 21,
+        "automatic_outcome": 1,
+        "command_outbox": 29,
+        "observation_receipts": 0,
+        "receipt_watermarks": 23,
+        "storage_transactions": 0
+      },
+      "schema": 4
+    },
+    {
+      "nodes": {
+        "agent-a": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789666280-d0ceb8810fe2-recovery-1-eb57a522-2bdb-4599-9365-e6254950cd2a",
+              "ticket": 12
+            }
+          ],
+          "attemptDirectories": 11,
+          "completed": 11,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 13,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 11,
+          "tickets": 12,
+          "workBytes": 9211899
+        },
+        "agent-b": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789666280-d0ceb8810fe2-recovery-0-b3558c60-c41a-47a0-839d-a678de16a1c6",
+              "ticket": 9
+            }
+          ],
+          "attemptDirectories": 9,
+          "completed": 8,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 10,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 9,
+          "tickets": 9,
+          "workBytes": 8679999
+        }
+      },
+      "observedAt": "2026-09-17T17:40:14.613830+00:00",
+      "phase": "recovery-running",
+      "rows": {
+        "attempt_retention": 21,
+        "automatic_outcome": 1,
+        "command_outbox": 29,
+        "observation_receipts": 0,
+        "receipt_watermarks": 23,
+        "storage_transactions": 0
+      },
+      "schema": 4
+    },
+    {
+      "nodes": {
+        "agent-a": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789666280-d0ceb8810fe2-recovery-1-eb57a522-2bdb-4599-9365-e6254950cd2a",
+              "ticket": 12
+            }
+          ],
+          "attemptDirectories": 11,
+          "completed": 11,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 13,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 11,
+          "tickets": 12,
+          "workBytes": 9211899
+        },
+        "agent-b": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789666280-d0ceb8810fe2-recovery-0-b3558c60-c41a-47a0-839d-a678de16a1c6",
+              "ticket": 9
+            }
+          ],
+          "attemptDirectories": 9,
+          "completed": 8,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 10,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 9,
+          "tickets": 9,
+          "workBytes": 8679999
+        }
+      },
+      "observedAt": "2026-09-17T17:40:44.732796+00:00",
+      "phase": "recovery-running",
+      "rows": {
+        "attempt_retention": 21,
+        "automatic_outcome": 1,
+        "command_outbox": 29,
+        "observation_receipts": 0,
+        "receipt_watermarks": 23,
+        "storage_transactions": 0
+      },
+      "schema": 4
+    },
+    {
+      "nodes": {
+        "agent-a": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789666280-d0ceb8810fe2-recovery-1-eb57a522-2bdb-4599-9365-e6254950cd2a",
+              "ticket": 12
+            }
+          ],
+          "attemptDirectories": 11,
+          "completed": 11,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 13,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 11,
+          "tickets": 12,
+          "workBytes": 9211899
+        },
+        "agent-b": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789666280-d0ceb8810fe2-recovery-0-b3558c60-c41a-47a0-839d-a678de16a1c6",
+              "ticket": 9
+            }
+          ],
+          "attemptDirectories": 9,
+          "completed": 8,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 10,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 9,
+          "tickets": 9,
+          "workBytes": 8679999
+        }
+      },
+      "observedAt": "2026-09-17T17:41:14.911426+00:00",
+      "phase": "recovery-running",
+      "rows": {
+        "attempt_retention": 21,
+        "automatic_outcome": 1,
+        "command_outbox": 29,
+        "observation_receipts": 0,
+        "receipt_watermarks": 23,
+        "storage_transactions": 0
+      },
+      "schema": 4
+    },
+    {
+      "nodes": {
+        "agent-a": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789666280-d0ceb8810fe2-recovery-1-eb57a522-2bdb-4599-9365-e6254950cd2a",
+              "ticket": 12
+            }
+          ],
+          "attemptDirectories": 11,
+          "completed": 11,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 13,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 11,
+          "tickets": 12,
+          "workBytes": 9211899
+        },
+        "agent-b": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789666280-d0ceb8810fe2-recovery-0-b3558c60-c41a-47a0-839d-a678de16a1c6",
+              "ticket": 9
+            }
+          ],
+          "attemptDirectories": 9,
+          "completed": 8,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 10,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 9,
+          "tickets": 9,
+          "workBytes": 8679999
+        }
+      },
+      "observedAt": "2026-09-17T17:41:44.992635+00:00",
+      "phase": "recovery-running",
+      "rows": {
+        "attempt_retention": 21,
+        "automatic_outcome": 1,
+        "command_outbox": 29,
+        "observation_receipts": 0,
+        "receipt_watermarks": 23,
+        "storage_transactions": 0
+      },
+      "schema": 4
+    },
+    {
+      "nodes": {
+        "agent-a": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789666280-d0ceb8810fe2-recovery-1-eb57a522-2bdb-4599-9365-e6254950cd2a",
+              "ticket": 12
+            }
+          ],
+          "attemptDirectories": 11,
+          "completed": 11,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 13,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 11,
+          "tickets": 12,
+          "workBytes": 9211899
+        },
+        "agent-b": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789666280-d0ceb8810fe2-recovery-0-b3558c60-c41a-47a0-839d-a678de16a1c6",
+              "ticket": 9
+            }
+          ],
+          "attemptDirectories": 9,
+          "completed": 8,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 10,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 9,
+          "tickets": 9,
+          "workBytes": 8679999
+        }
+      },
+      "observedAt": "2026-09-17T17:42:15.062103+00:00",
+      "phase": "recovery-running",
+      "rows": {
+        "attempt_retention": 21,
+        "automatic_outcome": 1,
+        "command_outbox": 29,
+        "observation_receipts": 0,
+        "receipt_watermarks": 23,
+        "storage_transactions": 0
+      },
+      "schema": 4
+    },
+    {
+      "nodes": {
+        "agent-a": {
+          "activeTickets": [],
+          "attemptDirectories": 11,
+          "completed": 12,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 13,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 11,
+          "tickets": 12,
+          "workBytes": 9211899
+        },
+        "agent-b": {
+          "activeTickets": [],
+          "attemptDirectories": 9,
+          "completed": 9,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 10,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 9,
+          "tickets": 9,
+          "workBytes": 8679999
+        }
+      },
+      "observedAt": "2026-09-17T17:42:33.412526+00:00",
+      "phase": "recovery-after",
+      "rows": {
+        "attempt_retention": 21,
+        "automatic_outcome": 1,
+        "command_outbox": 31,
+        "observation_receipts": 0,
+        "receipt_watermarks": 23,
+        "storage_transactions": 0
+      },
+      "schema": 4
+    },
+    {
+      "nodes": {
+        "agent-a": {
+          "activeTickets": [],
+          "attemptDirectories": 11,
+          "completed": 12,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 13,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 11,
+          "tickets": 12,
+          "workBytes": 9211899
+        },
+        "agent-b": {
+          "activeTickets": [],
+          "attemptDirectories": 9,
+          "completed": 9,
+          "enabled": 1,
+          "journalBytes": 262144,
+          "nextTicket": 10,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 9,
+          "tickets": 9,
+          "workBytes": 8679999
+        }
+      },
+      "observedAt": "2026-09-17T17:42:33.484920+00:00",
+      "phase": "policy-before",
+      "rows": {
+        "attempt_retention": 21,
+        "automatic_outcome": 1,
+        "command_outbox": 31,
+        "observation_receipts": 0,
+        "receipt_watermarks": 23,
+        "storage_transactions": 0
+      },
+      "schema": 4
+    },
+    {
+      "nodes": {
+        "agent-a": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789666961-87e80a29f06a-policy-service-0-e2ad02ec-7273-40fd-b394-ad3feb43545b",
+              "ticket": 14
+            }
+          ],
+          "attemptDirectories": 13,
+          "completed": 13,
+          "enabled": 1,
+          "journalBytes": 524288,
+          "nextTicket": 15,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 13,
+          "tickets": 14,
+          "workBytes": 9742053
+        },
+        "agent-b": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789666961-87e80a29f06a-policy-service-1-3d6964fc-e1c1-433a-af1a-f1f4f608945a",
+              "ticket": 10
+            }
+          ],
+          "attemptDirectories": 10,
+          "completed": 9,
+          "enabled": 1,
+          "journalBytes": 524288,
+          "nextTicket": 11,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 10,
+          "tickets": 10,
+          "workBytes": 8945083
+        }
+      },
+      "observedAt": "2026-09-17T17:43:03.623556+00:00",
+      "phase": "policy-running",
+      "rows": {
+        "attempt_retention": 24,
+        "automatic_outcome": 1,
+        "command_outbox": 35,
+        "observation_receipts": 1,
+        "receipt_watermarks": 26,
+        "storage_transactions": 0
+      },
+      "schema": 4
+    },
+    {
+      "nodes": {
+        "agent-a": {
+          "activeTickets": [],
+          "attemptDirectories": 16,
+          "completed": 17,
+          "enabled": 1,
+          "journalBytes": 524288,
+          "nextTicket": 18,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 16,
+          "tickets": 17,
+          "workBytes": 10537283
+        },
+        "agent-b": {
+          "activeTickets": [],
+          "attemptDirectories": 11,
+          "completed": 11,
+          "enabled": 1,
+          "journalBytes": 524288,
+          "nextTicket": 12,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 11,
+          "tickets": 11,
+          "workBytes": 9210145
+        }
+      },
+      "observedAt": "2026-09-17T17:43:23.196369+00:00",
+      "phase": "policy-after",
+      "rows": {
+        "attempt_retention": 28,
+        "automatic_outcome": 1,
+        "command_outbox": 42,
+        "observation_receipts": 0,
+        "receipt_watermarks": 30,
+        "storage_transactions": 0
+      },
+      "schema": 4
+    },
+    {
+      "nodes": {
+        "agent-a": {
+          "activeTickets": [],
+          "attemptDirectories": 16,
+          "completed": 17,
+          "enabled": 1,
+          "journalBytes": 524288,
+          "nextTicket": 18,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 16,
+          "tickets": 17,
+          "workBytes": 10537283
+        },
+        "agent-b": {
+          "activeTickets": [],
+          "attemptDirectories": 11,
+          "completed": 11,
+          "enabled": 1,
+          "journalBytes": 524288,
+          "nextTicket": 12,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 11,
+          "tickets": 11,
+          "workBytes": 9210145
+        }
+      },
+      "observedAt": "2026-09-17T17:43:23.266752+00:00",
+      "phase": "churn-before",
+      "rows": {
+        "attempt_retention": 28,
+        "automatic_outcome": 1,
+        "command_outbox": 42,
+        "observation_receipts": 0,
+        "receipt_watermarks": 30,
+        "storage_transactions": 0
+      },
+      "schema": 4
+    },
+    {
+      "nodes": {
+        "agent-a": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789667012-d2f29ee47cfa-churn-service-0-dd7bee68-9f75-4880-8160-a650137478b8",
+              "ticket": 18
+            },
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789667012-d2f29ee47cfa-churn-batch-0-1-6e29a7b2-7e2a-4ca2-8d39-313663bf54fa",
+              "ticket": 19
+            }
+          ],
+          "attemptDirectories": 18,
+          "completed": 17,
+          "enabled": 1,
+          "journalBytes": 524288,
+          "nextTicket": 20,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 18,
+          "tickets": 19,
+          "workBytes": 11067441
+        },
+        "agent-b": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789667012-d2f29ee47cfa-churn-service-1-4d04eb1f-c490-48e4-8d37-2e0177d555b8",
+              "ticket": 12
+            },
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789667012-d2f29ee47cfa-churn-batch-0-0-e94e74da-e3e1-49e2-8775-13d2c423a3df",
+              "ticket": 13
+            }
+          ],
+          "attemptDirectories": 13,
+          "completed": 11,
+          "enabled": 1,
+          "journalBytes": 524288,
+          "nextTicket": 14,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 13,
+          "tickets": 13,
+          "workBytes": 9740303
+        }
+      },
+      "observedAt": "2026-09-17T17:43:53.472536+00:00",
+      "phase": "churn-running",
+      "rows": {
+        "attempt_retention": 32,
+        "automatic_outcome": 1,
+        "command_outbox": 46,
+        "observation_receipts": 0,
+        "receipt_watermarks": 34,
+        "storage_transactions": 0
+      },
+      "schema": 4
+    },
+    {
+      "nodes": {
+        "agent-a": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789667012-d2f29ee47cfa-churn-service-0-dd7bee68-9f75-4880-8160-a650137478b8",
+              "ticket": 18
+            },
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789667012-d2f29ee47cfa-churn-batch-5-0-6d8ca8ed-ae15-46fb-b480-e26f65e6123a",
+              "ticket": 24
+            }
+          ],
+          "attemptDirectories": 23,
+          "completed": 22,
+          "enabled": 1,
+          "journalBytes": 524288,
+          "nextTicket": 25,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 23,
+          "tickets": 24,
+          "workBytes": 12392821
+        },
+        "agent-b": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789667012-d2f29ee47cfa-churn-service-1-4d04eb1f-c490-48e4-8d37-2e0177d555b8",
+              "ticket": 12
+            }
+          ],
+          "attemptDirectories": 18,
+          "completed": 17,
+          "enabled": 1,
+          "journalBytes": 524288,
+          "nextTicket": 19,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 18,
+          "tickets": 18,
+          "workBytes": 11065683
+        }
+      },
+      "observedAt": "2026-09-17T17:44:23.561833+00:00",
+      "phase": "churn-running",
+      "rows": {
+        "attempt_retention": 42,
+        "automatic_outcome": 1,
+        "command_outbox": 56,
+        "observation_receipts": 1,
+        "receipt_watermarks": 44,
+        "storage_transactions": 0
+      },
+      "schema": 4
+    },
+    {
+      "nodes": {
+        "agent-a": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789667012-d2f29ee47cfa-churn-service-0-dd7bee68-9f75-4880-8160-a650137478b8",
+              "ticket": 18
+            },
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789667012-d2f29ee47cfa-churn-batch-11-0-11e41d54-504f-4c9d-8e7b-b04128c301b7",
+              "ticket": 30
+            }
+          ],
+          "attemptDirectories": 29,
+          "completed": 28,
+          "enabled": 1,
+          "journalBytes": 524288,
+          "nextTicket": 31,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 29,
+          "tickets": 30,
+          "workBytes": 13983281
+        },
+        "agent-b": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789667012-d2f29ee47cfa-churn-service-1-4d04eb1f-c490-48e4-8d37-2e0177d555b8",
+              "ticket": 12
+            },
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789667012-d2f29ee47cfa-churn-batch-11-1-5733eb55-ca05-4021-abbe-077b56855c69",
+              "ticket": 24
+            }
+          ],
+          "attemptDirectories": 24,
+          "completed": 22,
+          "enabled": 1,
+          "journalBytes": 524288,
+          "nextTicket": 25,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 24,
+          "tickets": 24,
+          "workBytes": 12656143
+        }
+      },
+      "observedAt": "2026-09-17T17:44:53.646810+00:00",
+      "phase": "churn-running",
+      "rows": {
+        "attempt_retention": 54,
+        "automatic_outcome": 1,
+        "command_outbox": 68,
+        "observation_receipts": 0,
+        "receipt_watermarks": 56,
+        "storage_transactions": 0
+      },
+      "schema": 4
+    },
+    {
+      "nodes": {
+        "agent-a": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789667012-d2f29ee47cfa-churn-service-0-dd7bee68-9f75-4880-8160-a650137478b8",
+              "ticket": 18
+            }
+          ],
+          "attemptDirectories": 34,
+          "completed": 34,
+          "enabled": 1,
+          "journalBytes": 524288,
+          "nextTicket": 36,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 34,
+          "tickets": 35,
+          "workBytes": 15308671
+        },
+        "agent-b": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789667012-d2f29ee47cfa-churn-service-1-4d04eb1f-c490-48e4-8d37-2e0177d555b8",
+              "ticket": 12
+            }
+          ],
+          "attemptDirectories": 29,
+          "completed": 28,
+          "enabled": 1,
+          "journalBytes": 524288,
+          "nextTicket": 30,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 29,
+          "tickets": 29,
+          "workBytes": 13981533
+        }
+      },
+      "observedAt": "2026-09-17T17:45:23.790145+00:00",
+      "phase": "churn-running",
+      "rows": {
+        "attempt_retention": 64,
+        "automatic_outcome": 1,
+        "command_outbox": 78,
+        "observation_receipts": 0,
+        "receipt_watermarks": 66,
+        "storage_transactions": 0
+      },
+      "schema": 4
+    },
+    {
+      "nodes": {
+        "agent-a": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789667012-d2f29ee47cfa-churn-service-0-dd7bee68-9f75-4880-8160-a650137478b8",
+              "ticket": 18
+            },
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789667012-d2f29ee47cfa-churn-batch-22-0-74fd387c-c720-4a68-9ee0-7b3101e522d6",
+              "ticket": 41
+            }
+          ],
+          "attemptDirectories": 39,
+          "completed": 39,
+          "enabled": 1,
+          "journalBytes": 524288,
+          "nextTicket": 42,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 40,
+          "tickets": 41,
+          "workBytes": 16766931
+        },
+        "agent-b": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789667012-d2f29ee47cfa-churn-service-1-4d04eb1f-c490-48e4-8d37-2e0177d555b8",
+              "ticket": 12
+            },
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789667012-d2f29ee47cfa-churn-batch-22-1-2660a34b-00b7-4515-87de-25b2e095f19c",
+              "ticket": 35
+            }
+          ],
+          "attemptDirectories": 34,
+          "completed": 33,
+          "enabled": 1,
+          "journalBytes": 524288,
+          "nextTicket": 36,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 35,
+          "tickets": 35,
+          "workBytes": 15439793
+        }
+      },
+      "observedAt": "2026-09-17T17:45:53.883202+00:00",
+      "phase": "churn-running",
+      "rows": {
+        "attempt_retention": 76,
+        "automatic_outcome": 1,
+        "command_outbox": 90,
+        "observation_receipts": 2,
+        "receipt_watermarks": 78,
+        "storage_transactions": 0
+      },
+      "schema": 4
+    },
+    {
+      "nodes": {
+        "agent-a": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789667012-d2f29ee47cfa-churn-service-0-dd7bee68-9f75-4880-8160-a650137478b8",
+              "ticket": 18
+            },
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789667012-d2f29ee47cfa-churn-batch-27-1-02ea0dbf-a066-40f6-b998-334081d1c718",
+              "ticket": 46
+            }
+          ],
+          "attemptDirectories": 45,
+          "completed": 44,
+          "enabled": 1,
+          "journalBytes": 524288,
+          "nextTicket": 47,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 45,
+          "tickets": 46,
+          "workBytes": 18224529
+        },
+        "agent-b": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789667012-d2f29ee47cfa-churn-service-1-4d04eb1f-c490-48e4-8d37-2e0177d555b8",
+              "ticket": 12
+            },
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789667012-d2f29ee47cfa-churn-batch-27-0-ca54468d-078a-48d5-af68-10a04cf0d33a",
+              "ticket": 40
+            }
+          ],
+          "attemptDirectories": 40,
+          "completed": 38,
+          "enabled": 1,
+          "journalBytes": 524288,
+          "nextTicket": 41,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 40,
+          "tickets": 40,
+          "workBytes": 16897391
+        }
+      },
+      "observedAt": "2026-09-17T17:46:23.966318+00:00",
+      "phase": "churn-running",
+      "rows": {
+        "attempt_retention": 86,
+        "automatic_outcome": 1,
+        "command_outbox": 100,
+        "observation_receipts": 0,
+        "receipt_watermarks": 88,
+        "storage_transactions": 0
+      },
+      "schema": 4
+    },
+    {
+      "nodes": {
+        "agent-a": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789667012-d2f29ee47cfa-churn-service-0-dd7bee68-9f75-4880-8160-a650137478b8",
+              "ticket": 18
+            }
+          ],
+          "attemptDirectories": 50,
+          "completed": 50,
+          "enabled": 1,
+          "journalBytes": 524288,
+          "nextTicket": 52,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 50,
+          "tickets": 51,
+          "workBytes": 19549919
+        },
+        "agent-b": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789667012-d2f29ee47cfa-churn-service-1-4d04eb1f-c490-48e4-8d37-2e0177d555b8",
+              "ticket": 12
+            }
+          ],
+          "attemptDirectories": 45,
+          "completed": 44,
+          "enabled": 1,
+          "journalBytes": 524288,
+          "nextTicket": 46,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 45,
+          "tickets": 45,
+          "workBytes": 18222781
+        }
+      },
+      "observedAt": "2026-09-17T17:46:54.050020+00:00",
+      "phase": "churn-running",
+      "rows": {
+        "attempt_retention": 96,
+        "automatic_outcome": 1,
+        "command_outbox": 110,
+        "observation_receipts": 2,
+        "receipt_watermarks": 98,
+        "storage_transactions": 0
+      },
+      "schema": 4
+    },
+    {
+      "nodes": {
+        "agent-a": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789667012-d2f29ee47cfa-churn-service-0-dd7bee68-9f75-4880-8160-a650137478b8",
+              "ticket": 18
+            },
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789667012-d2f29ee47cfa-churn-batch-38-1-06455fe0-1e79-4ed2-b47e-03810f72a33e",
+              "ticket": 57
+            }
+          ],
+          "attemptDirectories": 56,
+          "completed": 55,
+          "enabled": 1,
+          "journalBytes": 1048576,
+          "nextTicket": 58,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 56,
+          "tickets": 57,
+          "workBytes": 21140387
+        },
+        "agent-b": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789667012-d2f29ee47cfa-churn-service-1-4d04eb1f-c490-48e4-8d37-2e0177d555b8",
+              "ticket": 12
+            },
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789667012-d2f29ee47cfa-churn-batch-38-0-ced5014f-c2fc-4f37-bd21-bb430fa36414",
+              "ticket": 51
+            }
+          ],
+          "attemptDirectories": 51,
+          "completed": 49,
+          "enabled": 1,
+          "journalBytes": 1048576,
+          "nextTicket": 52,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 51,
+          "tickets": 51,
+          "workBytes": 19813249
+        }
+      },
+      "observedAt": "2026-09-17T17:47:24.141675+00:00",
+      "phase": "churn-running",
+      "rows": {
+        "attempt_retention": 108,
+        "automatic_outcome": 1,
+        "command_outbox": 122,
+        "observation_receipts": 1,
+        "receipt_watermarks": 110,
+        "storage_transactions": 0
+      },
+      "schema": 4
+    },
+    {
+      "nodes": {
+        "agent-a": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789667012-d2f29ee47cfa-churn-service-0-dd7bee68-9f75-4880-8160-a650137478b8",
+              "ticket": 18
+            },
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789667012-d2f29ee47cfa-churn-batch-43-0-98dae373-956c-4cac-b5a1-7911cc71ff8a",
+              "ticket": 62
+            }
+          ],
+          "attemptDirectories": 60,
+          "completed": 60,
+          "enabled": 1,
+          "journalBytes": 1048576,
+          "nextTicket": 63,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 61,
+          "tickets": 62,
+          "workBytes": 22464767
+        },
+        "agent-b": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789667012-d2f29ee47cfa-churn-service-1-4d04eb1f-c490-48e4-8d37-2e0177d555b8",
+              "ticket": 12
+            },
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789667012-d2f29ee47cfa-churn-batch-43-1-e249b829-d145-4f0a-8588-ead4f92af90d",
+              "ticket": 56
+            }
+          ],
+          "attemptDirectories": 55,
+          "completed": 54,
+          "enabled": 1,
+          "journalBytes": 1048576,
+          "nextTicket": 57,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 56,
+          "tickets": 56,
+          "workBytes": 20875359
+        }
+      },
+      "observedAt": "2026-09-17T17:47:54.386057+00:00",
+      "phase": "churn-running",
+      "rows": {
+        "attempt_retention": 118,
+        "automatic_outcome": 1,
+        "command_outbox": 132,
+        "observation_receipts": 2,
+        "receipt_watermarks": 120,
+        "storage_transactions": 0
+      },
+      "schema": 4
+    },
+    {
+      "nodes": {
+        "agent-a": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789667012-d2f29ee47cfa-churn-service-0-dd7bee68-9f75-4880-8160-a650137478b8",
+              "ticket": 18
+            },
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789667012-d2f29ee47cfa-churn-batch-47-1-e9fdd1b4-9146-4389-aa00-be0d709c8c63",
+              "ticket": 66
+            }
+          ],
+          "attemptDirectories": 65,
+          "completed": 64,
+          "enabled": 1,
+          "journalBytes": 1048576,
+          "nextTicket": 67,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 65,
+          "tickets": 66,
+          "workBytes": 23526089
+        },
+        "agent-b": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789667012-d2f29ee47cfa-churn-service-1-4d04eb1f-c490-48e4-8d37-2e0177d555b8",
+              "ticket": 12
+            }
+          ],
+          "attemptDirectories": 60,
+          "completed": 59,
+          "enabled": 1,
+          "journalBytes": 1048576,
+          "nextTicket": 61,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 60,
+          "tickets": 60,
+          "workBytes": 22198951
+        }
+      },
+      "observedAt": "2026-09-17T17:48:24.481497+00:00",
+      "phase": "churn-running",
+      "rows": {
+        "attempt_retention": 126,
+        "automatic_outcome": 1,
+        "command_outbox": 140,
+        "observation_receipts": 0,
+        "receipt_watermarks": 128,
+        "storage_transactions": 0
+      },
+      "schema": 4
+    },
+    {
+      "nodes": {
+        "agent-a": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789667012-d2f29ee47cfa-churn-service-0-dd7bee68-9f75-4880-8160-a650137478b8",
+              "ticket": 18
+            },
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789667012-d2f29ee47cfa-churn-batch-53-0-df49835a-100f-4912-bdd0-e4f8d9ef3567",
+              "ticket": 72
+            }
+          ],
+          "attemptDirectories": 65,
+          "completed": 64,
+          "enabled": 1,
+          "journalBytes": 1048576,
+          "nextTicket": 73,
+          "retired": [
+            {
+              "first": "1",
+              "last": "6"
+            }
+          ],
+          "retiring": 0,
+          "supervisorDirectories": 65,
+          "tickets": 66,
+          "workBytes": 23523543
+        },
+        "agent-b": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789667012-d2f29ee47cfa-churn-service-1-4d04eb1f-c490-48e4-8d37-2e0177d555b8",
+              "ticket": 12
+            },
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789667012-d2f29ee47cfa-churn-batch-53-1-bc91e6ef-652a-486f-a422-648080d60275",
+              "ticket": 66
+            }
+          ],
+          "attemptDirectories": 66,
+          "completed": 64,
+          "enabled": 1,
+          "journalBytes": 1048576,
+          "nextTicket": 67,
+          "retired": [],
+          "retiring": 0,
+          "supervisorDirectories": 66,
+          "tickets": 66,
+          "workBytes": 23789419
+        }
+      },
+      "observedAt": "2026-09-17T17:48:54.591929+00:00",
+      "phase": "churn-running",
+      "rows": {
+        "attempt_retention": 132,
+        "automatic_outcome": 1,
+        "command_outbox": 142,
+        "observation_receipts": 0,
+        "receipt_watermarks": 134,
+        "storage_transactions": 0
+      },
+      "schema": 4
+    },
+    {
+      "nodes": {
+        "agent-a": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789667012-d2f29ee47cfa-churn-service-0-dd7bee68-9f75-4880-8160-a650137478b8",
+              "ticket": 18
+            }
+          ],
+          "attemptDirectories": 65,
+          "completed": 64,
+          "enabled": 1,
+          "journalBytes": 1048576,
+          "nextTicket": 78,
+          "retired": [
+            {
+              "first": "1",
+              "last": "12"
+            }
+          ],
+          "retiring": 0,
+          "supervisorDirectories": 65,
+          "tickets": 65,
+          "workBytes": 17230048
+        },
+        "agent-b": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789667012-d2f29ee47cfa-churn-service-1-4d04eb1f-c490-48e4-8d37-2e0177d555b8",
+              "ticket": 12
+            }
+          ],
+          "attemptDirectories": 65,
+          "completed": 64,
+          "enabled": 1,
+          "journalBytes": 1048576,
+          "nextTicket": 72,
+          "retired": [
+            {
+              "first": "1",
+              "last": "6"
+            }
+          ],
+          "retiring": 0,
+          "supervisorDirectories": 65,
+          "tickets": 65,
+          "workBytes": 21425113
+        }
+      },
+      "observedAt": "2026-09-17T17:49:24.690584+00:00",
+      "phase": "churn-running",
+      "rows": {
+        "attempt_retention": 130,
+        "automatic_outcome": 1,
+        "command_outbox": 135,
+        "observation_receipts": 0,
+        "receipt_watermarks": 132,
+        "storage_transactions": 0
+      },
+      "schema": 4
+    },
+    {
+      "nodes": {
+        "agent-a": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789667012-d2f29ee47cfa-churn-service-0-dd7bee68-9f75-4880-8160-a650137478b8",
+              "ticket": 18
+            },
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789667012-d2f29ee47cfa-churn-batch-64-0-9c7ea25a-0b0e-4490-81be-a1996b4814c4",
+              "ticket": 83
+            }
+          ],
+          "attemptDirectories": 66,
+          "completed": 64,
+          "enabled": 1,
+          "journalBytes": 1048576,
+          "nextTicket": 84,
+          "retired": [
+            {
+              "first": "1",
+              "last": "17"
+            }
+          ],
+          "retiring": 0,
+          "supervisorDirectories": 66,
+          "tickets": 66,
+          "workBytes": 17495132
+        },
+        "agent-b": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789667012-d2f29ee47cfa-churn-service-1-4d04eb1f-c490-48e4-8d37-2e0177d555b8",
+              "ticket": 12
+            },
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789667012-d2f29ee47cfa-churn-batch-64-1-5c2f5cbd-0184-4b52-a1fd-99554f02ea39",
+              "ticket": 77
+            }
+          ],
+          "attemptDirectories": 66,
+          "completed": 64,
+          "enabled": 1,
+          "journalBytes": 1048576,
+          "nextTicket": 78,
+          "retired": [
+            {
+              "first": "1",
+              "last": "11"
+            }
+          ],
+          "retiring": 0,
+          "supervisorDirectories": 66,
+          "tickets": 66,
+          "workBytes": 17495132
+        }
+      },
+      "observedAt": "2026-09-17T17:49:54.873832+00:00",
+      "phase": "churn-running",
+      "rows": {
+        "attempt_retention": 132,
+        "automatic_outcome": 1,
+        "command_outbox": 132,
+        "observation_receipts": 3,
+        "receipt_watermarks": 134,
+        "storage_transactions": 0
+      },
+      "schema": 4
+    },
+    {
+      "nodes": {
+        "agent-a": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789667012-d2f29ee47cfa-churn-service-0-dd7bee68-9f75-4880-8160-a650137478b8",
+              "ticket": 18
+            },
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789667012-d2f29ee47cfa-churn-batch-69-0-dc882e04-39d6-46b8-8fed-bf6970c942d5",
+              "ticket": 88
+            }
+          ],
+          "attemptDirectories": 66,
+          "completed": 64,
+          "enabled": 1,
+          "journalBytes": 1048576,
+          "nextTicket": 89,
+          "retired": [
+            {
+              "first": "1",
+              "last": "17"
+            },
+            {
+              "first": "19",
+              "last": "23"
+            }
+          ],
+          "retiring": 0,
+          "supervisorDirectories": 66,
+          "tickets": 66,
+          "workBytes": 17495142
+        },
+        "agent-b": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789667012-d2f29ee47cfa-churn-service-1-4d04eb1f-c490-48e4-8d37-2e0177d555b8",
+              "ticket": 12
+            },
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789667012-d2f29ee47cfa-churn-batch-69-1-3e623b65-ea41-42d1-a627-51571a6d45d3",
+              "ticket": 82
+            }
+          ],
+          "attemptDirectories": 66,
+          "completed": 64,
+          "enabled": 1,
+          "journalBytes": 1048576,
+          "nextTicket": 83,
+          "retired": [
+            {
+              "first": "1",
+              "last": "11"
+            },
+            {
+              "first": "13",
+              "last": "17"
+            }
+          ],
+          "retiring": 0,
+          "supervisorDirectories": 66,
+          "tickets": 66,
+          "workBytes": 17495142
+        }
+      },
+      "observedAt": "2026-09-17T17:50:25.098354+00:00",
+      "phase": "churn-running",
+      "rows": {
+        "attempt_retention": 132,
+        "automatic_outcome": 1,
+        "command_outbox": 132,
+        "observation_receipts": 0,
+        "receipt_watermarks": 134,
+        "storage_transactions": 0
+      },
+      "schema": 4
+    },
+    {
+      "nodes": {
+        "agent-a": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789667012-d2f29ee47cfa-churn-service-0-dd7bee68-9f75-4880-8160-a650137478b8",
+              "ticket": 18
+            },
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789667012-d2f29ee47cfa-churn-batch-74-1-e13b228f-176c-4300-8f73-83860ae5e900",
+              "ticket": 93
+            }
+          ],
+          "attemptDirectories": 66,
+          "completed": 64,
+          "enabled": 1,
+          "journalBytes": 1048576,
+          "nextTicket": 94,
+          "retired": [
+            {
+              "first": "1",
+              "last": "17"
+            },
+            {
+              "first": "19",
+              "last": "28"
+            }
+          ],
+          "retiring": 0,
+          "supervisorDirectories": 66,
+          "tickets": 66,
+          "workBytes": 17495152
+        },
+        "agent-b": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789667012-d2f29ee47cfa-churn-service-1-4d04eb1f-c490-48e4-8d37-2e0177d555b8",
+              "ticket": 12
+            },
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789667012-d2f29ee47cfa-churn-batch-74-0-db92d40e-72b2-4de8-8cca-04988043ecc2",
+              "ticket": 87
+            }
+          ],
+          "attemptDirectories": 66,
+          "completed": 64,
+          "enabled": 1,
+          "journalBytes": 1048576,
+          "nextTicket": 88,
+          "retired": [
+            {
+              "first": "1",
+              "last": "11"
+            },
+            {
+              "first": "13",
+              "last": "22"
+            }
+          ],
+          "retiring": 0,
+          "supervisorDirectories": 66,
+          "tickets": 66,
+          "workBytes": 17495152
+        }
+      },
+      "observedAt": "2026-09-17T17:50:55.247691+00:00",
+      "phase": "churn-running",
+      "rows": {
+        "attempt_retention": 132,
+        "automatic_outcome": 1,
+        "command_outbox": 132,
+        "observation_receipts": 0,
+        "receipt_watermarks": 134,
+        "storage_transactions": 0
+      },
+      "schema": 4
+    },
+    {
+      "nodes": {
+        "agent-a": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789667012-d2f29ee47cfa-churn-service-0-dd7bee68-9f75-4880-8160-a650137478b8",
+              "ticket": 18
+            },
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789667012-d2f29ee47cfa-churn-batch-79-1-94088851-f189-4f3a-830e-ed299b566108",
+              "ticket": 98
+            }
+          ],
+          "attemptDirectories": 66,
+          "completed": 64,
+          "enabled": 1,
+          "journalBytes": 1048576,
+          "nextTicket": 99,
+          "retired": [
+            {
+              "first": "1",
+              "last": "17"
+            },
+            {
+              "first": "19",
+              "last": "33"
+            }
+          ],
+          "retiring": 0,
+          "supervisorDirectories": 66,
+          "tickets": 66,
+          "workBytes": 17495152
+        },
+        "agent-b": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789667012-d2f29ee47cfa-churn-service-1-4d04eb1f-c490-48e4-8d37-2e0177d555b8",
+              "ticket": 12
+            },
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789667012-d2f29ee47cfa-churn-batch-79-0-fb040a97-0ab2-43c1-9b8a-826aef386d47",
+              "ticket": 92
+            }
+          ],
+          "attemptDirectories": 66,
+          "completed": 64,
+          "enabled": 1,
+          "journalBytes": 1048576,
+          "nextTicket": 93,
+          "retired": [
+            {
+              "first": "1",
+              "last": "11"
+            },
+            {
+              "first": "13",
+              "last": "27"
+            }
+          ],
+          "retiring": 0,
+          "supervisorDirectories": 66,
+          "tickets": 66,
+          "workBytes": 17495152
+        }
+      },
+      "observedAt": "2026-09-17T17:51:25.352303+00:00",
+      "phase": "churn-running",
+      "rows": {
+        "attempt_retention": 132,
+        "automatic_outcome": 1,
+        "command_outbox": 132,
+        "observation_receipts": 0,
+        "receipt_watermarks": 134,
+        "storage_transactions": 0
+      },
+      "schema": 4
+    },
+    {
+      "nodes": {
+        "agent-a": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789667012-d2f29ee47cfa-churn-service-0-dd7bee68-9f75-4880-8160-a650137478b8",
+              "ticket": 18
+            }
+          ],
+          "attemptDirectories": 65,
+          "completed": 64,
+          "enabled": 1,
+          "journalBytes": 1048576,
+          "nextTicket": 104,
+          "retired": [
+            {
+              "first": "1",
+              "last": "17"
+            },
+            {
+              "first": "19",
+              "last": "39"
+            }
+          ],
+          "retiring": 0,
+          "supervisorDirectories": 65,
+          "tickets": 65,
+          "workBytes": 17230082
+        },
+        "agent-b": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789667012-d2f29ee47cfa-churn-service-1-4d04eb1f-c490-48e4-8d37-2e0177d555b8",
+              "ticket": 12
+            }
+          ],
+          "attemptDirectories": 65,
+          "completed": 64,
+          "enabled": 1,
+          "journalBytes": 1048576,
+          "nextTicket": 98,
+          "retired": [
+            {
+              "first": "1",
+              "last": "11"
+            },
+            {
+              "first": "13",
+              "last": "33"
+            }
+          ],
+          "retiring": 0,
+          "supervisorDirectories": 65,
+          "tickets": 65,
+          "workBytes": 17230074
+        }
+      },
+      "observedAt": "2026-09-17T17:51:55.449553+00:00",
+      "phase": "churn-running",
+      "rows": {
+        "attempt_retention": 130,
+        "automatic_outcome": 1,
+        "command_outbox": 130,
+        "observation_receipts": 0,
+        "receipt_watermarks": 132,
+        "storage_transactions": 0
+      },
+      "schema": 4
+    },
+    {
+      "nodes": {
+        "agent-a": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789667012-d2f29ee47cfa-churn-service-0-dd7bee68-9f75-4880-8160-a650137478b8",
+              "ticket": 18
+            },
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789667012-d2f29ee47cfa-churn-batch-90-1-36ca3657-3082-422f-8ab7-00564a62cc5d",
+              "ticket": 109
+            }
+          ],
+          "attemptDirectories": 66,
+          "completed": 64,
+          "enabled": 1,
+          "journalBytes": 1048576,
+          "nextTicket": 110,
+          "retired": [
+            {
+              "first": "1",
+              "last": "17"
+            },
+            {
+              "first": "19",
+              "last": "44"
+            }
+          ],
+          "retiring": 0,
+          "supervisorDirectories": 66,
+          "tickets": 66,
+          "workBytes": 17495172
+        },
+        "agent-b": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789667012-d2f29ee47cfa-churn-service-1-4d04eb1f-c490-48e4-8d37-2e0177d555b8",
+              "ticket": 12
+            },
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789667012-d2f29ee47cfa-churn-batch-90-0-9e6aebcb-7b56-4c02-8895-55812c807fe3",
+              "ticket": 103
+            }
+          ],
+          "attemptDirectories": 66,
+          "completed": 64,
+          "enabled": 1,
+          "journalBytes": 1048576,
+          "nextTicket": 104,
+          "retired": [
+            {
+              "first": "1",
+              "last": "11"
+            },
+            {
+              "first": "13",
+              "last": "38"
+            }
+          ],
+          "retiring": 0,
+          "supervisorDirectories": 66,
+          "tickets": 66,
+          "workBytes": 17495160
+        }
+      },
+      "observedAt": "2026-09-17T17:52:25.583355+00:00",
+      "phase": "churn-running",
+      "rows": {
+        "attempt_retention": 132,
+        "automatic_outcome": 1,
+        "command_outbox": 132,
+        "observation_receipts": 1,
+        "receipt_watermarks": 134,
+        "storage_transactions": 0
+      },
+      "schema": 4
+    },
+    {
+      "nodes": {
+        "agent-a": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789667012-d2f29ee47cfa-churn-service-0-dd7bee68-9f75-4880-8160-a650137478b8",
+              "ticket": 18
+            },
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789667012-d2f29ee47cfa-churn-batch-95-1-3af007e4-769b-4238-b0f0-5cc078068e21",
+              "ticket": 114
+            }
+          ],
+          "attemptDirectories": 66,
+          "completed": 64,
+          "enabled": 1,
+          "journalBytes": 1048576,
+          "nextTicket": 115,
+          "retired": [
+            {
+              "first": "1",
+              "last": "17"
+            },
+            {
+              "first": "19",
+              "last": "49"
+            }
+          ],
+          "retiring": 0,
+          "supervisorDirectories": 66,
+          "tickets": 66,
+          "workBytes": 17495182
+        },
+        "agent-b": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789667012-d2f29ee47cfa-churn-service-1-4d04eb1f-c490-48e4-8d37-2e0177d555b8",
+              "ticket": 12
+            }
+          ],
+          "attemptDirectories": 65,
+          "completed": 64,
+          "enabled": 1,
+          "journalBytes": 1048576,
+          "nextTicket": 109,
+          "retired": [
+            {
+              "first": "1",
+              "last": "11"
+            },
+            {
+              "first": "13",
+              "last": "44"
+            }
+          ],
+          "retiring": 0,
+          "supervisorDirectories": 65,
+          "tickets": 65,
+          "workBytes": 17230092
+        }
+      },
+      "observedAt": "2026-09-17T17:52:55.678834+00:00",
+      "phase": "churn-running",
+      "rows": {
+        "attempt_retention": 131,
+        "automatic_outcome": 1,
+        "command_outbox": 131,
+        "observation_receipts": 0,
+        "receipt_watermarks": 133,
+        "storage_transactions": 0
+      },
+      "schema": 4
+    },
+    {
+      "nodes": {
+        "agent-a": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789667012-d2f29ee47cfa-churn-service-0-dd7bee68-9f75-4880-8160-a650137478b8",
+              "ticket": 18
+            }
+          ],
+          "attemptDirectories": 65,
+          "completed": 64,
+          "enabled": 1,
+          "journalBytes": 1048576,
+          "nextTicket": 120,
+          "retired": [
+            {
+              "first": "1",
+              "last": "17"
+            },
+            {
+              "first": "19",
+              "last": "55"
+            }
+          ],
+          "retiring": 0,
+          "supervisorDirectories": 65,
+          "tickets": 65,
+          "workBytes": 17230116
+        },
+        "agent-b": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789667012-d2f29ee47cfa-churn-service-1-4d04eb1f-c490-48e4-8d37-2e0177d555b8",
+              "ticket": 12
+            }
+          ],
+          "attemptDirectories": 65,
+          "completed": 64,
+          "enabled": 1,
+          "journalBytes": 1048576,
+          "nextTicket": 114,
+          "retired": [
+            {
+              "first": "1",
+              "last": "11"
+            },
+            {
+              "first": "13",
+              "last": "49"
+            }
+          ],
+          "retiring": 0,
+          "supervisorDirectories": 65,
+          "tickets": 65,
+          "workBytes": 17230104
+        }
+      },
+      "observedAt": "2026-09-17T17:53:25.829445+00:00",
+      "phase": "churn-running",
+      "rows": {
+        "attempt_retention": 130,
+        "automatic_outcome": 1,
+        "command_outbox": 130,
+        "observation_receipts": 0,
+        "receipt_watermarks": 132,
+        "storage_transactions": 0
+      },
+      "schema": 4
+    },
+    {
+      "nodes": {
+        "agent-a": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789667012-d2f29ee47cfa-churn-service-0-dd7bee68-9f75-4880-8160-a650137478b8",
+              "ticket": 18
+            }
+          ],
+          "attemptDirectories": 65,
+          "completed": 64,
+          "enabled": 1,
+          "journalBytes": 1048576,
+          "nextTicket": 125,
+          "retired": [
+            {
+              "first": "1",
+              "last": "17"
+            },
+            {
+              "first": "19",
+              "last": "60"
+            }
+          ],
+          "retiring": 0,
+          "supervisorDirectories": 65,
+          "tickets": 65,
+          "workBytes": 17230136
+        },
+        "agent-b": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789667012-d2f29ee47cfa-churn-service-1-4d04eb1f-c490-48e4-8d37-2e0177d555b8",
+              "ticket": 12
+            }
+          ],
+          "attemptDirectories": 65,
+          "completed": 64,
+          "enabled": 1,
+          "journalBytes": 1048576,
+          "nextTicket": 119,
+          "retired": [
+            {
+              "first": "1",
+              "last": "11"
+            },
+            {
+              "first": "13",
+              "last": "54"
+            }
+          ],
+          "retiring": 0,
+          "supervisorDirectories": 65,
+          "tickets": 65,
+          "workBytes": 17230124
+        }
+      },
+      "observedAt": "2026-09-17T17:53:56.010217+00:00",
+      "phase": "churn-running",
+      "rows": {
+        "attempt_retention": 130,
+        "automatic_outcome": 1,
+        "command_outbox": 130,
+        "observation_receipts": 0,
+        "receipt_watermarks": 132,
+        "storage_transactions": 0
+      },
+      "schema": 4
+    },
+    {
+      "nodes": {
+        "agent-a": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789667012-d2f29ee47cfa-churn-service-0-dd7bee68-9f75-4880-8160-a650137478b8",
+              "ticket": 18
+            },
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789667012-d2f29ee47cfa-churn-batch-111-0-06e5f124-7fd3-4db1-9d74-29f56ee21ae5",
+              "ticket": 130
+            }
+          ],
+          "attemptDirectories": 66,
+          "completed": 64,
+          "enabled": 1,
+          "journalBytes": 1048576,
+          "nextTicket": 131,
+          "retired": [
+            {
+              "first": "1",
+              "last": "17"
+            },
+            {
+              "first": "19",
+              "last": "65"
+            }
+          ],
+          "retiring": 0,
+          "supervisorDirectories": 66,
+          "tickets": 66,
+          "workBytes": 17495238
+        },
+        "agent-b": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789667012-d2f29ee47cfa-churn-service-1-4d04eb1f-c490-48e4-8d37-2e0177d555b8",
+              "ticket": 12
+            },
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789667012-d2f29ee47cfa-churn-batch-111-1-de7eb3bb-1b77-4b50-b27c-86c6a9e935a7",
+              "ticket": 124
+            }
+          ],
+          "attemptDirectories": 66,
+          "completed": 64,
+          "enabled": 1,
+          "journalBytes": 1048576,
+          "nextTicket": 125,
+          "retired": [
+            {
+              "first": "1",
+              "last": "11"
+            },
+            {
+              "first": "13",
+              "last": "59"
+            }
+          ],
+          "retiring": 0,
+          "supervisorDirectories": 66,
+          "tickets": 66,
+          "workBytes": 17495226
+        }
+      },
+      "observedAt": "2026-09-17T17:54:26.141756+00:00",
+      "phase": "churn-running",
+      "rows": {
+        "attempt_retention": 132,
+        "automatic_outcome": 1,
+        "command_outbox": 132,
+        "observation_receipts": 2,
+        "receipt_watermarks": 134,
+        "storage_transactions": 0
+      },
+      "schema": 4
+    },
+    {
+      "nodes": {
+        "agent-a": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789667012-d2f29ee47cfa-churn-service-0-dd7bee68-9f75-4880-8160-a650137478b8",
+              "ticket": 18
+            }
+          ],
+          "attemptDirectories": 66,
+          "completed": 65,
+          "enabled": 1,
+          "journalBytes": 1048576,
+          "nextTicket": 136,
+          "retired": [
+            {
+              "first": "1",
+              "last": "17"
+            },
+            {
+              "first": "19",
+              "last": "70"
+            }
+          ],
+          "retiring": 0,
+          "supervisorDirectories": 66,
+          "tickets": 66,
+          "workBytes": 17495258
+        },
+        "agent-b": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789667012-d2f29ee47cfa-churn-service-1-4d04eb1f-c490-48e4-8d37-2e0177d555b8",
+              "ticket": 12
+            },
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789667012-d2f29ee47cfa-churn-batch-116-0-95131d68-dfea-45d9-ae10-39533066b9db",
+              "ticket": 129
+            }
+          ],
+          "attemptDirectories": 66,
+          "completed": 64,
+          "enabled": 1,
+          "journalBytes": 1048576,
+          "nextTicket": 130,
+          "retired": [
+            {
+              "first": "1",
+              "last": "11"
+            },
+            {
+              "first": "13",
+              "last": "64"
+            }
+          ],
+          "retiring": 0,
+          "supervisorDirectories": 66,
+          "tickets": 66,
+          "workBytes": 17495246
+        }
+      },
+      "observedAt": "2026-09-17T17:54:56.236343+00:00",
+      "phase": "churn-running",
+      "rows": {
+        "attempt_retention": 132,
+        "automatic_outcome": 1,
+        "command_outbox": 132,
+        "observation_receipts": 1,
+        "receipt_watermarks": 134,
+        "storage_transactions": 0
+      },
+      "schema": 4
+    },
+    {
+      "nodes": {
+        "agent-a": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789667012-d2f29ee47cfa-churn-service-0-dd7bee68-9f75-4880-8160-a650137478b8",
+              "ticket": 18
+            },
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789667012-d2f29ee47cfa-churn-batch-122-0-e36e8e05-0119-4734-b5d7-e6fcbd5274e0",
+              "ticket": 141
+            }
+          ],
+          "attemptDirectories": 66,
+          "completed": 64,
+          "enabled": 1,
+          "journalBytes": 1048576,
+          "nextTicket": 142,
+          "retired": [
+            {
+              "first": "1",
+              "last": "17"
+            },
+            {
+              "first": "19",
+              "last": "76"
+            }
+          ],
+          "retiring": 0,
+          "supervisorDirectories": 66,
+          "tickets": 66,
+          "workBytes": 17495282
+        },
+        "agent-b": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789667012-d2f29ee47cfa-churn-service-1-4d04eb1f-c490-48e4-8d37-2e0177d555b8",
+              "ticket": 12
+            },
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789667012-d2f29ee47cfa-churn-batch-122-1-743ec02d-9f79-4215-a3f3-d221a3b9c19e",
+              "ticket": 135
+            }
+          ],
+          "attemptDirectories": 65,
+          "completed": 64,
+          "enabled": 1,
+          "journalBytes": 1048576,
+          "nextTicket": 136,
+          "retired": [
+            {
+              "first": "1",
+              "last": "11"
+            },
+            {
+              "first": "13",
+              "last": "70"
+            }
+          ],
+          "retiring": 0,
+          "supervisorDirectories": 65,
+          "tickets": 66,
+          "workBytes": 17230188
+        }
+      },
+      "observedAt": "2026-09-17T17:55:26.338032+00:00",
+      "phase": "churn-running",
+      "rows": {
+        "attempt_retention": 132,
+        "automatic_outcome": 1,
+        "command_outbox": 132,
+        "observation_receipts": 1,
+        "receipt_watermarks": 133,
+        "storage_transactions": 0
+      },
+      "schema": 4
+    },
+    {
+      "nodes": {
+        "agent-a": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789667012-d2f29ee47cfa-churn-service-0-dd7bee68-9f75-4880-8160-a650137478b8",
+              "ticket": 18
+            },
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789667012-d2f29ee47cfa-churn-batch-127-0-f0f4c055-e407-44cf-82d8-638b69707e7e",
+              "ticket": 146
+            }
+          ],
+          "attemptDirectories": 65,
+          "completed": 64,
+          "enabled": 1,
+          "journalBytes": 1048576,
+          "nextTicket": 147,
+          "retired": [
+            {
+              "first": "1",
+              "last": "17"
+            },
+            {
+              "first": "19",
+              "last": "81"
+            }
+          ],
+          "retiring": 0,
+          "supervisorDirectories": 66,
+          "tickets": 66,
+          "workBytes": 17232020
+        },
+        "agent-b": {
+          "activeTickets": [
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789667012-d2f29ee47cfa-churn-service-1-4d04eb1f-c490-48e4-8d37-2e0177d555b8",
+              "ticket": 12
+            },
+            {
+              "complete": 0,
+              "retiring": 0,
+              "task": "fixtures-test-check-1789667012-d2f29ee47cfa-churn-batch-127-1-24aecaa7-aade-407c-91b4-598aa332eb08",
+              "ticket": 140
+            }
+          ],
+          "attemptDirectories": 65,
+          "completed": 64,
+          "enabled": 1,
+          "journalBytes": 1048576,
+          "nextTicket": 141,
+          "retired": [
+            {
+              "first": "1",
+              "last": "11"
+            },
+            {
+              "first": "13",
+              "last": "75"
+            }
+          ],
+          "retiring": 0,
+          "supervisorDirectories": 66,
+          "tickets": 66,
+          "workBytes": 17494278
+        }
+      },
+      "observedAt": "2026-09-17T17:55:56.436366+00:00",
+      "phase": "churn-running",
+      "rows": {
+        "attempt_retention": 132,
+        "automatic_outcome": 1,
+        "command_outbox": 132,
+        "observation_receipts": 0,
+        "receipt_watermarks": 133,
+        "storage_transactions": 0
+      },
+      "schema": 4
+    },
+    {
+      "nodes": {
+        "agent-a": {
+          "activeTickets": [],
+          "attemptDirectories": 64,
+          "completed": 64,
+          "enabled": 1,
+          "journalBytes": 1048576,
+          "nextTicket": 149,
+          "retired": [
+            {
+              "first": "1",
+              "last": "84"
+            }
+          ],
+          "retiring": 0,
+          "supervisorDirectories": 64,
+          "tickets": 64,
+          "workBytes": 16965150
+        },
+        "agent-b": {
+          "activeTickets": [],
+          "attemptDirectories": 64,
+          "completed": 64,
+          "enabled": 1,
+          "journalBytes": 1048576,
+          "nextTicket": 143,
+          "retired": [
+            {
+              "first": "1",
+              "last": "78"
+            }
+          ],
+          "retiring": 0,
+          "supervisorDirectories": 64,
+          "tickets": 64,
+          "workBytes": 16965138
+        }
+      },
+      "observedAt": "2026-09-17T17:56:15.114209+00:00",
+      "phase": "churn-after",
+      "rows": {
+        "attempt_retention": 128,
+        "automatic_outcome": 1,
+        "command_outbox": 128,
+        "observation_receipts": 0,
+        "receipt_watermarks": 130,
+        "storage_transactions": 0
+      },
+      "schema": 4
+    },
+    {
+      "nodes": {
+        "agent-a": {
+          "activeTickets": [],
+          "attemptDirectories": 64,
+          "completed": 64,
+          "enabled": 1,
+          "journalBytes": 1048576,
+          "nextTicket": 149,
+          "retired": [
+            {
+              "first": "1",
+              "last": "84"
+            }
+          ],
+          "retiring": 0,
+          "supervisorDirectories": 64,
+          "tickets": 64,
+          "workBytes": 16965150
+        },
+        "agent-b": {
+          "activeTickets": [],
+          "attemptDirectories": 64,
+          "completed": 64,
+          "enabled": 1,
+          "journalBytes": 1048576,
+          "nextTicket": 143,
+          "retired": [
+            {
+              "first": "1",
+              "last": "78"
+            }
+          ],
+          "retiring": 0,
+          "supervisorDirectories": 64,
+          "tickets": 64,
+          "workBytes": 16965138
+        }
+      },
+      "observedAt": "2026-09-17T17:56:42.783947+00:00",
+      "phase": "churn-steady",
+      "rows": {
+        "attempt_retention": 128,
+        "automatic_outcome": 1,
+        "command_outbox": 128,
+        "observation_receipts": 0,
+        "receipt_watermarks": 130,
+        "storage_transactions": 0
+      },
+      "schema": 4
+    }
+  ]
+}
