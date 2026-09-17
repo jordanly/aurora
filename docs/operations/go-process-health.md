@@ -22,8 +22,9 @@ The original scheduler's `go-process` executor accepts optional `health` in its
 ```
 
 All health fields are required when `health` is supplied. This initial subset
-checks a fixed IPv4 TCP listener on loopback, owned by the launched process group.
-The application must bind the specified port; `network` must equal the agent's
+probes `127.0.0.1` and requires an IPv4 listener owned by the launched process
+group. The application may bind `127.0.0.1` or `0.0.0.0` on the specified port;
+`network` must equal the agent's
 `--network` domain. The check establishes connectivity, not HTTP response or
 application-specific correctness. General dynamically assigned Thrift named ports
 remain unsupported in this process profile.
@@ -41,8 +42,10 @@ the scheduler receives FAILED. Task events identify `health-startup-timeout` or
 `health-check-failed`. A process that exits before its first successful probe fails
 with `health-exited-before-ready`, including a zero exit code. This failure enters the existing service replacement and
 update failure/rollback policy. Transient failures below the threshold reset on a
-successful probe. Health monitoring continues in the per-attempt supervisor while
-the agent daemon is restarted.
+successful probe. When the agent runs with `--supervise`, health monitoring
+continues in the per-attempt supervisor across daemon loss and recovery. The
+Docker lab enables this mode; it is not the CLI default. Graceful daemon shutdown
+drains workloads.
 
 Placement reserves the configured socket per agent through both pending launch
 acknowledgment and terminal process cleanup. Conflicting tasks try another agent

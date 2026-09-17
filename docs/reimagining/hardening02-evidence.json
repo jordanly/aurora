@@ -1,0 +1,3362 @@
+{
+  "acceptance": {
+    "churn": {
+      "cases": [
+        {
+          "backupCountAfter": 3,
+          "backupCountBefore": 3,
+          "backupFilesAfter": [
+            "backup-0fd90ef0-ffe7-43e9-b6c2-789e6f00521c.db",
+            "backup-34743fc6-4110-485c-85c4-be8022d28214.db",
+            "backup-c9f5e93e-2393-42a5-9a97-6ef940d24dda.db"
+          ],
+          "backupFilesBefore": [
+            "backup-007983cc-1a7e-4040-b3dc-f32872051a38.db",
+            "backup-bc2101f8-8db5-4e86-a4c0-506fa270f20c.db",
+            "backup-c3c28f12-7593-45f4-8fb6-098a8f3140ee.db"
+          ],
+          "batches": 130,
+          "daemons": {
+            "agent-a": {
+              "generation": 4,
+              "paused": false,
+              "pid": 155
+            },
+            "agent-b": {
+              "generation": 3,
+              "paused": false,
+              "pid": 210
+            },
+            "scheduler": {
+              "generation": 8,
+              "paused": false,
+              "pid": 970
+            }
+          },
+          "elapsedSeconds": 713.090494137,
+          "finishedPerHost": {
+            "agent-a": 130,
+            "agent-b": 130
+          },
+          "finishedTasks": [
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-0-0-516062ca-e1ba-40fb-804d-06cfa705e5c6",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-0-1-2bd1c588-b430-4826-92d6-16c54a48ce80",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-1-0-f68db027-0773-4806-9000-53cb607a9c18",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-1-1-352851b3-f382-417b-b379-ff1d7e702545",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-2-0-8d8298d2-20f5-4e43-9232-1f7a19cc262b",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-2-1-188192de-b914-4ab6-a459-45e94db4e344",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-3-0-3bcb84d5-62c0-4150-9f0a-28dfb3229de8",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-3-1-018819f8-6e41-490a-8c57-61929b285e02",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-4-0-a32b095e-22a1-4bb9-b41d-a428802472e8",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-4-1-b917fe69-07fb-421e-92fa-0d7a00e38a4c",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-5-0-41f4ee8d-1faf-4a0a-a920-d6587dad1308",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-5-1-19f57fe2-6f09-4fed-b58d-7b9be6061c9a",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-6-0-f0f86292-889d-43ed-be8f-9d4206c61092",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-6-1-cc46fa5f-bac4-46b7-a9a4-74a035a81f87",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-7-0-5156f9ad-bd9a-4c20-b8d1-5b117165ba1b",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-7-1-259871d7-c6b3-4677-b4ff-df22fde474c7",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-8-0-2de36ca4-8426-4032-9eef-2485357244a0",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-8-1-61ec86fa-dbd1-4730-968a-3df0763b714a",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-9-0-ac3b7fce-65e7-4e5b-ae29-9e2f2d0d81d0",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-9-1-ca608b9e-0c79-405c-be95-bdb6a32e7e6b",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-10-0-9fc29546-961e-40de-b191-acd6af4f475c",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-10-1-d20998b0-88d2-4e23-9b9b-e541d54f3e3a",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-11-0-ce49c10f-cdbc-4d43-97cb-1e6ef5388b61",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-11-1-c49749e0-11df-4992-a03c-9821d198704b",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-12-0-bcc37f2f-0a2e-4add-aa7d-6775550fc027",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-12-1-b1eb7648-ede6-42be-9e30-a4f25d7b70eb",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-13-0-a5477dea-6960-4a2c-88d0-5fd78e435624",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-13-1-8c892452-5dca-4588-a01a-c2bc937f68e1",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-14-0-73af62ad-1a46-4c39-a5fc-970697ed9d9c",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-14-1-50b0ba82-ffb7-4b56-8c97-3fb8c93d2aa2",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-15-0-ad148e27-82e5-412f-a060-422a732265c4",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-15-1-82dadf81-f233-4631-8068-b9955a3b1034",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-16-0-380ab7cd-ea45-42db-82d3-50dfbc3f3a71",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-16-1-0dd7046c-2774-4eca-ba03-a714f284c1cb",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-17-0-3f7c06f6-70e7-477a-895b-af03750e5d42",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-17-1-62ffce37-3db4-463b-a6c1-71624494b081",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-18-0-8470c3c2-875b-47ee-8c2b-41dfeede9e92",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-18-1-75140557-4132-4c00-890a-46b738ce414b",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-19-0-832f028d-9466-4b54-a103-11ded0105311",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-19-1-75a65c43-66e5-474e-b847-123ddd2cec38",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-20-0-1b9dbab8-3116-4ca8-8692-86b9e963d578",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-20-1-61b95dec-afda-4cb4-8b0c-6355aebaf915",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-21-0-56b43057-f4a3-486b-a578-bc91d7430c42",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-21-1-febb65f8-8a10-4f46-875c-86f090440343",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-22-0-49ae5bf4-dc7d-4329-992f-37927eca8002",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-22-1-2d959752-7a82-49e8-a0c3-59ef0b018496",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-23-0-10ef7b02-4a48-4f65-b8dd-981fdcd4eb92",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-23-1-8d6f9be4-0931-4554-adc6-dd868ac3be38",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-24-0-6db4e20c-61be-44ba-bc60-e7e1232684b8",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-24-1-463c2930-0b7b-40e3-a521-da6ec62f3d85",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-25-0-62864503-8686-49ad-9732-eede4a644f77",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-25-1-8df424f1-e51c-4efa-99b1-99427cca8b4d",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-26-0-f195f38d-7d6c-4dd9-bc56-d3041b896cd5",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-26-1-dbee760d-42fa-4411-905a-bf161f11e138",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-27-0-e5ebcbac-9635-46a1-8430-7b2e63cd4c00",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-27-1-a19946a3-dbb8-4596-9a76-991074bfcb12",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-28-0-dfb49c5c-5ce1-4cfd-b75c-e4cb605fb643",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-28-1-83b987a0-ffa5-4e23-a82f-103b39619cab",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-29-0-21075dec-565b-4d44-afe3-3948b14f74e6",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-29-1-7eaee24f-ce83-455c-bad6-e25645511317",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-30-0-34b1d7d7-71e5-48dd-92c8-1e0e70c43670",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-30-1-908d2133-ee06-4ded-911f-dd58986c3021",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-31-0-eba8bbd6-ddd4-4726-b871-ef665e7e1ed6",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-31-1-205bac18-bf97-4f43-a56e-998393e25f8e",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-32-0-81177fbc-558d-4029-ad03-f6b8381193d4",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-32-1-05fd0863-9281-4e00-a75c-01b7423255ef",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-33-0-cd3164cc-f4b1-4ccf-971b-03533aebb9d4",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-33-1-bd4c20c6-76f8-4b1a-9032-a2ee0e6f114f",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-34-0-61f980a0-f882-47d2-91cb-0c0bec9640b4",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-34-1-0dff5bc0-9555-4ecc-8e37-4bc5dd7b3327",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-35-0-ecfd60db-0a89-4d5a-bea0-ad87a801724f",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-35-1-3198d7bf-30ed-44b7-97dc-08d36ad16945",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-36-0-6d2a741d-d9ec-4104-9be8-db2e2c9a8246",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-36-1-f89cb2fc-02f2-434c-b35b-c69fe5804b08",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-37-0-714a0498-104d-470b-a5a4-caf5f2a246e0",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-37-1-76e99ace-bcbf-490d-b4fd-617616684c03",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-38-0-64ac01e0-cee8-4af1-b75f-fb80ce926978",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-38-1-3ba042cb-69f4-4ca8-a69b-d44b29821ce7",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-39-0-9f49681e-99a8-49eb-b166-c908ab8e675a",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-39-1-67541374-32d9-42a9-aa04-cd9b8a9a7fe7",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-40-0-72c86f8f-c069-4da2-844d-a3727e8b88b6",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-40-1-364235e8-ed57-47df-a384-ce12e93cfe41",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-41-0-88ea6f57-3f39-433d-8ae2-c81a9e47657c",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-41-1-c87919a0-07c7-4671-bddd-ca9f78793232",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-42-0-c09f8bc2-a17d-4a7d-a74c-9d9f313e6ce4",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-42-1-1111d1d0-b55d-4c35-9ebe-d7e63ad82730",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-43-0-08cbddc2-4a7b-44d5-8e00-e7e844d26fd3",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-43-1-319e7ce6-5ca5-40d9-bab6-c08fd1327cac",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-44-0-c85d8afc-00cc-4fb2-b791-f422bca55ff7",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-44-1-2c0bcc70-cc29-4bcf-8cad-61bce4bfa79b",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-45-0-f7b5929b-db37-4155-8d02-8930b5dc5fdf",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-45-1-a39e3a0d-f826-4451-9f46-097265f54650",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-46-0-1c412d6b-acf1-4151-99fc-fa5000af7980",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-46-1-f090d48d-c42d-4789-92e9-0f5199c8f63b",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-47-0-d74b5c21-4b5c-4374-94b6-eddeefe20b55",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-47-1-41b76ddd-e4e2-4658-ac3f-376077089516",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-48-0-f9cc51ee-c650-4903-a659-5b358046f1bb",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-48-1-de943253-27c6-4e3b-a67e-c05714ba2f6b",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-49-0-79d83c29-252b-4791-a701-874489d7fef3",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-49-1-20bc0c6d-f31e-4666-903d-597c7856ea92",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-50-0-cfa45446-828e-4893-9fa2-7226388fbce8",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-50-1-4f72cbcc-a92d-49e7-abb7-bb616a82d26a",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-51-0-02307171-a140-4abd-aa0b-081ee6b21d84",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-51-1-d36c0861-19ba-4409-8022-988b0de6bffd",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-52-0-eeb7c30c-5304-4e48-b295-42d2fc32536c",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-52-1-a98e4c3e-45ea-4e80-be29-9e9079323088",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-53-0-9e5043c6-9168-4e3f-a64e-73bbe26f61cc",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-53-1-c9f9a5bd-70f0-4e14-9e85-1b473a96e5d6",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-54-0-86d959c1-addf-494d-85fe-07835c0a624e",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-54-1-b8c87d64-15bd-4dc5-81a3-d8612dfe19a6",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-55-0-0b3cf606-da29-4b5c-918f-202ac5dc62e1",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-55-1-c9c3511e-143b-4786-8040-26ac33bebcf5",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-56-0-5b5a60f2-9cc7-4878-9688-4fb728f33dc2",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-56-1-3d769fec-6e21-4302-9dda-fbed60fcdc9d",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-57-0-b66b60cf-6ab0-4fe1-92f4-80cb1820060e",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-57-1-a048868b-6aca-4822-816f-c92168b2a6a5",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-58-0-f1645855-e3ad-48f1-b13a-ebfac70833f4",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-58-1-652f6df7-2bab-40cf-9681-63f4f5f25502",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-59-0-68d94b1f-0b3d-4060-badd-ebb7959a0e31",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-59-1-2154bf00-6d23-4c39-8f9b-35f2c4aca78d",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-60-0-5ab63170-ab38-44bf-869a-cd96152fa455",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-60-1-09332a0f-dc7c-4911-95ea-614baad3ade9",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-61-0-8d87cf1f-5a61-440f-b135-f37daa8bea5e",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-61-1-182ee187-7495-4851-98b3-b1ecd19d1970",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-62-0-fe386793-bd92-4eeb-869b-bf0367d69b7d",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-62-1-4c5c816b-2a32-499b-8b63-6790ecfe3464",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-63-0-54374d7f-2573-4bf8-984d-4475af905247",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-63-1-3be01578-748f-4089-b1b5-af077ceb0dbe",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-64-0-d0b01837-8678-4bea-b10c-79164132da00",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-64-1-e2937edc-da18-4856-bd34-b79aa023ea92",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-65-0-2db5276f-a568-4d16-b33a-7d975e541b9e",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-65-1-e84fb75b-5475-4eaf-8047-913b77ed8d35",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-66-0-844e6a17-1de2-4c52-9f54-eee34db7f3b3",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-66-1-eadcb0c4-abd0-4740-8997-c6906df17745",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-67-0-d11c65f7-2410-4712-a820-3624b77ef5c3",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-67-1-43757bcd-5684-4991-bde1-bd6f6cd9c501",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-68-0-4b195cb2-fa4e-4679-ab1e-089c24ef7cb7",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-68-1-711e5870-b973-44a8-bb7e-830b573b92a5",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-69-0-48158545-86cc-4b3f-b6a4-5f3780631ea9",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-69-1-0b95c1af-bf6a-467c-b4ff-84a0ed45ab59",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-70-0-8d8d3ce8-8d9f-48a1-897b-a41cec9f6e2d",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-70-1-17cc3158-c1c6-40b8-99b9-7eedb2a8f363",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-71-0-3be20826-aa90-46ea-9513-e653c82bad56",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-71-1-ba4f6c8c-b752-4b1c-a766-fd930c83bcf2",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-72-0-f4d5d25d-ef58-497d-80ab-20e66f265692",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-72-1-596b5511-a6ba-4bb1-8690-9cefe322bef8",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-73-0-a2c2325c-accd-4f92-8912-66e77fd63d43",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-73-1-9f69814a-5e68-4387-9e78-f0a92ef2a123",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-74-0-df38a57d-b086-44f5-b135-5b6afb9e3378",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-74-1-fc4c00df-77f9-4175-a02f-3ee8658a03b2",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-75-0-b9ca8a5a-3d72-4a25-bc4d-4f8f242ed33a",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-75-1-7914fc8e-33b9-48e6-9a3e-00fd806d2f92",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-76-0-b73d5f64-a4b0-450b-ad41-9de77d57bce9",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-76-1-7646b334-17dc-49e6-bb0f-74d518b22d08",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-77-0-69474c55-1ab1-41e4-b479-89cc9d7f29ee",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-77-1-917d3136-1fda-4b91-8819-ec07f44c59dc",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-78-0-b9be1976-7c5b-4a6e-8c03-8b5dbf5eab8a",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-78-1-05037b98-5863-499a-b4d0-5c515b293848",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-79-0-0c0e8eb9-1ede-4c67-afd8-c770c07b5315",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-79-1-1d87d73b-b40d-48cb-bc77-12c8ec45aae1",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-80-0-69c6060c-4f57-45ab-b9da-5735fb176976",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-80-1-a6c20a98-59e1-43e4-8c8a-b8c619d0fb33",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-81-0-b6c3353b-7451-4a02-9457-acf6e5f3532a",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-81-1-ad20d29b-7be4-4ca5-ba5e-b6e3d252640c",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-82-0-de9d187c-1df2-4480-bb5e-c776405c3d3a",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-82-1-049b5298-18ee-445b-8798-58b0093430bc",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-83-0-ed9c29b6-bec0-4da4-9552-337edc98bd71",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-83-1-fc965f7f-33e6-4c50-ad1a-de8194644777",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-84-0-deda14b3-a579-4783-bc84-4a98c94a2752",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-84-1-b911180a-017e-445a-a7ca-b4b9babf2a6a",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-85-0-709a7295-636d-4f12-af4c-707ae97ba446",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-85-1-0a26718f-e9f6-4c0e-8bcf-eca6ee0d9804",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-86-0-7c4264bf-4140-4e27-989c-5c8e415cef22",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-86-1-c69f17cc-f9c1-4cba-b9ab-1d34b924001c",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-87-0-ef574c93-238f-4f80-af91-32f05cf2898a",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-87-1-b06b5725-d3cc-4307-adb4-7f17209cbc39",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-88-0-576a59d8-2556-48b0-a74d-cd27bd4939db",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-88-1-b0b3e37d-d140-4931-8fe2-f816d12ff8f2",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-89-0-97201269-1b2d-480d-b1ec-4c4fb3ef0e86",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-89-1-201c482d-d9bf-4b47-a0d4-3a219b6210a1",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-90-0-c9354fa4-ca23-4479-b19f-9b43fd15fcae",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-90-1-c9d84c70-6702-4f45-bd85-a56bafd667d0",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-91-0-8b347035-2552-4b74-8b65-1fd6d327531f",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-91-1-9941746d-8e68-44b0-b430-d98623344eee",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-92-0-164eca35-952c-43a8-9f6b-7f50a254014c",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-92-1-3d72bd85-c1fa-4873-a3e7-e406c2ef0cca",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-93-0-e0492245-26e0-4982-9cb7-109016e083a9",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-93-1-3ebc9188-9cc2-460d-9db3-660cc118fab0",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-94-0-1370a908-978d-4a28-b0e5-9d243f084d08",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-94-1-baa357a1-6296-4a81-8892-82bfd60e79be",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-95-0-e73bcd48-0a4e-4c93-90e7-b8ac15534555",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-95-1-5b6d8ed6-5001-4758-8d1c-85586225034d",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-96-0-fb377b47-26fe-4caa-be27-fc52a2519706",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-96-1-6153cd41-2f91-4d85-a8d3-08783e976d5c",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-97-0-7bca780f-6795-46e8-832b-37691c7a0645",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-97-1-b8d89d86-5bd5-435a-a38b-f5b479974243",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-98-0-e84caa36-61ec-4b61-9aa2-b8184dbe6ecf",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-98-1-a601c356-31c2-4dc1-89b4-bcb208d3f381",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-99-0-a65f5da2-1386-4ff5-a683-f77109315f91",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-99-1-1db33118-51ec-4edd-a814-571bb8809d93",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-100-0-891ed588-5efa-4333-b811-8b7ad5c89750",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-100-1-b1d33a15-0140-4e81-a517-5bed7a47d05e",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-101-0-f139bacd-604e-4c2f-b75d-a68ce3a2b3b3",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-101-1-38abe287-2a15-4b83-b58e-e2a3025a1487",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-102-0-f4578e3b-b5f3-4bc9-81fd-0f92a82349fd",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-102-1-3093c607-07e5-4ef5-b1d2-8b22e6e967cc",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-103-0-2149d03d-40cc-4212-87b1-ef1a5e0315fc",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-103-1-c939168b-3370-4e27-a8dd-86fe7695ca0f",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-104-0-638afc02-e80f-473f-8a01-5e4b0d2c1c45",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-104-1-39c7c5af-367d-4358-b507-35cb0b6bd9fe",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-105-0-eec0b5b2-f18a-4c43-8f36-65a4e6fb25f2",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-105-1-8aa3a6d2-8c1d-49c5-9373-5ecc7fff7eba",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-106-0-5d2cf1c3-0f61-487a-84f9-f33b345058b1",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-106-1-359e90a2-2adf-4705-84b7-0eb65ee9b72e",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-107-0-e839b702-97c6-40a8-aae7-263ba38a5c65",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-107-1-f0807e20-effb-4a13-a6ce-95f9b2957bac",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-108-0-cc88990a-2bb5-4d95-a0aa-b09881722689",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-108-1-fbd97b0f-d4b0-4440-a064-d69f1b3e76b0",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-109-0-6d2fa1ef-ddee-4832-a03e-eed7fcb15f3e",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-109-1-f15cab1d-db5f-46db-9f03-0f6501a904f8",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-110-0-5e5bdfd6-7f6f-478a-acd8-6f23bab80ce5",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-110-1-c473112b-a91f-48bf-b820-721fe236f08d",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-111-0-8222971e-9e75-4a0a-bff7-357c7099d0cc",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-111-1-46393e08-6d10-4189-82fb-4b04b96f958c",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-112-0-f9cac3e7-e603-4bfd-bf90-4da48afc2654",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-112-1-c666793c-e34f-42af-aa0e-23a2b382963e",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-113-0-a2a6f1d9-24d5-4428-9ef8-fa83edecb848",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-113-1-9acda186-a440-4f0b-8152-d34f5974d801",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-114-0-c85ccbb0-36cd-4d90-ad4d-0eba4f0e2578",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-114-1-90de9b45-439c-4b71-a528-03be311bccc8",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-115-0-dbb2e1ee-3f84-4bb6-8556-e14e15b70149",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-115-1-8019b350-dec6-40a0-a672-9753b77b4233",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-116-0-ff3d52cf-5930-4b94-8435-40e9c444b335",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-116-1-da4f6ae8-c795-4149-be60-d6a61b5e7327",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-117-0-99b188d1-4aba-4442-ab43-a0b376fb84e3",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-117-1-ff85300f-675f-417a-930f-c5d254210b1c",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-118-0-c62d8b46-e6b2-4289-a098-f33939ed5695",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-118-1-6607e04c-6eda-414f-860f-4bb57f46756c",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-119-0-74b517a9-0594-446f-aaa7-c7735294e0d4",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-119-1-0721e9b3-d0c7-41d2-8671-a871a0727167",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-120-0-63bece82-9d0f-48c2-8bd3-48c880cb0b16",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-120-1-5e750947-76fe-409d-a864-120dec6c8907",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-121-0-98bdf379-5bac-4e06-9633-982ee238b2df",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-121-1-25775c36-f67b-4ce3-900d-f2c366b0fee8",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-122-0-cdbaa04e-b8de-41a6-9a6d-de215d32d5d6",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-122-1-fc5df5c4-1edd-49e8-aa31-1879cc2b476b",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-123-0-cc05d344-26bc-428c-8fea-4052092e16a1",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-123-1-5900f3cf-ecb8-411e-86fa-9b2112613898",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-124-0-77b66b9b-ddfe-4016-afa1-b3d9997f9c1d",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-124-1-cd9a7291-de68-43bb-9ced-f36839613e3a",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-125-0-09b4bec9-cd79-4338-8d91-a682ae956233",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-125-1-da44a861-20e6-43be-87eb-c02043a92ceb",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-126-0-8f9a64bf-b8a2-4074-9242-f0a2e69a6eab",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-126-1-f5287cf8-c4fb-4f52-9a14-efe05abcb6e1",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-127-0-093293d9-343c-4ea1-9ced-4132c80f3f41",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-127-1-9f267c46-0bb3-48fe-bb23-b11b5761b957",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-128-0-a143c433-f33c-41f6-bb7e-8b55c751138a",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-128-1-73b429d1-dd0d-4c8e-beee-d2085414ae23",
+              "status": 3
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-129-0-0b248db4-4de0-4b52-8a04-f317faa50455",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-batch-129-1-eea12ad4-ff55-426f-bd7f-c6bae452c1bd",
+              "status": 3
+            }
+          ],
+          "name": "retained-history-churn",
+          "physical": {
+            "agent-a": [
+              "2526352             /bin/sleep 3603"
+            ],
+            "agent-b": [
+              "2526345             /bin/sleep 3603"
+            ]
+          },
+          "samples": 130,
+          "serviceTasks": [
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-service-0-b7709f1e-9fbc-474d-9816-3a38c22d9a9d",
+              "status": 2
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655663-886646e7dbc0-churn-service-1-4f9d442d-fb9a-49a5-a3a0-d5dd39fd4b8d",
+              "status": 2
+            }
+          ]
+        }
+      ],
+      "ok": true,
+      "path": ".pi-lab/hardening02-final/check-churn-1789655663659057280.json",
+      "phase": "churn",
+      "prefix": "check-1789655663-886646e7dbc0",
+      "recoveryRounds": null,
+      "sha256": "dab44b9d6f42c873336929004e552a7943d6ec6e4a0bca85ce490abfa466245c"
+    },
+    "health": {
+      "cases": [
+        {
+          "name": "health-readiness-two-agents",
+          "tasks": [
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655312-3c4b7ae5059e-health-0-63e56242-e771-4bbf-8879-1b6b458838ec",
+              "status": 2
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655312-3c4b7ae5059e-health-1-9e11e558-19c2-491d-b3ac-4e388c3b9c69",
+              "status": 2
+            }
+          ]
+        },
+        {
+          "executorRestored": true,
+          "failedTask": "fixtures-test-check-1789655312-3c4b7ae5059e-health-0-9b899939-9e87-4c13-b30d-535515e66b97",
+          "name": "health-startup-rollback",
+          "tasks": [
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655312-3c4b7ae5059e-health-0-1bf94e35-8d68-4e89-91f0-6aca7ce42fc8",
+              "status": 2
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655312-3c4b7ae5059e-health-0-63e56242-e771-4bbf-8879-1b6b458838ec",
+              "status": 5
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655312-3c4b7ae5059e-health-0-9b899939-9e87-4c13-b30d-535515e66b97",
+              "status": 4
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655312-3c4b7ae5059e-health-1-9e11e558-19c2-491d-b3ac-4e388c3b9c69",
+              "status": 2
+            }
+          ],
+          "updateStatus": 5
+        },
+        {
+          "failedTask": "fixtures-test-check-1789655312-3c4b7ae5059e-health-loss-1-036bca0b-e865-4711-8a97-872e07cfd940",
+          "name": "health-listener-loss",
+          "originalTasks": [
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655312-3c4b7ae5059e-health-loss-0-7f72bb57-7a98-4da9-9ed9-59c795393af9",
+              "status": 2
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655312-3c4b7ae5059e-health-loss-1-036bca0b-e865-4711-8a97-872e07cfd940",
+              "status": 2
+            }
+          ],
+          "tasks": [
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655312-3c4b7ae5059e-health-loss-0-7f72bb57-7a98-4da9-9ed9-59c795393af9",
+              "status": 2
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655312-3c4b7ae5059e-health-loss-1-036bca0b-e865-4711-8a97-872e07cfd940",
+              "status": 4
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655312-3c4b7ae5059e-health-loss-1-dddfd7f4-1f26-4cda-9105-b769fca23c6c",
+              "status": 9
+            }
+          ]
+        }
+      ],
+      "ok": true,
+      "path": ".pi-lab/hardening02-final/check-health-1789655312949633739.json",
+      "phase": "health",
+      "prefix": "check-1789655312-3c4b7ae5059e",
+      "recoveryRounds": null,
+      "sha256": "3b8d61259b5f5c816d72b61a37cc4ed46c05d0703d5b6c206fd9fed6fc65f0b6"
+    },
+    "logs": {
+      "cases": [
+        {
+          "bytes": 1048576,
+          "name": "retained-output",
+          "pages": 16,
+          "sha256": "62faa7acfb2871efe61d18e8c47871ebf361bab2cdb643dabf472e691680e655",
+          "stream": "stdout",
+          "task": {
+            "host": "agent-b",
+            "id": "fixtures-test-check-1789655358-708f8def1f4e-logs-0-8a2444ba-ab3f-428c-a2c7-9fb79d28ee6c",
+            "status": 3
+          },
+          "truncated": true
+        },
+        {
+          "bytes": 1048576,
+          "name": "retained-output",
+          "pages": 16,
+          "sha256": "cd0510c588b889371457684c2c60f0d0980ea3076d647ab1301c1a7e36358c17",
+          "stream": "stderr",
+          "task": {
+            "host": "agent-b",
+            "id": "fixtures-test-check-1789655358-708f8def1f4e-logs-0-8a2444ba-ab3f-428c-a2c7-9fb79d28ee6c",
+            "status": 3
+          },
+          "truncated": true
+        },
+        {
+          "bytes": 1048576,
+          "name": "retained-output",
+          "pages": 16,
+          "sha256": "62faa7acfb2871efe61d18e8c47871ebf361bab2cdb643dabf472e691680e655",
+          "stream": "stdout",
+          "task": {
+            "host": "agent-a",
+            "id": "fixtures-test-check-1789655358-708f8def1f4e-logs-1-898385cc-3cbc-4ba8-a4dc-a3d9e1b46e95",
+            "status": 3
+          },
+          "truncated": true
+        },
+        {
+          "bytes": 1048576,
+          "name": "retained-output",
+          "pages": 16,
+          "sha256": "cd0510c588b889371457684c2c60f0d0980ea3076d647ab1301c1a7e36358c17",
+          "stream": "stderr",
+          "task": {
+            "host": "agent-a",
+            "id": "fixtures-test-check-1789655358-708f8def1f4e-logs-1-898385cc-3cbc-4ba8-a4dc-a3d9e1b46e95",
+            "status": 3
+          },
+          "truncated": true
+        },
+        {
+          "afterGeneration": 2,
+          "beforeGeneration": 1,
+          "name": "retained-logs-after-restart",
+          "node": "agent-a"
+        },
+        {
+          "afterGeneration": 2,
+          "beforeGeneration": 1,
+          "name": "retained-logs-after-restart",
+          "node": "agent-b"
+        },
+        {
+          "afterGeneration": 2,
+          "beforeGeneration": 1,
+          "name": "retained-logs-after-restart",
+          "node": "scheduler"
+        }
+      ],
+      "ok": true,
+      "path": ".pi-lab/hardening02-final/check-logs-1789655358145270318.json",
+      "phase": "logs",
+      "prefix": "check-1789655358-708f8def1f4e",
+      "recoveryRounds": null,
+      "sha256": "6b23bd6baffdd6b48ec522b763b6978807ac7188c523fa0c180325d4f334788b"
+    },
+    "policy": {
+      "cases": [
+        {
+          "executorRestored": true,
+          "name": "automatic-rollback",
+          "tasks": [
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655625-b4b7e79e551f-policy-service-0-6753f00e-6e5e-4f5f-bbbc-ecf14ac6b007",
+              "status": 4
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655625-b4b7e79e551f-policy-service-0-c56d2022-bdc3-4295-869d-259ad4f98264",
+              "status": 5
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655625-b4b7e79e551f-policy-service-0-dd3fae14-b94d-4e51-b6a2-3fcc665272c4",
+              "status": 2
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655625-b4b7e79e551f-policy-service-1-f33b0467-9910-4ea1-b697-8ce55a78420f",
+              "status": 2
+            }
+          ],
+          "updateStatus": 5
+        },
+        {
+          "drainedTasks": [
+            {
+              "host": null,
+              "id": "fixtures-test-check-1789655625-b4b7e79e551f-policy-service-0-61afe138-b3e4-4ce5-83ff-c7e255dc91fe",
+              "status": 0
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655625-b4b7e79e551f-policy-service-0-6753f00e-6e5e-4f5f-bbbc-ecf14ac6b007",
+              "status": 4
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655625-b4b7e79e551f-policy-service-0-c56d2022-bdc3-4295-869d-259ad4f98264",
+              "status": 5
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655625-b4b7e79e551f-policy-service-0-dd3fae14-b94d-4e51-b6a2-3fcc665272c4",
+              "status": 5
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655625-b4b7e79e551f-policy-service-1-f33b0467-9910-4ea1-b697-8ce55a78420f",
+              "status": 2
+            }
+          ],
+          "host": "agent-a",
+          "name": "active-drain-replacement",
+          "replacedTasks": [
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655625-b4b7e79e551f-policy-service-0-61afe138-b3e4-4ce5-83ff-c7e255dc91fe",
+              "status": 2
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655625-b4b7e79e551f-policy-service-0-6753f00e-6e5e-4f5f-bbbc-ecf14ac6b007",
+              "status": 4
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655625-b4b7e79e551f-policy-service-0-c56d2022-bdc3-4295-869d-259ad4f98264",
+              "status": 5
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655625-b4b7e79e551f-policy-service-0-dd3fae14-b94d-4e51-b6a2-3fcc665272c4",
+              "status": 5
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655625-b4b7e79e551f-policy-service-1-f33b0467-9910-4ea1-b697-8ce55a78420f",
+              "status": 2
+            }
+          ]
+        },
+        {
+          "name": "manual-cron-finished",
+          "tasks": [
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655625-b4b7e79e551f-policy-cron-0-807d196d-2f23-4702-8f2e-995951e92c54",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655625-b4b7e79e551f-policy-cron-1-2c2bc2e5-320b-4ec3-be5a-ed10c723ef62",
+              "status": 3
+            }
+          ]
+        }
+      ],
+      "ok": true,
+      "path": ".pi-lab/hardening02-final/check-policy-1789655625874027055.json",
+      "phase": "policy",
+      "prefix": "check-1789655625-b4b7e79e551f",
+      "recoveryRounds": null,
+      "sha256": "efd6090d56d2cd3bbad885dc7b15135d612347b4159c76f75e0594752db276f3"
+    },
+    "recovery": {
+      "cases": [
+        {
+          "afterGeneration": 3,
+          "beforeGeneration": 2,
+          "name": "restart-scheduler",
+          "node": "scheduler",
+          "physical": {
+            "agent-a": [
+              "2523859             /bin/sleep 3600"
+            ],
+            "agent-b": [
+              "2523851             /bin/sleep 3600"
+            ]
+          },
+          "round": 1,
+          "tasks": [
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655404-99d9cbcd791c-recovery-0-8f824614-b055-4957-a94f-42b626081085",
+              "status": 2
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655404-99d9cbcd791c-recovery-1-4ff01a8f-90a5-414a-a640-0e4df8b44234",
+              "status": 2
+            }
+          ]
+        },
+        {
+          "afterGeneration": 4,
+          "beforeGeneration": 3,
+          "name": "crash-scheduler",
+          "node": "scheduler",
+          "physical": {
+            "agent-a": [
+              "2523859             /bin/sleep 3600"
+            ],
+            "agent-b": [
+              "2523851             /bin/sleep 3600"
+            ]
+          },
+          "round": 1,
+          "tasks": [
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655404-99d9cbcd791c-recovery-0-8f824614-b055-4957-a94f-42b626081085",
+              "status": 2
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655404-99d9cbcd791c-recovery-1-4ff01a8f-90a5-414a-a640-0e4df8b44234",
+              "status": 2
+            }
+          ]
+        },
+        {
+          "afterGeneration": 3,
+          "beforeGeneration": 2,
+          "name": "crash-agent",
+          "node": "agent-a",
+          "physical": {
+            "agent-a": [
+              "2523859             /bin/sleep 3600"
+            ],
+            "agent-b": [
+              "2523851             /bin/sleep 3600"
+            ]
+          },
+          "round": 1,
+          "tasks": [
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655404-99d9cbcd791c-recovery-0-8f824614-b055-4957-a94f-42b626081085",
+              "status": 2
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655404-99d9cbcd791c-recovery-1-4ff01a8f-90a5-414a-a640-0e4df8b44234",
+              "status": 2
+            }
+          ]
+        },
+        {
+          "afterGeneration": 5,
+          "beforeGeneration": 4,
+          "name": "restart-scheduler",
+          "node": "scheduler",
+          "physical": {
+            "agent-a": [
+              "2523859             /bin/sleep 3600"
+            ],
+            "agent-b": [
+              "2523851             /bin/sleep 3600"
+            ]
+          },
+          "round": 2,
+          "tasks": [
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655404-99d9cbcd791c-recovery-0-8f824614-b055-4957-a94f-42b626081085",
+              "status": 2
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655404-99d9cbcd791c-recovery-1-4ff01a8f-90a5-414a-a640-0e4df8b44234",
+              "status": 2
+            }
+          ]
+        },
+        {
+          "afterGeneration": 6,
+          "beforeGeneration": 5,
+          "name": "crash-scheduler",
+          "node": "scheduler",
+          "physical": {
+            "agent-a": [
+              "2523859             /bin/sleep 3600"
+            ],
+            "agent-b": [
+              "2523851             /bin/sleep 3600"
+            ]
+          },
+          "round": 2,
+          "tasks": [
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655404-99d9cbcd791c-recovery-0-8f824614-b055-4957-a94f-42b626081085",
+              "status": 2
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655404-99d9cbcd791c-recovery-1-4ff01a8f-90a5-414a-a640-0e4df8b44234",
+              "status": 2
+            }
+          ]
+        },
+        {
+          "afterGeneration": 3,
+          "beforeGeneration": 2,
+          "name": "crash-agent",
+          "node": "agent-b",
+          "physical": {
+            "agent-a": [
+              "2523859             /bin/sleep 3600"
+            ],
+            "agent-b": [
+              "2523851             /bin/sleep 3600"
+            ]
+          },
+          "round": 2,
+          "tasks": [
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655404-99d9cbcd791c-recovery-0-8f824614-b055-4957-a94f-42b626081085",
+              "status": 2
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655404-99d9cbcd791c-recovery-1-4ff01a8f-90a5-414a-a640-0e4df8b44234",
+              "status": 2
+            }
+          ]
+        },
+        {
+          "afterGeneration": 7,
+          "beforeGeneration": 6,
+          "name": "restart-scheduler",
+          "node": "scheduler",
+          "physical": {
+            "agent-a": [
+              "2523859             /bin/sleep 3600"
+            ],
+            "agent-b": [
+              "2523851             /bin/sleep 3600"
+            ]
+          },
+          "round": 3,
+          "tasks": [
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655404-99d9cbcd791c-recovery-0-8f824614-b055-4957-a94f-42b626081085",
+              "status": 2
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655404-99d9cbcd791c-recovery-1-4ff01a8f-90a5-414a-a640-0e4df8b44234",
+              "status": 2
+            }
+          ]
+        },
+        {
+          "afterGeneration": 8,
+          "beforeGeneration": 7,
+          "name": "crash-scheduler",
+          "node": "scheduler",
+          "physical": {
+            "agent-a": [
+              "2523859             /bin/sleep 3600"
+            ],
+            "agent-b": [
+              "2523851             /bin/sleep 3600"
+            ]
+          },
+          "round": 3,
+          "tasks": [
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655404-99d9cbcd791c-recovery-0-8f824614-b055-4957-a94f-42b626081085",
+              "status": 2
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655404-99d9cbcd791c-recovery-1-4ff01a8f-90a5-414a-a640-0e4df8b44234",
+              "status": 2
+            }
+          ]
+        },
+        {
+          "afterGeneration": 4,
+          "beforeGeneration": 3,
+          "name": "crash-agent",
+          "node": "agent-a",
+          "physical": {
+            "agent-a": [
+              "2523859             /bin/sleep 3600"
+            ],
+            "agent-b": [
+              "2523851             /bin/sleep 3600"
+            ]
+          },
+          "round": 3,
+          "tasks": [
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655404-99d9cbcd791c-recovery-0-8f824614-b055-4957-a94f-42b626081085",
+              "status": 2
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655404-99d9cbcd791c-recovery-1-4ff01a8f-90a5-414a-a640-0e4df8b44234",
+              "status": 2
+            }
+          ]
+        }
+      ],
+      "ok": true,
+      "path": ".pi-lab/hardening02-final/check-recovery-1789655404017711229.json",
+      "phase": "recovery",
+      "prefix": "check-1789655404-99d9cbcd791c",
+      "recoveryRounds": 3,
+      "sha256": "c3b96d98f72b0e4e5012778d8f4d3bd62ee83b1e3f368c3156a52a11928bba42"
+    },
+    "smoke": {
+      "cases": [
+        {
+          "name": "batch-finished",
+          "tasks": [
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655280-af3820b6ec4e-batch-0-c656fa2d-24fb-417e-8b05-d963e8c6c76b",
+              "status": 3
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655280-af3820b6ec4e-batch-1-f4220e3d-dc08-46c6-80ed-7960d51f86d3",
+              "status": 3
+            }
+          ]
+        },
+        {
+          "name": "two-agent-service",
+          "physical": {
+            "agent-a": [
+              "2522452             /bin/sleep 300"
+            ],
+            "agent-b": [
+              "2522459             /bin/sleep 300"
+            ]
+          },
+          "tasks": [
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655280-af3820b6ec4e-service-0-8aef8b72-3f3c-4097-b56d-59650e3ad42b",
+              "status": 2
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655280-af3820b6ec4e-service-1-e4b3c9fb-6a38-4120-b758-a9b5879eccbf",
+              "status": 2
+            }
+          ]
+        },
+        {
+          "name": "rolling-update",
+          "tasks": [
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655280-af3820b6ec4e-service-0-5650edc5-109e-4f50-9ecb-4ccc44ce3e28",
+              "status": 2
+            },
+            {
+              "host": "agent-a",
+              "id": "fixtures-test-check-1789655280-af3820b6ec4e-service-0-8aef8b72-3f3c-4097-b56d-59650e3ad42b",
+              "status": 5
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655280-af3820b6ec4e-service-1-a7bd90f1-7fb4-4ae7-b8b3-0576b30627ae",
+              "status": 2
+            },
+            {
+              "host": "agent-b",
+              "id": "fixtures-test-check-1789655280-af3820b6ec4e-service-1-e4b3c9fb-6a38-4120-b758-a9b5879eccbf",
+              "status": 5
+            }
+          ],
+          "updateStatus": 4
+        },
+        {
+          "name": "service-killed"
+        },
+        {
+          "name": "quota-and-cron-api"
+        },
+        {
+          "name": "drain-empty-hosts-api"
+        }
+      ],
+      "ok": true,
+      "path": ".pi-lab/hardening02-final/check-smoke-1789655280615097769.json",
+      "phase": "smoke",
+      "prefix": "check-1789655280-af3820b6ec4e",
+      "recoveryRounds": null,
+      "sha256": "422ccad9f845f3a9762fabd04c514209165039c7de493e0704318e4068d784c3"
+    }
+  },
+  "baseline": "034e3d28dbc90ee6e4edbdf683bb6861afe6e66f",
+  "checks": {
+    "hardening02-full-04.log": {
+      "path": ".cache/hardening02-full-04.log",
+      "sha256": "fe9df038b3375e1d3045884491b4593d6fcc2c9603828ea665f075f741f78bb8"
+    },
+    "hardening02-go-final-07.log": {
+      "path": ".cache/hardening02-go-final-07.log",
+      "sha256": "670d0997834d84b65dab3936f90ee453e2fe8a1f0284a60d06ea79172297137b"
+    },
+    "hardening02-tools-final.log": {
+      "path": ".cache/hardening02-tools-final.log",
+      "sha256": "0ead874e554663c6ddafce0d9eaf6ebc9bf0850cba5c53768f3b4c1cbe952aaf"
+    }
+  },
+  "ci": {
+    "path": ".cache/hardening02-ci.json",
+    "report": {
+      "conclusion": "success",
+      "head": "18e3021da0fd1f5a5e99016f587bfddafd9bd088",
+      "id": 35233550889,
+      "jobs": [
+        {
+          "conclusion": "success",
+          "id": 105243558033,
+          "name": "Java 25 / quality",
+          "status": "completed",
+          "url": "https://github.com/jordanly/aurora/actions/runs/35233550889/job/105243558033"
+        },
+        {
+          "conclusion": "success",
+          "id": 105243558592,
+          "name": "Go agent / tests and provenance",
+          "status": "completed",
+          "url": "https://github.com/jordanly/aurora/actions/runs/35233550889/job/105243558592"
+        },
+        {
+          "conclusion": "success",
+          "id": 105243558665,
+          "name": "Java 25 / behavior-and-distribution",
+          "status": "completed",
+          "url": "https://github.com/jordanly/aurora/actions/runs/35233550889/job/105243558665"
+        }
+      ],
+      "ok": true,
+      "status": "completed",
+      "url": "https://github.com/jordanly/aurora/actions/runs/35233550889"
+    },
+    "sha256": "d2365b775d03c11c9008d750f44bf151ba62f4fff3b237131c16149a999ebb58"
+  },
+  "coverage": {
+    "BRANCH": {
+      "covered": 2865,
+      "missed": 668
+    },
+    "CLASS": {
+      "covered": 592,
+      "missed": 32
+    },
+    "COMPLEXITY": {
+      "covered": 3999,
+      "missed": 884
+    },
+    "INSTRUCTION": {
+      "covered": 53518,
+      "missed": 4927
+    },
+    "LINE": {
+      "covered": 11849,
+      "missed": 1154
+    },
+    "METHOD": {
+      "covered": 2800,
+      "missed": 273
+    }
+  },
+  "coverageThresholds": {
+    "BRANCH": 0.79,
+    "INSTRUCTION": 0.87
+  },
+  "created": "2026-09-17T14:46:48.011183+00:00",
+  "diagnosedFailures": {
+    "connectionLifecycleContention": {
+      "diagnosticLab": {
+        "path": ".pi-lab/hardening02/lab.json",
+        "sha256": "a331a73eb3736debd4961993c42feaccaf034daf1f1a91f09d9e19b1bc067558"
+      },
+      "experiment": {
+        "path": ".pi-lab/hardening02/idle-anchor-experiment.json",
+        "report": {
+          "created": "2026-09-17T13:37:53.802038+00:00",
+          "healthReceipt": ".pi-lab/hardening02/check-health-1789652192842356229.json",
+          "method": "Hold one external read-only SQLite connection in autocommit; PRAGMA user_version materializes WAL state; no transaction pinned. Existing unmodified distribution health phase then passes.",
+          "ok": true,
+          "qualifiedDeployment": false
+        },
+        "sha256": "87249a32b764901783e681cd29d6369e59356cd5646d8671346099b1a691c403"
+      },
+      "log": {
+        "path": ".cache/hardening02-health-scheduler.log",
+        "sha256": "a07369777487f3ea7e8b53bcbcc26608be156aedc783524b2394871e2f4b7ae6"
+      },
+      "reason": "Repeated smoke/health read failures at connection setup matched SQLite WAL last-close/first-open cleanup contention. An idle external read-only connection let the previously failing health scenario pass. Production now retains its initialized idle connection for the owning lifetime, with snapshot/checkpoint and close-failure ownership regressions. Final qualification uses a new lab without the external helper.",
+      "smoke": {
+        "path": ".pi-lab/hardening02/diagnostics/check-smoke-1789651891107632136.json",
+        "report": {
+          "cases": [],
+          "error": "getTasksStatus rejected: [\"rec\",1,{\"1\":{\"str\":\"Unable to open SQLite transaction\"}}]",
+          "ok": false,
+          "phase": "smoke",
+          "prefix": "check-1789651891-3ba27e8d5cf9"
+        },
+        "sha256": "5a82cc44197808c602d9c8ffca4ecd4a0808a3c52fb84797e2d9a1057701ccea"
+      }
+    },
+    "connectionOwnershipAnalysis": {
+      "log": {
+        "path": ".cache/hardening02-full-03.log",
+        "sha256": "b6b0d12541b901013a9cb7f58e44f54862598cb33055efaee6b708678573047c"
+      },
+      "reason": "Full1499 behavior tests passed, but PMD could not infer retained connection ownership in initialization/test aliases. Initialization now uses an explicit retained flag; the lifecycle test documents its database-owned aliases with a method-local suppression. Final full gates rerun afterward."
+    },
+    "finalizerDeadlineAssertion": {
+      "log": {
+        "path": ".cache/hardening02-go-final-04.log",
+        "sha256": "062ed3105a859393d368c76785d2a94cd41d0fcd648af9d9c3f07d72a4ac3bc3"
+      },
+      "reason": "The old assertion timed the entire task, including primary startup/fsyncs, against a bound shorter than the documented finalization-plus-cleanup window. An event-based regression now verifies shared deadline exhaustion, no second finalizer admission, confirmed cleanup and an uncancelled outer context; runtime unchanged."
+    },
+    "legacyTestBindings": {
+      "log": {
+        "path": ".cache/hardening02-full-01.log",
+        "sha256": "49a495e7c2806d8bd3346916d0f7c82f43f08d7544b2d62927f6df425a8d28e0"
+      },
+      "reason": "36 legacy HTTP/integration test failures shared a missing TaskLogReader test-injector binding. The injected test dependencies and new analyzer/lint findings were fixed before the final passing suite."
+    },
+    "remoteThriftBootstrap": {
+      "initialJob": {
+        "path": ".cache/hardening02-ci-quality-job.json",
+        "report": {
+          "check_run_url": "https://api.github.com/repos/jordanly/aurora/check-runs/105230553215",
+          "completed_at": "2026-09-17T13:52:55Z",
+          "conclusion": "failure",
+          "created_at": "2026-09-17T13:51:46Z",
+          "head_branch": "codex/in-place-java25",
+          "head_sha": "42ad3c6dc28a032cb771a609b6223e32d2fd1559",
+          "html_url": "https://github.com/jordanly/aurora/actions/runs/35229703579/job/105230553215",
+          "id": 105230553215,
+          "labels": [
+            "ubuntu-24.04-arm"
+          ],
+          "name": "Java 25 / quality",
+          "node_id": "CR_kwDOBsP6RM8AAAAYgDrQfw",
+          "run_attempt": 1,
+          "run_id": 35229703579,
+          "run_url": "https://api.github.com/repos/jordanly/aurora/actions/runs/35229703579",
+          "runner_group_id": 0,
+          "runner_group_name": "GitHub Actions",
+          "runner_id": 1000000038,
+          "runner_name": "GitHub Actions 1000000038",
+          "started_at": "2026-09-17T13:51:51Z",
+          "status": "completed",
+          "steps": [
+            {
+              "completed_at": "2026-09-17T13:51:52Z",
+              "conclusion": "success",
+              "name": "Set up job",
+              "number": 1,
+              "started_at": "2026-09-17T13:51:52Z",
+              "status": "completed"
+            },
+            {
+              "completed_at": "2026-09-17T13:51:55Z",
+              "conclusion": "success",
+              "name": "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+              "number": 2,
+              "started_at": "2026-09-17T13:51:52Z",
+              "status": "completed"
+            },
+            {
+              "completed_at": "2026-09-17T13:52:12Z",
+              "conclusion": "success",
+              "name": "Install compiler build prerequisites",
+              "number": 3,
+              "started_at": "2026-09-17T13:51:55Z",
+              "status": "completed"
+            },
+            {
+              "completed_at": "2026-09-17T13:52:53Z",
+              "conclusion": "failure",
+              "name": "Build the pinned Thrift compiler",
+              "number": 4,
+              "started_at": "2026-09-17T13:52:12Z",
+              "status": "completed"
+            },
+            {
+              "completed_at": "2026-09-17T13:52:53Z",
+              "conclusion": "skipped",
+              "name": "Verify build helpers and code generation contracts",
+              "number": 5,
+              "started_at": "2026-09-17T13:52:53Z",
+              "status": "completed"
+            },
+            {
+              "completed_at": "2026-09-17T13:52:53Z",
+              "conclusion": "skipped",
+              "name": "Verify original behavior, UI, and installed launchers",
+              "number": 6,
+              "started_at": "2026-09-17T13:52:53Z",
+              "status": "completed"
+            },
+            {
+              "completed_at": "2026-09-17T13:52:53Z",
+              "conclusion": "skipped",
+              "name": "Run the original optional quality gates explicitly",
+              "number": 7,
+              "started_at": "2026-09-17T13:52:53Z",
+              "status": "completed"
+            },
+            {
+              "completed_at": "2026-09-17T13:52:54Z",
+              "conclusion": "success",
+              "name": "Retain reports for passing and failing gates",
+              "number": 8,
+              "started_at": "2026-09-17T13:52:53Z",
+              "status": "completed"
+            },
+            {
+              "completed_at": "2026-09-17T13:52:54Z",
+              "conclusion": "success",
+              "name": "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+              "number": 16,
+              "started_at": "2026-09-17T13:52:54Z",
+              "status": "completed"
+            },
+            {
+              "completed_at": "2026-09-17T13:52:54Z",
+              "conclusion": "success",
+              "name": "Complete job",
+              "number": 17,
+              "started_at": "2026-09-17T13:52:54Z",
+              "status": "completed"
+            }
+          ],
+          "url": "https://api.github.com/repos/jordanly/aurora/actions/jobs/105230553215",
+          "workflow_name": "Original Aurora on Java 25"
+        },
+        "sha256": "d52fff44c7fc2b042e4c258fa1bab1c03101ed483e2dc0c15dce8300cbbb70aa"
+      },
+      "laterJob": {
+        "path": ".cache/hardening02-ci-behavior-job-11d.json",
+        "report": {
+          "check_run_url": "https://api.github.com/repos/jordanly/aurora/check-runs/105234917117",
+          "completed_at": "2026-09-17T14:04:40Z",
+          "conclusion": "failure",
+          "created_at": "2026-09-17T14:03:26Z",
+          "head_branch": "codex/in-place-java25",
+          "head_sha": "11d094d7b4eb5d6a94f1d7302974d58777e4334f",
+          "html_url": "https://github.com/jordanly/aurora/actions/runs/35231048117/job/105234917117",
+          "id": 105234917117,
+          "labels": [
+            "ubuntu-24.04-arm"
+          ],
+          "name": "Java 25 / behavior-and-distribution",
+          "node_id": "CR_kwDOBsP6RM8AAAAYgH1m_Q",
+          "run_attempt": 1,
+          "run_id": 35231048117,
+          "run_url": "https://api.github.com/repos/jordanly/aurora/actions/runs/35231048117",
+          "runner_group_id": 0,
+          "runner_group_name": "GitHub Actions",
+          "runner_id": 1000000041,
+          "runner_name": "GitHub Actions 1000000041",
+          "started_at": "2026-09-17T14:03:31Z",
+          "status": "completed",
+          "steps": [
+            {
+              "completed_at": "2026-09-17T14:03:33Z",
+              "conclusion": "success",
+              "name": "Set up job",
+              "number": 1,
+              "started_at": "2026-09-17T14:03:32Z",
+              "status": "completed"
+            },
+            {
+              "completed_at": "2026-09-17T14:03:36Z",
+              "conclusion": "success",
+              "name": "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+              "number": 2,
+              "started_at": "2026-09-17T14:03:33Z",
+              "status": "completed"
+            },
+            {
+              "completed_at": "2026-09-17T14:03:54Z",
+              "conclusion": "success",
+              "name": "Install compiler build prerequisites",
+              "number": 3,
+              "started_at": "2026-09-17T14:03:36Z",
+              "status": "completed"
+            },
+            {
+              "completed_at": "2026-09-17T14:04:36Z",
+              "conclusion": "failure",
+              "name": "Build the pinned Thrift compiler",
+              "number": 4,
+              "started_at": "2026-09-17T14:03:54Z",
+              "status": "completed"
+            },
+            {
+              "completed_at": "2026-09-17T14:04:36Z",
+              "conclusion": "skipped",
+              "name": "Verify build helpers and code generation contracts",
+              "number": 5,
+              "started_at": "2026-09-17T14:04:36Z",
+              "status": "completed"
+            },
+            {
+              "completed_at": "2026-09-17T14:04:36Z",
+              "conclusion": "skipped",
+              "name": "Verify original behavior, UI, and installed launchers",
+              "number": 6,
+              "started_at": "2026-09-17T14:04:36Z",
+              "status": "completed"
+            },
+            {
+              "completed_at": "2026-09-17T14:04:36Z",
+              "conclusion": "skipped",
+              "name": "Run the original optional quality gates explicitly",
+              "number": 7,
+              "started_at": "2026-09-17T14:04:36Z",
+              "status": "completed"
+            },
+            {
+              "completed_at": "2026-09-17T14:04:37Z",
+              "conclusion": "success",
+              "name": "Retain reports for passing and failing gates",
+              "number": 8,
+              "started_at": "2026-09-17T14:04:36Z",
+              "status": "completed"
+            },
+            {
+              "completed_at": "2026-09-17T14:04:37Z",
+              "conclusion": "success",
+              "name": "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+              "number": 16,
+              "started_at": "2026-09-17T14:04:37Z",
+              "status": "completed"
+            },
+            {
+              "completed_at": "2026-09-17T14:04:37Z",
+              "conclusion": "success",
+              "name": "Complete job",
+              "number": 17,
+              "started_at": "2026-09-17T14:04:37Z",
+              "status": "completed"
+            }
+          ],
+          "url": "https://api.github.com/repos/jordanly/aurora/actions/jobs/105234917117",
+          "workflow_name": "Original Aurora on Java 25"
+        },
+        "sha256": "6d3cc80cac6f6d9f3ac40f049731860e49adddd0ca2fd2c0bd9f9d0fab6b9833"
+      },
+      "reason": "Separate remote jobs stopped at pinned Thrift bootstrap before executing Java checks. Other jobs on identical code and the local pinned-compiler gates run successfully. Detailed remote failure logs were unavailable without HTTPS API credentials; no unproven root cause is asserted."
+    },
+    "supervisorJournalContention": {
+      "log": {
+        "path": ".cache/hardening02-go-final.log",
+        "sha256": "43aeb869902c0b9d9048f5f66dc45b3d32e4a2cf702a6106aa9fa7c68abdbb2c"
+      },
+      "reason": "A stopped supervisor can retain its journal writer lock briefly. Only bbolt lock timeout now retries with all durable state/reservations unchanged; corruption remains fatal. Repeated deterministic recovery tests pass."
+    },
+    "supervisorStartupDeadline": {
+      "diagnostic": {
+        "path": ".pi-lab/hardening02-qualified/supervisor-startup-diagnostic.json",
+        "report": {
+          "diagnosis": "Both supervisors failed their five-second pre-gate readiness check while initializing journals. Failed journal/spec mtimes and exact attempt bodies are retained for review; no workload launch was recorded for the first attempts.",
+          "error": "timed out waiting for check-1789654581-fbbbb615d7a8-logs: [{fixtures-test-check-1789654581-fbbbb615d7a8-logs-0-102684ee-c8c3-4096-9416-424a3772c94b agent-a 7} {fixtures-test-check-1789654581-fbbbb615d7a8-logs-0-124297ec-239e-468d-a484-01630fecb33b agent-a 3} {fixtures-test-check-1789654581-fbbbb615d7a8-logs-1-03046b6f-f316-4aa8-a5ce-83c4bd6ade03 agent-b 3} {fixtures-test-check-1789654581-fbbbb615d7a8-logs-1-80879b32-ac2e-4645-be87-54e529709dd2 agent-b 7}]",
+          "logs": {
+            "agent-a": {
+              "path": ".cache/hardening02-qualified-log-failure-agent-a.log",
+              "sha256": "cca882553136f622a67fff6e36b21f5073a32e5db68816bfa451b0b759a6195e"
+            },
+            "agent-b": {
+              "path": ".cache/hardening02-qualified-log-failure-agent-b.log",
+              "sha256": "cca882553136f622a67fff6e36b21f5073a32e5db68816bfa451b0b759a6195e"
+            },
+            "scheduler": {
+              "path": ".cache/hardening02-qualified-log-failure-scheduler.log",
+              "sha256": "f2149b822e3028aa0bbfc8ae34e75ebf9e926c3c687f35a42867362fe6cf5ad6"
+            }
+          },
+          "qualifiedDeployment": false,
+          "report": ".pi-lab/hardening02-qualified/check-logs-1789654581490256077.json",
+          "reportSha256": "71e770677dd0edb57e67b6f25c5b8308733726e2d36d4e7079ef462820b860f1",
+          "time": "2026-09-17T14:22:24.747880+00:00"
+        },
+        "sha256": "041271e663f104912636bf5425eb86e9eb10b4fc253d65aecb283a4cc337e4d9"
+      },
+      "reason": "Both supervisors exceeded the fixed pre-gate readiness timeout during durable journal initialization. The startup handshake now records the exact supervisor identity before durable initialization; alive supervisors retain reservations during startup. No timeout was extended and the strict no-reschedule log qualification remains unchanged."
+    },
+    "watchFixtureTLSDeadline": {
+      "log": {
+        "path": ".cache/hardening02-go-final-05.log",
+        "sha256": "a9924257b50ddb660138e664f3b0c061beb8512ce1cc29f658f94321b456106c"
+      },
+      "reason": "The fixture global20ms write timeout accidentally limited TLS negotiation. The normal fixture now uses production5s; the heartbeat regression injects its20ms response deadline after TLS. Twenty repeated runs pass; production transport unchanged."
+    }
+  },
+  "distribution": {
+    "path": ".cache/inplace-build/build/scheduler/distribution-verification.json",
+    "report": {
+      "artifacts": {
+        "activation-1.1.1.jar": {
+          "sha256": "ae475120e9fcd99b4b00b38329bd61cdc5eb754eee03fe66c01f50e137724f99",
+          "size": 69409
+        },
+        "antlr-2.7.7.jar": {
+          "sha256": "88fbda4b912596b9f56e8e12e580cc954bacfb51776ecfddd3e18fc1cf56dc4c",
+          "size": 445288
+        },
+        "aopalliance-1.0.jar": {
+          "sha256": "0addec670fedcd3f113c5c8091d783280d23f75e3acb841b61a9cdb079376a08",
+          "size": 4467
+        },
+        "asm-9.8.jar": {
+          "sha256": "876eab6a83daecad5ca67eb9fcabb063c97b5aeb8cf1fca7a989ecde17522051",
+          "size": 126113
+        },
+        "async-http-client-2.0.37.jar": {
+          "sha256": "cb1c6583c18b7e180e59584c8ef1d5c8064939af861a4c898661ba6e3014df3f",
+          "size": 433590
+        },
+        "async-http-client-netty-utils-2.0.37.jar": {
+          "sha256": "6c9e79cf4f3eac56fa01ca4a31d18b2a95c5636142760a517e74bff4fe58925d",
+          "size": 7287
+        },
+        "aurora-0.23.0-SNAPSHOT.jar": {
+          "auroraClassCount": 767,
+          "bytecodeMajor": 69,
+          "requiredEntries": [
+            "org/apache/aurora/scheduler/storage/durability/RecoveryTool.class",
+            "scheduler/assets/scheduler/index.html",
+            "scheduler/assets/js/bundle.js",
+            "scheduler/assets/js/bundle.js.map",
+            "scheduler/assets/js/thrift.js",
+            "scheduler/assets/bower_components/jquery/dist/jquery.min.js"
+          ],
+          "sha256": "37f4c2c861fb50507cc5da96d453991b59566fe606ffdb8a176525510e8caac0",
+          "size": 3631579
+        },
+        "aurora-api-0.23.0-SNAPSHOT.jar": {
+          "auroraClassCount": 1547,
+          "bytecodeMajor": 69,
+          "requiredEntries": [
+            "org/apache/aurora/gen/AuroraAdmin.class",
+            "org/apache/aurora/scheduler/storage/entities/IScheduledTask.class",
+            "org/apache/aurora/scheduler/gen/client/ReadOnlyScheduler.js",
+            "org/apache/aurora/scheduler/gen/client/AuroraAdmin.js",
+            "org/apache/aurora/scheduler/gen/client/api_types.js",
+            "org/apache/aurora/scheduler/gen/client/api.html"
+          ],
+          "sha256": "daea331459e39255df142a92fc73e148fd9291fc67976c223d4d9289e72ab4a1",
+          "size": 2989975
+        },
+        "byte-buddy-1.17.5.jar": {
+          "sha256": "71568c9f8396677219f650268fbf6493ded484edcdbdf2dae6129ca5be81e8db",
+          "size": 8953594
+        },
+        "c3p0-0.9.1.1.jar": {
+          "sha256": "a3c772033d43c85f2635596e2421496d55840abbde64ad64b8d0298cacbba466",
+          "size": 608376
+        },
+        "checker-qual-3.12.0.jar": {
+          "sha256": "ff10785ac2a357ec5de9c293cb982a2cbb605c0309ea4cc1cb9b9bc6dbe7f3cb",
+          "size": 208835
+        },
+        "commons-0.23.0-SNAPSHOT.jar": {
+          "auroraClassCount": 150,
+          "bytecodeMajor": 69,
+          "sha256": "9221503c961065a94f718b494ac301927ecbf0d9875728763111dc69611fa807",
+          "size": 160237
+        },
+        "commons-beanutils-1.9.3.jar": {
+          "sha256": "c058e39c7c64203d3a448f3adb588cb03d6378ed808485618f26e137f29dae73",
+          "size": 246174
+        },
+        "commons-codec-1.9.jar": {
+          "sha256": "ad19d2601c3abf0b946b5c3a4113e226a8c1e3305e395b90013b78dd94a723ce",
+          "size": 263965
+        },
+        "commons-collections-3.2.2.jar": {
+          "sha256": "eeeae917917144a68a741d4c0dff66aa5c5c5fd85593ff217bced3fc8ca783b8",
+          "size": 588337
+        },
+        "commons-io-2.5.jar": {
+          "sha256": "a10418348d234968600ccb1d988efcbbd08716e1d96936ccc1880e7d22513474",
+          "size": 208700
+        },
+        "commons-lang-2.6.jar": {
+          "sha256": "50f11b09f877c294d56f24463f47d28f929cf5044f648661c0f0cfbae9a2f49c",
+          "size": 284220
+        },
+        "commons-logging-1.2.jar": {
+          "sha256": "daddea1ea0be0f56978ab3006b8ac92834afeefbd9b7e4e6316fca57df0fa636",
+          "size": 61829
+        },
+        "curator-client-2.12.0.jar": {
+          "sha256": "683c5410fba7fe622f2aec6cfaff335838204d5bcd569157a548e3c1506c16aa",
+          "size": 2423138
+        },
+        "curator-framework-2.12.0.jar": {
+          "sha256": "8c5e2ccdd94088f7db3669b8183345d88c6d3dca931542a39fe15304a3c1b278",
+          "size": 201953
+        },
+        "curator-recipes-2.12.0.jar": {
+          "sha256": "4166d93e88c3a7bbc890e21cb927108d6efc9435c57fb5ceac9665e17fbccec2",
+          "size": 283598
+        },
+        "easymock-5.6.0.jar": {
+          "sha256": "63efc00da99774fb0253330ef9b5788b261022ba73f36bf76889ce7edf3d2b31",
+          "size": 148389
+        },
+        "error_prone_annotations-2.18.0.jar": {
+          "sha256": "9e6814cb71816988a4fd1b07a993a8f21bb7058d522c162b1de849e19bea54ae",
+          "size": 16017
+        },
+        "failureaccess-1.0.1.jar": {
+          "sha256": "a171ee4c734dd2da837e4b16be9df4661afab72a41adaf31eb84dfdaf936ca26",
+          "size": 4617
+        },
+        "gson-2.3.1.jar": {
+          "sha256": "13f44a2f6ead058da80a91ee650c073871942468e684a9bf6a0d0319138924ce",
+          "size": 210856
+        },
+        "guava-31.0.1-jre.jar": {
+          "sha256": "d5be94d65e87bd219fb3193ad1517baa55a3b88fc91d21cf735826ab5af087b9",
+          "size": 2974216
+        },
+        "guice-6.0.0.jar": {
+          "sha256": "b4d4f7ec5e8fc17b4f98dee9d3f6cf6ae3ae13e2e5ed4b2f7bbf09bc4bb675d5",
+          "size": 805724
+        },
+        "guice-assistedinject-6.0.0.jar": {
+          "sha256": "f4d264534f213af7beb493273f72f02ef9eb4b229d71a0a80f003b7349dee6f9",
+          "size": 51293
+        },
+        "guice-servlet-6.0.0.jar": {
+          "sha256": "0450043d0770b816957856ff9d08209c31f801a31e820e53e45ac29468514002",
+          "size": 82123
+        },
+        "hamcrest-core-1.3.jar": {
+          "sha256": "66fdef91e9739348df7a096aa384a5685f4e875584cce89386a7a47251c4d8e9",
+          "size": 45024
+        },
+        "httpclient-4.5.2.jar": {
+          "sha256": "0dffc621400d6c632f55787d996b8aeca36b30746a716e079a985f24d8074057",
+          "size": 736658
+        },
+        "httpcore-4.4.4.jar": {
+          "sha256": "f7bc09dc8a7003822d109634ffd3845d579d12e725ae54673e323a7ce7f5e325",
+          "size": 326724
+        },
+        "j2objc-annotations-1.3.jar": {
+          "sha256": "21af30c92267bd6122c0e0b4d20cccb6641a37eaf956c6540ec471d584e64a7b",
+          "size": 8781
+        },
+        "jackson-annotations-2.5.1.jar": {
+          "sha256": "836a18d49b1cc515dde8b14cb7ea2b3ac3fd26b1c914b5a399bca0ecc9fbf4bc",
+          "size": 39817
+        },
+        "jackson-core-2.5.1.jar": {
+          "sha256": "ba80bd8304bc268a573ac424b692f465a7c087db2207daa50979d7ab2751baf6",
+          "size": 229860
+        },
+        "jackson-core-asl-1.9.13.jar": {
+          "sha256": "440a9cb5ca95b215f953d3a20a6b1a10da1f09b529a9ddea5f8a4905ddab4f5a",
+          "size": 232248
+        },
+        "jackson-databind-2.5.1.jar": {
+          "sha256": "0d817bad8b533a61fe0e50b53303d89a1f71b2f92b237d9fe2e314bc4a9b0f90",
+          "size": 1138921
+        },
+        "jackson-jaxrs-1.9.13.jar": {
+          "sha256": "1770570a6ba5c87a4795c0aeb40ee7c5fe5e31df64ef1d4795a0d427796b84bb",
+          "size": 18336
+        },
+        "jackson-mapper-asl-1.9.13.jar": {
+          "sha256": "74e7a07a76f2edbade29312a5a2ebccfa019128bc021ece3856d76197e9be0c2",
+          "size": 780664
+        },
+        "jackson-xc-1.9.13.jar": {
+          "sha256": "2d2905fcec7d1c55b775995617685dbb03672350704d9e40b492eab5b54d0be7",
+          "size": 27084
+        },
+        "jakarta.inject-api-2.0.1.jar": {
+          "sha256": "f7dc98062fccf14126abb751b64fab12c312566e8cbdc8483598bffcea93af7c",
+          "size": 10681
+        },
+        "javax.activation-api-1.2.0.jar": {
+          "sha256": "43fdef0b5b6ceb31b0424b208b930c74ab58fac2ceeb7b3f6fd3aeb8b5ca4393",
+          "size": 56674
+        },
+        "javax.annotation-api-1.3.2.jar": {
+          "sha256": "e04ba5195bcd555dc95650f7cc614d151e4bcd52d29a10b8aa2197f3ab89ab9b",
+          "size": 26586
+        },
+        "javax.inject-1.jar": {
+          "sha256": "91c77044a50c481636c32d916fd89c9118a72195390452c81065080f957de7ff",
+          "size": 2497
+        },
+        "javax.servlet-api-3.1.0.jar": {
+          "sha256": "af456b2dd41c4e82cf54f3e743bc678973d9fe35bd4d3071fa05c7e5333b8482",
+          "size": 95806
+        },
+        "javax.ws.rs-api-2.0.jar": {
+          "sha256": "ca88fcb9ce85aac4f77e42eac486aa7fde6ead6a545d74ccef6089241c84db53",
+          "size": 112758
+        },
+        "jaxb-api-2.3.1.jar": {
+          "sha256": "88b955a0df57880a26a74708bc34f74dcaf8ebf4e78843a28b50eae945732b06",
+          "size": 128076
+        },
+        "jboss-annotations-api_1.2_spec-1.0.0.Final.jar": {
+          "sha256": "bb979cac95ef2748bc85d4b8151bef88b9a203d03068fbe799c6e6162c950780",
+          "size": 19197
+        },
+        "jboss-jaxrs-api_2.0_spec-1.0.1.Beta1.jar": {
+          "sha256": "1218fa20acae20a0cfb618b452e01c9bf2bfa9cb12fadb308a7a3adbdc45d2b5",
+          "size": 120531
+        },
+        "jboss-logging-3.3.0.Final.jar": {
+          "sha256": "e0e0595e7f70c464609095aef9e47a8484e05f2f621c0aa5081c18e3db2d498c",
+          "size": 66802
+        },
+        "jcip-annotations-1.0.jar": {
+          "sha256": "be5805392060c71474bf6c9a67a099471274d30b83eef84bfc4e0889a4f1dcc0",
+          "size": 2254
+        },
+        "jcommander-1.72.jar": {
+          "sha256": "e0de160b129b2414087e01fe845609cd55caec6820cfd4d0c90fabcc7bdb8c1e",
+          "size": 69254
+        },
+        "jetty-client-9.3.11.v20160721.jar": {
+          "sha256": "6ead2ce0e191e105b036db9a44abc99edc78c165077a21bbab73a150cd1d9424",
+          "size": 260660
+        },
+        "jetty-continuation-9.3.11.v20160721.jar": {
+          "sha256": "fe3297049fc1bed6800cf50793645ef035be157b7207655e70131a2dcaf5fa1b",
+          "size": 15769
+        },
+        "jetty-http-9.3.11.v20160721.jar": {
+          "sha256": "067808638b6129cfbd7445d100344eb05d4f375be8bfa547bd4e35cce316fe77",
+          "size": 148566
+        },
+        "jetty-io-9.3.11.v20160721.jar": {
+          "sha256": "33c7429413ea999fcd8fdf8f4590eaf2437e3189a8799478001928b8848491f9",
+          "size": 112071
+        },
+        "jetty-rewrite-9.3.11.v20160721.jar": {
+          "sha256": "4219807d37b2268df09eff6b7eb7ba5ca1a5b14df150526764300fe0a407fe4f",
+          "size": 34019
+        },
+        "jetty-security-9.3.11.v20160721.jar": {
+          "sha256": "6ad79d7edc8205ab0a8e95fcb205b60d8ac0d818c6e6afa05ba1b1bbb22299c9",
+          "size": 94503
+        },
+        "jetty-server-9.3.11.v20160721.jar": {
+          "sha256": "dc8f2e0e1f167aa6aa9b077c26f6147f0c634a8cc87a3144dd3f62bac82d1ab7",
+          "size": 494012
+        },
+        "jetty-servlet-9.3.11.v20160721.jar": {
+          "sha256": "03409dcf7b0d85d29f7d7603e5fe8900462df80496b9f6cd11bf1da6d52e9997",
+          "size": 116571
+        },
+        "jetty-servlets-9.3.11.v20160721.jar": {
+          "sha256": "8d9df4d916d9a602b20c6182d056ae934a636877b7560598f7124d3dd754c2da",
+          "size": 86413
+        },
+        "jetty-util-9.3.11.v20160721.jar": {
+          "sha256": "d5bda0c878cf2b36f74fa000535abdbcfec6a6704ae6791ed6b34a0be0d0c728",
+          "size": 431954
+        },
+        "jline-0.9.94.jar": {
+          "sha256": "d8df0ffb12d87ca876271cda4d59b3feb94123882c1be1763b7faf2e0a0b0cbb",
+          "size": 87325
+        },
+        "jsr305-3.0.2.jar": {
+          "sha256": "766ad2a0783f2687962c8ad74ceecc38a28b9f72a2d085ee438b7813e928d0c7",
+          "size": 19936
+        },
+        "junit-4.12.jar": {
+          "sha256": "59721f0805e223d84b90677887d9ff567dc534d7c502ca903c0c2b17f05c116a",
+          "size": 314932
+        },
+        "libthrift-0.10.0.jar": {
+          "sha256": "8591718c1884ac8001b4c5ca80f349c0a6deec691de0af720c5e3bc3a581dada",
+          "size": 236865
+        },
+        "listenablefuture-9999.0-empty-to-avoid-conflict-with-guava.jar": {
+          "sha256": "b372a037d4230aa57fbeffdef30fd6123f9c0c2db85d0aced00c91b974f33f99",
+          "size": 2199
+        },
+        "logback-classic-1.2.3.jar": {
+          "sha256": "fb53f8539e7fcb8f093a56e138112056ec1dc809ebb020b59d8a36a5ebac37e0",
+          "size": 290339
+        },
+        "logback-core-1.2.3.jar": {
+          "sha256": "5946d837fe6f960c02a53eda7a6926ecc3c758bbdd69aa453ee429f858217f22",
+          "size": 471901
+        },
+        "netty-3.7.0.Final.jar": {
+          "sha256": "aa44be64442b9cbc5edd521476b9f1c272eec6a53dca104cf3032f42ad20ff89",
+          "size": 1208356
+        },
+        "netty-buffer-4.0.52.Final.jar": {
+          "sha256": "ff765973f863cbfc7137ff2ca0d3765224b6d5370ed421a4f3c4c66b24626e11",
+          "size": 234592
+        },
+        "netty-codec-4.0.52.Final.jar": {
+          "sha256": "55825f3e34b20f9fb0e78dc2e2c9f7d00e13d14657418e88e5431562d0386dd2",
+          "size": 151008
+        },
+        "netty-codec-dns-2.0.37.jar": {
+          "sha256": "39c3b61c546444b33690500da1203ee60294ef9a7c5b5f567cfb2cc717ccd9be",
+          "size": 55155
+        },
+        "netty-codec-http-4.0.52.Final.jar": {
+          "sha256": "99e3a087d0347e30c30d5a8d829abba5f8fdc9e66c43a17a70e4d25a5cbf9526",
+          "size": 460925
+        },
+        "netty-common-4.0.52.Final.jar": {
+          "sha256": "5b154c5424807b62a51f3278530c5eaf2c6dfa9c1a4417c2fb8e4e7ceda0bfbc",
+          "size": 398158
+        },
+        "netty-handler-4.0.52.Final.jar": {
+          "sha256": "9695d34837da27d307e860b445b0c922c8eb5cf1837a0f7f0077cb050c830ab7",
+          "size": 358962
+        },
+        "netty-reactive-streams-1.0.8.jar": {
+          "sha256": "a368c024079971086d83c89ff7fbd6a028e6a8185faafd6ab8339e760f0f7aa2",
+          "size": 20938
+        },
+        "netty-resolver-2.0.37.jar": {
+          "sha256": "90c1271f0fc80ea785334c2d04598f305c9cd0871fd41e32bc9ca60c52043be7",
+          "size": 36585
+        },
+        "netty-resolver-dns-2.0.37.jar": {
+          "sha256": "e8320966446ada2ffaee05b38f138cba1ef9c22e33b944d3efb13a566dcd01b4",
+          "size": 89181
+        },
+        "netty-transport-4.0.52.Final.jar": {
+          "sha256": "7a3aed2ae297318eba6d713cc867313220fe1d41608ce6a9627871f58ed7a989",
+          "size": 387718
+        },
+        "netty-transport-native-epoll-4.0.52.Final-linux-x86_64.jar": {
+          "sha256": "0b9ea2848c2cec2c72453d425bb2f96dc744027aba2b8ecf64e343c21b6fbad1",
+          "size": 151894
+        },
+        "objenesis-3.4.jar": {
+          "sha256": "95488102feaf2e2858adf6b299353677dac6c15294006f8ed1c5556f8e3cd251",
+          "size": 49076
+        },
+        "quartz-2.2.2.jar": {
+          "sha256": "739b70bc472f91cbaa8e3e4ce5ec5c8354a43b0d4b16516319f3ffcd7b05920a",
+          "size": 660382
+        },
+        "reactive-streams-1.0.0.jar": {
+          "sha256": "ef867702a614b96eb6c64fb65a8f5e14bdfcabbc1ae056f78a1643f7b79ca0eb",
+          "size": 2042
+        },
+        "resteasy-client-3.1.4.Final.jar": {
+          "sha256": "51a608a464697a68ebcbdd382c2bf46428b5942de4ae1ebc3c9d2ae45b0d8bd7",
+          "size": 175335
+        },
+        "resteasy-guice-3.1.4.Final.jar": {
+          "sha256": "3efac44fa687778c526213fbd7f6afe1e4502a619060932af1b95cf7f2775d92",
+          "size": 20841
+        },
+        "resteasy-jackson-provider-3.1.4.Final.jar": {
+          "sha256": "e9649ce493378e741da9639a47be360547196a4ccdab34f3a67b7ef716148ba0",
+          "size": 7996
+        },
+        "resteasy-jaxrs-3.1.4.Final.jar": {
+          "sha256": "3da64ce6622d037dbb1cb4ae0098429f5b9930199794c42a9e49cd4b9f37e102",
+          "size": 698875
+        },
+        "resteasy-jaxrs-services-3.1.4.Final.jar": {
+          "sha256": "e8512a73bf5d5f911c1d38a8367ffb1b92d604aff3b67914c9c62c895797f461",
+          "size": 2564
+        },
+        "shiro-cache-1.4.0.jar": {
+          "sha256": "abab87532d6139cea5a48aee34a20daa15757917a65c7032976fdc014dd4c46a",
+          "size": 13601
+        },
+        "shiro-config-core-1.4.0.jar": {
+          "sha256": "77e2cf1d210f334cba0e8902d01fd2acbf61b599c39c6cf023241fc6784a82a0",
+          "size": 18037
+        },
+        "shiro-config-ogdl-1.4.0.jar": {
+          "sha256": "d21bf04b78c69748db2fcf0315df00347bda43b65ef0aa83a7e496070c8e34f9",
+          "size": 43303
+        },
+        "shiro-core-1.4.0.jar": {
+          "sha256": "1c1aa41af7a3314678154ff0456d7592bbd00f298ce3a94a417a1bd4bcfd1104",
+          "size": 410541
+        },
+        "shiro-crypto-cipher-1.4.0.jar": {
+          "sha256": "67f8bc6f9dfa11a9c4959284f2f591dbd238ca20e1fbd1964d0c2daa69cf9ec0",
+          "size": 24024
+        },
+        "shiro-crypto-core-1.4.0.jar": {
+          "sha256": "1cba00a55eb65858ba0fd76e515d2177e6b834f37277a76afecd1cad0957d36c",
+          "size": 10873
+        },
+        "shiro-crypto-hash-1.4.0.jar": {
+          "sha256": "3a40fb67aa4c118cb3e47ca339a3094707778f0ea0c9fedca2147c9bfdb8647f",
+          "size": 34298
+        },
+        "shiro-event-1.4.0.jar": {
+          "sha256": "eed623e101d2bc5b29be2c93679504d411eedb2261b95a478cd5140d82734e7c",
+          "size": 19210
+        },
+        "shiro-guice-1.4.0.jar": {
+          "sha256": "a742efd9355202c07987893a28a82b4c7f0044e3cb76634b30e36db1ba669392",
+          "size": 52382
+        },
+        "shiro-lang-1.4.0.jar": {
+          "sha256": "8d78850ff764f72803568bbe0789eee513e2dcee990f465adbfdf0916a10ea9d",
+          "size": 51122
+        },
+        "shiro-web-1.4.0.jar": {
+          "sha256": "92f3fbb4f3425d6aa7cdd5f5fc3160cfeb561ada968b360c86c6fd7afb168364",
+          "size": 150341
+        },
+        "slf4j-api-1.7.25.jar": {
+          "sha256": "18c4a0095d5c1da6b817592e767bb23d29dd2f560ad74df75ff3961dbde25b79",
+          "size": 41203
+        },
+        "sqlite-jdbc-3.53.4.0.jar": {
+          "sha256": "bcb1f51e36f940867e83342f9efbf5968ac44a6bef4d397bb4af7b17b45cd2fb",
+          "size": 12002370
+        },
+        "stringtemplate-3.2.1.jar": {
+          "sha256": "f66ce72e965e5301cb0f020e54d2ba6ad76feb91b3cbfc30dbbf00c06a6df6d7",
+          "size": 148627
+        },
+        "zookeeper-3.4.8.jar": {
+          "sha256": "d47d35b9a10af53b7967ff4851bff832778539eed1e43fae6bfcb1f13576bdf5",
+          "size": 804601
+        }
+      },
+      "checkedAt": "2026-09-17T14:11:33.285132953Z",
+      "distribution": "/home/jordanly/.codex/worktrees/da231709-add9-4468-b3a5-712561554031/aurora/.cache/inplace-build/build/scheduler/install/aurora-scheduler",
+      "java": {
+        "command": [
+          "/home/jordanly/.codex/worktrees/da231709-add9-4468-b3a5-712561554031/aurora/.cache/inplace-build/tools-1158809014/java/jdk-25.0.4.1+1/bin/java",
+          "--version"
+        ],
+        "exitCode": 0,
+        "javaHome": "/home/jordanly/.codex/worktrees/da231709-add9-4468-b3a5-712561554031/aurora/.cache/inplace-build/tools-1158809014/java/jdk-25.0.4.1+1",
+        "output": "openjdk 25.0.4.1 2026-08-18 LTS\nOpenJDK Runtime Environment Temurin-25.0.4.1+1 (build 25.0.4.1+1-LTS)\nOpenJDK 64-Bit Server VM Temurin-25.0.4.1+1 (build 25.0.4.1+1-LTS, mixed mode, sharing)\n",
+        "outputSha256": "2ea09eaf7b3c2db5256b076f18d3758d1f2a5746384c9f6b58a2c5d244864971"
+      },
+      "launchers": {
+        "aurora-scheduler": {
+          "classpathJars": [
+            "aurora-0.23.0-SNAPSHOT.jar",
+            "aurora-api-0.23.0-SNAPSHOT.jar",
+            "commons-0.23.0-SNAPSHOT.jar",
+            "guice-assistedinject-6.0.0.jar",
+            "guice-servlet-6.0.0.jar",
+            "resteasy-guice-3.1.4.Final.jar",
+            "shiro-guice-1.4.0.jar",
+            "guice-6.0.0.jar",
+            "aopalliance-1.0.jar",
+            "logback-classic-1.2.3.jar",
+            "jcommander-1.72.jar",
+            "jackson-databind-2.5.1.jar",
+            "jackson-core-2.5.1.jar",
+            "resteasy-jackson-provider-3.1.4.Final.jar",
+            "resteasy-client-3.1.4.Final.jar",
+            "resteasy-jaxrs-3.1.4.Final.jar",
+            "javax.inject-1.jar",
+            "jetty-rewrite-9.3.11.v20160721.jar",
+            "jetty-servlet-9.3.11.v20160721.jar",
+            "jetty-security-9.3.11.v20160721.jar",
+            "jetty-server-9.3.11.v20160721.jar",
+            "javax.servlet-api-3.1.0.jar",
+            "stringtemplate-3.2.1.jar",
+            "curator-recipes-2.12.0.jar",
+            "curator-framework-2.12.0.jar",
+            "curator-client-2.12.0.jar",
+            "async-http-client-2.0.37.jar",
+            "shiro-web-1.4.0.jar",
+            "zookeeper-3.4.8.jar",
+            "jetty-servlets-9.3.11.v20160721.jar",
+            "quartz-2.2.2.jar",
+            "jaxb-api-2.3.1.jar",
+            "sqlite-jdbc-3.53.4.0.jar",
+            "libthrift-0.10.0.jar",
+            "javax.annotation-api-1.3.2.jar",
+            "gson-2.3.1.jar",
+            "guava-31.0.1-jre.jar",
+            "commons-lang-2.6.jar",
+            "javax.ws.rs-api-2.0.jar",
+            "easymock-5.6.0.jar",
+            "junit-4.12.jar",
+            "logback-core-1.2.3.jar",
+            "async-http-client-netty-utils-2.0.37.jar",
+            "netty-resolver-dns-2.0.37.jar",
+            "netty-resolver-2.0.37.jar",
+            "netty-codec-dns-2.0.37.jar",
+            "shiro-core-1.4.0.jar",
+            "shiro-cache-1.4.0.jar",
+            "shiro-crypto-hash-1.4.0.jar",
+            "shiro-crypto-cipher-1.4.0.jar",
+            "shiro-config-ogdl-1.4.0.jar",
+            "shiro-config-core-1.4.0.jar",
+            "shiro-event-1.4.0.jar",
+            "shiro-crypto-core-1.4.0.jar",
+            "shiro-lang-1.4.0.jar",
+            "slf4j-api-1.7.25.jar",
+            "jakarta.inject-api-2.0.1.jar",
+            "error_prone_annotations-2.18.0.jar",
+            "jackson-annotations-2.5.1.jar",
+            "jboss-annotations-api_1.2_spec-1.0.0.Final.jar",
+            "jboss-logging-3.3.0.Final.jar",
+            "jackson-jaxrs-1.9.13.jar",
+            "jackson-xc-1.9.13.jar",
+            "jackson-mapper-asl-1.9.13.jar",
+            "jackson-core-asl-1.9.13.jar",
+            "jboss-jaxrs-api_2.0_spec-1.0.1.Beta1.jar",
+            "resteasy-jaxrs-services-3.1.4.Final.jar",
+            "activation-1.1.1.jar",
+            "httpclient-4.5.2.jar",
+            "commons-io-2.5.jar",
+            "jcip-annotations-1.0.jar",
+            "antlr-2.7.7.jar",
+            "netty-codec-http-4.0.52.Final.jar",
+            "netty-reactive-streams-1.0.8.jar",
+            "netty-handler-4.0.52.Final.jar",
+            "netty-transport-native-epoll-4.0.52.Final-linux-x86_64.jar",
+            "reactive-streams-1.0.0.jar",
+            "jline-0.9.94.jar",
+            "netty-3.7.0.Final.jar",
+            "jetty-client-9.3.11.v20160721.jar",
+            "jetty-http-9.3.11.v20160721.jar",
+            "jetty-io-9.3.11.v20160721.jar",
+            "jetty-continuation-9.3.11.v20160721.jar",
+            "jetty-util-9.3.11.v20160721.jar",
+            "c3p0-0.9.1.1.jar",
+            "javax.activation-api-1.2.0.jar",
+            "httpcore-4.4.4.jar",
+            "failureaccess-1.0.1.jar",
+            "listenablefuture-9999.0-empty-to-avoid-conflict-with-guava.jar",
+            "jsr305-3.0.2.jar",
+            "checker-qual-3.12.0.jar",
+            "j2objc-annotations-1.3.jar",
+            "byte-buddy-1.17.5.jar",
+            "asm-9.8.jar",
+            "objenesis-3.4.jar",
+            "hamcrest-core-1.3.jar",
+            "commons-logging-1.2.jar",
+            "commons-codec-1.9.jar",
+            "netty-codec-4.0.52.Final.jar",
+            "netty-transport-4.0.52.Final.jar",
+            "netty-buffer-4.0.52.Final.jar",
+            "netty-common-4.0.52.Final.jar",
+            "commons-beanutils-1.9.3.jar",
+            "commons-collections-3.2.2.jar"
+          ],
+          "command": [
+            "/home/jordanly/.codex/worktrees/da231709-add9-4468-b3a5-712561554031/aurora/.cache/inplace-build/build/scheduler/install/aurora-scheduler/bin/aurora-scheduler",
+            "-help"
+          ],
+          "exitCode": 1,
+          "expectedExitCode": 1,
+          "output": "10:11:34,948 |-INFO in ch.qos.logback.classic.LoggerContext[default] - Could NOT find resource [logback-test.xml]\n10:11:34,953 |-INFO in ch.qos.logback.classic.LoggerContext[default] - Could NOT find resource [logback.groovy]\n10:11:34,956 |-INFO in ch.qos.logback.classic.LoggerContext[default] - Found resource [logback.xml] at [jar:file:/home/jordanly/.codex/worktrees/da231709-add9-4468-b3a5-712561554031/aurora/.cache/inplace-build/build/scheduler/install/aurora-scheduler/lib/aurora-0.23.0-SNAPSHOT.jar!/logback.xml]\n10:11:34,999 |-INFO in ch.qos.logback.core.joran.spi.ConfigurationWatchList@3567135c - URL [jar:file:/home/jordanly/.codex/worktrees/da231709-add9-4468-b3a5-712561554031/aurora/.cache/inplace-build/build/scheduler/install/aurora-scheduler/lib/aurora-0.23.0-SNAPSHOT.jar!/logback.xml] is not of type file\n10:11:35,292 |-INFO in ch.qos.logback.core.joran.action.AppenderAction - About to instantiate appender of type [ch.qos.logback.core.ConsoleAppender]\n10:11:35,308 |-INFO in ch.qos.logback.core.joran.action.AppenderAction - Naming appender as [STDERR]\n10:11:35,424 |-INFO in ch.qos.logback.core.joran.action.NestedComplexPropertyIA - Assuming default type [ch.qos.logback.classic.encoder.PatternLayoutEncoder] for [encoder] property\n10:11:35,476 |-INFO in ch.qos.logback.classic.joran.action.LoggerAction - Setting level of logger [h2database] to WARN\n10:11:35,477 |-INFO in ch.qos.logback.classic.joran.action.RootLoggerAction - Setting level of ROOT logger to INFO\n10:11:35,477 |-INFO in ch.qos.logback.core.joran.action.AppenderRefAction - Attaching appender named [STDERR] to Logger[ROOT]\n10:11:35,479 |-INFO in ch.qos.logback.classic.joran.action.ConfigurationAction - End of configuration.\n10:11:35,483 |-INFO in ch.qos.logback.classic.joran.JoranConfigurator@369f73a2 - Registering current configuration as safe fallback point\nUsage: org.apache.aurora.scheduler.app.SchedulerMain [options]\n  Options:\n    -allow_container_volumes\n      Allow passing in volumes in the job. Enabling this could pose a \n      privilege escalation threat.\n      Default: false\n    -allow_docker_parameters\n      Allow to pass docker container parameters in the job.\n      Default: false\n    -allow_gpu_resource\n      Allow jobs to request GPU resources.\n      Default: false\n    -allowed_container_types\n      Container types that are allowed to be used by jobs.\n      Default: [MESOS]\n    -allowed_job_environments\n      Regular expression describing the environments that are allowed to be \n      used by jobs.\n      Default: ^(prod|devel|test|staging\\d*)$\n    -async_slot_stat_update_interval\n      Interval on which to try to update open slot stats.\n      Default: (1, mins)\n    -async_task_stat_update_interval\n      Interval on which to try to update resource consumption stats.\n      Default: (1, hrs)\n    -async_worker_threads\n      The number of worker threads to process async task operations with.\n      Default: 8\n    -backup_dir\n      Directory to store backups under. Will be created if it does not exist.\n    -backup_interval\n      Minimum interval on which to write a storage backup.\n      Default: (1, hrs)\n  * -cluster_name\n      Name to identify the cluster being served.\n    -cron_scheduler_num_threads\n      Number of threads to use for the cron scheduler thread pool.\n      Default: 10\n    -cron_scheduling_max_batch_size\n      The maximum number of triggered cron jobs that can be processed in a \n      batch. \n      Default: 10\n    -cron_start_initial_backoff\n      Initial backoff delay while waiting for a previous cron run to be \n      killed. \n      Default: (5, secs)\n    -cron_start_max_backoff\n      Max backoff delay while waiting for a previous cron run to be killed.\n      Default: (1, mins)\n    -cron_timezone\n      TimeZone to use for cron predictions.\n      Default: GMT\n    -default_docker_parameters\n      Default docker parameters for any job that does not explicitly declare \n      parameters. \n      Default: []\n    -dlog_max_entry_size\n      Specifies the maximum entry size to append to the log. Larger entries \n      will be split across entry Frames.\n      Default: (512, KB)\n    -dlog_snapshot_interval\n      Specifies the frequency at which snapshots of local storage are taken \n      and written to the log.\n      Default: (1, hrs)\n    -enable_cors_for\n      List of domains for which CORS support should be enabled.\n    -enable_mesos_fetcher\n      Allow jobs to pass URIs to the Mesos Fetcher. Note that enabling this \n      feature could pose a privilege escalation threat.\n      Default: false\n    -enable_preemptor\n      Enable the preemptor and preemption\n      Default: true\n    -enable_revocable_cpus\n      Treat CPUs as a revocable resource.\n      Default: true\n    -enable_revocable_ram\n      Treat RAM as a revocable resource.\n      Default: false\n    -enable_update_affinity\n      Enable best-effort affinity of task updates.\n      Default: false\n    -first_schedule_delay\n      Initial amount of time to wait before first attempting to schedule a \n      PENDING task.\n      Default: (1, ms)\n    -flapping_task_threshold\n      A task that repeatedly runs for less than this time is considered to be \n      flapping. \n      Default: (5, mins)\n  * -go_agent_config\n      Go process agent enrollment and SQLite configuration file.\n    -history_max_per_job_threshold\n      Maximum number of terminated tasks to retain in a job history.\n      Default: 100\n    -history_min_retention_threshold\n      Minimum guaranteed time for task history retention before any pruning is \n      attempted. \n      Default: (1, hrs)\n    -history_prune_threshold\n      Time after which the scheduler will prune terminated task history.\n      Default: (2, days)\n    -hold_offers_forever\n      Hold resource offers indefinitely, disabling automatic offer decline \n      settings. \n      Default: false\n    -host_maintenance_polling_interval\n      Interval between polling for pending host maintenance requests.\n      Default: (1, mins)\n    -hostname\n      The hostname to advertise in ZooKeeper instead of the locally-resolved \n      hostname. \n    -http_authentication_mechanism\n      HTTP Authentication mechanism to use.\n      Default: NONE\n      Possible Values: [NONE, BASIC, NEGOTIATE]\n    -http_port\n      The port to start an HTTP server on.  Default value will choose a random \n      port. \n      Default: 0\n    -initial_flapping_task_delay\n      Initial amount of time to wait before attempting to schedule a flapping \n      task. \n      Default: (30, secs)\n    -initial_schedule_penalty\n      Initial amount of time to wait before attempting to schedule a task that \n      has failed to schedule.\n      Default: (1, secs)\n    -initial_task_kill_retry_interval\n      When killing a task, retry after this delay if the agent has not \n      responded, backing off up to transient_task_state_timeout\n      Default: (15, secs)\n    -ip\n      The ip address to listen. If not set, the scheduler will listen on all \n      interfaces. \n    -job_update_history_per_job_threshold\n      Maximum number of completed job updates to retain in a job update \n      history. \n      Default: 10\n    -job_update_history_pruning_interval\n      Job update history pruning interval.\n      Default: (15, mins)\n    -job_update_history_pruning_threshold\n      Time after which the scheduler will prune completed job update history.\n      Default: (30, days)\n    -kerberos_debug\n      Produce additional Kerberos debugging output.\n      Default: false\n    -kerberos_server_keytab\n      Path to the server keytab.\n    -kerberos_server_principal\n      Kerberos server principal to use, usually of the form \n      HTTP/aurora.example.com@EXAMPLE.COM \n    -max_flapping_task_delay\n      Maximum delay between attempts to schedule a flapping task.\n      Default: (5, mins)\n    -max_leading_duration\n      After leading for this duration, the scheduler should commit suicide.\n      Default: (1, days)\n    -max_parallel_coordinated_maintenance\n      Maximum number of coordinators that can be contacted in parallel.\n      Default: 10\n    -max_registration_delay\n      Max allowable delay to allow the driver to register before aborting\n      Default: (1, mins)\n    -max_reschedule_task_delay_on_startup\n      Upper bound of random delay for pending task rescheduling on scheduler \n      startup. \n      Default: (30, secs)\n    -max_saved_backups\n      Maximum number of backups to retain before deleting the oldest backups.\n      Default: 48\n    -max_schedule_attempts_per_sec\n      Maximum number of scheduling attempts to make per second.\n      Default: 40.0\n    -max_schedule_penalty\n      Maximum delay between attempts to schedule a PENDING tasks.\n      Default: (1, mins)\n    -max_sla_duration_secs\n      Maximum duration window for which SLA requirements are to be \n      satisfied.This does not apply to jobs that have a CoordinatorSlaPolicy.\n      Default: (2, hrs)\n    -max_status_update_batch_size\n      The maximum number of status updates that can be processed in a batch.\n      Default: 1000\n    -max_task_event_batch_size\n      The maximum number of task state change events that can be processed in \n      a batch.\n      Default: 300\n    -max_tasks_per_job\n      Maximum number of allowed tasks in a single job.\n      Default: 4000\n    -max_tasks_per_schedule_attempt\n      The maximum number of tasks to pick in a single scheduling attempt.\n      Default: 5\n    -max_update_instance_failures\n      Upper limit on the number of failures allowed during a job update. This \n      helps cap potentially unbounded entries into storage.\n      Default: 20000\n    -min_offer_hold_time\n      Minimum amount of time to hold a resource offer before declining.\n      Default: (5, mins)\n    -min_required_instances_for_sla_check\n      Minimum number of instances required for a job to be eligible for SLA \n      check. This does not apply to jobs that have a CoordinatorSlaPolicy.\n      Default: 20\n    -offer_filter_duration\n      Requested retry delay supplied to the offer transport when resources are \n      declined. Go agents refresh cached offers on demand without applying \n      this delay.\n      Default: (5, secs)\n    -offer_hold_jitter_window\n      Maximum amount of random jitter to add to the offer hold time window.\n      Default: (1, mins)\n    -offer_order\n      Iteration order for offers, to influence task scheduling. Multiple \n      orderings will be compounded together. E.g. CPU,MEMORY,RANDOM would sort \n      first by cpus offered, then memory and finally would randomize any equal \n      offers. \n      Default: [RANDOM]\n    -offer_reservation_duration\n      Time to reserve a agent's offers while trying to satisfy a task \n      preempting another.\n      Default: (3, mins)\n    -offer_set_module\n      Custom Guice module to provide a custom OfferSet.\n      Default: class org.apache.aurora.scheduler.offers.OfferManagerModule$OfferSetModule\n    -offer_static_ban_cache_max_size\n      The number of offers to hold in the static ban cache. If no value is \n      specified, the cache will grow indefinitely. However, entries will \n      expire within 'min_offer_hold_time' + 'offer_hold_jitter_window' of \n      being written.\n      Default: 9223372036854775807\n    -preemption_delay\n      Time interval after which a pending task becomes eligible to preempt \n      other tasks\n      Default: (3, mins)\n    -preemption_reservation_max_batch_size\n      The maximum number of reservations for a task group to be made in a \n      batch. \n      Default: 5\n    -preemption_slot_finder_modules\n      Guice modules for custom preemption slot searching for pending tasks.\n      Default: [class org.apache.aurora.scheduler.preemptor.PendingTaskProcessorModule, class org.apache.aurora.scheduler.preemptor.PreemptionVictimFilterModule]\n    -preemption_slot_hold_time\n      Time to hold a preemption slot found before it is discarded.\n      Default: (5, mins)\n    -preemption_slot_search_initial_delay\n      Initial amount of time to delay preemption slot searching after \n      scheduler start up.\n      Default: (3, mins)\n    -preemption_slot_search_interval\n      Time interval between pending task preemption slot searches.\n      Default: (1, mins)\n    -reconciliation_explicit_batch_interval\n      Interval between explicit batch reconciliation requests.\n      Default: (5, secs)\n    -reconciliation_explicit_batch_size\n      Number of tasks in each explicit execution driver reconciliation \n      request. \n      Default: 1000\n    -reconciliation_explicit_interval\n      Interval for explicit execution driver reconciliation of non-terminal \n      tasks known to the scheduler. Go agents reconcile through watch \n      snapshots. \n      Default: (60, mins)\n    -reconciliation_implicit_interval\n      Interval for implicit execution driver reconciliation of tasks known to \n      agents. Go agents reconcile through watch snapshots.\n      Default: (60, mins)\n    -reconciliation_initial_delay\n      Initial amount of time to delay task reconciliation after scheduler \n      start up.\n      Default: (1, mins)\n    -reconciliation_schedule_spread\n      Difference between explicit and implicit reconciliation intervals \n      intended to create a non-overlapping task reconciliation schedule.\n      Default: (30, mins)\n    -require_docker_use_executor\n      If false, Docker tasks may run without an executor (EXPERIMENTAL)\n      Default: true\n    -scheduling_max_batch_size\n      The maximum number of scheduling attempts that can be processed in a \n      batch. \n      Default: 3\n    -serverset_endpoint_name\n      Name of the scheduler endpoint published in ZooKeeper.\n      Default: http\n  * -serverset_path\n      ZooKeeper ServerSet path to register at.\n    -shiro_after_auth_filter\n      Fully qualified class name of the servlet filter to be applied after the \n      shiro auth filters are applied.\n    -shiro_credentials_matcher\n      The shiro credentials matcher to use (will be constructed by Guice).\n      Default: class org.apache.shiro.authc.credential.SimpleCredentialsMatcher\n    -shiro_ini_path\n      Path to shiro.ini for authentication and authorization configuration.\n    -shiro_realm_modules\n      Guice modules for configuring Shiro Realms.\n      Default: [class org.apache.aurora.scheduler.http.api.security.IniShiroRealmModule]\n    -sla_aware_action_max_batch_size\n      The maximum number of sla aware update actions that can be processed in \n      a batch.\n      Default: 300\n    -sla_aware_kill_non_prod\n      Enables SLA awareness for drain and and update for non-production tasks\n      Default: false\n    -sla_aware_kill_retry_max_delay\n      Maximum amount of time to wait between attempting to perform an \n      SLA-Aware kill on a task.\n      Default: (5, mins)\n    -sla_aware_kill_retry_min_delay\n      Minimum amount of time to wait between attempting to perform an \n      SLA-Aware kill on a task.\n      Default: (1, mins)\n    -sla_coordinator_timeout\n      Timeout interval for communicating with Coordinator.\n      Default: (1, mins)\n    -sla_non_prod_metrics\n      Metric categories collected for non production tasks.\n      Default: []\n    -sla_prod_metrics\n      Metric categories collected for production tasks.\n      Default: [JOB_UPTIMES, PLATFORM_UPTIME, MEDIANS]\n    -sla_stat_refresh_interval\n      The SLA stat refresh interval.\n      Default: (1, mins)\n    -stat_retention_period\n      Time for a stat to be retained in memory before expiring.\n      Default: (1, hrs)\n    -stat_sampling_interval\n      Statistic value sampling interval.\n      Default: (1, secs)\n    -task_assigner_modules\n      Guice modules for customizing task assignment.\n      Default: [class org.apache.aurora.scheduler.scheduling.TaskAssignerImplModule]\n    -thrift_method_interceptor_modules\n      Custom Guice module(s) to provide additional Thrift method interceptors.\n      Default: []\n    -tier_config\n      Configuration file defining supported task tiers, task traits and \n      behaviors. \n    -transient_task_state_timeout\n      The amount of time after which to treat a task stuck in a transient \n      state as LOST.\n      Default: (5, mins)\n    -unavailability_threshold\n      Threshold time, when running tasks should be drained from a host, before \n      a host becomes unavailable. Should be greater than min_offer_hold_time + \n      offer_hold_jitter_window. \n      Default: (6, mins)\n    -update_affinity_reservation_hold_time\n      How long to wait for a reserved agent to reoffer freed up resources.\n      Default: (3, mins)\n    -viz_job_url_prefix\n      URL prefix for job container stats.\n      Default: <empty string>\n    -webhook_config\n      Path to webhook configuration file.\n    -zk_chroot_path\n      chroot path to use for the ZooKeeper connections\n    -zk_connection_timeout\n      The ZooKeeper connection timeout.\n      Default: (10, secs)\n    -zk_digest_credentials\n      user:password to use when authenticating with ZooKeeper.\n  * -zk_endpoints\n      Endpoint specification for the ZooKeeper servers.\n    -zk_in_proc\n      Launches an embedded zookeeper server for local testing causing \n      -zk_endpoints to be ignored if specified.\n      Default: false\n    -zk_session_timeout\n      The ZooKeeper session timeout.\n      Default: (15, secs)\n\nE0917 10:11:36.069 [main, CommandLine] Was passed main parameter '-help' but no main parameter was defined in your arg class \n",
+          "outputSha256": "d11913eec10b213683d323c95c88fb1606924925fe2c429093c89706acf71d13",
+          "unixSha256": "8bab8c8e27140618b021362da81ec4b4e2477e2b024e3a9855c257a77e97436f",
+          "usageVerified": true,
+          "windowsSha256": "e7fbd2251eecaf473161cc59e916e5e203d22103a1ee666ce41c47720f07d62f"
+        },
+        "recovery-tool": {
+          "classpathJars": [
+            "aurora-0.23.0-SNAPSHOT.jar",
+            "aurora-api-0.23.0-SNAPSHOT.jar",
+            "commons-0.23.0-SNAPSHOT.jar",
+            "guice-assistedinject-6.0.0.jar",
+            "guice-servlet-6.0.0.jar",
+            "resteasy-guice-3.1.4.Final.jar",
+            "shiro-guice-1.4.0.jar",
+            "guice-6.0.0.jar",
+            "aopalliance-1.0.jar",
+            "logback-classic-1.2.3.jar",
+            "jcommander-1.72.jar",
+            "jackson-databind-2.5.1.jar",
+            "jackson-core-2.5.1.jar",
+            "resteasy-jackson-provider-3.1.4.Final.jar",
+            "resteasy-client-3.1.4.Final.jar",
+            "resteasy-jaxrs-3.1.4.Final.jar",
+            "javax.inject-1.jar",
+            "jetty-rewrite-9.3.11.v20160721.jar",
+            "jetty-servlet-9.3.11.v20160721.jar",
+            "jetty-security-9.3.11.v20160721.jar",
+            "jetty-server-9.3.11.v20160721.jar",
+            "javax.servlet-api-3.1.0.jar",
+            "stringtemplate-3.2.1.jar",
+            "curator-recipes-2.12.0.jar",
+            "curator-framework-2.12.0.jar",
+            "curator-client-2.12.0.jar",
+            "async-http-client-2.0.37.jar",
+            "shiro-web-1.4.0.jar",
+            "zookeeper-3.4.8.jar",
+            "jetty-servlets-9.3.11.v20160721.jar",
+            "quartz-2.2.2.jar",
+            "jaxb-api-2.3.1.jar",
+            "sqlite-jdbc-3.53.4.0.jar",
+            "libthrift-0.10.0.jar",
+            "javax.annotation-api-1.3.2.jar",
+            "gson-2.3.1.jar",
+            "guava-31.0.1-jre.jar",
+            "commons-lang-2.6.jar",
+            "javax.ws.rs-api-2.0.jar",
+            "easymock-5.6.0.jar",
+            "junit-4.12.jar",
+            "logback-core-1.2.3.jar",
+            "async-http-client-netty-utils-2.0.37.jar",
+            "netty-resolver-dns-2.0.37.jar",
+            "netty-resolver-2.0.37.jar",
+            "netty-codec-dns-2.0.37.jar",
+            "shiro-core-1.4.0.jar",
+            "shiro-cache-1.4.0.jar",
+            "shiro-crypto-hash-1.4.0.jar",
+            "shiro-crypto-cipher-1.4.0.jar",
+            "shiro-config-ogdl-1.4.0.jar",
+            "shiro-config-core-1.4.0.jar",
+            "shiro-event-1.4.0.jar",
+            "shiro-crypto-core-1.4.0.jar",
+            "shiro-lang-1.4.0.jar",
+            "slf4j-api-1.7.25.jar",
+            "jakarta.inject-api-2.0.1.jar",
+            "error_prone_annotations-2.18.0.jar",
+            "jackson-annotations-2.5.1.jar",
+            "jboss-annotations-api_1.2_spec-1.0.0.Final.jar",
+            "jboss-logging-3.3.0.Final.jar",
+            "jackson-jaxrs-1.9.13.jar",
+            "jackson-xc-1.9.13.jar",
+            "jackson-mapper-asl-1.9.13.jar",
+            "jackson-core-asl-1.9.13.jar",
+            "jboss-jaxrs-api_2.0_spec-1.0.1.Beta1.jar",
+            "resteasy-jaxrs-services-3.1.4.Final.jar",
+            "activation-1.1.1.jar",
+            "httpclient-4.5.2.jar",
+            "commons-io-2.5.jar",
+            "jcip-annotations-1.0.jar",
+            "antlr-2.7.7.jar",
+            "netty-codec-http-4.0.52.Final.jar",
+            "netty-reactive-streams-1.0.8.jar",
+            "netty-handler-4.0.52.Final.jar",
+            "netty-transport-native-epoll-4.0.52.Final-linux-x86_64.jar",
+            "reactive-streams-1.0.0.jar",
+            "jline-0.9.94.jar",
+            "netty-3.7.0.Final.jar",
+            "jetty-client-9.3.11.v20160721.jar",
+            "jetty-http-9.3.11.v20160721.jar",
+            "jetty-io-9.3.11.v20160721.jar",
+            "jetty-continuation-9.3.11.v20160721.jar",
+            "jetty-util-9.3.11.v20160721.jar",
+            "c3p0-0.9.1.1.jar",
+            "javax.activation-api-1.2.0.jar",
+            "httpcore-4.4.4.jar",
+            "failureaccess-1.0.1.jar",
+            "listenablefuture-9999.0-empty-to-avoid-conflict-with-guava.jar",
+            "jsr305-3.0.2.jar",
+            "checker-qual-3.12.0.jar",
+            "j2objc-annotations-1.3.jar",
+            "byte-buddy-1.17.5.jar",
+            "asm-9.8.jar",
+            "objenesis-3.4.jar",
+            "hamcrest-core-1.3.jar",
+            "commons-logging-1.2.jar",
+            "commons-codec-1.9.jar",
+            "netty-codec-4.0.52.Final.jar",
+            "netty-transport-4.0.52.Final.jar",
+            "netty-buffer-4.0.52.Final.jar",
+            "netty-common-4.0.52.Final.jar",
+            "commons-beanutils-1.9.3.jar",
+            "commons-collections-3.2.2.jar"
+          ],
+          "command": [
+            "/home/jordanly/.codex/worktrees/da231709-add9-4468-b3a5-712561554031/aurora/.cache/inplace-build/build/scheduler/install/aurora-scheduler/bin/recovery-tool",
+            "--help"
+          ],
+          "exitCode": 1,
+          "expectedExitCode": 1,
+          "output": "Usage: org.apache.aurora.scheduler.storage.durability.RecoveryTool [options]\n  Options:\n    --help\n      Print usage\n  * -backup\n      Read-only source backup file\n  * -from\n      BACKUP for a drained Thrift snapshot; SQLITE for a standalone backup\n      Possible Values: [BACKUP, SQLITE]\n  * -sqlite-destination\n      New file in an existing offline directory; never replaces a database\n  * -to\n      Destination type (SQLITE only)\n      Possible Values: [BACKUP, SQLITE]\n\n",
+          "outputSha256": "08e6674ccaf1fb6ce0f71ee4760f526a578a1c456d9a95e665382ff14a77a2d2",
+          "unixSha256": "736cecddc2a1acbf20cff24b9a0a6ba32e30d4e186d1303a788cafc48a2d5fb7",
+          "usageVerified": true,
+          "windowsSha256": "cc2da7927fef76e0142275f7ce42e36be91ba447b5df2be7f5d83dc0b767d646"
+        }
+      },
+      "runtimeDependencies": {
+        "com/google/common/collect/ImmutableList.class": "guava-31.0.1-jre.jar",
+        "com/google/gson/Gson.class": "gson-2.3.1.jar",
+        "com/google/inject/Guice.class": "guice-6.0.0.jar",
+        "javax/xml/bind/annotation/XmlElement.class": "jaxb-api-2.3.1.jar",
+        "org/apache/thrift/TBase.class": "libthrift-0.10.0.jar",
+        "org/apache/zookeeper/ZooKeeper.class": "zookeeper-3.4.8.jar",
+        "org/eclipse/jetty/server/Server.class": "jetty-server-9.3.11.v20160721.jar",
+        "org/sqlite/JDBC.class": "sqlite-jdbc-3.53.4.0.jar"
+      },
+      "schema": 1,
+      "status": "passed"
+    },
+    "sha256": "1e660bc42bf5cdf274907456173a47dc2fad9d8d9c5641c7e148b2baf35f04db"
+  },
+  "finalDemoRecheck": {
+    "health": "OK",
+    "sameRunningTasks": [
+      {
+        "id": "fixtures-test-health-mvp-demo-0-e344618f-462e-4e59-a0ee-a44dccc32178",
+        "status": 2
+      },
+      {
+        "id": "fixtures-test-health-mvp-demo-1-0c34a39b-41b6-4ab5-88a3-633403e8a604",
+        "status": 2
+      }
+    ],
+    "time": "2026-09-17T14:48:26.031541+00:00"
+  },
+  "finalRuntimeLogs": {
+    "agent-a": {
+      "path": ".cache/hardening02-final-agent-a.log",
+      "sha256": "e44b18bea349f3724b33c7c08ca8300238542e6aa1066208d514356308901c1c"
+    },
+    "agent-b": {
+      "path": ".cache/hardening02-final-agent-b.log",
+      "sha256": "ffec6dadbf50dccb3a2bd94363cbb82ec1cc499bf5531cfff1cd4336ca6bf57d"
+    },
+    "scheduler": {
+      "path": ".cache/hardening02-final-scheduler.log",
+      "sha256": "3db56a0449d21d0587840b5cfe4fe491c82ae88b759179742679c949c6b2b830"
+    }
+  },
+  "healthyServiceDemo": {
+    "path": ".pi-lab/hardening02-final/health-demo.json",
+    "report": {
+      "base": "http://172.24.0.4:8081",
+      "created": "2026-09-17T14:46:38.401175+00:00",
+      "job": "fixtures/test/health-mvp-demo",
+      "ok": true,
+      "schedulerRouteHttpStatus": 200,
+      "tasks": [
+        {
+          "host": "agent-b",
+          "id": "fixtures-test-health-mvp-demo-0-e344618f-462e-4e59-a0ee-a44dccc32178",
+          "logs": {
+            "stderr": {
+              "complete": false,
+              "data": "health-stderr-marker\nxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+              "hasMore": false,
+              "nextOffset": 149,
+              "offset": 0,
+              "stream": "stderr",
+              "taskId": "fixtures-test-health-mvp-demo-0-e344618f-462e-4e59-a0ee-a44dccc32178",
+              "truncated": false
+            },
+            "stdout": {
+              "complete": false,
+              "data": "health-stdout-marker\nxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+              "hasMore": false,
+              "nextOffset": 149,
+              "offset": 0,
+              "stream": "stdout",
+              "taskId": "fixtures-test-health-mvp-demo-0-e344618f-462e-4e59-a0ee-a44dccc32178",
+              "truncated": false
+            }
+          },
+          "status": 2
+        },
+        {
+          "host": "agent-a",
+          "id": "fixtures-test-health-mvp-demo-1-0c34a39b-41b6-4ab5-88a3-633403e8a604",
+          "logs": {
+            "stderr": {
+              "complete": false,
+              "data": "health-stderr-marker\nxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+              "hasMore": false,
+              "nextOffset": 149,
+              "offset": 0,
+              "stream": "stderr",
+              "taskId": "fixtures-test-health-mvp-demo-1-0c34a39b-41b6-4ab5-88a3-633403e8a604",
+              "truncated": false
+            },
+            "stdout": {
+              "complete": false,
+              "data": "health-stdout-marker\nxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+              "hasMore": false,
+              "nextOffset": 149,
+              "offset": 0,
+              "stream": "stdout",
+              "taskId": "fixtures-test-health-mvp-demo-1-0c34a39b-41b6-4ab5-88a3-633403e8a604",
+              "truncated": false
+            }
+          },
+          "status": 2
+        }
+      ]
+    },
+    "sha256": "7d70e0d7a3837b37a85ca4e0bbd32ae8189901f2670ac5ffb86d5b64d9a44c43"
+  },
+  "implementationCommit": "18e3021da0fd1f5a5e99016f587bfddafd9bd088",
+  "javaSourceCommit": "42ad3c6dc28a032cb771a609b6223e32d2fd1559",
+  "javaTests": {
+    "commons": {
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0,
+      "tests": 124
+    },
+    "scheduler": {
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0,
+      "tests": 1375
+    }
+  },
+  "lab": {
+    "binaries": {
+      "agent": {
+        "binarySha256": "fa9ce1d9c854cf4540c1c5874c1bed3c3a9478bf0b6dae5287a902feefa29b54",
+        "build": [
+          "CGO_ENABLED=0",
+          "GOOS=linux",
+          "GOARCH=arm64",
+          "GOTOOLCHAIN=local",
+          "-trimpath",
+          "-buildvcs=false",
+          "-ldflags=-s -w"
+        ],
+        "goVersion": "go version go1.27.1 linux/arm64",
+        "schema": 1,
+        "sourceSha256": "fa16ff543e266d4f518cac62556985a5369bdd4addc7364e241cfae890e45f33"
+      },
+      "helper": {
+        "binarySha256": "6efea655ef9538ebace7686268fab9e687a7b97167d588e0cfc7889fad412e7d",
+        "build": [
+          "CGO_ENABLED=0",
+          "GOOS=linux",
+          "GOARCH=arm64",
+          "GOTOOLCHAIN=local",
+          "-trimpath",
+          "-buildvcs=false",
+          "-ldflags=-s -w"
+        ],
+        "goVersion": "go version go1.27.1 linux/arm64",
+        "schema": 1,
+        "sourceSha256": "aa47c820224ebb3d6374f1bd79f610ff6a59f0eacbbc9381d660aa13170d9ca8"
+      }
+    },
+    "image": "sha256:32d322b19846336d25f755f73618a448e3621982d52c48064e95af8b3dcbc2d9",
+    "jdk": {
+      "release": "IMPLEMENTOR=\"Eclipse Adoptium\"\nIMPLEMENTOR_VERSION=\"Temurin-25.0.4.1+1\"\nJAVA_RUNTIME_VERSION=\"25.0.4.1+1-LTS\"\nJAVA_VERSION=\"25.0.4.1\"\nJAVA_VERSION_DATE=\"2026-08-18\"\nLIBC=\"gnu\"\nMODULES=\"java.base java.compiler java.datatransfer java.xml java.prefs java.desktop java.instrument java.logging java.management java.security.sasl java.naming java.rmi java.management.rmi java.net.http java.scripting java.security.jgss java.transaction.xa java.sql java.sql.rowset java.xml.crypto java.se java.smartcardio jdk.accessibility jdk.internal.jvmstat jdk.attach jdk.charsets jdk.internal.opt jdk.zipfs jdk.compiler jdk.crypto.cryptoki jdk.crypto.ec jdk.dynalink jdk.internal.ed jdk.editpad jdk.internal.vm.ci jdk.graal.compiler jdk.graal.compiler.management jdk.hotspot.agent jdk.httpserver jdk.incubator.vector jdk.internal.le jdk.internal.md jdk.jartool jdk.javadoc jdk.jcmd jdk.management jdk.management.agent jdk.jconsole jdk.jdeps jdk.jdwp.agent jdk.jdi jdk.jfr jdk.jlink jdk.jpackage jdk.jshell jdk.jsobject jdk.jstatd jdk.localedata jdk.management.jfr jdk.naming.dns jdk.naming.rmi jdk.net jdk.nio.mapmode jdk.sctp jdk.security.auth jdk.security.jgss jdk.unsupported jdk.unsupported.desktop jdk.xml.dom\"\nOS_ARCH=\"aarch64\"\nOS_NAME=\"Linux\"\nSOURCE=\".:git:520406d87195\"\nBUILD_SOURCE=\"git:e6ba7dec3d07654074559310376a3ae89da5f4ac\"\nBUILD_SOURCE_REPO=\"https://github.com/adoptium/temurin-build.git\"\nSOURCE_REPO=\"https://github.com/adoptium/jdk25u.git\"\nFULL_VERSION=\"25.0.4.1+1-LTS\"\nSEMANTIC_VERSION=\"25.0.4.1+1\"\nBUILD_INFO=\"OS: Linux Version: 6.8.0-71-generic\"\nJVM_VARIANT=\"Hotspot\"\nJVM_VERSION=\"25.0.4.1+1-LTS\"\nIMAGE_TYPE=\"JDK\"\n",
+      "releaseSha256": "5d5e02af20088898661ea03a17304b2e10c028cb0471820f344c4576c1c59424",
+      "treeSha256": "b3cc501021753578ad473ebf90efed8cb34e37435dd4ba1b8b36589577863ca2"
+    },
+    "path": ".pi-lab/hardening02-final/lab.json",
+    "schedulerDistributionSha256": "29fa8f97d65e820a86a4aef34b2002be80dff10a595b420e7a846330aedbd776",
+    "sha256": "10ee82a2655ef181804fd50d04b8d6c20b024b50fe663a063f94d89eeacbe1a3",
+    "sourceHashes": {
+      "agent": "fa16ff543e266d4f518cac62556985a5369bdd4addc7364e241cfae890e45f33",
+      "helper": "aa47c820224ebb3d6374f1bd79f610ff6a59f0eacbbc9381d660aa13170d9ca8"
+    },
+    "token": "e482952f8dd49d6f"
+  },
+  "limits": [
+    "Single scheduler; production HA deferred.",
+    "Trusted process profile without workload resource isolation.",
+    "TCP readiness/liveness checks do not validate HTTP or application responses.",
+    "Cold replay history, supervisor journals and workload log directories remain retained indefinitely. Offline compaction reclaims free pages without deleting live history.",
+    "Live compaction qualification validates complete offline copies and original-byte preservation; copies are not activated.",
+    "Two-agent ARM64 Pi qualification is not large-cluster performance evidence."
+  ],
+  "offlineCompaction": {
+    "path": ".pi-lab/hardening02-final/compaction-drill.json",
+    "report": {
+      "cases": [
+        {
+          "activated": false,
+          "afterGeneration": 5,
+          "beforeGeneration": 4,
+          "copySha256": "8d9fb4bcc9cc74542dde4bf1f0ecab9b55715198b10d5ddbe8dd1c31b91fedf4",
+          "destination": "/home/jordanly/.codex/worktrees/da231709-add9-4468-b3a5-712561554031/aurora/.pi-lab/hardening02-final/compaction-drill/agent-a/compacted.db",
+          "destinationBytes": 524288,
+          "node": "agent-a",
+          "source": "/home/jordanly/.codex/worktrees/da231709-add9-4468-b3a5-712561554031/aurora/.pi-lab/hardening02-final/agent-a/state/state.db",
+          "sourceBytes": 1048576,
+          "sourceSha256": "dd855cb550b3676337f93f2520f52c1caa38a99a48b4e6a9d46f829b7da9fa95",
+          "sourceUnchanged": true
+        },
+        {
+          "activated": false,
+          "afterGeneration": 4,
+          "beforeGeneration": 3,
+          "copySha256": "99c83ecdd04c7bcbf901cb4a28f4c7c60e3e512712528ed5542a7c87856a20c0",
+          "destination": "/home/jordanly/.codex/worktrees/da231709-add9-4468-b3a5-712561554031/aurora/.pi-lab/hardening02-final/compaction-drill/agent-b/compacted.db",
+          "destinationBytes": 524288,
+          "node": "agent-b",
+          "source": "/home/jordanly/.codex/worktrees/da231709-add9-4468-b3a5-712561554031/aurora/.pi-lab/hardening02-final/agent-b/state/state.db",
+          "sourceBytes": 1048576,
+          "sourceSha256": "4b524c34944526b57687372973d825b2597399b6af44402e3c287670bb664102",
+          "sourceUnchanged": true
+        }
+      ],
+      "contract": "Complete offline copy, original bytes unchanged, original daemon resumed; copy not activated.",
+      "created": "2026-09-17T14:46:33.676202+00:00",
+      "ok": true
+    },
+    "sha256": "0a8afbff73304d6767ba1ce4ff33ba8832d8dc67eb81976082b57d8cd72a0247"
+  },
+  "orchestration": {
+    "finalizationExitCode": 0,
+    "finalizationLog": {
+      "path": ".cache/hardening02-finalization.log",
+      "sha256": "38907b86e3e8168412c8f30f6f7c0e32ee4c567851e5605283bb634b21e0d0c5"
+    },
+    "note": "The long-lived outer exec session reported exit143 when collected. Each of the six acceptance commands recorded exit0 and an independent success receipt; the separate compaction/demo/evidence finalizer exited0. No cause for the outer wrapper termination is asserted.",
+    "phaseCompletionLog": {
+      "path": ".cache/hardening02-final-live.log",
+      "sha256": "53029d21aef8e072da66b4cdd05423605aab0b73660d609f554bd8105b9b2808"
+    },
+    "wrapperExitCodeReportedByExecSession": 143
+  },
+  "qualificationCommit": "18e3021da0fd1f5a5e99016f587bfddafd9bd088",
+  "qualifiedStatus": {
+    "path": ".pi-lab/hardening02-final/qualified-status.json",
+    "report": {
+      "containers": {
+        "agent-a": {
+          "address": "172.24.0.2",
+          "id": "5734d6b6fcc28e5758f8b229daf90ff68bec484235188c46fdae8b0e1c32db87",
+          "running": true
+        },
+        "agent-b": {
+          "address": "172.24.0.3",
+          "id": "490883a20b4c9fa2a4e6f3ad742b4361d33d3034eb194ce9ec3217470e88db2c",
+          "running": true
+        },
+        "scheduler": {
+          "address": "172.24.0.4",
+          "id": "f9984d89eabf284ff0b5b25cd4eaff9fd78f45686a4c1f24a1a6d9aa1dd1a49d",
+          "running": true
+        }
+      },
+      "root": "/home/jordanly/.codex/worktrees/da231709-add9-4468-b3a5-712561554031/aurora/.pi-lab/hardening02-final"
+    },
+    "sha256": "2d0cdb64260a8622135c00cf8500ec1747d27282320ea130bdd12057b2d28ed3"
+  },
+  "schema": 1,
+  "sourceInputs": {
+    "path": "docs/reimagining/hardening02-inputs.json",
+    "sha256": "3817aee59fddab9d85312b4fc25e319a31ade561554f1028f3117e93ea4fa0ce"
+  },
+  "suiteLedger": {
+    "path": "docs/reimagining/hardening02-tests.jsonl",
+    "sha256": "183a79989b2f65b528bfb592e47c11a6eb8e5b2983c32df8070ede9df6d2de17"
+  },
+  "ui": {
+    "failures": 0,
+    "source": "hardening02-full-04.log",
+    "suites": 35,
+    "tests": 150
+  },
+  "upstreamMaster": "11ebaeeb071cb182c388a40755e84f60dda32260"
+}

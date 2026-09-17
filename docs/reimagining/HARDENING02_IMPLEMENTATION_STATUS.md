@@ -30,7 +30,7 @@ contract; ACK or elapsed time alone cannot authorize deletion.
 ## Application health
 
 The existing process executor accepts optional TCP health policy. A process must
-own the IPv4 loopback listener and pass a probe before RUNNING. Startup deadlines
+own an IPv4 listener reachable on loopback and pass a probe before RUNNING. Startup deadlines
 apply independently of probe intervals; early exit before readiness, timeout or
 consecutive failures terminate the process group and report FAILED after cleanup.
 Failure reasons reach original task events and the existing update rollback policy.
@@ -39,7 +39,8 @@ Unconfigured processes retain immediate readiness.
 Fixed health sockets participate in placement alongside CPU/memory reservations,
 including pending delivery, update affinity and agent cleanup. Conflicts select
 another agent or remain pending. Monitoring survives agent daemon restart in the
-per-attempt supervisor. This provides TCP connectivity checks, not HTTP or
+per-attempt supervisor when `--supervise` is enabled, as in the Docker lab.
+This provides TCP connectivity checks, not HTTP or
 application-level response validation. See [health configuration](../operations/go-process-health.md).
 
 ## Task log access
@@ -84,25 +85,61 @@ this change does not infer successful cleanup from an absent journal.
 
 ## Qualification
 
-Qualification is in progress for the implementation published on
-[`codex/in-place-java25`](https://github.com/jordanly/aurora/tree/codex/in-place-java25).
-Final receipts will record exact source, artifacts and fresh two-agent Docker results.
+All six acceptance phases passed on the fresh two-agent ARM64 Docker lab
+`.pi-lab/hardening02-final`, with implementation commit `18e3021da0fd1f5a5e99016f587bfddafd9bd088`.
+The cluster uses the original SchedulerMain, its Java 25 distribution and the
+checksum-recorded Go agents; no external SQLite connection helper was present.
 
-Local behavior checks pass 1,375 scheduler tests and 124 commons tests, with
-zero failures, errors or skips. Instruction coverage is 91.57% and branch coverage
-is 81.09%; the original 87% / 79% thresholds remain unchanged. All Java quality gates, UI lint and 150 tests in 35 suites, packaging and
-installed-launcher verification pass locally. The previous cluster passed smoke and application-health qualification before
-the supervisor startup failure described above. A new cluster will qualify the
-corrected startup behavior and remaining phases.
+| Check | Result |
+| --- | --- |
+| Java behavior | 1,375 scheduler + 124 commons tests; zero failures, errors or skips |
+| Coverage | 91.57% instructions / 81.09% branches; thresholds unchanged at 87% / 79% |
+| Java quality, packaging and installed launchers | Passed |
+| UI | Lint, production build, 150 tests in 35 suites passed |
+| Go | Uncached agent/helper tests, vet and verified binary builds passed |
+| Smoke | Batch completion, two-agent services, rolling update, kill, quota/cron and drain APIs |
+| Application health | Two-agent placement, startup-failure rollback with exact executor restoration, listener-loss failure |
+| Logs | Four 1 MiB streams, 64 pages total, exact SHA256s, truncation/end-page checks; retained after both agents and scheduler restarted |
+| Recovery | Three rounds: graceful scheduler restart, scheduler crash and alternating agent crash; workload identities and PIDs unchanged |
+| Scheduling policy | Failed-update rollback, maintenance replacement and cron execution |
+| Sustained churn | 130 batches / 260 completed tasks; two service identities/PIDs and all daemon generations stable; automatic backup publication retained |
 
-The implementation changes 65 files, adding 4,281 lines and deleting 128 before
-this qualification documentation; 23 changed files contain tests. Review found
-and fixed startup-deadline ordering, monotonic health-stop escalation, UTF-8 page
-boundaries, UI route collisions, test injector bindings and transient supervisor
-journal lock contention. The finalizer regression now checks shared-budget
-behavior instead of timing unrelated task setup against an invalid total bound.
-The watch fixture applies its short response deadline after TLS negotiation,
-so the streaming regression no longer imposes a 20 ms handshake limit.
+All three jobs in [GitHub CI](https://github.com/jordanly/aurora/actions/runs/35233550889) passed on the implementation revision.
+Earlier remote jobs that stopped at pinned Thrift bootstrap are retained as
+failed diagnostics; they are not represented as application test passes.
+The Java/UI/tools sources are unchanged from the final local full-gate revision
+`42ad3c6dc28a032cb771a609b6223e32d2fd1559`; the subsequent supervisor change has
+its own final Go tests, rebuilt artifacts and fresh-cluster qualification.
+
+The offline compaction drill paused each agent, validated a complete copy, checked
+that the original database SHA256 was unchanged, and resumed the original daemon.
+Copies were not activated:
+
+| Agent | Source bytes | Compacted bytes | Original unchanged |
+| --- | ---: | ---: | --- |
+| agent-a | 1,048,576 | 524,288 | Yes |
+| agent-b | 1,048,576 | 524,288 | Yes |
+
+The lab remains running at `http://172.24.0.4:8081` with
+`fixtures/test/health-mvp-demo`: two healthy services on different agents, readable
+stdout/stderr, scheduler health OK and the UI log route available. The bridge is
+private to the Pi. The demo reserves its health port; use a fresh lab for another
+complete acceptance run.
+
+The implementation changes 65 files, adding 4,284 lines and deleting
+128 (+4,156 net), excluding qualification documents under
+`docs/reimagining`. 23 changed files contain tests.
+Astra implemented/reviewed complex journal, health and durability changes; Luna
+handled/reviewed UI and operational documentation. Parent review corrected issues
+and qualified the combined result. Regression coverage includes health-deadline
+ordering, monotonic stop escalation, UTF-8 pagination, UI route collisions,
+SQLite lifetime ownership, journal lock contention and delayed supervisor startup.
+
+Evidence: [qualification receipt](hardening02-evidence.json),
+[source SHA256s](hardening02-inputs.json), [Java test ledger](hardening02-tests.jsonl).
+The receipt identifies the earlier failed diagnostic labs and test failures
+alongside final passing checks, without reusing diagnostic workarounds as final
+qualification.
 
 ## Remaining work
 
