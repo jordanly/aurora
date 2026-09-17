@@ -115,6 +115,62 @@ public class SqliteDatabaseTest {
   }
 
   @Test
+  public void testIdleConnectionKeepsWalOpenWithoutPinningSnapshot() throws Exception {
+    database.close();
+    List<Connection> connections = new ArrayList<>();
+    database = SqliteDatabase.open(path, url -> {
+      Connection connection = DriverManager.getConnection(url);
+      connections.add(connection);
+      return connection;
+    });
+    assertEquals(1, connections.size());
+    Connection anchor = connections.get(0);
+    assertFalse(anchor.isClosed());
+    database.write("retained-wal", () -> {
+      execute("UPDATE test_values SET value='after'");
+      return null;
+    });
+    assertTrue(connections.get(1).isClosed());
+    assertTrue(java.nio.file.Files.exists(path.resolveSibling("scheduler.db-wal")));
+    assertEquals("after", database.read(this::value));
+    assertTrue(connections.get(2).isClosed());
+    assertFalse(anchor.isClosed());
+    // An idle anchor must not hold a read transaction that prevents WAL reset.
+    try (Connection checkpoint = DriverManager.getConnection("jdbc:sqlite:" + path);
+         Statement statement = checkpoint.createStatement();
+         ResultSet result = statement.executeQuery("PRAGMA wal_checkpoint(TRUNCATE)")) {
+      assertTrue(result.next());
+      assertEquals(0, result.getInt(1));
+      assertEquals(0, result.getInt(2));
+      assertEquals(0, result.getInt(3));
+    }
+    database.close();
+    for (Connection connection : connections) {
+      assertTrue(connection.isClosed());
+    }
+    assertFalse(java.nio.file.Files.exists(path.resolveSibling("scheduler.db-wal")));
+    database = SqliteDatabase.open(path);
+    assertEquals("after", database.read(this::value));
+  }
+
+  @Test
+  public void testAnchorCloseFailureRetainsOwnershipUntilSuccessfulRetry() throws Exception {
+    database.close();
+    AtomicBoolean failClose = new AtomicBoolean();
+    database = SqliteDatabase.open(path, url -> interceptClose(
+        DriverManager.getConnection(url), failClose));
+    for (int attempt = 0; attempt < 2; attempt++) {
+      failClose.set(true);
+      expectFailure(StorageException.class, () -> database.close());
+      expectFailure(StorageException.class, () -> database.read(() -> null));
+      expectFailure(StorageException.class, () -> SqliteDatabase.open(path));
+    }
+    database.close();
+    database = SqliteDatabase.open(path);
+    assertEquals("before", database.read(this::value));
+  }
+
+  @Test
   public void testExclusiveOwnershipAndClosedAccess() throws Exception {
     expectFailure(StorageException.class, () -> SqliteDatabase.open(path));
     Path alias = path.resolveSibling("alias.db");
@@ -566,8 +622,10 @@ public class SqliteDatabaseTest {
   public void testInitializationCleanupFailureReleasesOwnershipAfterRetry() throws Exception {
     database.close();
     AtomicBoolean failClose = new AtomicBoolean(true);
+    AtomicBoolean failCommit = new AtomicBoolean(true);
     expectFailure(StorageException.class, () -> SqliteDatabase.open(path,
-        url -> interceptClose(DriverManager.getConnection(url), failClose)));
+        url -> interceptClose(interceptCommit(
+            DriverManager.getConnection(url), failCommit, false), failClose)));
     database = SqliteDatabase.open(path);
     assertEquals("before", database.read(this::value));
   }

@@ -104,6 +104,7 @@ final class SqliteDatabase implements AutoCloseable {
   private final ReentrantLock writer = new ReentrantLock(true);
   private final ThreadLocal<Transaction> current = new ThreadLocal<>();
   private final List<Connection> unclosedConnections = new ArrayList<>();
+  private Connection anchorConnection;
   private long epoch;
   private boolean closed;
   private boolean closing;
@@ -339,6 +340,11 @@ final class SqliteDatabase implements AutoCloseable {
       }
       epoch = scalar(connection, "SELECT epoch FROM storage_owner WHERE singleton=1");
       execute(connection, "COMMIT");
+      // Keep an idle connection attached to WAL for the owner's lifetime. Otherwise the
+      // last transaction's close can take an exclusive cleanup lock while another thread
+      // opens its connection. No transaction remains open here, so checkpoints can progress.
+      anchorConnection = connection;
+      connection = null;
     } catch (SQLException e) {
       primary = e;
       throw new StorageException("Failed to initialize SQLite storage", e);
@@ -779,6 +785,11 @@ final class SqliteDatabase implements AutoCloseable {
           connection.close();
         }
         unclosedConnections.clear();
+      }
+      if (anchorConnection != null) {
+        // Retain the connection and ownership on failure so shutdown can be retried.
+        anchorConnection.close();
+        anchorConnection = null;
       }
       if (ownershipLock.isValid()) {
         ownershipLock.release();
