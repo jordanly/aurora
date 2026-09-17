@@ -17,7 +17,7 @@ import java.lang.annotation.Annotation;
 import java.lang.annotation.Retention;
 import java.util.List;
 
-import javax.inject.Qualifier;
+import jakarta.inject.Qualifier;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.BindingAnnotation;

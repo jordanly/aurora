@@ -1,8 +1,7 @@
 # Aurora agent
 
-This directory is the original integration agent used by the isolated lab. It
-is a standalone Go module and does not depend on the replacement Java scheduler
-or a `build-support/native` tree.
+This standalone Go module executes tasks for Aurora's original `SchedulerMain`.
+The integration lab runs two agents and the Java 25 scheduler in separate containers.
 
 Build the two lab binaries reproducibly from the repository root:
 
@@ -26,7 +25,9 @@ GOCACHE="$PWD/.pi-tools/go-cache" GOMODCACHE="$PWD/.pi-tools/go-mod" \
 
 The agent's local and authenticated HTTPS interfaces are documented in the
 source package and exercised by its Go tests. The lab remains the only supported
-integration boundary for scheduler communication.
+integration boundary for scheduler communication. The enforced Linux workload
+profile and its operator prerequisites are documented in
+[Native process isolation](../docs/operations/native-process-isolation.md).
 
 HTTPS reconciliation publishes at most 128 simultaneous reservations. New Run
 admissions at that bound return retryable HTTP 503 without recording a command
@@ -42,27 +43,69 @@ on `delta`. A client must consume and commit all observation pages before treati
 the reservation inventory as reconciled. The existing scheduler follows these
 rules. Local inspection continues to expose full retained history.
 
-Durable command results, complete historical attempt bodies, tombstones, and
-sequence counters remain permanent for replay protection across ACK and restart.
-Opening an older journal atomically migrates its monolithic snapshot to indexed,
-checksummed bbolt history buckets. Older binaries reject the new storage layout.
-Admission and daemon polling read the hot snapshot plus targeted history entries;
-unchanged history entries are not rewritten. Hot state contains reservations,
-pending Stop processing and supervisor acknowledgments, and unpruned observations
-with their command results. ACK prunes that observation backlog, never replay
-metadata. Local full inspection and startup integrity validation still scan all
-history; indexed attempt lookup also supports completed-attempt log reads.
+Durable command results, attempt bodies, Stop tombstones and sequence counters
+remain replay evidence until a coordinated scheduler retirement barrier. ACK alone
+never deletes that evidence. Indexed, checksummed bbolt history keeps the hot
+snapshot small; startup and full inspection validate retained cold history.
 
-This bounds lifetime-history costs in the running daemon once pending work and
-observations are drained. It does not bound disk usage: full cold attempt bodies,
-command results, and sequence counters grow permanently. bbolt reuses freed pages
-but does not shrink the database file automatically. Bounded bulky-history
-retention remains future work. Per-attempt supervisor execution-event
-history also remains retained in its child journal. A legacy journal with more than
-128 actual reservations still returns 503 for state/watch rather than hiding
-reservations. Stop delivery and execution cleanup remain available; inventory
-recovers after cleanup reduces reservations to the bound. Do not delete its
-journal or tombstones to recover capacity.
+The upgraded scheduler automatically enables ordered-ticket retention on a fresh,
+quiescent journal. For an existing journal it first durably fences new launches
+and withholds offers, while existing Stop delivery and cleanup continue. Drain
+legacy services once: activation requires no scheduler active/pending commands,
+no agent reservations, no unacknowledged observations and no live/unacknowledged
+supervisors. The activation transaction discards legacy replay rows and permanently
+rejects legacy deliveries. Do not delete journal files to bypass this barrier.
+Older scheduler/agent binaries fail closed on the new SQLite schema, snapshot
+metadata or ticket-bearing protocol identities.
+
+After activation, each Run/Stop pair carries one immutable, durably allocated
+per-node ticket. The scheduler keeps the most recent 64 eligible completed
+attempts by default; set JVM `-Daurora.go.retained-completed=N` (0–896) to change
+this. Retirement requires committed terminal cleanup and no pending command,
+then freezes further scheduler intent for that ticket. The agent independently
+checks reservations, observation receipt and supervisor exit before retirement.
+Compact disjoint retired-ticket intervals reject replay forever without retaining
+individual old commands. A long-lived ticket does not pin later completed tickets.
+Helper event journals durably prune acknowledged prefixes using a persistent event
+base. Above 256 queued helper events or 8192 node observations, new readiness-only
+changes coalesce into one durable latest-readiness slot per attempt. Already
+queued events stay immutable; ACK/reconnection publishes the latest readiness with
+a fresh sequence. Terminal, health-failure, Stop and cleanup facts are never
+coalesced, and new ticket admission backpressures at the observation threshold.
+Health probing and failure deadlines continue while readiness publication waits.
+The finite existing attempt window retains headroom for its remaining control and
+terminal transitions, so the thresholds are not hard byte quotas.
+Retirement replies may confirm only the currently eligible subset; other tickets
+remain fenced and retry. Lost replies and restart replay the same barrier safely.
+
+At most 1024 unretired tickets, two command identities per ticket and 1024 retired
+intervals are admitted per agent. New admissions backpressure at capacity; existing
+Stop delivery and cleanup remain available. The scheduler caps enrollment records
+at 128 and pins each node's incarnation/journal scope. Ordinary daemon/scheduler
+restarts reuse that scope. Changing it in-place is rejected.
+
+Retirement atomically replaces cold command/attempt/sequence rows with the compact
+replay fence and a durable artifact deletion queue. Only then are completed log,
+work and supervisor directories deleted; symlink roots are rejected and traversal
+is confined to the runtime root. Isolation cleanup must also succeed. The canonical
+runtime root is pinned on the first upgraded runtime open; later root changes fail
+before execution or GC. For the initial legacy upgrade, supply the original work
+root. Failed or interrupted deletion keeps its metadata and blocks new ticket
+admission until retry, including after restart. SQLite outbox and per-attempt receipt watermarks
+are deleted only after the agent confirms the barrier. Global receipt payloads
+are replaced by one durable cursor per enrolled journal; replay below that cursor
+fails closed. Acknowledged supervisor child journals are removed with their attempt.
+
+The configured completed count is a retention target, not a disk quota: unfinished
+cleanup, undelivered commands and failed artifact removal retain their bounded
+window. With the 1024-ticket maximum, workload log payload alone is bounded by
+`2048 * --log-bytes` per agent (2 GiB at the default, 32 GiB at the maximum), plus
+bounded command/attempt/observation metadata and filesystem/database overhead.
+Preexisting legacy files are an inherited high-water mark until migration drains.
+bbolt reuses freed pages but does not shrink its file automatically; compact the
+stopped journal to recover that historical high-water disk allocation. Operator
+backups and arbitrary files outside the managed runtime directories are separate
+from this retention policy.
 
 Offline physical compaction reclaims unused bbolt pages without deleting history:
 
@@ -83,5 +126,5 @@ Publication persists the new owner marker before publishing the database. A cras
 between those steps can leave a marker-only output, which deliberately cannot be
 opened or silently re-enrolled. The source remains usable; choose another unused
 output path to retry. A crash can also leave a private `.aurora-compact-*` staging
-directory. Compaction does not delete workload logs, bound permanent replay history,
-or automatically reclaim space in separate per-attempt supervisor journals.
+directory. Compaction does not perform the coordinated retention barrier or delete workload
+logs; normal retention removes eligible per-attempt supervisor journals.

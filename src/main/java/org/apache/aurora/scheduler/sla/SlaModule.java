@@ -15,11 +15,13 @@ package org.apache.aurora.scheduler.sla;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
+import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import javax.inject.Inject;
-import javax.inject.Qualifier;
+
+import jakarta.inject.Inject;
+import jakarta.inject.Qualifier;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
@@ -138,11 +140,11 @@ public class SlaModule extends AbstractModule {
 
     DefaultAsyncHttpClientConfig config = new DefaultAsyncHttpClientConfig.Builder()
         .setThreadPoolName("SlaManager-AsyncHttpClient")
-        .setConnectTimeout(options.slaCoordinatorTimeout.as(Time.MILLISECONDS).intValue())
+        .setConnectTimeout(Duration.ofMillis(options.slaCoordinatorTimeout.as(Time.MILLISECONDS)))
         .setHandshakeTimeout(options.slaCoordinatorTimeout.as(Time.MILLISECONDS).intValue())
         .setSslSessionTimeout(options.slaCoordinatorTimeout.as(Time.MILLISECONDS).intValue())
-        .setReadTimeout(options.slaCoordinatorTimeout.as(Time.MILLISECONDS).intValue())
-        .setRequestTimeout(options.slaCoordinatorTimeout.as(Time.MILLISECONDS).intValue())
+        .setReadTimeout(Duration.ofMillis(options.slaCoordinatorTimeout.as(Time.MILLISECONDS)))
+        .setRequestTimeout(Duration.ofMillis(options.slaCoordinatorTimeout.as(Time.MILLISECONDS)))
         .setKeepAliveStrategy(new DefaultKeepAliveStrategy())
         .build();
     AsyncHttpClient httpClient = asyncHttpClient(config);
@@ -169,7 +171,7 @@ public class SlaModule extends AbstractModule {
             options.maxParallelCoordinators,
             "SlaManager-%d", LOG));
 
-    bind(SlaManager.class).in(javax.inject.Singleton.class);
+    bind(SlaManager.class).in(jakarta.inject.Singleton.class);
     SchedulerServicesModule.addSchedulerActiveServiceBinding(binder()).to(SlaManager.class);
   }
 

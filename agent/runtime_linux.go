@@ -76,6 +76,11 @@ func LaunchHelper() error {
 	if body["kind"] != "Run" {
 		return errors.New("helper requires Run")
 	}
+	if os.Getenv("AURORA_INTERNAL_ISOLATION") == "1" {
+		if e := enterIsolation(os.NewFile(6, "isolation")); e != nil {
+			return e
+		}
+	}
 	p := body["assignment"].(map[string]any)
 	argv := make([]string, len(p["argv"].([]any)))
 	for i, a := range p["argv"].([]any) {
@@ -118,6 +123,11 @@ func LaunchHelper() error {
 	spec.Close()
 	if os.Getppid() != parent {
 		return errors.New("launch parent lost")
+	}
+	if os.Getenv("AURORA_INTERNAL_ISOLATION") == "1" {
+		if e := unix.CloseRange(3, ^uint(0), unix.CLOSE_RANGE_CLOEXEC); e != nil {
+			return e
+		}
 	}
 	return syscall.Exec(argv[0], argv, env)
 }

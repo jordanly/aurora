@@ -13,13 +13,13 @@
  */
 package org.apache.aurora.scheduler.preemptor;
 
+import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import com.google.common.base.Ticker;
 import com.google.common.cache.Cache;
@@ -71,7 +71,7 @@ public class BiCache<K, V> {
 
     requireNonNull(clock);
     this.cache = CacheBuilder.newBuilder()
-        .expireAfterWrite(settings.expireAfter.as(Time.MINUTES), TimeUnit.MINUTES)
+        .expireAfterWrite(Duration.ofMinutes(settings.expireAfter.as(Time.MINUTES)))
         .ticker(new Ticker() {
           @Override
           public long read() {

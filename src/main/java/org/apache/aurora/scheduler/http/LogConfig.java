@@ -18,12 +18,12 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-import javax.ws.rs.FormParam;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
+import jakarta.ws.rs.FormParam;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
 
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.Lists;
@@ -52,7 +52,7 @@ public class LogConfig {
       Level.INFO.levelStr,
       Level.DEBUG.levelStr,
       Level.TRACE.levelStr,
-      Level.ALL.levelStr,
+      "ALL", // Retain the legacy UI alias for TRACE without the deprecated constant.
       "INHERIT" // Display value for a null level, the logger inherits from its ancestor.
   );
 

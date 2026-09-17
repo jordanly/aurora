@@ -100,7 +100,7 @@ func save(b *bolt.Bucket, st State) error {
 		if err := putHistory(buckets["attempts"], key, value); err != nil {
 			return err
 		}
-		if value.Reserved() || (value.Body["kind"] == "Stop" && value.Execution == nil) || (value.Supervisor != nil && !value.Supervisor.Acknowledged) {
+		if value.PendingReadiness || value.Reserved() || (value.Body["kind"] == "Stop" && value.Execution == nil) || (value.Supervisor != nil && !value.Supervisor.Acknowledged) {
 			hot.Attempts[key] = value
 			hot.Sequences[key] = st.Sequences[key]
 		}

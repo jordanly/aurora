@@ -36,7 +36,7 @@ import org.apache.aurora.scheduler.storage.Storage;
 import org.apache.aurora.scheduler.storage.Storage.NonVolatileStorage;
 import org.apache.aurora.scheduler.storage.backup.BackupModule;
 import org.apache.aurora.scheduler.storage.log.SnapshotterImpl;
-import org.apache.shiro.io.ResourceUtils;
+import org.apache.shiro.lang.io.ResourceUtils;
 
 /**
  * A main class that runs the scheduler in local mode, using fakes for external components.

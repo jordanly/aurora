@@ -30,7 +30,7 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -68,6 +68,7 @@ import org.apache.aurora.scheduler.storage.entities.IHostAttributes;
 import org.apache.aurora.scheduler.storage.entities.IResource;
 import org.apache.aurora.scheduler.storage.sqlite.SqliteEffects.Command;
 import org.apache.aurora.scheduler.storage.sqlite.SqliteEffects.ReceiptKey;
+import org.apache.aurora.scheduler.storage.sqlite.SqliteEffects.Retiring;
 import org.apache.aurora.scheduler.storage.sqlite.SqliteStorage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -99,6 +100,9 @@ final class GoAgentDriver extends AbstractIdleService
   private final java.util.Map<String, Inventory> inventories = new ConcurrentHashMap<>();
   private final java.util.Map<String, Long> offeredAt = new ConcurrentHashMap<>();
   private volatile boolean closing;
+  private final java.util.Map<String, Object> retentionLocks = new ConcurrentHashMap<>();
+  private final Set<String> retentionValidated = ConcurrentHashMap.newKeySet();
+  private final int retainedCompleted = Integer.getInteger("aurora.go.retained-completed", 64);
 
   private static final class Inventory {
     private ObjectNode attempts = WireJson.object();
@@ -128,6 +132,8 @@ final class GoAgentDriver extends AbstractIdleService
                 com.google.inject.Provider<OfferManager> offers,
                 com.google.inject.Provider<StateManager> stateManager,
                 EventSink registered, AgentTransport client, boolean autoPoll) {
+    WireJson.require(retainedCompleted >= 0 && retainedCompleted <= 896,
+        "aurora.go.retained-completed must be between 0 and 896");
     this.autoPoll = autoPoll;
     this.config = config;
     this.storage = storage;
@@ -270,6 +276,7 @@ final class GoAgentDriver extends AbstractIdleService
       try {
         boolean pending = false;
         if (isRunning()) {
+          retainHistory(node);
           refreshOffer(node, inventory);
           dispatchIfPending(node);
           pending = hasPending(node);
@@ -279,6 +286,8 @@ final class GoAgentDriver extends AbstractIdleService
       } catch (InterruptedException e) {
         Thread.currentThread().interrupt();
       } catch (Exception e) {
+        cancelOffer(node);
+        dispatchStopsAfterFailure(node);
         LOG.warn("Agent {} local dispatch failed: {}", node.name(), e.toString());
         try {
           inventory.wake.tryAcquire(1, TimeUnit.SECONDS);
@@ -335,7 +344,7 @@ final class GoAgentDriver extends AbstractIdleService
             synchronized (inventory) {
               ObjectNode attempts = "snapshot".equals(kind)
                   ? WireJson.object() : inventory.attempts.deepCopy();
-              frame.path("state").path("attempts").fields().forEachRemaining(
+              frame.path("state").path("attempts").properties().forEach(
                   entry -> attempts.set(entry.getKey(), entry.getValue()));
               WireJson.require(attempts.size() <= 128, "Merged attempt inventory exceeds bound");
               for (JsonNode attempt : attempts) {
@@ -359,6 +368,9 @@ final class GoAgentDriver extends AbstractIdleService
             first = false;
             retrySeconds = 1;
             if (!frame.path("hasMore").asBoolean()) {
+              if (!inventory.initial.isDone()) {
+                retainHistory(node);
+              }
               inventory.initial.complete(null);
               inventory.wake.release();
             }
@@ -416,6 +428,10 @@ final class GoAgentDriver extends AbstractIdleService
         .put("journal", node.journal()).put("committedCursor", Long.toString(next));
     ACK_REQUESTS.incrementAndGet();
     client.request(node, "/v1/ack", ack, epoch, session);
+    storage.write(stores -> {
+      sqlite.effects().pruneReceipts(node.name(), journalScope(node));
+      return null;
+    });
   }
 
   void tick() {
@@ -428,6 +444,7 @@ final class GoAgentDriver extends AbstractIdleService
         dispatch(node);
       } catch (Exception e) {
         cancelOffer(node);
+        dispatchStopsAfterFailure(node);
         LOG.warn("Agent {} exchange failed; its reservations are retained: {}",
             node.name(), e.toString());
       }
@@ -452,6 +469,7 @@ final class GoAgentDriver extends AbstractIdleService
       acknowledge(node, next);
       after = next;
       if (!response.path("hasMore").asBoolean()) {
+        retainHistory(node);
         if (advertise) {
           offer(node, response.path("state").path("attempts"));
         }
@@ -470,7 +488,7 @@ final class GoAgentDriver extends AbstractIdleService
         && "scheduler".equals(actual.path("peer").asText())
         && node.cpuMillis() == actual.path("cpuMillis").asLong()
         && node.memoryBytes() == actual.path("memoryBytes").asLong(), "Agent enrollment differs");
-    node.target().fields().forEachRemaining(entry -> WireJson.require(
+    node.target().properties().forEach(entry -> WireJson.require(
         entry.getValue().equals(actual.path(entry.getKey())), "Agent target differs"));
   }
 
@@ -528,6 +546,15 @@ final class GoAgentDriver extends AbstractIdleService
     WireJson.require(sequence == Math.incrementExact(previous), "Attempt sequence gap");
     sqlite.effects().recordReceipt(new ReceiptKey(attemptScope, journalScope(node), sequence),
         1, WireJson.bytes(observation));
+    if (observation.path("identity").has("ticket")) {
+      if ("complete".equals(observation.path("cleanup").asText())
+          && Set.of("succeeded", "failed", "lost", "stopped")
+              .contains(observation.path("state").asText())) {
+        sqlite.effects().completeTicket(node.name(),
+            WireJson.counter(observation.path("identity"), "ticket"));
+      }
+      sqlite.effects().pruneReceipts(attemptScope, journalScope(node));
+    }
     ScheduleStatus status = switch (observation.path("state").asText()) {
       case "running" -> observation.path("ready").asBoolean() ? ScheduleStatus.RUNNING : null;
       case "succeeded" -> ScheduleStatus.FINISHED;
@@ -546,6 +573,10 @@ final class GoAgentDriver extends AbstractIdleService
 
   private void offer(GoAgentConfig.Node node, JsonNode inventory) {
     storage.write(stores -> {
+      if (!sqlite.effects().hasTicketCapacity(node.name())) {
+        cancelOffer(node);
+        return null;
+      }
       Set<String> reserved = new HashSet<>();
       Set<String> occupiedPorts = new HashSet<>();
       for (JsonNode attempt : inventory) {
@@ -658,6 +689,16 @@ final class GoAgentDriver extends AbstractIdleService
     WireJson.require(isRunning() && task instanceof GoTaskFactory.Launch, "Go driver not running");
     GoTaskFactory.Launch launch = (GoTaskFactory.Launch) task;
     byte[] body = launch.body().getBytes(StandardCharsets.US_ASCII);
+    long ticket = sqlite.effects().allocateTicket(launch.agentId(), launch.taskId());
+    if (ticket != 0) {
+      try {
+        ObjectNode retained = (ObjectNode) WireJson.parse(body);
+        ((ObjectNode) retained.path("identity")).put("ticket", Long.toString(ticket));
+        body = WireJson.bytes(retained);
+      } catch (IOException e) {
+        throw new IllegalArgumentException("Invalid launch body", e);
+      }
+    }
     sqlite.effects().enqueue(new Command(GoTaskFactory.identity("r-", launch.taskId()),
         launch.agentId(), launch.taskId(), "Run", 1, body));
   }
@@ -672,6 +713,9 @@ final class GoAgentDriver extends AbstractIdleService
 
   private void enqueueStop(String taskId) {
     // State transitions join their outer transaction; KillRetry also calls outside a write.
+    if (sqlite.effects().retiringTask(taskId)) {
+      return;
+    }
     Optional<Command> run = sqlite.effects().command(GoTaskFactory.identity("r-", taskId));
     if (run.isEmpty()) {
       return; // No committed or uncommitted launch exists for this task.
@@ -687,14 +731,16 @@ final class GoAgentDriver extends AbstractIdleService
         taskId, "Stop", 1, WireJson.bytes(stop)));
   }
 
-  private Optional<Command> selectCommand(GoAgentConfig.Node node) {
+  private Optional<Command> selectCommand(GoAgentConfig.Node node, boolean stopsOnly) {
     return storage.write(stores -> {
       Optional<Command> selected = Optional.empty();
       for (int count = 0; count < 16 && isRunning() && selected.isEmpty(); count++) {
         // A Run can wait for reservation capacity. Stops must still reach the agent to release
         // that capacity, even when their intent was committed after the blocked Run.
-        var next = sqlite.effects().pendingStops(node.name(), 1).stream().findFirst()
-            .or(() -> sqlite.effects().pending(node.name(), 1).stream().findFirst());
+        var next = sqlite.effects().pendingStops(node.name(), 1).stream().findFirst();
+        if (next.isEmpty() && !stopsOnly) {
+          next = sqlite.effects().pending(node.name(), 1).stream().findFirst();
+        }
         if (next.isEmpty()) {
           return Optional.empty();
         }
@@ -713,9 +759,27 @@ final class GoAgentDriver extends AbstractIdleService
     });
   }
 
+  private void dispatchStopsAfterFailure(GoAgentConfig.Node node) {
+    if (!isRunning() || Thread.currentThread().isInterrupted()) {
+      return;
+    }
+    try {
+      if (storage.read(stores -> sqlite.effects().pendingStops(node.name(), 1).isEmpty())) {
+        return;
+      }
+      dispatch(node, true);
+    } catch (RuntimeException failure) {
+      LOG.warn("Agent {} Stop dispatch unavailable: {}", node.name(), failure.toString());
+    }
+  }
+
   private void dispatch(GoAgentConfig.Node node) {
+    dispatch(node, false);
+  }
+
+  private void dispatch(GoAgentConfig.Node node, boolean stopsOnly) {
     for (int count = 0; count < 16; count++) {
-      Optional<Command> selected = selectCommand(node);
+      Optional<Command> selected = selectCommand(node, stopsOnly);
       if (selected.isEmpty() || !isRunning()) {
         return;
       }
@@ -733,6 +797,9 @@ final class GoAgentDriver extends AbstractIdleService
         COMMAND_REQUESTS.incrementAndGet();
         JsonNode result = client.request(node, "/v1/deliver", delivery, epoch, session);
         storage.write(stores -> {
+          if (sqlite.effects().command(command.id()).isEmpty() && retiredCommand(command)) {
+            return null; // A superseded in-flight reply arrived after durable retirement.
+          }
           WireJson.require(command.id().equals(result.path("command").asText())
               && WireJson.hash(command.payload()).equals(result.path("bodySha256").asText()),
               "Command receipt differs");
@@ -766,6 +833,140 @@ final class GoAgentDriver extends AbstractIdleService
         Thread.currentThread().interrupt();
         return;
       }
+    }
+  }
+
+  private boolean retiredCommand(Command command) {
+    JsonNode identity = parse(command).path("identity");
+    var retention = sqlite.effects().retention(command.agentId());
+    if (retention.isEmpty() || !retention.get().enabled()) {
+      return false;
+    }
+    // The quiescent activation barrier permanently retires every legacy identity.
+    if (!identity.has("ticket")) {
+      return true;
+    }
+    long ticket = WireJson.counter(identity, "ticket");
+    try {
+      JsonNode ranges = WireJson.parse(retention.get().retired()
+          .getBytes(StandardCharsets.US_ASCII));
+      for (JsonNode range : ranges) {
+        if (WireJson.counter(range, "first") <= ticket
+            && WireJson.counter(range, "last") >= ticket) {
+          return true;
+        }
+      }
+      return false;
+    } catch (IOException e) {
+      throw new IllegalArgumentException("Invalid durable retirement fence", e);
+    }
+  }
+
+  private void retainHistory(GoAgentConfig.Node node) throws IOException, InterruptedException {
+    synchronized (retentionLocks.computeIfAbsent(node.name(), ignored -> new Object())) {
+      var prepared = storage.write(stores -> {
+        var current = sqlite.effects().retention(node.name());
+        sqlite.effects().beginRetention(node.name(), journalScope(node));
+        if (current.isEmpty() || !current.get().enabled()) {
+          boolean active = stores.getTaskStore().fetchTasks(Query.unscoped()).stream().anyMatch(
+              task -> node.name().equals(task.getAssignedTask().getSlaveId())
+                  && Tasks.isActive(task.getStatus()));
+          if (active || !sqlite.effects().pending(node.name(), 1).isEmpty()) {
+            return false;
+          }
+        }
+        return true;
+      });
+      if (!prepared) {
+        return;
+      }
+      var before = storage.read(stores -> sqlite.effects().retention(node.name()).orElseThrow());
+      var retiring = storage.write(stores -> before.enabled()
+          ? sqlite.effects().prepareRetirement(node.name(), retainedCompleted)
+          : List.<Retiring>of());
+      if (before.enabled() && retiring.isEmpty() && retentionValidated.contains(node.name())) {
+        return;
+      }
+      ObjectNode request = WireJson.object().put("journal", node.journal())
+          .put("activate", !before.enabled());
+      var tickets = request.putArray("tickets");
+      retiring.forEach(attempt -> tickets.add(Long.toString(attempt.ticket())));
+      JsonNode response = client.request(node, "/v1/retention", request, epoch, session);
+      WireJson.fields(response, "version", "retired", "garbage");
+      WireJson.require(response.path("version").asInt() == 1
+          && response.path("garbage").isArray() && response.path("garbage").isEmpty()
+          && response.path("retired").isArray() && response.path("retired").size() <= 1024,
+          "Invalid agent retirement barrier");
+      JsonNode ranges = response.path("retired");
+      long previous = -1;
+      for (JsonNode range : ranges) {
+        WireJson.fields(range, "first", "last");
+        long first = WireJson.counter(range, "first");
+        long last = WireJson.counter(range, "last");
+        WireJson.require(first > 0 && last >= first && first > previous + 1
+            && last < before.nextTicket(), "Invalid or unknown retired ticket range");
+        previous = last;
+      }
+      JsonNode prior = WireJson.parse(before.retired().getBytes(StandardCharsets.US_ASCII));
+      List<long[]> authorized = new java.util.ArrayList<>();
+      for (JsonNode range : prior) {
+        authorized.add(new long[] {WireJson.counter(range, "first"),
+            WireJson.counter(range, "last")});
+      }
+      for (var attempt : retiring) {
+        authorized.add(new long[] {attempt.ticket(), attempt.ticket()});
+      }
+      authorized.sort(java.util.Comparator.comparingLong(range -> range[0]));
+      List<long[]> merged = new java.util.ArrayList<>();
+      for (long[] range : authorized) {
+        if (!merged.isEmpty() && range[0] <= merged.getLast()[1] + 1) {
+          merged.getLast()[1] = Math.max(merged.getLast()[1], range[1]);
+        } else {
+          merged.add(range.clone());
+        }
+      }
+      for (JsonNode range : ranges) {
+        long first = WireJson.counter(range, "first");
+        long last = WireJson.counter(range, "last");
+        WireJson.require(merged.stream().anyMatch(
+            allowed -> allowed[0] <= first && allowed[1] >= last),
+            "Agent retired a ticket outside the durable retirement request");
+      }
+      for (JsonNode range : prior) {
+        long first = WireJson.counter(range, "first");
+        long last = WireJson.counter(range, "last");
+        boolean covered = false;
+        for (JsonNode now : ranges) {
+          covered |= WireJson.counter(now, "first") <= first
+              && WireJson.counter(now, "last") >= last;
+        }
+        WireJson.require(covered, "Agent retirement state rolled back");
+      }
+      var confirmed = new java.util.ArrayList<Retiring>();
+      for (var attempt : retiring) {
+        boolean covered = false;
+        for (JsonNode range : ranges) {
+          covered |= WireJson.counter(range, "first") <= attempt.ticket()
+              && WireJson.counter(range, "last") >= attempt.ticket();
+        }
+        if (covered) {
+          confirmed.add(attempt);
+        }
+      }
+      storage.write(stores -> {
+        if (!before.enabled()) {
+          sqlite.effects().finishLegacyRetention(node.name(), journalScope(node));
+        }
+        sqlite.effects().confirmRetention(node.name(), WireJson.string(ranges));
+        for (var attempt : confirmed) {
+          var run = sqlite.effects().command(GoTaskFactory.identity("r-", attempt.taskId()))
+              .orElseThrow(() -> new IllegalStateException("Retiring launch missing"));
+          sqlite.effects().finishRetirement(node.name(), journalScope(node), attempt,
+              WireJson.text(parse(run).path("identity"), "attempt"));
+        }
+        return null;
+      });
+      retentionValidated.add(node.name());
     }
   }
 

@@ -16,7 +16,7 @@ package org.apache.aurora.scheduler.storage.log;
 import java.nio.ByteBuffer;
 import java.util.Iterator;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.AbstractIterator;

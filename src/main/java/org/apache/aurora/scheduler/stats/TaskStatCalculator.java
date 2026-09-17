@@ -15,7 +15,7 @@ package org.apache.aurora.scheduler.stats;
 
 import java.util.Locale;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import com.google.common.base.Joiner;
 

@@ -16,8 +16,8 @@ package org.apache.aurora.scheduler.storage.backup;
 import java.io.File;
 import java.util.concurrent.Executor;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;

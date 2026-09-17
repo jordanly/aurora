@@ -17,7 +17,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Set;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -120,7 +120,7 @@ public final class GoTaskFactory implements TaskFactory, TaskConfigValidator {
     WireJson.require(argv.get(0).asText().startsWith("/"), "Executable path must be absolute");
     JsonNode env = spec.path("env");
     WireJson.require(env.isObject(), "Explicit environment object required");
-    env.fields().forEachRemaining(entry -> WireJson.require(
+    env.properties().forEach(entry -> WireJson.require(
         entry.getKey().matches("[A-Z_][A-Z0-9_]*") && entry.getValue().isTextual()
             && entry.getValue().asText().length() <= 4096, "Invalid environment entry"));
     JsonNode grace = spec.path("graceMillis");

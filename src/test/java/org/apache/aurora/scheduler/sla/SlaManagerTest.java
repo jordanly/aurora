@@ -15,6 +15,8 @@ package org.apache.aurora.scheduler.sla;
 
 import java.io.IOException;
 import java.net.URLEncoder;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -25,9 +27,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableMap;
@@ -66,9 +65,11 @@ import org.apache.thrift.TSerializer;
 import org.apache.thrift.protocol.TSimpleJSONProtocol;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.DefaultAsyncHttpClient;
+import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.Response;
 import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.eclipse.jetty.util.Callback;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -1325,24 +1326,21 @@ public class SlaManagerTest extends EasyMockTest {
     ));
   }
 
-  private AbstractHandler mockCoordinatorResponse(
+  private Handler.Abstract mockCoordinatorResponse(
       IScheduledTask task,
       String pollResponse) {
     return mockCoordinatorResponse(task, pollResponse, ImmutableMap.of());
   }
 
-  private AbstractHandler mockCoordinatorResponse(
+  private Handler.Abstract mockCoordinatorResponse(
       IScheduledTask task,
       String pollResponse,
       Map<String, String> params) {
 
-    return new AbstractHandler() {
+    return new Handler.Abstract() {
       @Override
-      public void handle(
-          String target,
-          Request baseRequest,
-          HttpServletRequest request,
-          HttpServletResponse response) throws IOException {
+      public boolean handle(Request request, Response response, Callback callback)
+          throws IOException {
         try {
           String taskKey = slaManager.getTaskKey(task);
           String query = Joiner
@@ -1352,51 +1350,51 @@ public class SlaManagerTest extends EasyMockTest {
           String taskConfig = new TSerializer(new TSimpleJSONProtocol.Factory())
               .toString(task.newBuilder());
           JsonObject jsonBody = new JsonObject();
-          jsonBody.add("taskConfig", new JsonParser().parse(taskConfig));
+          jsonBody.add("taskConfig", JsonParser.parseString(taskConfig));
           jsonBody.addProperty(SlaManager.TASK_PARAM, taskKey);
           params.forEach(jsonBody::addProperty);
           String body = new Gson().toJson(jsonBody);
 
-          if (request.getQueryString().equals(query)
-              && request.getReader().lines().collect(Collectors.joining()).equals(body)) {
-            createResponse(baseRequest, response, pollResponse);
+          if (query.equals(request.getHttpURI().getQuery())
+              && new String(Request.asInputStream(request).readAllBytes(), StandardCharsets.UTF_8)
+              .equals(body)) {
+            createResponse(response, callback, pollResponse);
+          } else {
+            callback.succeeded();
           }
           coordinatorResponded.countDown();
         } catch (TException e) {
           fail();
         }
+        return true;
       }
     };
   }
 
-  private AbstractHandler mockCoordinatorResponses(String mockResponse) {
-    return new AbstractHandler() {
+  private Handler.Abstract mockCoordinatorResponses(String mockResponse) {
+    return new Handler.Abstract() {
       @Override
-      public void handle(String target, Request baseRequest, HttpServletRequest request,
-                         HttpServletResponse response) throws IOException {
-        createResponse(baseRequest, response, mockResponse);
+      public boolean handle(Request request, Response response, Callback callback)
+          throws IOException {
+        createResponse(response, callback, mockResponse);
+        return true;
       }
     };
   }
 
-  private void createResponse(
-      Request baseRequest,
-      HttpServletResponse response,
-      String mockResponse) throws IOException {
-    response.setStatus(HttpServletResponse.SC_OK);
-    response.getWriter().write(mockResponse);
-    response.getWriter().flush();
-    baseRequest.setHandled(true);
+  private void createResponse(Response response, Callback callback, String mockResponse) {
+    response.setStatus(200);
+    response.write(true, ByteBuffer.wrap(mockResponse.getBytes(StandardCharsets.UTF_8)), callback);
   }
 
-  private AbstractHandler mockCoordinatorError() {
-    return new AbstractHandler() {
+  private Handler.Abstract mockCoordinatorError() {
+    return new Handler.Abstract() {
       @Override
-      public void handle(String target, Request baseRequest, HttpServletRequest request,
-                         HttpServletResponse response) {
-        response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-        baseRequest.setHandled(true);
+      public boolean handle(Request request, Response response, Callback callback) {
+        response.setStatus(500);
+        callback.succeeded();
         coordinatorResponded.countDown();
+        return true;
       }
     };
   }

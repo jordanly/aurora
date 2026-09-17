@@ -13,7 +13,7 @@
  */
 package org.apache.aurora.scheduler.http.api.security;
 
-import javax.inject.Provider;
+import jakarta.inject.Provider;
 
 import com.google.inject.Inject;
 

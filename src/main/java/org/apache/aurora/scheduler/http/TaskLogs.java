@@ -18,15 +18,15 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.Semaphore;
 
-import javax.inject.Inject;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.DefaultValue;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -35,7 +35,7 @@ import org.apache.aurora.scheduler.execution.TaskLogReader;
 
 /** Scheduler-local log proxy with the same access policy as the scheduler read APIs. */
 @Path("/tasklogs")
-@javax.inject.Singleton
+@jakarta.inject.Singleton
 public class TaskLogs {
   private final TaskLogReader logs;
   private final ObjectMapper mapper = new ObjectMapper();

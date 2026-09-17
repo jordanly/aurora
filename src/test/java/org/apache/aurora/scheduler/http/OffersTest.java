@@ -16,7 +16,7 @@ package org.apache.aurora.scheduler.http;
 import java.time.Instant;
 import java.util.List;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -24,6 +24,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.aurora.common.testing.easymock.EasyMockTest;
 import org.apache.aurora.gen.HostAttributes;
 import org.apache.aurora.gen.MaintenanceMode;
+import org.apache.aurora.scheduler.config.CommandLine;
 import org.apache.aurora.scheduler.execution.TestOffer;
 import org.apache.aurora.scheduler.offers.HostOffer;
 import org.apache.aurora.scheduler.offers.OfferManager;
@@ -42,6 +43,7 @@ public class OffersTest extends EasyMockTest {
 
   @Before
   public void setUp() {
+    CommandLine.initializeForTest();
     offerManager = createMock(OfferManager.class);
     offers = new Offers(offerManager);
   }

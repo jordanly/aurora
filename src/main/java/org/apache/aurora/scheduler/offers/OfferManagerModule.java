@@ -17,8 +17,8 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 import java.util.List;
 
-import javax.inject.Qualifier;
-import javax.inject.Singleton;
+import jakarta.inject.Qualifier;
+import jakarta.inject.Singleton;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;

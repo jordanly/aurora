@@ -47,7 +47,9 @@ import static java.util.Objects.requireNonNull;
  * The database must be a local file with no hard-link aliases and a stable ownership-lock path.
  */
 final class SqliteDatabase implements AutoCloseable {
-  static final int SCHEMA_VERSION = 3;
+  static final int SCHEMA_VERSION = 4;
+  static final int MAX_EXPLICIT_OUTCOMES = 4096;
+  private static final String AUTOMATIC_PREFIX = "aurora-auto:";
   private static final int BUSY_TIMEOUT_MS = 1000;
   private static final Set<Path> OWNED_PATHS = ConcurrentHashMap.newKeySet();
 
@@ -325,6 +327,22 @@ final class SqliteDatabase implements AutoCloseable {
             + " PRIMARY KEY(agent_id,incarnation,sequence))");
         execute(connection, "PRAGMA user_version=3");
       }
+      if (version < 4) {
+        execute(connection, "CREATE TABLE automatic_outcome (singleton INTEGER PRIMARY KEY"
+            + " CHECK(singleton=1), operation_id TEXT NOT NULL, owner_epoch INTEGER NOT NULL)");
+        execute(connection, "CREATE TABLE agent_retention (agent_id TEXT PRIMARY KEY,"
+            + " scope TEXT NOT NULL,"
+            + " enabled INTEGER NOT NULL DEFAULT 0, next_ticket INTEGER NOT NULL DEFAULT 1,"
+            + " retired TEXT NOT NULL DEFAULT '[]')");
+        execute(connection, "CREATE TABLE attempt_retention (agent_id TEXT NOT NULL,"
+            + " ticket INTEGER NOT NULL, task_id TEXT NOT NULL UNIQUE,"
+            + " complete INTEGER NOT NULL DEFAULT 0, retiring INTEGER NOT NULL DEFAULT 0,"
+            + " PRIMARY KEY(agent_id,ticket))");
+        execute(connection, "CREATE TABLE receipt_watermarks (agent_id TEXT NOT NULL,"
+            + " incarnation TEXT NOT NULL, sequence INTEGER NOT NULL,"
+            + " PRIMARY KEY(agent_id,incarnation))");
+        execute(connection, "PRAGMA user_version=4");
+      }
       // An additive query index keeps version-3 backups compatible and is installed when an
       // existing database is opened, as well as when the outbox is first created.
       execute(connection, "CREATE INDEX IF NOT EXISTS pending_commands_by_agent"
@@ -376,7 +394,17 @@ final class SqliteDatabase implements AutoCloseable {
    * state. Callbacks are never retried automatically, including after an uncertain commit.
    */
   <T, E extends Exception> T write(String operationId, Work<T, E> work) throws E {
+    if (operationId != null && operationId.startsWith(AUTOMATIC_PREFIX)) {
+      throw new IllegalArgumentException("Automatic operation IDs cannot be explicitly retried");
+    }
     return transact(true, operationId, work);
+  }
+
+  /** Internal writes retain only the latest receipt; uncertainty fences subsequent writes. */
+  <T, E extends Exception> T writeAutomatic(Work<T, E> work) throws E {
+    String enclosing = currentOperationId();
+    return transact(
+        true, enclosing == null ? AUTOMATIC_PREFIX + UUID.randomUUID() : enclosing, work);
   }
 
   Connection connection() {
@@ -418,7 +446,10 @@ final class SqliteDatabase implements AutoCloseable {
     }
   }
 
-  /** Queries on a fresh connection; an absent outcome permits an explicit caller retry. */
+  /**
+   * Queries on a fresh connection. An absent explicit outcome permits a caller retry. Automatic
+   * outcomes expire after the next automatic commit; expired IDs fail closed, never appear absent.
+   */
   boolean isCommitted(String operationId) {
     requireNonNull(operationId);
     if (current.get() != null) {
@@ -427,7 +458,14 @@ final class SqliteDatabase implements AutoCloseable {
     lifecycle.readLock().lock();
     writer.lock();
     try {
-      boolean committed = read(() -> hasOutcome(connection(), operationId));
+      boolean committed = read(() -> {
+        boolean found = hasOutcome(connection(), operationId);
+        if (!found && operationId.startsWith(AUTOMATIC_PREFIX)
+            && !operationId.equals(uncertainOperation)) {
+          throw new StorageException("Automatic operation outcome has expired: " + operationId);
+        }
+        return found;
+      });
       if (operationId.equals(uncertainOperation)) {
         uncertainOperation = null;
         if (committed) {
@@ -604,8 +642,8 @@ final class SqliteDatabase implements AutoCloseable {
     requireNonNull(work);
     if (writable) {
       requireNonNull(operationId);
-      if (operationId.isEmpty()) {
-        throw new IllegalArgumentException("An operation ID is required");
+      if (operationId.isEmpty() || operationId.length() > 256) {
+        throw new IllegalArgumentException("An operation ID of 1 to 256 characters is required");
       }
     }
   }
@@ -631,8 +669,15 @@ final class SqliteDatabase implements AutoCloseable {
         // Establish the snapshot before entering user work and validate the owner under
         // the same write lock as all subsequent mutations.
         verifyOwner(connection);
-        if (writable && hasOutcome(connection, operationId)) {
-          throw new AlreadyCommittedException(operationId);
+        if (writable) {
+          if (hasOutcome(connection, operationId)) {
+            throw new AlreadyCommittedException(operationId);
+          }
+          if (!operationId.startsWith(AUTOMATIC_PREFIX)
+              && scalar(connection, "SELECT count(*) FROM storage_transactions")
+                  >= MAX_EXPLICIT_OUTCOMES) {
+            throw new StorageException("Explicit transaction receipt capacity exhausted");
+          }
         }
       } catch (SQLException e) {
         throw new StorageException("Unable to begin SQLite transaction", e);
@@ -646,7 +691,11 @@ final class SqliteDatabase implements AutoCloseable {
       try {
         if (writable) {
           try (PreparedStatement insert = connection.prepareStatement(
-              "INSERT INTO storage_transactions(operation_id, owner_epoch) VALUES (?, ?)")) {
+              operationId.startsWith(AUTOMATIC_PREFIX)
+                  ? "INSERT INTO automatic_outcome(singleton,operation_id,owner_epoch)"
+                      + " VALUES (1,?,?) ON CONFLICT(singleton) DO UPDATE SET"
+                      + " operation_id=excluded.operation_id,owner_epoch=excluded.owner_epoch"
+                  : "INSERT INTO storage_transactions(operation_id, owner_epoch) VALUES (?, ?)")) {
             insert.setString(1, operationId);
             insert.setLong(2, epoch);
             insert.executeUpdate();
@@ -723,7 +772,10 @@ final class SqliteDatabase implements AutoCloseable {
 
   private static boolean hasOutcome(Connection connection, String operationId) throws SQLException {
     try (PreparedStatement query = connection.prepareStatement(
-        "SELECT 1 FROM storage_transactions WHERE operation_id=?")) {
+        operationId.startsWith(AUTOMATIC_PREFIX)
+            ? "SELECT 1 FROM automatic_outcome WHERE operation_id=?1"
+                + " UNION ALL SELECT 1 FROM storage_transactions WHERE operation_id=?1"
+            : "SELECT 1 FROM storage_transactions WHERE operation_id=?")) {
       query.setString(1, operationId);
       try (ResultSet result = query.executeQuery()) {
         return result.next();

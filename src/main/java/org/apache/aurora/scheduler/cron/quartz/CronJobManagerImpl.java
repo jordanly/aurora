@@ -17,7 +17,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.TimeZone;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableMap;

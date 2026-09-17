@@ -154,3 +154,27 @@ func TestHealthBoundsAndPairedPolicy(t *testing.T) {
 		}
 	}
 }
+
+func TestOrderedRetentionTicketIdentity(t *testing.T) {
+	data, err := os.ReadFile("../../protocol/native-v1alpha1/fixtures/valid/run.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	body, err := Validate(data)
+	if err != nil {
+		t.Fatal(err)
+	}
+	identity := body["identity"].(map[string]any)
+	for _, ticket := range []string{"1", "18446744073709551615"} {
+		identity["ticket"] = ticket
+		if _, err = Validate(Canonical(body)); err != nil {
+			t.Fatal(ticket, err)
+		}
+	}
+	for _, ticket := range []any{"0", "01", "18446744073709551616", uint64(1)} {
+		identity["ticket"] = ticket
+		if _, err = Validate(Canonical(body)); err == nil {
+			t.Fatal("invalid ticket accepted", ticket)
+		}
+	}
+}

@@ -30,7 +30,8 @@ import static java.util.Objects.requireNonNull;
  * transaction.
  * This class does not dispatch commands. Positive payload versions are opaque protocol metadata;
  * future consumers must reject unsupported versions before interpreting or executing a payload.
- * Acknowledged commands are retained so their identities cannot silently be reused.
+ * Acknowledged commands remain immutable until a coordinated ordered-ticket retirement barrier.
+ * Legacy command identities cannot be removed without the quiescent activation fence.
  */
 public final class SqliteEffects {
   public record Command(
@@ -194,7 +195,8 @@ public final class SqliteEffects {
     }
   }
 
-  /** Marks a known command acknowledged; false means it was already acknowledged. */
+  /** Marks a known command acknowledged;
+  false means it was already acknowledged. */
   public boolean acknowledge(String commandId) {
     database.requireWrite();
     requireIdentifier(commandId);
@@ -219,12 +221,25 @@ public final class SqliteEffects {
     }
   }
 
-  /** Returns false only for an exact receipt replay; conflicting content fails the write. */
+  /** Returns false only for an exact receipt replay;
+  conflicting content fails the write. */
   public boolean recordReceipt(ReceiptKey key, int payloadVersion, byte[] payload) {
     database.requireWrite();
     requireNonNull(key);
     requireVersion(payloadVersion);
     byte[] contents = requireNonNull(payload).clone();
+    try (var watermark = database.connection().prepareStatement(
+        "SELECT sequence FROM receipt_watermarks WHERE agent_id=? AND incarnation=?")) {
+      watermark.setString(1, key.agentId());
+      watermark.setString(2, key.incarnation());
+      try (var rows = watermark.executeQuery()) {
+        if (rows.next() && key.sequence() <= rows.getLong(1)) {
+          throw new StorageException("Receipt replay below durable retirement watermark");
+        }
+      }
+    } catch (SQLException e) {
+      throw database.failTransaction("Read receipt watermark", e);
+    }
     try (PreparedStatement query = database.connection().prepareStatement(
         "SELECT payload_version,payload FROM observation_receipts"
             + " WHERE agent_id=? AND incarnation=? AND sequence=?")) {
@@ -271,8 +286,10 @@ public final class SqliteEffects {
     requireIdentifier(agentId);
     requireIdentifier(incarnation);
     try (PreparedStatement query = database.connection().prepareStatement(
-        "SELECT COALESCE(MAX(sequence),0) FROM observation_receipts"
-            + " WHERE agent_id=? AND incarnation=?")) {
+        "SELECT MAX(value) FROM (SELECT COALESCE(MAX(sequence),0) AS value"
+            + " FROM observation_receipts WHERE agent_id=?1 AND incarnation=?2 UNION ALL"
+            + " SELECT COALESCE(MAX(sequence),0) FROM receipt_watermarks"
+            + " WHERE agent_id=?1 AND incarnation=?2)")) {
       query.setString(1, agentId);
       query.setString(2, incarnation);
       try (ResultSet rows = query.executeQuery()) {
@@ -293,6 +310,250 @@ public final class SqliteEffects {
       }
     } catch (SQLException e) {
       throw database.failTransaction("Unable to read observation receipt", e);
+    }
+  }
+
+  public record Retention(boolean enabled, long nextTicket, String retired, String scope) { }
+  public record Retiring(long ticket, String taskId) { }
+
+  public java.util.Optional<Retention> retention(String agent) {
+    try (var query = database.connection().prepareStatement(
+        "SELECT enabled,next_ticket,retired,scope FROM agent_retention WHERE agent_id=?")) {
+      query.setString(1, agent);
+      try (var rows = query.executeQuery()) {
+        return rows.next() ? java.util.Optional.of(new Retention(
+            rows.getInt(1) == 1, rows.getLong(2), rows.getString(3), rows.getString(4)))
+            : java.util.Optional.empty();
+      }
+    } catch (SQLException e) {
+      throw database.failTransaction("Read retention", e);
+    }
+  }
+
+  /** Durable launch fence spans the network activation barrier and restart. */
+  public void beginRetention(String agent, String scope) {
+    database.requireWrite();
+    var prior = retention(agent);
+    if (prior.isPresent()) {
+      if (!prior.get().scope().equals(scope)) {
+        throw new StorageException("Retention enrollment scope changed");
+      }
+      return;
+    }
+    try (var capacity = database.connection().prepareStatement(
+        "SELECT COUNT(*) FROM agent_retention");
+         var rows = capacity.executeQuery()) {
+      if (rows.next() && rows.getInt(1) >= 128) {
+        throw new StorageException("Retention enrollment capacity");
+      }
+    } catch (SQLException e) {
+      throw database.failTransaction("Read enrollment capacity", e);
+    }
+    try (var query = database.connection().prepareStatement(
+        "INSERT INTO agent_retention(agent_id,scope) VALUES (?,?)")) {
+      query.setString(1, agent);
+      query.setString(2, scope);
+      query.executeUpdate();
+    } catch (SQLException e) {
+      throw database.failTransaction("Begin retention", e);
+    }
+  }
+
+  public void finishLegacyRetention(String agent, String scope) {
+    database.requireWrite();
+    try (var commands = database.connection().prepareStatement(
+        "DELETE FROM command_outbox WHERE agent_id=? AND acknowledged=1")) {
+      commands.setString(1, agent);
+      commands.executeUpdate();
+      for (String table : List.of("observation_receipts", "receipt_watermarks")) {
+        try (var query = database.connection().prepareStatement(
+            "DELETE FROM " + table
+                + " WHERE substr(agent_id,1,length(?)+1)=?||'/' AND incarnation=?")) {
+          query.setString(1, agent);
+          query.setString(2, agent);
+          query.setString(3, scope);
+          query.executeUpdate();
+        }
+      }
+      pruneReceipts(agent, scope);
+    } catch (SQLException e) {
+      throw database.failTransaction("Retire legacy history", e);
+    }
+  }
+
+  public void confirmRetention(String agent, String retired) {
+    database.requireWrite();
+    try (var query = database.connection().prepareStatement(
+        "UPDATE agent_retention SET enabled=1,retired=? WHERE agent_id=?")) {
+      query.setString(1, retired);
+      query.setString(2, agent);
+      if (query.executeUpdate() != 1) {
+        throw new StorageException("Retention not prepared");
+      }
+    } catch (SQLException e) {
+      throw database.failTransaction("Confirm retention", e);
+    }
+  }
+
+  /** New launches stop while migration or the bounded retained window needs progress. */
+  public boolean hasTicketCapacity(String agent) {
+    var state = retention(agent);
+    if (state.isPresent() && !state.get().enabled()) {
+      return false;
+    }
+    try (var query = database.connection().prepareStatement(
+        "SELECT COUNT(*) FROM attempt_retention WHERE agent_id=?")) {
+      query.setString(1, agent);
+      try (var rows = query.executeQuery()) {
+        return rows.next() && rows.getInt(1) < 1024;
+      }
+    } catch (SQLException e) {
+      throw database.failTransaction("Read ticket capacity", e);
+    }
+  }
+
+  /** Allocation and immutable command insertion share the launch transaction. */
+  public long allocateTicket(String agent, String taskId) {
+    database.requireWrite();
+    var state = retention(agent);
+    if (state.isEmpty()) {
+      return 0; // Legacy node before its quiescent barrier.
+    }
+    if (!state.get().enabled() || state.get().nextTicket() == Long.MAX_VALUE) {
+      throw new StorageException("Retention barrier or ticket exhaustion");
+    }
+    try (var query = database.connection().prepareStatement(
+        "SELECT COUNT(*) FROM attempt_retention WHERE agent_id=?")) {
+      query.setString(1, agent);
+      try (var rows = query.executeQuery()) {
+        if (rows.next() && rows.getInt(1) >= 1024) {
+          throw new StorageException("Agent retained attempt capacity");
+        }
+      }
+      long ticket = state.get().nextTicket();
+      try (var insert = database.connection().prepareStatement(
+          "INSERT INTO attempt_retention(agent_id,ticket,task_id) VALUES (?,?,?)")) {
+        insert.setString(1, agent);
+        insert.setLong(2, ticket);
+        insert.setString(3, taskId);
+        insert.executeUpdate();
+      }
+      try (var update = database.connection().prepareStatement(
+          "UPDATE agent_retention SET next_ticket=next_ticket+1 WHERE agent_id=?")) {
+        update.setString(1, agent);
+        update.executeUpdate();
+      }
+      return ticket;
+    } catch (SQLException e) {
+      throw database.failTransaction("Allocate attempt ticket", e);
+    }
+  }
+
+  public void completeTicket(String agent, long ticket) {
+    database.requireWrite();
+    try (var query = database.connection().prepareStatement(
+        "UPDATE attempt_retention SET complete=1 WHERE agent_id=? AND ticket=?")) {
+      query.setString(1, agent);
+      query.setLong(2, ticket);
+      query.executeUpdate();
+    } catch (SQLException e) {
+      throw database.failTransaction("Complete attempt ticket", e);
+    }
+  }
+
+  /** Freeze the oldest eligible completed tickets before sending any retirement request. */
+  public List<Retiring> prepareRetirement(String agent, int keep) {
+    database.requireWrite();
+    if (keep < 0 || keep > 896) {
+      throw new IllegalArgumentException("retained completed bound");
+    }
+    try (var query = database.connection().prepareStatement(
+        "UPDATE attempt_retention SET retiring=1 WHERE agent_id=? AND ticket IN ("
+            + "SELECT ticket FROM attempt_retention a WHERE a.agent_id=? AND complete=1"
+            + " AND NOT EXISTS (SELECT 1 FROM command_outbox c WHERE c.task_id=a.task_id"
+            + " AND acknowledged=0) ORDER BY ticket DESC LIMIT -1 OFFSET ?)")) {
+      query.setString(1, agent);
+      query.setString(2, agent);
+      query.setInt(3, keep);
+      query.executeUpdate();
+      try (var select = database.connection().prepareStatement(
+          "SELECT ticket,task_id FROM attempt_retention WHERE agent_id=? AND retiring=1"
+              + " ORDER BY ticket LIMIT 128")) {
+        select.setString(1, agent);
+        List<Retiring> result = new ArrayList<>();
+        try (var rows = select.executeQuery()) {
+          while (rows.next()) {
+            result.add(new Retiring(rows.getLong(1), rows.getString(2)));
+          }
+        }
+        return List.copyOf(result);
+      }
+    } catch (SQLException e) {
+      throw database.failTransaction("Prepare retirement", e);
+    }
+  }
+
+  public boolean retiringTask(String task) {
+    try (var query = database.connection().prepareStatement(
+        "SELECT 1 FROM attempt_retention WHERE task_id=? AND retiring=1")) {
+      query.setString(1, task);
+      try (var rows = query.executeQuery()) {
+        return rows.next();
+      }
+    } catch (SQLException e) {
+      throw database.failTransaction("Read retirement fence", e);
+    }
+  }
+
+  /** Called only after the agent has durably fenced replay and removed its artifacts. */
+  public void finishRetirement(String agent, String scope, Retiring attempt, String attemptId) {
+    database.requireWrite();
+    try {
+      for (String table : List.of("observation_receipts", "receipt_watermarks")) {
+        try (var query = database.connection().prepareStatement(
+            "DELETE FROM " + table + " WHERE agent_id=? AND incarnation=?")) {
+          query.setString(1, agent + "/" + attemptId);
+          query.setString(2, scope);
+          query.executeUpdate();
+        }
+      }
+      try (var query = database.connection().prepareStatement(
+          "DELETE FROM command_outbox WHERE task_id=? AND acknowledged=1")) {
+        query.setString(1, attempt.taskId());
+        query.executeUpdate();
+      }
+      try (var query = database.connection().prepareStatement(
+          "DELETE FROM attempt_retention WHERE agent_id=? AND ticket=? AND retiring=1")) {
+        query.setString(1, agent);
+        query.setLong(2, attempt.ticket());
+        query.executeUpdate();
+      }
+    } catch (SQLException e) {
+      throw database.failTransaction("Finish retirement", e);
+    }
+  }
+
+  /** Retain a scalar receipt fence while dropping bulky committed receipt payloads. */
+  public void pruneReceipts(String agent, String scope) {
+    database.requireWrite();
+    long cursor = committedCursor(agent, scope);
+    try (var query = database.connection().prepareStatement(
+        "INSERT INTO receipt_watermarks(agent_id,incarnation,sequence) VALUES (?,?,?)"
+            + " ON CONFLICT(agent_id,incarnation) DO UPDATE SET"
+            + " sequence=MAX(sequence,excluded.sequence)")) {
+      query.setString(1, agent);
+      query.setString(2, scope);
+      query.setLong(3, cursor);
+      query.executeUpdate();
+      try (var prune = database.connection().prepareStatement(
+          "DELETE FROM observation_receipts WHERE agent_id=? AND incarnation=? AND sequence<=?")) {
+        prune.setString(1, agent);
+        prune.setString(2, scope);
+        prune.setLong(3, cursor);
+        prune.executeUpdate();
+      }
+    } catch (SQLException e) {
+      throw database.failTransaction("Prune receipts", e);
     }
   }
 

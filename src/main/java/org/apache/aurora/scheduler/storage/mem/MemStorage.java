@@ -13,7 +13,7 @@
  */
 package org.apache.aurora.scheduler.storage.mem;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import org.apache.aurora.common.inject.TimedInterceptor.Timed;
 import org.apache.aurora.scheduler.storage.AttributeStore;

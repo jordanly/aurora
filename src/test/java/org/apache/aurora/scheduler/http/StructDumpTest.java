@@ -13,9 +13,9 @@
  */
 package org.apache.aurora.scheduler.http;
 
+import jakarta.ws.rs.core.Response.Status;
+
 import com.google.common.collect.ImmutableSet;
-import com.sun.jersey.api.client.ClientResponse;
-import com.sun.jersey.api.client.ClientResponse.Status;
 
 import org.apache.aurora.gen.AssignedTask;
 import org.apache.aurora.gen.Resource;
@@ -51,8 +51,8 @@ public class StructDumpTest extends AbstractJettyTest {
   public void testGetUsage() {
     replayAndStart();
 
-    ClientResponse response = getPlainRequestBuilder("/structdump")
-        .get(ClientResponse.class);
+    jakarta.ws.rs.core.Response response = getPlainRequestBuilder("/structdump")
+        .get();
 
     assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
   }
@@ -64,10 +64,10 @@ public class StructDumpTest extends AbstractJettyTest {
 
     replayAndStart();
 
-    ClientResponse response = getPlainRequestBuilder("/structdump/task/" + FAKE_TASKID)
-            .get(ClientResponse.class);
+    jakarta.ws.rs.core.Response response = getPlainRequestBuilder("/structdump/task/" + FAKE_TASKID)
+            .get();
 
-    String htmlResponse = response.getEntity(String.class);
+    String htmlResponse = response.readEntity(String.class);
     assertEquals(Status.OK.getStatusCode(), response.getStatus());
     assertFalse(htmlResponse.contains("__isset_bitfield"));
   }
@@ -79,10 +79,10 @@ public class StructDumpTest extends AbstractJettyTest {
 
     replayAndStart();
 
-    ClientResponse response = getPlainRequestBuilder("/structdump/task/" + FAKE_TASKID)
-            .get(ClientResponse.class);
+    jakarta.ws.rs.core.Response response = getPlainRequestBuilder("/structdump/task/" + FAKE_TASKID)
+            .get();
 
-    String htmlResponse = response.getEntity(String.class);
+    String htmlResponse = response.readEntity(String.class);
 
     assertEquals(Status.OK.getStatusCode(), response.getStatus());
     assertFalse(htmlResponse.contains("setField_"));

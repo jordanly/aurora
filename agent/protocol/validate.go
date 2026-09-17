@@ -93,7 +93,7 @@ func semantics(v map[string]any) error {
 		case map[string]any:
 			for k, a := range m {
 				switch k {
-				case "revision", "desiredRevision", "schedulerEpoch", "sequence", "cursor", "generation", "watermark", "committedCursor":
+				case "ticket", "revision", "desiredRevision", "schedulerEpoch", "sequence", "cursor", "generation", "watermark", "committedCursor":
 					if _, e := strconv.ParseUint(a.(string), 10, 64); e != nil {
 						return e
 					}

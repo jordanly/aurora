@@ -14,7 +14,8 @@
 package org.apache.aurora.scheduler.http.api;
 
 import java.nio.charset.StandardCharsets;
-import javax.inject.Singleton;
+
+import jakarta.inject.Singleton;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
@@ -32,8 +33,8 @@ import org.apache.aurora.scheduler.http.api.TContentAwareServlet.OutputConfig;
 import org.apache.aurora.scheduler.thrift.aop.AnnotatedAuroraAdmin;
 import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.protocol.TJSONProtocol;
-import org.eclipse.jetty.servlet.DefaultServlet;
-import org.eclipse.jetty.util.resource.Resource;
+import org.eclipse.jetty.ee11.servlet.ResourceServlet;
+import org.eclipse.jetty.util.resource.ResourceFactory;
 
 public class ApiModule extends ServletModule {
   public static final String API_PATH = "/api";
@@ -64,9 +65,10 @@ public class ApiModule extends ServletModule {
     this.options = options;
   }
 
-  private static final String API_CLIENT_ROOT = Resource
-      .newClassPathResource("org/apache/aurora/scheduler/gen/client")
-      .toString();
+  private static final String API_CLIENT_ROOT = ResourceFactory.root()
+      .newClassLoaderResource("org/apache/aurora/scheduler/gen/client/AuroraAdmin.js")
+      .getURI().toASCIIString()
+      .replace("AuroraAdmin.js", "");
 
   @Override
   protected void configureServlets() {
@@ -79,8 +81,8 @@ public class ApiModule extends ServletModule {
     bind(ApiBeta.class);
 
     serve("/apiclient", "/apiclient/*")
-        .with(new DefaultServlet(), ImmutableMap.<String, String>builder()
-            .put("resourceBase", API_CLIENT_ROOT)
+        .with(new ResourceServlet(), ImmutableMap.<String, String>builder()
+            .put("baseResource", API_CLIENT_ROOT)
             .put("pathInfoOnly", "true")
             .put("dirAllowed", "false")
             .build());

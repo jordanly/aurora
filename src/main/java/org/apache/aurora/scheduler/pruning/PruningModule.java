@@ -15,7 +15,7 @@ package org.apache.aurora.scheduler.pruning;
 
 import java.util.concurrent.ScheduledExecutorService;
 
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;

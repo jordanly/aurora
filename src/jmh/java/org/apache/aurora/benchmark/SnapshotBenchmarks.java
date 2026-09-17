@@ -15,7 +15,7 @@ package org.apache.aurora.benchmark;
 
 import java.util.concurrent.TimeUnit;
 
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;

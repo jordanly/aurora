@@ -16,10 +16,12 @@ package org.apache.aurora.scheduler.events;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.Optional;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
 import com.google.common.io.Files;
@@ -31,7 +33,6 @@ import org.apache.aurora.scheduler.config.validators.ReadableFile;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.DefaultAsyncHttpClientConfig;
 import org.asynchttpclient.channel.DefaultKeepAliveStrategy;
-import org.codehaus.jackson.map.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -81,11 +82,11 @@ public class WebhookModule extends AbstractModule {
       WebhookInfo webhookInfo = parseWebhookConfig(webhookConfig.get());
       DefaultAsyncHttpClientConfig config = new DefaultAsyncHttpClientConfig.Builder()
           .setThreadPoolName("WebHook-AsyncHttpClient")
-          .setConnectTimeout(webhookInfo.getConnectonTimeoutMsec())
+          .setConnectTimeout(Duration.ofMillis(webhookInfo.getConnectonTimeoutMsec()))
           .setHandshakeTimeout(webhookInfo.getConnectonTimeoutMsec())
           .setSslSessionTimeout(webhookInfo.getConnectonTimeoutMsec())
-          .setReadTimeout(webhookInfo.getConnectonTimeoutMsec())
-          .setRequestTimeout(webhookInfo.getConnectonTimeoutMsec())
+          .setReadTimeout(Duration.ofMillis(webhookInfo.getConnectonTimeoutMsec()))
+          .setRequestTimeout(Duration.ofMillis(webhookInfo.getConnectonTimeoutMsec()))
           .setKeepAliveStrategy(new DefaultKeepAliveStrategy())
           .build();
       AsyncHttpClient httpClient = asyncHttpClient(config);

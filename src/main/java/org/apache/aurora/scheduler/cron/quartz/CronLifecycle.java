@@ -16,7 +16,7 @@ package org.apache.aurora.scheduler.cron.quartz;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import com.google.common.util.concurrent.AbstractIdleService;
 

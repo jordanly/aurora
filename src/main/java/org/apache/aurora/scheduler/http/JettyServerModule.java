@@ -23,12 +23,11 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
-import javax.servlet.DispatcherType;
-import javax.servlet.ServletContext;
-import javax.servlet.ServletContextListener;
-import javax.ws.rs.HttpMethod;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
+import jakarta.servlet.DispatcherType;
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.ServletContextListener;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
@@ -71,20 +70,19 @@ import org.apache.aurora.scheduler.http.api.ApiModule;
 import org.apache.aurora.scheduler.http.api.security.HttpSecurityModule;
 import org.apache.aurora.scheduler.thrift.ThriftModule;
 import org.apache.aurora.scheduler.thrift.aop.AopModule;
+import org.eclipse.jetty.compression.server.CompressionConfig;
+import org.eclipse.jetty.compression.server.CompressionHandler;
+import org.eclipse.jetty.ee11.servlet.DefaultServlet;
+import org.eclipse.jetty.ee11.servlet.ResourceServlet;
+import org.eclipse.jetty.ee11.servlet.ServletContextHandler;
 import org.eclipse.jetty.rewrite.handler.RewriteHandler;
 import org.eclipse.jetty.rewrite.handler.RewriteRegexRule;
+import org.eclipse.jetty.server.CustomRequestLog;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
-import org.eclipse.jetty.server.Slf4jRequestLog;
-import org.eclipse.jetty.server.handler.HandlerCollection;
-import org.eclipse.jetty.server.handler.HandlerList;
-import org.eclipse.jetty.server.handler.RequestLogHandler;
-import org.eclipse.jetty.server.handler.gzip.GzipHandler;
-import org.eclipse.jetty.servlet.DefaultServlet;
-import org.eclipse.jetty.servlet.ServletContextHandler;
-import org.eclipse.jetty.util.resource.Resource;
-import org.jboss.resteasy.plugins.guice.GuiceResteasyBootstrapServletContextListener;
+import org.eclipse.jetty.server.Slf4jRequestLogWriter;
+import org.eclipse.jetty.util.resource.ResourceFactory;
 import org.jboss.resteasy.plugins.server.servlet.HttpServletDispatcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -123,9 +121,9 @@ public class JettyServerModule extends AbstractModule {
     public String listenIp;
   }
 
-  private static final String STATIC_ASSETS_ROOT = Resource
-      .newClassPathResource("scheduler/assets/index.html")
-      .toString()
+  private static final String STATIC_ASSETS_ROOT = ResourceFactory.root()
+      .newClassLoaderResource("scheduler/assets/index.html")
+      .getURI().toASCIIString()
       .replace("assets/index.html", "");
 
   private final CliOptions options;
@@ -257,7 +255,7 @@ public class JettyServerModule extends AbstractModule {
       Injector parentInjector,
       Function<ServletContext, Module> childModuleFactory) {
 
-    ServletContextListener contextListener = new GuiceResteasyBootstrapServletContextListener() {
+    return new GuiceRestContextListener(parentInjector) {
       @Override
       protected List<? extends Module> getModules(ServletContext context) {
         return ImmutableList.of(
@@ -275,9 +273,10 @@ public class JettyServerModule extends AbstractModule {
                 filterRegex("/assets/scheduler(?:/.*)?").through(LeaderRedirectFilter.class);
 
                 serve("/assets", "/assets/*")
-                    .with(new DefaultServlet(), ImmutableMap.of(
+                    .with(new ResourceServlet(), ImmutableMap.of(
                         "cacheControl", "max-age=3600",
-                        "resourceBase", STATIC_ASSETS_ROOT,
+                        "pathInfoOnly", "false",
+                        "baseResource", STATIC_ASSETS_ROOT,
                         "dirAllowed", "false"));
 
                 for (Class<?> jaxRsHandler : JAX_RS_ENDPOINTS.keySet()) {
@@ -288,11 +287,6 @@ public class JettyServerModule extends AbstractModule {
         );
       }
     };
-
-    // Injects the Injector into GuiceResteasyBootstrapServletContextListener.
-    parentInjector.injectMembers(contextListener);
-
-    return contextListener;
   }
 
   static class RedirectMonitor extends AbstractIdleService {
@@ -344,8 +338,6 @@ public class JettyServerModule extends AbstractModule {
     private static Handler getRewriteHandler(Handler wrapped) {
       RewriteHandler rewrites = new RewriteHandler();
       rewrites.setOriginalPathAttribute(ORIGINAL_PATH_ATTRIBUTE_NAME);
-      rewrites.setRewriteRequestURI(true);
-      rewrites.setRewritePathInfo(true);
 
       for (Map.Entry<String, String> entry : REGEX_REWRITE_RULES.entrySet()) {
         RewriteRegexRule rule = new RewriteRegexRule();
@@ -359,11 +351,11 @@ public class JettyServerModule extends AbstractModule {
       return rewrites;
     }
 
-    private static Handler getGzipHandler(Handler wrapped) {
-      GzipHandler gzip = new GzipHandler();
-      gzip.addIncludedMethods(HttpMethod.POST);
-      gzip.setHandler(wrapped);
-      return gzip;
+    private static Handler getCompressionHandler(Handler wrapped) {
+      CompressionHandler compression = new CompressionHandler(wrapped);
+      compression.putConfiguration("/*", CompressionConfig.builder().defaults()
+          .decompressExcludeEncoding("gzip").build());
+      return compression;
     }
 
     @Override
@@ -378,20 +370,15 @@ public class JettyServerModule extends AbstractModule {
     protected void startUp() {
       server = new Server();
       ServletContextHandler servletHandler =
-          new ServletContextHandler(server, "/", ServletContextHandler.NO_SESSIONS);
+          new ServletContextHandler("/", ServletContextHandler.NO_SESSIONS);
 
       servletHandler.addServlet(DefaultServlet.class, "/");
       servletHandler.addFilter(GuiceFilter.class, "/*", EnumSet.allOf(DispatcherType.class));
       servletHandler.addEventListener(servletContextListener);
       servletHandler.addServlet(HttpServletDispatcher.class, "/*");
 
-      HandlerCollection rootHandler = new HandlerList();
-
-      RequestLogHandler logHandler = new RequestLogHandler();
-      logHandler.setRequestLog(new Slf4jRequestLog());
-
-      rootHandler.addHandler(logHandler);
-      rootHandler.addHandler(servletHandler);
+      server.setRequestLog(new CustomRequestLog(
+          new Slf4jRequestLogWriter(), CustomRequestLog.NCSA_FORMAT));
 
       ServerConnector connector = new ServerConnector(server);
       connector.setPort(options.jetty.httpPort);
@@ -400,7 +387,7 @@ public class JettyServerModule extends AbstractModule {
       }
 
       server.addConnector(connector);
-      server.setHandler(getGzipHandler(getRewriteHandler(rootHandler)));
+      server.setHandler(getCompressionHandler(getRewriteHandler(servletHandler)));
 
       try {
         connector.open();

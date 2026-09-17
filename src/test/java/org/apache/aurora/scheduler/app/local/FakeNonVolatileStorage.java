@@ -13,7 +13,7 @@
  */
 package org.apache.aurora.scheduler.app.local;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import org.apache.aurora.scheduler.storage.Storage;
 import org.apache.aurora.scheduler.storage.Storage.MutateWork.NoResult.Quiet;

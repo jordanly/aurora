@@ -13,8 +13,9 @@
  */
 package org.apache.aurora.scheduler.http.api.security;
 
-import javax.inject.Inject;
 import javax.security.auth.kerberos.KerberosPrincipal;
+
+import jakarta.inject.Inject;
 
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
@@ -24,7 +25,7 @@ import org.apache.shiro.authc.AuthenticationInfo;
 import org.apache.shiro.authc.AuthenticationToken;
 import org.apache.shiro.authc.SimpleAuthenticationInfo;
 import org.apache.shiro.realm.Realm;
-import org.apache.shiro.subject.SimplePrincipalCollection;
+import org.apache.shiro.subject.ImmutablePrincipalCollection;
 import org.ietf.jgss.GSSContext;
 import org.ietf.jgss.GSSCredential;
 import org.ietf.jgss.GSSException;
@@ -115,7 +116,7 @@ class Kerberos5Realm implements Realm {
         KerberosPrincipal kerberosPrincipal =
             new KerberosPrincipal(context.getSrcName().toString());
         return new SimpleAuthenticationInfo(
-            new SimplePrincipalCollection(
+            ImmutablePrincipalCollection.ofSingleRealm(
                 ImmutableList.of(
                     // We assume there's a single Kerberos realm in use here. Most Authorizer
                     // implementations care about the "simple" username instead of the full

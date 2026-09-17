@@ -13,7 +13,7 @@
  */
 package org.apache.aurora.scheduler.preemptor;
 
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 import com.google.inject.AbstractModule;
 

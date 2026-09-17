@@ -16,17 +16,16 @@ package org.apache.aurora.scheduler.http.api.security;
 import java.io.IOException;
 import java.util.function.Function;
 
-import javax.servlet.ServletContext;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.core.HttpHeaders;
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.ws.rs.core.HttpHeaders;
 
 import com.google.inject.Module;
 import com.google.inject.servlet.ServletModule;
 import com.google.inject.util.Providers;
-import com.sun.jersey.api.client.ClientResponse;
 
 import org.apache.aurora.scheduler.http.AbstractJettyTest;
 import org.apache.shiro.authz.UnauthenticatedException;
@@ -78,7 +77,7 @@ public class ShiroKerberosPermissiveAuthenticationFilterTest extends AbstractJet
 
     replayAndStart();
 
-    ClientResponse clientResponse = getRequestBuilder(PATH).get(ClientResponse.class);
+    jakarta.ws.rs.core.Response clientResponse = getRequestBuilder(PATH).get();
     assertEquals(HttpServletResponse.SC_OK, clientResponse.getStatus());
   }
 
@@ -89,7 +88,7 @@ public class ShiroKerberosPermissiveAuthenticationFilterTest extends AbstractJet
 
     replayAndStart();
 
-    ClientResponse clientResponse = getRequestBuilder(PATH).get(ClientResponse.class);
+    jakarta.ws.rs.core.Response clientResponse = getRequestBuilder(PATH).get();
 
     assertEquals(HttpServletResponse.SC_UNAUTHORIZED, clientResponse.getStatus());
     assertEquals(

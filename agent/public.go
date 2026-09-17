@@ -30,7 +30,11 @@ func PublicState(st State) map[string]any {
 			"execution": PublicExecution(a.Execution),
 		}
 	}
-	return map[string]any{"cursor": fmt.Sprint(st.Cursor), "ack": fmt.Sprint(st.Ack),
+	var retention any
+	if st.Retention != nil {
+		retention = map[string]any{"version": st.Retention.Version, "retiredIntervals": len(st.Retention.Retired), "pendingGarbage": len(st.Retention.Garbage)}
+	}
+	return map[string]any{"retention": retention, "cursor": fmt.Sprint(st.Cursor), "ack": fmt.Sprint(st.Ack),
 		"commands": st.Commands, "attempts": attempts, "observations": st.Observations}
 }
 

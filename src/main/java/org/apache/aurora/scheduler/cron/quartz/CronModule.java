@@ -17,7 +17,7 @@ import java.util.Properties;
 import java.util.TimeZone;
 import java.util.concurrent.atomic.AtomicLong;
 
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;

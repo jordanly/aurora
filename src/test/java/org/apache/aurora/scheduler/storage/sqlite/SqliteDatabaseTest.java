@@ -85,7 +85,7 @@ public class SqliteDatabaseTest {
     database.close();
     database = SqliteDatabase.open(path);
     database.read(() -> {
-      assertEquals("3", scalar("PRAGMA user_version"));
+      assertEquals("4", scalar("PRAGMA user_version"));
       try (Statement statement = database.connection().createStatement();
            ResultSet plan = statement.executeQuery("EXPLAIN QUERY PLAN SELECT command_id"
                + " FROM command_outbox WHERE acknowledged=0 AND agent_id='healthy'"
@@ -104,7 +104,7 @@ public class SqliteDatabaseTest {
       assertEquals("wal", scalar("PRAGMA journal_mode"));
       assertEquals("2", scalar("PRAGMA synchronous"));
       assertEquals("1", scalar("PRAGMA foreign_keys"));
-      assertEquals("3", scalar("PRAGMA user_version"));
+      assertEquals("4", scalar("PRAGMA user_version"));
       return null;
     });
     database.close();
@@ -244,7 +244,7 @@ public class SqliteDatabaseTest {
     expectFailure(StorageException.class, () -> SqliteDatabase.open(path));
     try (Connection connection = DriverManager.getConnection("jdbc:sqlite:" + path);
          Statement statement = connection.createStatement()) {
-      statement.execute("PRAGMA user_version=3");
+      statement.execute("PRAGMA user_version=4");
     }
     database = SqliteDatabase.open(path);
   }
@@ -289,7 +289,7 @@ public class SqliteDatabaseTest {
         try (Statement statement = migrated.connection().createStatement();
              ResultSet rows = statement.executeQuery("PRAGMA user_version")) {
           assertTrue(rows.next());
-          assertEquals(3, rows.getInt(1));
+          assertEquals(4, rows.getInt(1));
         }
         return null;
       });
@@ -630,6 +630,89 @@ public class SqliteDatabaseTest {
             DriverManager.getConnection(url), failCommit, false), failClose)));
     database = SqliteDatabase.open(path);
     assertEquals("before", database.read(this::value));
+  }
+
+  @Test
+  public void testAutomaticReceiptsRemainBoundedAndExpiredIdsCannotReplay() throws Exception {
+    String first = database.writeAutomatic(database::currentOperationId);
+    assertTrue(database.isCommitted(first));
+    for (int i = 0; i < 64; i++) {
+      database.writeAutomatic(() -> {
+        String enclosing = database.currentOperationId();
+        assertEquals(enclosing, database.writeAutomatic(database::currentOperationId));
+        return null;
+      });
+    }
+    String latest = database.writeAutomatic(database::currentOperationId);
+    assertEquals("1", database.read(() -> scalar("SELECT count(*) FROM automatic_outcome")));
+    assertEquals("1", database.read(() -> scalar("SELECT count(*) FROM storage_transactions")));
+    expectFailure(IllegalArgumentException.class, () -> database.write(first, () -> {
+      fail("An expired automatic ID must never invoke work");
+      return null;
+    }));
+    expectFailure(StorageException.class, () -> database.isCommitted(first));
+    database.close();
+    database = SqliteDatabase.open(path);
+    assertTrue(database.isCommitted(latest));
+    expectFailure(StorageException.class, () -> database.isCommitted(first));
+    assertTrue(database.isCommitted("schema"));
+  }
+
+  @Test
+  public void testExplicitReceiptCapacityPreservesReplayProtectionAndAutomaticWrites()
+      throws Exception {
+    database.writeAutomatic(() -> {
+      execute("WITH RECURSIVE ids(id) AS (SELECT 1 UNION ALL SELECT id+1 FROM ids WHERE id<"
+          + (SqliteDatabase.MAX_EXPLICIT_OUTCOMES - 1) + ")"
+          + " INSERT INTO storage_transactions SELECT 'explicit-' || id,1 FROM ids");
+      return null;
+    });
+    expectFailure(StorageException.class, () -> database.write("over-capacity", () -> {
+      fail("Explicit receipt capacity must be checked before user work");
+      return null;
+    }));
+    expectFailure(SqliteDatabase.AlreadyCommittedException.class,
+        () -> database.write("schema", () -> null));
+    database.writeAutomatic(() -> null);
+    assertEquals(Integer.toString(SqliteDatabase.MAX_EXPLICIT_OUTCOMES),
+        database.read(() -> scalar("SELECT count(*) FROM storage_transactions")));
+    assertTrue(database.isCommitted("explicit-1"));
+  }
+
+  @Test
+  public void testAutomaticCommitUncertaintyBeforeCommit() throws Exception {
+    testAutomaticCommitUncertainty(false);
+  }
+
+  @Test
+  public void testAutomaticCommitUncertaintyAfterCommit() throws Exception {
+    testAutomaticCommitUncertainty(true);
+  }
+
+  private void testAutomaticCommitUncertainty(boolean commitFirst) throws Exception {
+    String previous = database.writeAutomatic(database::currentOperationId);
+    database.close();
+    AtomicBoolean failCommit = new AtomicBoolean();
+    database = SqliteDatabase.open(path, url -> interceptCommit(
+        DriverManager.getConnection(url), failCommit, commitFirst));
+    failCommit.set(true);
+    List<String> published = new ArrayList<>();
+    var failure = expectFailure(SqliteDatabase.CommitUncertainException.class,
+        () -> database.writeAutomatic(() -> {
+          database.afterCommit(() -> published.add("committed"));
+          execute("UPDATE test_values SET value='after'");
+          return null;
+        }));
+    expectFailure(StorageException.class, () -> database.writeAutomatic(() -> null));
+    assertEquals(commitFirst, database.isCommitted(failure.getOperationId()));
+    assertEquals(commitFirst ? List.of("committed") : List.of(), published);
+    assertEquals(commitFirst ? "after" : "before", database.read(this::value));
+    if (!commitFirst) {
+      assertTrue(database.isCommitted(previous));
+    }
+    database.writeAutomatic(() -> null);
+    expectFailure(StorageException.class, () -> database.isCommitted(failure.getOperationId()));
+    assertEquals("1", database.read(() -> scalar("SELECT count(*) FROM automatic_outcome")));
   }
 
   private void testCommitUncertainty(boolean commitFirst) throws Exception {

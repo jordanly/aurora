@@ -118,10 +118,34 @@ type child struct {
 	run      int
 }
 
+// ephemeralIsolation rejects the graph runner inside the simple process profile:
+// its child journals require persistent storage, unlike the disposable /work.
+func ephemeralIsolation(mountinfo string) bool {
+	for _, line := range strings.Split(mountinfo, "\n") {
+		parts := strings.Split(line, " - ")
+		if len(parts) != 2 {
+			continue
+		}
+		left, right := strings.Fields(parts[0]), strings.Fields(parts[1])
+		if len(left) >= 5 && len(right) >= 2 && left[4] == "/work" && right[0] == "tmpfs" && strings.HasPrefix(right[1], "aurora-") {
+			return true
+		}
+	}
+	return false
+}
+
 // Execute consumes a private state directory exactly once. Any existing journal,
 // including a torn initial record, prevents replay and relaunch. The surviving
 // outer supervisor owns recovery; a dead task runner cannot adopt unknown children.
 func Execute(ctx context.Context, m Manifest, o Options) (res Result, err error) {
+	mounts, mountErr := os.ReadFile("/proc/self/mountinfo")
+	if mountErr != nil {
+		return res, mountErr
+	}
+	if ephemeralIsolation(string(mounts)) {
+		return res, errors.New("task graph runner requires persistent volumes; enforced simple-process /work is ephemeral")
+	}
+
 	if !executing.CompareAndSwap(false, true) {
 		return res, errors.New("Execute requires a dedicated process")
 	}
@@ -636,6 +660,12 @@ func ChildHelper() error {
 	return syscall.Exec(p.Argv[0], p.Argv, env)
 }
 
+// A proc entry can disappear before open (ENOENT) or after open (ESRCH).
+// Neither permits signaling a replacement PID; both mean this scan may continue.
+func processDisappeared(err error) bool {
+	return errors.Is(err, os.ErrNotExist) || errors.Is(err, unix.ESRCH)
+}
+
 // cleanupOrphans pins adopted descendants before signaling and reaps only those
 // exact PIDs. Original children are exclusively reaped by their exec.Cmd.Wait.
 func cleanupOrphans(live map[string]*child) (bool, error) {
@@ -654,7 +684,7 @@ func cleanupOrphans(live map[string]*child) (bool, error) {
 			continue
 		}
 		b, e := os.ReadFile(fmt.Sprintf("/proc/%d/stat", pid))
-		if os.IsNotExist(e) {
+		if processDisappeared(e) {
 			continue
 		}
 		if e != nil {
@@ -684,7 +714,7 @@ func cleanupOrphans(live map[string]*child) (bool, error) {
 		start, e := processStart(pid)
 		if e != nil {
 			unix.Close(fd)
-			if os.IsNotExist(e) {
+			if processDisappeared(e) {
 				continue
 			}
 			return true, e

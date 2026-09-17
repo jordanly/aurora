@@ -13,7 +13,7 @@
  */
 package org.apache.aurora.scheduler.storage.mem;
 
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.AbstractModule;

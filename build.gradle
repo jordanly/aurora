@@ -84,21 +84,22 @@ For more details, please see https://issues.apache.org/jira/browse/AURORA-1169
 
   ext.commonsLangRev = '2.6'
   ext.curatorRev = '2.12.0'
-  ext.gsonRev = '2.3.1'
-  // Guice 6 retains javax APIs; use the Guava version in its published parent POM.
-  ext.guavaRev = '31.0.1-jre'
-  ext.guiceRev = '6.0.0'
-  ext.httpclientRev = '4.5.2'
-  ext.httpcoreRev = '4.4.4'
-  ext.asyncHttpclientRev = '2.0.37'
-  ext.jacksonRev = '2.5.1'
-  ext.jaxRsRev = '2.0'
+  ext.gsonRev = '2.14.0'
+  // The maintained HTTP, security and DI stack uses Jakarta APIs on Java 25.
+  ext.guavaRev = '33.7.1-jre'
+  ext.guiceRev = '7.0.0'
+  ext.httpclientRev = '4.5.14'
+  ext.httpcoreRev = '4.4.16'
+  ext.asyncHttpclientRev = '3.0.13'
+  ext.jacksonRev = '2.21.6'
+  ext.jacksonAnnotationsRev = '2.21'
+  ext.jaxRsRev = '4.0.0'
   ext.junitRev = '4.12'
-  ext.logbackRev = '1.2.3'
-  ext.nettyRev = '4.0.52.Final'
-  ext.resteasyRev = '3.1.4.Final'
-  ext.servletRev = '3.1.0'
-  ext.slf4jRev = '1.7.25'
+  ext.logbackRev = '1.6.3'
+  ext.nettyRev = '4.2.18.Final'
+  ext.resteasyRev = '7.0.4.Final'
+  ext.servletRev = '6.1.0'
+  ext.slf4jRev = '2.0.19'
   ext.stringTemplateRev = '3.2.1'
   ext.thriftRev = '0.10.0'
   ext.zookeeperRev = '3.4.8'
@@ -123,15 +124,22 @@ For more details, please see https://issues.apache.org/jira/browse/AURORA-1169
     resolutionStrategy {
       failOnVersionConflict()
       force "com.google.inject:guice:${guiceRev}"
-      // Guice 6 extensions require 2.18.0; Guava 31 also requests the older 2.7.1.
-      force 'com.google.errorprone:error_prone_annotations:2.18.0'
+      force 'com.google.errorprone:error_prone_annotations:2.50.0'
       force "org.apache.httpcomponents:httpclient:${httpclientRev}"
       force "org.apache.httpcomponents:httpcore:${httpcoreRev}"
-      force "com.fasterxml.jackson.core:jackson-annotations:${jacksonRev}"
+      force "com.fasterxml.jackson.core:jackson-annotations:${jacksonAnnotationsRev}"
       force "com.fasterxml.jackson.core:jackson-core:${jacksonRev}"
+      force "com.fasterxml.jackson.core:jackson-databind:${jacksonRev}"
+      force "jakarta.servlet:jakarta.servlet-api:${servletRev}"
+      force 'jakarta.activation:jakarta.activation-api:2.1.4'
+      force 'commons-codec:commons-codec:1.22.1'
       force "com.google.code.gson:gson:${gsonRev}"
       force "com.google.guava:guava:${guavaRev}"
-      force "io.netty:netty-handler:${nettyRev}"
+      eachDependency { details ->
+        if (details.requested.group == 'io.netty' && details.requested.name != 'netty') {
+          details.useVersion nettyRev
+        }
+      }
       force "junit:junit:${junitRev}"
       force "org.apache.thrift:libthrift:${thriftRev}"
       force "org.apache.zookeeper:zookeeper:${zookeeperRev}"
@@ -215,9 +223,11 @@ project(':commons') {
     api "com.google.code.gson:gson:${gsonRev}"
     api "com.google.guava:guava:${guavaRev}"
     api "com.google.inject:guice:${guiceRev}"
+    api 'jakarta.inject:jakarta.inject-api:2.0.1'
+    api 'com.google.code.findbugs:jsr305:3.0.2'
     api "commons-lang:commons-lang:${commonsLangRev}"
-    api "javax.servlet:javax.servlet-api:${servletRev}"
-    api "javax.ws.rs:javax.ws.rs-api:${jaxRsRev}"
+    api "jakarta.servlet:jakarta.servlet-api:${servletRev}"
+    api "jakarta.ws.rs:jakarta.ws.rs-api:${jaxRsRev}"
     api "org.antlr:stringtemplate:${stringTemplateRev}"
     api "org.apache.zookeeper:zookeeper:${zookeeperRev}"
     api "org.easymock:easymock:5.6.0"
@@ -369,8 +379,8 @@ sourceSets {
 }
 
 dependencies {
-  def shiroRev = '1.4.0'
-  def jettyDep = '9.3.11.v20160721'
+  def shiroRev = '3.0.1'
+  def jettyDep = '12.1.13'
 
   api project(':api')
   api project(':commons')
@@ -383,15 +393,13 @@ dependencies {
   api "com.google.inject.extensions:guice-servlet:${guiceRev}"
   api "com.fasterxml.jackson.core:jackson-core:${jacksonRev}"
   api "com.fasterxml.jackson.core:jackson-databind:${jacksonRev}"
-  api "org.jboss.resteasy:resteasy-guice:${resteasyRev}"
-  api "org.jboss.resteasy:resteasy-jackson-provider:${resteasyRev}"
-  api "org.jboss.resteasy:resteasy-jaxrs:${resteasyRev}"
-  // The existing Jackson/JAX-RS error provider needs annotations no longer bundled with the JDK.
-  runtimeOnly 'javax.xml.bind:jaxb-api:2.3.1'
+  api "org.jboss.resteasy:resteasy-core:${resteasyRev}"
+  api "org.jboss.resteasy:resteasy-jackson2-provider:${resteasyRev}"
+  api "org.jboss.resteasy:resteasy-client:${resteasyRev}"
   // SQLite 3.53.4 includes the upstream WAL-reset fix; qualify on this Pi through JDBC.
   runtimeOnly 'org.xerial:sqlite-jdbc:3.53.4.0'
-  api 'javax.inject:javax.inject:1'
-  api "javax.servlet:javax.servlet-api:${servletRev}"
+  api 'jakarta.inject:jakarta.inject-api:2.0.1'
+  api "jakarta.servlet:jakarta.servlet-api:${servletRev}"
   api "org.antlr:stringtemplate:${stringTemplateRev}"
   api "org.apache.curator:curator-client:${curatorRev}"
   api "org.apache.curator:curator-framework:${curatorRev}"
@@ -402,11 +410,12 @@ dependencies {
   api "org.apache.zookeeper:zookeeper:${zookeeperRev}"
   api "org.eclipse.jetty:jetty-rewrite:${jettyDep}"
   api "org.eclipse.jetty:jetty-server:${jettyDep}"
-  api "org.eclipse.jetty:jetty-servlet:${jettyDep}"
-  api "org.eclipse.jetty:jetty-servlets:${jettyDep}"
+  api "org.eclipse.jetty.compression:jetty-compression-server:${jettyDep}"
+  api "org.eclipse.jetty.compression:jetty-compression-gzip:${jettyDep}"
+  api "org.eclipse.jetty.ee11:jetty-ee11-servlet:${jettyDep}"
+  api "org.eclipse.jetty.ee11:jetty-ee11-servlets:${jettyDep}"
   api 'org.quartz-scheduler:quartz:2.2.2'
 
-  testImplementation 'com.sun.jersey:jersey-client:1.19'
   testImplementation "junit:junit:${junitRev}"
   testImplementation "org.powermock:powermock-module-junit4:1.6.4"
   testImplementation "org.powermock:powermock-api-easymock:1.6.4"

@@ -22,7 +22,8 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.annotation.Nullable;
-import javax.inject.Inject;
+
+import jakarta.inject.Inject;
 
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableSet;

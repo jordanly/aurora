@@ -35,7 +35,7 @@ import org.apache.aurora.gen.Response;
 import org.apache.aurora.gen.ResponseCode;
 import org.apache.aurora.scheduler.storage.Storage;
 import org.apache.aurora.scheduler.thrift.Responses;
-import org.apache.shiro.ShiroException;
+import org.apache.shiro.lang.ShiroException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

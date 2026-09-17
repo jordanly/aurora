@@ -13,7 +13,7 @@
  */
 package org.apache.aurora.scheduler.storage.log;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import com.google.common.util.concurrent.AbstractScheduledService;
 

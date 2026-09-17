@@ -87,7 +87,7 @@ final class WireJson {
     require(depth <= 64, "JSON nesting limit");
     if (value.isObject()) {
       TreeMap<String, JsonNode> fields = new TreeMap<>();
-      value.fields().forEachRemaining(entry -> {
+      value.properties().forEach(entry -> {
         ascii(entry.getKey());
         fields.put(entry.getKey(), sorted(entry.getValue(), depth + 1));
       });

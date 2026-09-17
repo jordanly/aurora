@@ -42,6 +42,11 @@ The source must be a regular nonsymlink file without `.owner`, `-wal`, `-shm`, o
 `-journal` sidecars. The tool checks source identity, size, and modification time
 around the copy and rejects changes. It checks database integrity, the supported
 schema/table set, and every stored Thrift record on a disposable validation copy.
+Complete schema-version 3 and 4 backups are supported. A version-3 copy is
+validated through the version-4 migration; publication still preserves the
+original version-3 bytes, and the scheduler migrates them when it opens the
+destination. Version 4 also preserves ticket retirement fences and receipt
+watermarks. Earlier incomplete schemas are refused.
 Validation never changes the source ownership epoch. Publication preserves the
 original complete backup bytes; opening the recovered database as the scheduler
 subsequently acquires a new local ownership epoch.

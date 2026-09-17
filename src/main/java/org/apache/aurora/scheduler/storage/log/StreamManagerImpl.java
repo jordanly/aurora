@@ -20,7 +20,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import javax.annotation.Nullable;
-import javax.inject.Inject;
+
+import jakarta.inject.Inject;
 
 import com.google.common.collect.AbstractIterator;
 import com.google.common.hash.HashFunction;

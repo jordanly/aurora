@@ -18,12 +18,12 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
+import jakarta.ws.rs.client.Entity;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response.Status;
 
 import com.google.common.io.Resources;
-import com.sun.jersey.api.client.ClientResponse;
-import com.sun.jersey.api.client.ClientResponse.Status;
 
 import org.junit.Test;
 
@@ -32,20 +32,21 @@ import static org.junit.Assert.assertEquals;
 
 public class ServletFilterTest extends AbstractJettyTest {
 
-  protected ClientResponse get(String path) {
+  protected jakarta.ws.rs.core.Response get(String path) {
     return getRequestBuilder(path)
         .header(HttpHeaders.ACCEPT_ENCODING, "gzip")
-        .get(ClientResponse.class);
+        .get();
   }
 
-  protected ClientResponse post(String path, String body) {
+  protected jakarta.ws.rs.core.Response post(String path, String body) {
     return getRequestBuilder(path)
         .header(HttpHeaders.ACCEPT_ENCODING, "gzip")
-        .type(MediaType.TEXT_PLAIN_TYPE)
-        .post(ClientResponse.class, body);
+        .header(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_PLAIN_TYPE.toString())
+        .post(Entity.text(body));
   }
 
-  private void assertContentEncoding(ClientResponse response, Optional<String> encoding) {
+  private void assertContentEncoding(
+      jakarta.ws.rs.core.Response response, Optional<String> encoding) {
     assertEquals(
         encoding.orElse(null),
         response.getHeaders().getFirst(HttpHeaders.CONTENT_ENCODING));
@@ -77,13 +78,13 @@ public class ServletFilterTest extends AbstractJettyTest {
       Status expectedStatus,
       Optional<URL> responseResource) throws IOException {
 
-    ClientResponse response = get(path);
+    jakarta.ws.rs.core.Response response = get(path);
     assertEquals(expectedStatus.getStatusCode(), response.getStatus());
 
     if (responseResource.isPresent()) {
       assertEquals(
           Resources.toString(responseResource.get(), StandardCharsets.UTF_8),
-          response.getEntity(String.class));
+          response.readEntity(String.class));
     }
   }
 
@@ -130,9 +131,9 @@ public class ServletFilterTest extends AbstractJettyTest {
 
     unsetLeadingSchduler();
 
-    ClientResponse response = getRequestBuilder("/scheduler")
+    jakarta.ws.rs.core.Response response = getRequestBuilder("/scheduler")
         .header(BYPASS_LEADER_REDIRECT_HEADER_NAME, "true")
-        .get(ClientResponse.class);
+        .get();
 
     assertEquals(Status.OK.getStatusCode(), response.getStatus());
   }

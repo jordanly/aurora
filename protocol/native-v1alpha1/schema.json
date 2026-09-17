@@ -49,6 +49,10 @@
         },
         "jobKey": {
           "$ref": "#/$defs/jobKey"
+        },
+        "ticket": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]{0,19}(?![\\s\\S])"
         }
       },
       "required": [

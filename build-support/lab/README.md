@@ -137,8 +137,9 @@ and the service receive cleanup requests; finished history remains available.
 
 This phase crosses the former 128-lifetime-attempt reconciliation boundary on
 both agents without journal resets or daemon restarts. It qualifies continued
-execution and observation delivery under retained history; it does not qualify
-bounded disk growth, physical history compaction, or 128 concurrent workloads.
+execution and observation delivery while completed attempts retire. Retention
+counts and filesystem reclamation require separate evidence; this phase alone
+does not qualify physical file-size compaction or 128 concurrent workloads.
 
 New labs configure scheduler backups every 30 seconds and retain the latest
 three snapshots (`-backup_interval=30secs -max_saved_backups=3`). Churn records
@@ -206,13 +207,21 @@ RAM and disk remain original resource fields. The profile rejects ports, GPU,
 revocable CPU, images, volumes and fetcher URIs before assignment. Job-key parts
 match `[a-z][a-z0-9-]{0,63}`. This is a trusted process cohort with reservations;
 memory is reserved rather than cgroup-enforced, and disk is scheduler accounting.
-The `user` field is metadata, not an operating-system user switch. Thermos process
-graphs, health checks and service announcement are unsupported, as are production
-isolation and multi-scheduler HA.
+The `user` field is metadata, not an operating-system user switch. Optional TCP
+readiness and the Go process-graph executor have separate configuration contracts;
+Thermos configuration is not accepted. Service announcement and multi-scheduler
+HA remain unsupported. The opt-in [enforced process profile](../../docs/operations/native-process-isolation.md)
+requires a delegated cgroup tree, trusted rootfs and agent privileges; this
+nonroot Docker recipe does not enable it. Its kernel tests run in a separate
+[disposable VM](../../docs/operations/isolation-testing.md).
 
 Agent reconciliation inventories contain at most 128 outstanding reservations.
 At capacity, new Runs receive retryable backpressure; replayed commands and Stops
-remain available. Completed attempts and command results stay in the durable
-journal for replay safety, while observation pages carry their required history.
-Disk history still grows; automatic physical compaction and indefinite production
-operation remain unqualified.
+remain available. The scheduler retains 64 completed attempts per node by default,
+then coordinates retirement of their commands, observations, supervisor journals
+and logs after confirmed cleanup. Durable ticket intervals reject retired launches
+after deletion and restart. Retained tickets and event queues have admission bounds;
+the [storage guide](../../docs/operations/storage.md) describes the limits and
+one-time legacy drain. Freed database pages are reused; physical file-size
+compaction remains offline. Retention does not impose a byte cap on the entire
+scheduler installation.

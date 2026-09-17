@@ -15,7 +15,7 @@ package org.apache.aurora.scheduler;
 
 import java.util.Set;
 
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.Service;

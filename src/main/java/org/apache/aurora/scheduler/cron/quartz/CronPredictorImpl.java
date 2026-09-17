@@ -17,7 +17,7 @@ import java.util.Date;
 import java.util.Optional;
 import java.util.TimeZone;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import org.apache.aurora.common.util.Clock;
 import org.apache.aurora.scheduler.cron.CronPredictor;

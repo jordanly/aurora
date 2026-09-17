@@ -69,7 +69,7 @@ func transportHandler(store *Store, timing watchTiming) http.Handler {
 			transportError(w, 403, "peer rejected")
 			return
 		}
-		if r.URL.Path != "/v1/watch" && r.URL.Path != "/v1/state" && r.URL.Path != "/v1/session" && r.URL.Path != "/v1/deliver" && r.URL.Path != "/v1/ack" && r.URL.Path != "/v1/logs" {
+		if r.URL.Path != "/v1/watch" && r.URL.Path != "/v1/state" && r.URL.Path != "/v1/session" && r.URL.Path != "/v1/deliver" && r.URL.Path != "/v1/ack" && r.URL.Path != "/v1/logs" && r.URL.Path != "/v1/retention" {
 			transportError(w, 404, "unknown endpoint")
 			return
 		}
@@ -139,6 +139,17 @@ func transportHandler(store *Store, timing watchTiming) http.Handler {
 				status = 409
 			}
 			transportJSON(w, status, result)
+		case "/v1/retention":
+			if len(r.Header.Values("X-Aurora-Epoch")) != 1 || len(r.Header.Values("X-Aurora-Session")) != 1 || r.Header.Get("X-Aurora-Epoch") != cfg.Epoch || r.Header.Get("X-Aurora-Session") != cfg.Session {
+				transportError(w, 409, "stale retention authority")
+				return
+			}
+			result, e := store.Retain(data, Caller{Peer: cfg.Peer, Epoch: cfg.Epoch, Session: cfg.Session})
+			if e != nil {
+				transportError(w, 409, "retention barrier rejected")
+				return
+			}
+			transportJSON(w, 200, result)
 		case "/v1/ack":
 			if len(r.Header.Values("X-Aurora-Epoch")) != 1 || len(r.Header.Values("X-Aurora-Session")) != 1 || r.Header.Get("X-Aurora-Epoch") != cfg.Epoch || r.Header.Get("X-Aurora-Session") != cfg.Session {
 				transportError(w, 409, "stale ACK authority")

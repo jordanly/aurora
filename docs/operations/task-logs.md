@@ -25,7 +25,10 @@ Each stream retains the beginning of its output, up to the agent's `--log-bytes`
 limit (default 1 MiB; configured range 1 KiB–16 MiB). The endpoint accepts a page
 limit of 1–65536 and offsets from zero through 16 MiB. Completed logs remain
 available across daemon and scheduler restarts while their files and enrolled
-journal are retained. There is no age-based log deletion in this slice. Missing
+journal are retained. Coordinated ticket retirement keeps the most recent 64
+eligible completed attempts per agent by default; configure the scheduler JVM
+`-Daurora.go.retained-completed=N` (0–896). Retirement removes completed logs only
+after durable terminal cleanup and replay fencing. Missing, retired
 or never-created logs return 404; unavailable agents return 503.
 
 The scheduler resolves the durable Run command to its enrolled node and immutable

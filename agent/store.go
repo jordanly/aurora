@@ -88,6 +88,8 @@ func ReadConfig(data []byte) (Config, error) {
 // Caller must be constructed by the embedding authenticated transport, never from wire JSON.
 type Caller struct{ Peer, Session, Epoch string }
 type Result struct {
+	Ticket   uint64 `json:"ticket,string,omitempty"`
+	Kind     string `json:"kind,omitempty"`
 	Command  string `json:"command"`
 	Hash     string `json:"bodySha256"`
 	Outcome  string `json:"outcome"`
@@ -95,15 +97,19 @@ type Result struct {
 	Deadline int64  `json:"deadlineUnixMillis,omitempty"`
 }
 type Attempt struct {
-	DeadlineMono int64          `json:"deadlineMono,omitempty"`
-	Body         map[string]any `json:"body"`
-	Stopped      bool           `json:"stopped"`
-	Deadline     int64          `json:"deadlineUnixMillis"`
-	Sequence     uint64         `json:"sequence"`
-	Execution    *Execution     `json:"execution,omitempty"`
-	Supervisor   *SupervisorRef `json:"supervisor,omitempty"`
+	PendingReadiness bool           `json:"pendingReadiness,omitempty"`
+	DeadlineMono     int64          `json:"deadlineMono,omitempty"`
+	Body             map[string]any `json:"body"`
+	Stopped          bool           `json:"stopped"`
+	Deadline         int64          `json:"deadlineUnixMillis"`
+	Sequence         uint64         `json:"sequence"`
+	Execution        *Execution     `json:"execution,omitempty"`
+	Supervisor       *SupervisorRef `json:"supervisor,omitempty"`
 }
 type State struct {
+	RuntimeRoot     string             `json:"runtimeRoot,omitempty"`
+	EventBase       uint64             `json:"eventBase,string,omitempty"`
+	Retention       *RetentionState    `json:"retention,omitempty"`
 	FormatVersion   int                `json:"formatVersion"`
 	ExecutionEvents []ExecutionEvent   `json:"executionEvents,omitempty"`
 	StopMono        int64              `json:"stopMono,omitempty"`
@@ -121,16 +127,19 @@ type State struct {
 var ErrInventoryCapacity = errors.New("reservation inventory full")
 
 type Store struct {
-	db              *bolt.DB
-	c               Config
-	beforeCommit    func() error
-	effectMu        sync.Mutex
-	runtimeRoot     string
-	runtimeActive   bool
-	runtimeDraining bool
-	watchMu         sync.Mutex
-	changed         chan struct{}
-	closed          bool
+	db               *bolt.DB
+	c                Config
+	beforeCommit     func() error
+	beforeGarbage    func() error
+	effectMu         sync.Mutex
+	runtimeRoot      string
+	runtimeActive    bool
+	runtimeIsolation bool
+	runtimeRef       *Runtime
+	runtimeDraining  bool
+	watchMu          sync.Mutex
+	changed          chan struct{}
+	closed           bool
 }
 
 func Open(path string, c Config) (*Store, error) { return openStore(path, c, false) }
@@ -283,17 +292,23 @@ func readJournal(b *bolt.Bucket, full bool) (State, error) {
 			return st, err
 		}
 	}
+	if st.RuntimeRoot != "" && (!filepath.IsAbs(st.RuntimeRoot) || filepath.Clean(st.RuntimeRoot) != st.RuntimeRoot || st.RuntimeScope == nil) {
+		return st, errors.New("corrupt runtime root identity")
+	}
+	if err := validateRetention(st.Retention); err != nil {
+		return st, err
+	}
 	if st.FormatVersion != 1 && st.FormatVersion != 2 && st.FormatVersion != 3 {
 		return st, errors.New("unsupported store format")
 	}
 	if st.Sequences == nil || st.Commands == nil || st.Attempts == nil || st.Observations == nil || st.Ack > st.Cursor {
 		return st, errors.New("corrupt state invariants")
 	}
-	if (len(st.ExecutionEvents) > 0 || st.StopMono != 0) && st.FormatVersion != 3 {
+	if (len(st.ExecutionEvents) > 0 || st.EventBase != 0 || st.StopMono != 0) && st.FormatVersion != 3 {
 		return st, errors.New("supervisor metadata without format3")
 	}
 	for i, event := range st.ExecutionEvents {
-		if event.Sequence != uint64(i+1) {
+		if st.EventBase > math.MaxUint64-uint64(i+1) || event.Sequence != st.EventBase+uint64(i+1) {
 			return st, errors.New("supervisor event sequence corruption")
 		}
 		if err := validateExecution(&event.Execution); err != nil {
@@ -332,6 +347,11 @@ func readJournal(b *bolt.Bucket, full bool) (State, error) {
 			return st, e
 		}
 		st.Observations[i] = v
+	}
+	if full {
+		if err := validateTicketIndex(b, st); err != nil {
+			return st, err
+		}
 	}
 	return st, nil
 }
@@ -373,6 +393,10 @@ func (s *Store) Admit(data []byte, caller Caller) (Result, error) {
 		if e != nil {
 			return e
 		}
+		ticket, e := checkRetentionAdmission(b, &st, body)
+		if e != nil {
+			return e
+		}
 		command := body["command"].(string)
 		hash := protocol.Digest(body)
 		prior, ok, e := loadCommand(b, command, st)
@@ -391,7 +415,7 @@ func (s *Store) Admit(data []byte, caller Caller) (Result, error) {
 		if exists && protocol.Digest(attempt.Body["identity"]) != protocol.Digest(id) {
 			return errors.New("conflicting attempt identity")
 		}
-		out = Result{Command: command, Hash: hash, Outcome: "accepted"}
+		out = Result{Command: command, Hash: hash, Outcome: "accepted", Ticket: ticket, Kind: body["kind"].(string)}
 		kind := body["kind"]
 		if kind == "Run" && s.runtimeDraining {
 			return errors.New("runtime shutting down")
@@ -426,8 +450,10 @@ func (s *Store) Admit(data []byte, caller Caller) (Result, error) {
 				if cpu > s.c.CPU || mem > s.c.Memory {
 					out.Outcome = "rejected-capacity"
 				}
-				if len(p["requiredCapabilities"].([]any)) != 0 {
-					out.Outcome = "rejected-capability"
+				for _, capability := range p["requiredCapabilities"].([]any) {
+					if capability != "hard-memory" || !s.runtimeIsolation {
+						out.Outcome = "rejected-capability"
+					}
 				}
 				for _, port := range p["ports"].([]any) {
 					if sockets[socket(port)] {

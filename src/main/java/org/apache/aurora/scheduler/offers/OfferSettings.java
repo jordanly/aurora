@@ -13,6 +13,8 @@
  */
 package org.apache.aurora.scheduler.offers;
 
+import java.time.Duration;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Ticker;
 import com.google.common.cache.CacheBuilder;
@@ -42,7 +44,7 @@ public class OfferSettings {
     this.filterDuration = requireNonNull(filterDuration);
     this.offerSet = requireNonNull(offerSet);
     this.staticBanCacheBuilder = CacheBuilder.newBuilder()
-        .expireAfterWrite(maxHoldTime.as(Time.SECONDS), Time.SECONDS.getTimeUnit())
+        .expireAfterWrite(Duration.ofMillis(maxHoldTime.as(Time.MILLISECONDS)))
         .maximumSize(staticBanCacheMaxSize)
         .ticker(staticBanTicker)
         .recordStats();

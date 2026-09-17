@@ -16,8 +16,8 @@ package org.apache.aurora.scheduler.thrift;
 import java.util.Objects;
 import java.util.Optional;
 
-import javax.inject.Inject;
-import javax.inject.Provider;
+import jakarta.inject.Inject;
+import jakarta.inject.Provider;
 
 import com.google.common.annotations.VisibleForTesting;
 

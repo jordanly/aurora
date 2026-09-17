@@ -151,6 +151,39 @@ public class SqliteRecoveryTest {
   }
 
   @Test
+  public void versionThreeBackupMigratesOnlyWhenRestoredOwnerOpens() throws Exception {
+    Path source = path("version-three.db");
+    try (SqliteStorage storage = SqliteStorage.open(path("live.db"))) {
+      storage.write("legacy-operation", stores -> {
+        populate(stores);
+        return null;
+      });
+      storage.backup(source);
+    }
+    try (var connection = DriverManager.getConnection("jdbc:sqlite:" + source);
+         var statement = connection.createStatement()) {
+      for (String table : List.of("agent_retention", "attempt_retention", "receipt_watermarks",
+          "automatic_outcome")) {
+        statement.execute("DROP TABLE " + table);
+      }
+      statement.execute("PRAGMA user_version=3");
+    }
+    byte[] original = Files.readAllBytes(source);
+    Path restored = path("restored-version-three.db");
+    SqliteRecovery.restoreBackup(source, restored);
+    assertArrayEquals(original, Files.readAllBytes(source));
+    assertArrayEquals(original, Files.readAllBytes(restored));
+    try (SqliteStorage storage = SqliteStorage.open(restored)) {
+      assertTrue(storage.isCommitted("legacy-operation"));
+      assertEquals(java.util.Optional.of("historical-framework"),
+          storage.read(stores -> stores.getSchedulerStore().fetchFrameworkId()));
+      assertTrue(storage.read(stores -> storage.effects().retention("agent").isEmpty()));
+      storage.write(stores -> null);
+    }
+    assertArrayEquals(original, Files.readAllBytes(source));
+  }
+
+  @Test
   public void historicalSnapshotPreservesContentsAndCountsAcrossAllSevenStores() throws Exception {
     List<Object> expected;
     Snapshot snapshot;

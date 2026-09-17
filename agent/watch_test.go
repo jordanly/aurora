@@ -66,7 +66,12 @@ func startWatch(t *testing.T, c *http.Client, base string, cfg Config, after str
 	req, _ := http.NewRequest("GET", base+"/v1/watch?afterCursor="+after+"&limit=1", nil)
 	req.Header.Set("X-Aurora-Epoch", cfg.Epoch)
 	req.Header.Set("X-Aurora-Session", cfg.Session)
-	resp, err := c.Do(req)
+	// Streaming reconciliation intentionally outlives the generic RPC client's
+	// short deadline, particularly while the churn test commits many journals.
+	// Keep a bounded stream lifetime without changing server/per-frame deadlines.
+	streamClient := *c
+	streamClient.Timeout = 30 * time.Second
+	resp, err := streamClient.Do(req)
 	if err != nil {
 		t.Fatal(err)
 	}

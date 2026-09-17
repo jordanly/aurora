@@ -16,8 +16,8 @@ package org.apache.aurora.scheduler.http;
 import java.io.StringWriter;
 import java.util.function.Consumer;
 
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.Response;
 
 import org.antlr.stringtemplate.StringTemplate;
 import org.apache.aurora.common.util.templating.StringTemplateHelper;

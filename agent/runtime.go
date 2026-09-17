@@ -56,22 +56,28 @@ type ProcessIdentity struct {
 	Start string `json:"start"`
 }
 type Execution struct {
-	HealthFailure string `json:"healthFailure,omitempty"`
-	Phase         string `json:"phase"`
-	PID           int    `json:"pid"`
-	Start         string `json:"start"`
-	Outcome       string `json:"outcome"`
-	Cleanup       string `json:"cleanup"`
-	Ready         bool   `json:"ready"`
-	ExitCode      *int   `json:"exitCode,omitempty"`
-	Signal        int    `json:"signal,omitempty"`
-	StdoutBytes   int64  `json:"stdoutBytes"`
-	StderrBytes   int64  `json:"stderrBytes"`
-	StdoutDropped int64  `json:"stdoutDropped"`
-	StderrDropped int64  `json:"stderrDropped"`
+	Isolation     *IsolationRef `json:"isolation,omitempty"`
+	HealthFailure string        `json:"healthFailure,omitempty"`
+	Phase         string        `json:"phase"`
+	PID           int           `json:"pid"`
+	Start         string        `json:"start"`
+	Outcome       string        `json:"outcome"`
+	Cleanup       string        `json:"cleanup"`
+	Ready         bool          `json:"ready"`
+	ExitCode      *int          `json:"exitCode,omitempty"`
+	Signal        int           `json:"signal,omitempty"`
+	StdoutBytes   int64         `json:"stdoutBytes"`
+	StderrBytes   int64         `json:"stderrBytes"`
+	StdoutDropped int64         `json:"stdoutDropped"`
+	StderrDropped int64         `json:"stderrDropped"`
 }
 
 func validateExecution(e *Execution) error {
+	if x := e.Isolation; x != nil {
+		if x.UID == 0 || !validIsolationKey(x.Fingerprint) || !filepath.IsAbs(x.CgroupRoot) || filepath.Clean(x.CgroupRoot) != x.CgroupRoot || x.CgroupRoot == "/" {
+			return errors.New("invalid persisted isolation identity")
+		}
+	}
 	if e.HealthFailure != "" && e.HealthFailure != "health-startup-timeout" && e.HealthFailure != "health-check-failed" && e.HealthFailure != "health-exited-before-ready" {
 		return errors.New("invalid persisted health failure")
 	}
@@ -100,6 +106,8 @@ func validateExecution(e *Execution) error {
 }
 
 type RuntimeOptions struct {
+	Isolation                 *IsolationOptions
+	isolationRef              *IsolationRef
 	Root, Network, HelperPath string
 	HelperArgs                []string
 	LogBytes                  int64
@@ -119,6 +127,7 @@ type Runtime struct {
 	hooks           runtimeHooks
 }
 type runtimeHooks struct {
+	afterSnapshot       func()
 	beforeGate          func()
 	beforePersist       func(Attempt) error
 	afterIntent         func()
@@ -168,6 +177,26 @@ func observedScope() (RuntimeScope, error) {
 // NewRuntime recovers every previously consumed launch intent before new work.
 // It requires the same observed kernel scope and an exclusively owned Store.
 func NewRuntime(s *Store, opts RuntimeOptions) (*Runtime, error) {
+	s.effectMu.Lock()
+	defer s.effectMu.Unlock()
+	if s.runtimeActive {
+		return nil, errors.New("runtime already owns store")
+	}
+	persisted, err := s.InspectHot()
+	if err != nil {
+		return nil, err
+	}
+	if persisted.RuntimeRoot != "" && persisted.RuntimeRoot != opts.Root {
+		return nil, errors.New("runtime root changed; retained artifact ownership must be preserved")
+	}
+
+	if opts.Isolation != nil {
+		copy := *opts.Isolation
+		opts.Isolation = &copy
+		if e := opts.Isolation.validate(); e != nil {
+			return nil, e
+		}
+	}
 	if !filepath.IsAbs(opts.Root) || opts.Network == "" {
 		return nil, errors.New("absolute runtime root and network domain required")
 	}
@@ -219,16 +248,16 @@ func NewRuntime(s *Store, opts RuntimeOptions) (*Runtime, error) {
 	if stat, ok := fi.Sys().(*syscall.Stat_t); !ok || stat.Uid != uint32(os.Geteuid()) {
 		return nil, errors.New("runtime root owner mismatch")
 	}
+	if opts.Isolation != nil {
+		if e := rootOwnedDir(opts.Root); e != nil {
+			return nil, e
+		}
+	}
 	scope, e := observedScope()
 	if e != nil {
 		return nil, e
 	}
 	r := &Runtime{store: s, opts: opts, scope: scope, live: map[string]*liveProcess{}}
-	s.effectMu.Lock()
-	defer s.effectMu.Unlock()
-	if s.runtimeActive {
-		return nil, errors.New("runtime already owns store")
-	}
 	e = s.update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte("state"))
 		st, e := readHot(b)
@@ -246,6 +275,7 @@ func NewRuntime(s *Store, opts RuntimeOptions) (*Runtime, error) {
 			st.FormatVersion = 3
 		}
 		st.RuntimeScope = &scope
+		st.RuntimeRoot = opts.Root
 		return save(b, st)
 	})
 	if e != nil {
@@ -256,6 +286,8 @@ func NewRuntime(s *Store, opts RuntimeOptions) (*Runtime, error) {
 	}
 	s.runtimeRoot = opts.Root
 	s.runtimeActive = true
+	s.runtimeRef = r
+	s.runtimeIsolation = opts.Isolation != nil
 	s.runtimeDraining = false
 	return r, nil
 }
@@ -265,6 +297,11 @@ func (r *Runtime) recover() error {
 		return e
 	}
 	for key, a := range st.Attempts {
+		if a.Execution != nil && !(a.Execution.Isolation == nil && a.Execution.PID == 0 && a.Execution.Outcome == "stopped") {
+			if e := r.checkIsolation(a.Execution.Isolation); e != nil {
+				return e
+			}
+		}
 		if a.Execution == nil || (a.Execution.Cleanup == "complete" && (a.Supervisor == nil || a.Supervisor.Acknowledged)) {
 			continue
 		}
@@ -279,7 +316,12 @@ func (r *Runtime) recover() error {
 		}
 		x := a.Execution
 		complete := false
-		if x.PID == 0 {
+		if x.Isolation != nil {
+			complete, e = r.finishIsolation(key, x)
+			if e != nil {
+				complete = false
+			}
+		} else if x.PID == 0 {
 			complete = x.Phase == "intent"
 		} else {
 			complete, e = cleanupOwned(ProcessIdentity{x.PID, x.Start}, unix.SIGKILL)
@@ -325,9 +367,15 @@ func (r *Runtime) Tick(ctx context.Context) error {
 	if e := ctx.Err(); e != nil {
 		return e
 	}
+	if e := r.flushReadiness(); e != nil {
+		return e
+	}
 	st, e := r.store.InspectHot()
 	if e != nil {
 		return e
+	}
+	if r.hooks.afterSnapshot != nil {
+		r.hooks.afterSnapshot()
 	}
 	keys := make([]string, 0, len(st.Attempts))
 	for k := range st.Attempts {
@@ -373,6 +421,13 @@ func (r *Runtime) Tick(ctx context.Context) error {
 			if e = r.poll(ctx, key, a, live); e != nil {
 				return e
 			}
+		} else if a.Execution.Isolation != nil && a.Execution.Phase == "terminal" && a.Execution.Cleanup != "complete" {
+			complete, err := r.finishIsolation(key, a.Execution)
+			if err == nil && complete {
+				if e = r.update(key, func(a *Attempt) error { a.Execution.Cleanup = "complete"; return nil }, true); e != nil {
+					return e
+				}
+			}
 		}
 	}
 	return nil
@@ -401,18 +456,18 @@ func (r *Runtime) update(key string, change func(*Attempt) error, observe bool) 
 		if !ok {
 			return errors.New("missing attempt")
 		}
+		var previous *Execution
+		if a.Execution != nil {
+			copy := *a.Execution
+			previous = &copy
+		}
 		if e = change(&a); e != nil {
 			return e
 		}
-		if observe {
-			if e = observeAttempt(&st, key, &a); e != nil {
-				return e
-			}
+		if e = recordExecutionTransition(&st, key, &a, previous, observe, r.opts.captureEvents); e != nil {
+			return e
 		}
 		st.Attempts[key] = a
-		if r.opts.captureEvents && a.Execution != nil {
-			st.ExecutionEvents = append(st.ExecutionEvents, ExecutionEvent{Sequence: uint64(len(st.ExecutionEvents) + 1), Execution: *a.Execution})
-		}
 		if r.hooks.beforePersist != nil {
 			if e = r.hooks.beforePersist(a); e != nil {
 				return e
@@ -444,13 +499,17 @@ func (r *Runtime) start(key string) error {
 	s.effectMu.Lock()
 	defer s.effectMu.Unlock()
 	var body map[string]any
+	isolation, e := r.isolationIdentity(key)
+	if e != nil {
+		return e
+	}
 	skip := false
 	if e := r.update(key, func(a *Attempt) error {
 		if a.Stopped || a.Execution != nil {
 			skip = true
 			return nil
 		}
-		a.Execution = &Execution{Phase: "intent", Outcome: "unknown", Cleanup: "pending"}
+		a.Execution = &Execution{Phase: "intent", Outcome: "unknown", Cleanup: "pending", Isolation: isolation}
 		body = a.Body
 		return nil
 	}, false); e != nil {
@@ -463,14 +522,28 @@ func (r *Runtime) start(key string) error {
 		r.hooks.afterIntent()
 	}
 	failed := func(cause error) error {
+		complete := true
+		if isolation != nil {
+			complete, _ = r.finishIsolation(key, &Execution{Isolation: isolation})
+		}
 		return r.update(key, func(a *Attempt) error {
 			a.Execution.Phase = "terminal"
 			a.Execution.Outcome = "failed"
-			a.Execution.Cleanup = "complete"
+			a.Execution.Cleanup = "unknown"
+			if complete {
+				a.Execution.Cleanup = "complete"
+			}
 			return nil
 		}, true)
 	}
 	p := body["assignment"].(map[string]any)
+	if isolation != nil {
+		for _, arg := range p["argv"].([]any) {
+			if arg == "execute-task" {
+				return failed(errors.New("task-graph runner is not supported in isolated process profile"))
+			}
+		}
+	}
 	for _, raw := range p["ports"].([]any) {
 		port := raw.(map[string]any)
 		if port["network"] != r.opts.Network {
@@ -485,6 +558,15 @@ func (r *Runtime) start(key string) error {
 	dir := filepath.Join(r.opts.Root, key)
 	if e := os.Mkdir(dir, 0700); e != nil {
 		return failed(e)
+	}
+	var cgroup, isolationSpec *os.File
+	if isolation != nil {
+		cgroup, isolationSpec, e = r.prepareIsolation(key, isolation, p["resources"].(map[string]any))
+		if e != nil {
+			return failed(e)
+		}
+		defer cgroup.Close()
+		defer isolationSpec.Close()
 	}
 	spec, e := os.OpenFile(filepath.Join(dir, "run.json"), os.O_CREATE|os.O_EXCL|os.O_RDWR, 0600)
 	if e != nil {
@@ -531,6 +613,13 @@ func (r *Runtime) start(key string) error {
 	pidfd := -1
 	cmd.WaitDelay = 250 * time.Millisecond
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true, Pdeathsig: unix.SIGKILL, PidFD: &pidfd}
+	if isolation != nil {
+		cmd.Env = []string{"AURORA_INTERNAL_ISOLATION=1"}
+		cmd.ExtraFiles = append(cmd.ExtraFiles, isolationSpec)
+		cmd.SysProcAttr.UseCgroupFD = true
+		cmd.SysProcAttr.CgroupFD = int(cgroup.Fd())
+		cmd.SysProcAttr.Cloneflags = unix.CLONE_NEWNS | unix.CLONE_NEWIPC | unix.CLONE_NEWUTS
+	}
 	live := &liveProcess{cmd: cmd, done: make(chan error, 1), stdout: stdout, stderr: stderr}
 	started := make(chan error, 1)
 	go func() {
@@ -595,6 +684,9 @@ func (r *Runtime) start(key string) error {
 		unix.Close(pidfd)
 		if gateAttempted || signalErr != nil && signalErr != unix.ESRCH {
 			complete, err := groupEmpty(live.identity)
+			if isolation != nil {
+				complete, err = r.finishIsolation(key, &Execution{Isolation: isolation})
+			}
 			if err != nil {
 				complete = false
 			}
@@ -679,7 +771,12 @@ func (r *Runtime) poll(ctx context.Context, key string, a Attempt, p *liveProces
 			signal = unix.SIGKILL
 		}
 		if !p.termSent || signal == unix.SIGKILL {
-			_, e := cleanupOwned(p.identity, signal)
+			var e error
+			if a.Execution.Isolation != nil && signal == unix.SIGKILL {
+				_, e = isolationKill(a.Execution.Isolation, key)
+			} else {
+				_, e = cleanupOwned(p.identity, signal)
+			}
 			if e != nil {
 				return e
 			}
@@ -687,7 +784,7 @@ func (r *Runtime) poll(ctx context.Context, key string, a Attempt, p *liveProces
 		}
 	}
 	if p.finished {
-		complete, e := groupEmpty(p.identity)
+		complete, e := r.finishIsolation(key, a.Execution)
 		if e != nil {
 			complete = false
 		}
@@ -902,6 +999,28 @@ func (r *Runtime) Shutdown(ctx context.Context) error {
 		}
 	}
 }
+
+// lockRetention serializes retirement/GC with the entire Tick snapshot and
+// its updates. It follows the runtime.mu -> effectMu order used by launch and
+// Close, while handling runtime replacement without holding an obsolete lock.
+func (s *Store) lockRetention() func() {
+	for {
+		s.effectMu.Lock()
+		r := s.runtimeRef
+		if r == nil {
+			return s.effectMu.Unlock
+		}
+		s.effectMu.Unlock()
+		r.mu.Lock()
+		s.effectMu.Lock()
+		if s.runtimeRef == r {
+			return func() { s.effectMu.Unlock(); r.mu.Unlock() }
+		}
+		s.effectMu.Unlock()
+		r.mu.Unlock()
+	}
+}
+
 func (r *Runtime) Close() error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -914,6 +1033,8 @@ func (r *Runtime) Close() error {
 	r.closed = true
 	r.store.effectMu.Lock()
 	r.store.runtimeActive = false
+	r.store.runtimeRef = nil
+	r.store.runtimeIsolation = false
 	r.store.effectMu.Unlock()
 	return nil
 }

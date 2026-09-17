@@ -357,7 +357,7 @@ public class DataCompatibilityTest {
 
       // Pretty print the json for easier review of diffs.
       return new GsonBuilder().setPrettyPrinting().create()
-          .toJson(new JsonParser().parse(unformattedJson)) + "\n";
+          .toJson(JsonParser.parseString(unformattedJson)) + "\n";
     } catch (TException e) {
       throw new RuntimeException(e);
     }
@@ -368,7 +368,7 @@ public class DataCompatibilityTest {
       Op op = new Op();
 
       String nonPrettyJson = new GsonBuilder().create()
-          .toJson(new JsonParser().parse(serializedOp));
+          .toJson(JsonParser.parseString(serializedOp));
 
       new TDeserializer(new TJSONProtocol.Factory())
           .deserialize(op, nonPrettyJson.getBytes(UTF_8));

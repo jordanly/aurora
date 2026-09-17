@@ -92,3 +92,12 @@ and write failures terminate the stream; clients reconnect with backoff. Daemon
 shutdown cancels active watch request contexts before draining HTTP handlers.
 This is a single active scheduler transport; HA handoff and overlapping writers
 remain out of scope.
+
+The upgraded retention profile adds optional identity `ticket`, a positive uint64
+encoded as a canonical decimal string. The scheduler durably allocates one ticket
+per Run/Stop attempt, and both immutable bodies carry it. After the authenticated
+quiescent `/v1/retention` activation barrier, the agent requires this field and
+rejects tickets covered by durable retired intervals. Observation ACK alone does
+not retire an identity. Old strict schemas reject ticket-bearing identities;
+legacy identities remain readable for the one-time drain barrier. See
+[agent retention operations](../../agent/README.md) for bounds and migration.

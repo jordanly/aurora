@@ -15,16 +15,13 @@ package org.apache.aurora.scheduler.events;
 
 import java.io.IOException;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 import com.google.common.collect.ImmutableMap;
 
@@ -39,16 +36,19 @@ import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.DefaultAsyncHttpClient;
 import org.asynchttpclient.DefaultAsyncHttpClientConfig;
 import org.asynchttpclient.HttpResponseBodyPart;
-import org.asynchttpclient.HttpResponseHeaders;
 import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.ListenableFuture;
 import org.asynchttpclient.channel.DefaultKeepAliveStrategy;
+import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.Response;
 import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.eclipse.jetty.util.Callback;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+
+import io.netty.handler.codec.http.HttpHeaders;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -139,7 +139,7 @@ public class WebhookTest {
     }
 
     @Override
-    public State onHeadersReceived(HttpResponseHeaders headers) throws Exception {
+    public State onHeadersReceived(HttpHeaders headers) throws Exception {
       return handler.onHeadersReceived(headers);
     }
 
@@ -182,11 +182,11 @@ public class WebhookTest {
   @Before
   public void setUp() throws Exception {
     DefaultAsyncHttpClientConfig testConfig = new DefaultAsyncHttpClientConfig.Builder()
-        .setConnectTimeout(TIMEOUT)
+        .setConnectTimeout(Duration.ofMillis(TIMEOUT))
         .setHandshakeTimeout(TIMEOUT)
         .setSslSessionTimeout(TIMEOUT)
-        .setReadTimeout(TIMEOUT)
-        .setRequestTimeout(TIMEOUT)
+        .setReadTimeout(Duration.ofMillis(TIMEOUT))
+        .setRequestTimeout(Duration.ofMillis(TIMEOUT))
         .setKeepAliveStrategy(new DefaultKeepAliveStrategy())
         .build();
     httpClient = new WebhookAsyncHttpClientWrapper(testConfig);
@@ -380,24 +380,26 @@ public class WebhookTest {
   }
 
   /** Create a Jetty handler that expects a request with a given content body. */
-  private AbstractHandler createHandlerThatExpectsContent(String expected) {
-    return new AbstractHandler() {
+  private Handler.Abstract createHandlerThatExpectsContent(String expected) {
+    return new Handler.Abstract() {
       @Override
-      public void handle(String target, Request baseRequest, HttpServletRequest request,
-                         HttpServletResponse response) throws IOException, ServletException {
-        String body = request.getReader().lines().collect(Collectors.joining());
+      public boolean handle(Request request, Response response, Callback callback)
+          throws IOException {
+        String body = new String(
+            Request.asInputStream(request).readAllBytes(), StandardCharsets.UTF_8);
         if (validateRequest(request) && body.equals(expected)) {
-          response.setStatus(HttpServletResponse.SC_OK);
+          response.setStatus(200);
         } else {
-          response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+          response.setStatus(500);
         }
-        baseRequest.setHandled(true);
+        callback.succeeded();
+        return true;
       }
     };
   }
 
   /** Validate that the request is what we are expecting to send out (ex. POST, headers). */
-  private boolean validateRequest(HttpServletRequest request) {
+  private boolean validateRequest(Request request) {
     // Validate general fields are what we expect (POST, headers).
     if (!"POST".equals(request.getMethod())) {
       return false;
@@ -407,7 +409,7 @@ public class WebhookTest {
       String expectedKey = header.getKey();
       String expectedValue = header.getValue();
 
-      if (!expectedValue.equals(request.getHeader(expectedKey))) {
+      if (!expectedValue.equals(request.getHeaders().get(expectedKey))) {
         return false;
       }
     }

@@ -15,7 +15,7 @@ package org.apache.aurora.scheduler.offers;
 
 import java.util.concurrent.ScheduledExecutorService;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import com.google.common.base.Supplier;
 

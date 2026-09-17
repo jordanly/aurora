@@ -13,7 +13,7 @@
  */
 package org.apache.aurora.scheduler.execution.go;
 
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 import com.google.common.eventbus.EventBus;
 import com.google.inject.AbstractModule;

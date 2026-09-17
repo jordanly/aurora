@@ -16,11 +16,11 @@ package org.apache.aurora.scheduler.http;
 import java.util.Map;
 import java.util.Objects;
 
-import javax.inject.Inject;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Joiner;
@@ -29,9 +29,9 @@ import com.google.common.collect.Maps;
 
 import org.apache.aurora.common.collections.Pair;
 
-import static javax.servlet.http.HttpServletResponse.SC_BAD_GATEWAY;
-import static javax.servlet.http.HttpServletResponse.SC_OK;
-import static javax.servlet.http.HttpServletResponse.SC_SERVICE_UNAVAILABLE;
+import static jakarta.servlet.http.HttpServletResponse.SC_BAD_GATEWAY;
+import static jakarta.servlet.http.HttpServletResponse.SC_OK;
+import static jakarta.servlet.http.HttpServletResponse.SC_SERVICE_UNAVAILABLE;
 
 import static org.apache.aurora.scheduler.http.LeaderRedirect.LeaderStatus;
 import static org.apache.aurora.scheduler.http.LeaderRedirect.LeaderStatus.LEADING;

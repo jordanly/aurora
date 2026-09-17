@@ -55,9 +55,12 @@ import org.apache.aurora.scheduler.updater.Updates;
 public final class SqliteRecovery {
   private static final long MAX_HISTORICAL_BYTES = 256L * 1024 * 1024;
   private static final List<String> SIDECARS = List.of(".owner", "-wal", "-shm", "-journal");
-  private static final Set<String> TABLES = Set.of("storage_owner", "storage_transactions",
-      "scheduler_metadata", "cron_jobs", "quotas", "attributes", "host_maintenance", "tasks",
-      "job_updates", "command_outbox", "observation_receipts", "sqlite_sequence");
+  private static final Set<String> VERSION_THREE_TABLES = Set.of(
+      "storage_owner", "storage_transactions", "scheduler_metadata", "cron_jobs", "quotas",
+      "attributes", "host_maintenance", "tasks", "job_updates", "command_outbox",
+      "observation_receipts", "sqlite_sequence");
+  private static final Set<String> RETENTION_TABLES = Set.of(
+      "agent_retention", "attempt_retention", "receipt_watermarks", "automatic_outcome");
 
   private SqliteRecovery() { }
 
@@ -284,10 +287,14 @@ public final class SqliteRecovery {
           throw new StorageException("SQLite backup failed integrity verification");
         }
       }
+      int version;
       try (var rows = statement.executeQuery("PRAGMA user_version")) {
-        if (!rows.next() || rows.getInt(1) != SqliteDatabase.SCHEMA_VERSION) {
-          throw new StorageException("Unsupported SQLite backup schema version");
+        if (!rows.next()) {
+          throw new StorageException("Missing SQLite backup schema version");
         }
+        version = rows.getInt(1);
+        require(version == 3 || version == SqliteDatabase.SCHEMA_VERSION,
+            "Unsupported SQLite backup schema version");
       }
       Set<String> tables = new HashSet<>();
       try (var rows = statement.executeQuery("SELECT name,type FROM sqlite_master")) {
@@ -300,7 +307,11 @@ public final class SqliteRecovery {
           }
         }
       }
-      require(TABLES.equals(tables), "Incomplete or unsupported SQLite backup tables");
+      Set<String> expectedTables = new HashSet<>(VERSION_THREE_TABLES);
+      if (version >= 4) {
+        expectedTables.addAll(RETENTION_TABLES);
+      }
+      require(expectedTables.equals(tables), "Incomplete or unsupported SQLite backup tables");
     }
     // Decode all seven stores on a separate copy. Opening bumps only this
     // disposable validation copy's epoch; publish the original complete bytes.

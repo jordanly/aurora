@@ -18,7 +18,7 @@ import com.google.common.collect.ImmutableSet;
 
 import org.apache.aurora.scheduler.http.api.security.ShiroIniConverter.ExtraSectionsException;
 import org.apache.aurora.scheduler.http.api.security.ShiroIniConverter.MissingSectionsException;
-import org.apache.shiro.io.ResourceUtils;
+import org.apache.shiro.lang.io.ResourceUtils;
 import org.apache.shiro.realm.text.IniRealm;
 import org.junit.Before;
 import org.junit.Test;

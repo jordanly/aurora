@@ -22,7 +22,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
 import java.util.stream.Collectors;
-import javax.inject.Qualifier;
+
+import jakarta.inject.Qualifier;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.annotations.VisibleForTesting;
@@ -343,7 +344,7 @@ public class SlaManager extends AbstractIdleService {
     String taskConfig = new TSerializer(new TSimpleJSONProtocol.Factory())
         .toString(task.newBuilder());
     JsonObject jsonBody = new JsonObject();
-    jsonBody.add("taskConfig", new JsonParser().parse(taskConfig));
+    jsonBody.add("taskConfig", JsonParser.parseString(taskConfig));
     jsonBody.addProperty(TASK_PARAM, taskKey);
     params.forEach(jsonBody::addProperty);
 

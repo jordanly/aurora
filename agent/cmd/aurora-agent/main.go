@@ -77,6 +77,12 @@ func run() (err error) {
 	tlsKey := f.String("tls-key", "", "server private key PEM")
 	tlsCA := f.String("tls-ca", "", "trusted scheduler client CA PEM")
 	supervise := f.Bool("supervise", false, "surviving same-binary attempt supervisors (journal v3)")
+	isolationCgroup := f.String("isolation-cgroup-root", "", "empty delegated cgroup v2 subtree with memory controller")
+	isolationRootFS := f.String("isolation-rootfs", "", "root-owned read-only workload root filesystem")
+	isolationUIDBase := f.Uint("isolation-uid-base", 200000, "first isolated workload host UID")
+	isolationUIDCount := f.Uint("isolation-uid-count", 65536, "isolated workload host UID pool")
+	isolationWorkBytes := f.Uint64("isolation-work-bytes", 67108864, "maximum bytes in isolated attempt work tmpfs")
+	isolationPids := f.Uint64("isolation-pids-max", 128, "maximum processes per isolated attempt")
 	logBytes := f.Int64("log-bytes", 1048576, "maximum retained bytes per workload log stream")
 	if e := f.Parse(os.Args[2:]); e != nil {
 		return e
@@ -124,11 +130,18 @@ func run() (err error) {
 		return e
 	}
 	defer func() { err = errors.Join(err, s.Close()) }()
+	var isolation *agent.IsolationOptions
+	if *isolationCgroup != "" || *isolationRootFS != "" {
+		if *isolationUIDBase > 4294967295 || *isolationUIDCount > 4294967295 {
+			return fmt.Errorf("isolation UID range overflow")
+		}
+		isolation = &agent.IsolationOptions{CgroupRoot: *isolationCgroup, RootFS: *isolationRootFS, UIDBase: uint32(*isolationUIDBase), UIDCount: uint32(*isolationUIDCount), PidsMax: *isolationPids, WorkBytes: *isolationWorkBytes}
+	}
 	if os.Args[1] == "serve" {
-		return runHTTPS(s, agent.RuntimeOptions{Root: *workRoot, Network: *network, LogBytes: *logBytes, Supervise: *supervise}, agent.HTTPSOptions{Listen: *listen, CertFile: *tlsCert, KeyFile: *tlsKey, CAFile: *tlsCA})
+		return runHTTPS(s, agent.RuntimeOptions{Root: *workRoot, Network: *network, LogBytes: *logBytes, Supervise: *supervise, Isolation: isolation}, agent.HTTPSOptions{Listen: *listen, CertFile: *tlsCert, KeyFile: *tlsKey, CAFile: *tlsCA})
 	}
 	if os.Args[1] == "serve-local" {
-		return runLocal(s, c, agent.RuntimeOptions{Root: *workRoot, Network: *network, LogBytes: *logBytes, Supervise: *supervise})
+		return runLocal(s, c, agent.RuntimeOptions{Root: *workRoot, Network: *network, LogBytes: *logBytes, Supervise: *supervise, Isolation: isolation})
 	}
 	var result any
 	if os.Args[1] == "inspect" {

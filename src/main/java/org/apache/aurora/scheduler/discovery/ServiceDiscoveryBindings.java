@@ -20,7 +20,7 @@ import java.lang.annotation.Target;
 import java.net.InetSocketAddress;
 import java.util.List;
 
-import javax.inject.Qualifier;
+import jakarta.inject.Qualifier;
 
 import com.google.inject.Key;
 import com.google.inject.TypeLiteral;

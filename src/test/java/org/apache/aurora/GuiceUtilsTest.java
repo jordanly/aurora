@@ -15,7 +15,7 @@ package org.apache.aurora;
 
 import java.util.List;
 
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 import com.google.common.collect.ImmutableList;
 import com.google.inject.AbstractModule;

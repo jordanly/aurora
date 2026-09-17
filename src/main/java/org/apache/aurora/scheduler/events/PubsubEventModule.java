@@ -20,10 +20,10 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
-import javax.inject.Inject;
-import javax.inject.Provider;
-import javax.inject.Qualifier;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Provider;
+import jakarta.inject.Qualifier;
+import jakarta.inject.Singleton;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.eventbus.AsyncEventBus;

@@ -17,7 +17,7 @@ import java.lang.Thread.UncaughtExceptionHandler;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledExecutorService;
 
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.util.concurrent.MoreExecutors;

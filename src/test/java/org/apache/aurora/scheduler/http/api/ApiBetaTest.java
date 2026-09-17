@@ -15,9 +15,12 @@ package org.apache.aurora.scheduler.http.api;
 
 import java.util.function.Function;
 
-import javax.servlet.ServletContext;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response.Status;
+import jakarta.servlet.ServletContext;
+import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.client.ClientBuilder;
+import jakarta.ws.rs.client.Entity;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response.Status;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -25,10 +28,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.inject.AbstractModule;
 import com.google.inject.Module;
 import com.google.inject.util.Modules;
-import com.sun.jersey.api.client.Client;
-import com.sun.jersey.api.client.ClientResponse;
-import com.sun.jersey.api.client.config.ClientConfig;
-import com.sun.jersey.api.client.config.DefaultClientConfig;
 
 import org.apache.aurora.gen.AssignedTask;
 import org.apache.aurora.gen.CronCollisionPolicy;
@@ -97,10 +96,8 @@ public class ApiBetaTest extends AbstractJettyTest {
     replayAndStart();
 
     Response actualResponse = getRequestBuilder("/apibeta/createJob")
-        .entity(
-            ImmutableMap.of("description", job),
-            MediaType.APPLICATION_JSON)
-        .post(Response.class);
+        .post(Entity.entity(ImmutableMap.of("description", job), MediaType.APPLICATION_JSON),
+            Response.class);
     assertEquals(IResponse.build(response), IResponse.build(actualResponse));
   }
 
@@ -119,7 +116,7 @@ public class ApiBetaTest extends AbstractJettyTest {
     replayAndStart();
 
     Response actualResponse = getRequestBuilder("/apibeta/getRoleSummary")
-        .post(Response.class);
+        .post(Entity.text(""), Response.class);
     assertEquals(response, actualResponse);
   }
 
@@ -136,8 +133,8 @@ public class ApiBetaTest extends AbstractJettyTest {
     replayAndStart();
 
     Response actualResponse = getRequestBuilder("/apibeta/getJobSummary")
-        .entity(ImmutableMap.of("role", "roleA"), MediaType.APPLICATION_JSON)
-        .post(Response.class);
+        .post(Entity.entity(ImmutableMap.of("role", "roleA"), MediaType.APPLICATION_JSON),
+            Response.class);
     assertEquals(IResponse.build(response), IResponse.build(actualResponse));
   }
 
@@ -162,8 +159,8 @@ public class ApiBetaTest extends AbstractJettyTest {
     replayAndStart();
 
     Response actualResponse = getRequestBuilder("/apibeta/getTasksStatus")
-        .entity(ImmutableMap.of("query", query), MediaType.APPLICATION_JSON)
-        .post(Response.class);
+        .post(Entity.entity(ImmutableMap.of("query", query), MediaType.APPLICATION_JSON),
+            Response.class);
     assertEquals(IResponse.build(response), IResponse.build(actualResponse));
   }
 
@@ -171,9 +168,9 @@ public class ApiBetaTest extends AbstractJettyTest {
   public void testGetHelp() throws Exception {
     replayAndStart();
 
-    ClientResponse response = getRequestBuilder("/apibeta")
+    jakarta.ws.rs.core.Response response = getRequestBuilder("/apibeta")
         .accept(MediaType.TEXT_HTML)
-        .get(ClientResponse.class);
+        .get();
     assertEquals(Status.SEE_OTHER.getStatusCode(), response.getStatus());
   }
 
@@ -181,14 +178,13 @@ public class ApiBetaTest extends AbstractJettyTest {
   public void testPostInvalidStructure() throws Exception {
     replayAndStart();
 
-    ClientResponse badRequest = getRequestBuilder("/apibeta/createJob")
-        .entity("not an object", MediaType.APPLICATION_JSON)
-        .post(ClientResponse.class);
+    jakarta.ws.rs.core.Response badRequest = getRequestBuilder("/apibeta/createJob")
+        .post(Entity.entity("not an object", MediaType.APPLICATION_JSON));
     assertEquals(Status.BAD_REQUEST.getStatusCode(), badRequest.getStatus());
 
-    ClientResponse badParameter = getRequestBuilder("/apibeta/createJob")
-        .entity(ImmutableMap.of("description", "not a job description"), MediaType.APPLICATION_JSON)
-        .post(ClientResponse.class);
+    jakarta.ws.rs.core.Response badParameter = getRequestBuilder("/apibeta/createJob")
+        .post(Entity.entity(ImmutableMap.of("description", "not a job description"),
+            MediaType.APPLICATION_JSON));
     assertEquals(Status.BAD_REQUEST.getStatusCode(), badParameter.getStatus());
   }
 
@@ -196,8 +192,8 @@ public class ApiBetaTest extends AbstractJettyTest {
   public void testInvalidApiMethod() throws Exception {
     replayAndStart();
 
-    ClientResponse response = getRequestBuilder("/apibeta/notAMethod")
-        .post(ClientResponse.class);
+    jakarta.ws.rs.core.Response response = getRequestBuilder("/apibeta/notAMethod")
+        .post(Entity.text(""));
     assertEquals(Status.NOT_FOUND.getStatusCode(), response.getStatus());
   }
 
@@ -205,12 +201,12 @@ public class ApiBetaTest extends AbstractJettyTest {
   public void testPostInvalidJson() throws Exception {
     replayAndStart();
 
-    ClientConfig config = new DefaultClientConfig();
-    Client client = Client.create(config);
-    ClientResponse response = client.resource(makeUrl("/apibeta/createJob"))
-        .accept(MediaType.APPLICATION_JSON)
-        .entity("{this is bad json}", MediaType.APPLICATION_JSON)
-        .post(ClientResponse.class);
-    assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+    try (Client client = ClientBuilder.newClient();
+         jakarta.ws.rs.core.Response response = client.target(makeUrl("/apibeta/createJob"))
+             .request()
+             .accept(MediaType.APPLICATION_JSON)
+             .post(Entity.entity("{this is bad json}", MediaType.APPLICATION_JSON))) {
+      assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+    }
   }
 }

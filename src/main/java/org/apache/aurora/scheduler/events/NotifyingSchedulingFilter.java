@@ -17,8 +17,8 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 import java.util.Set;
 
-import javax.inject.Inject;
-import javax.inject.Qualifier;
+import jakarta.inject.Inject;
+import jakarta.inject.Qualifier;
 
 import org.apache.aurora.common.inject.TimedInterceptor.Timed;
 import org.apache.aurora.scheduler.TaskVars;

@@ -14,7 +14,6 @@
 package org.apache.aurora.scheduler.storage.sqlite;
 
 import java.nio.file.Path;
-import java.util.UUID;
 import java.util.function.Consumer;
 
 import org.apache.aurora.scheduler.events.EventSink;
@@ -150,8 +149,7 @@ public final class SqliteStorage implements Storage.NonVolatileStorage, AutoClos
 
   @Override
   public <T, E extends Exception> T write(MutateWork<T, E> work) throws E {
-    String enclosing = database.currentOperationId();
-    return write(enclosing == null ? UUID.randomUUID().toString() : enclosing, work);
+    return performWrite(null, work, true);
   }
 
   /**
@@ -160,9 +158,16 @@ public final class SqliteStorage implements Storage.NonVolatileStorage, AutoClos
    * the enclosing transaction and must reuse its ID. No callback is automatically retried.
    */
   public <T, E extends Exception> T write(String operationId, MutateWork<T, E> work) throws E {
+    return performWrite(operationId, work, false);
+  }
+
+  private <T, E extends Exception> T performWrite(
+      String operationId, MutateWork<T, E> work, boolean automatic) throws E {
     boolean outermost = database.currentOperationId() == null;
     try {
-      return database.write(operationId, () -> work.apply(stores));
+      return automatic
+          ? database.writeAutomatic(() -> work.apply(stores))
+          : database.write(operationId, () -> work.apply(stores));
     } catch (SqliteDatabase.CommitUncertainException e) {
       CommitUncertainException failure = new CommitUncertainException(e);
       notifyWriteFailure(outermost, failure);

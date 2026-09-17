@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Predicate;
 
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Supplier;

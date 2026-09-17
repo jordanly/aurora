@@ -15,7 +15,7 @@ package org.apache.aurora.common.inject;
 
 import java.lang.annotation.Annotation;
 
-import javax.inject.Qualifier;
+import jakarta.inject.Qualifier;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;

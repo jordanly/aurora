@@ -73,6 +73,8 @@ type ExecutionEvent struct {
 	Execution Execution
 }
 type supervisorSpec struct {
+	Isolation                             *IsolationOptions
+	IsolationRef                          *IsolationRef
 	Version                               int
 	Token, Key, Root, Network, HelperPath string
 	HelperArgs                            []string
@@ -148,6 +150,10 @@ func (r *Runtime) startSupervisor(key string) error {
 	r.store.effectMu.Lock()
 	defer r.store.effectMu.Unlock()
 	var a Attempt
+	isolation, err := r.isolationIdentity(key)
+	if err != nil {
+		return err
+	}
 	token := make([]byte, 32)
 	if _, e := rand.Read(token); e != nil {
 		return e
@@ -158,7 +164,7 @@ func (r *Runtime) startSupervisor(key string) error {
 		if v.Stopped || v.Execution != nil {
 			return errors.New("attempt no longer launchable")
 		}
-		v.Execution = &Execution{Phase: "intent", Outcome: "unknown", Cleanup: "pending"}
+		v.Execution = &Execution{Phase: "intent", Outcome: "unknown", Cleanup: "pending", Isolation: isolation}
 		v.Supervisor = ref
 		return nil
 	}, false); e != nil {
@@ -187,7 +193,7 @@ func (r *Runtime) startSupervisor(key string) error {
 	if e := syncDir(r.opts.Root); e != nil {
 		return e
 	}
-	spec := supervisorSpec{supervisorVersion, ref.Token, key, r.opts.Root, r.opts.Network, r.opts.HelperPath, r.opts.HelperArgs, r.opts.LogBytes, r.store.c, a.Body, r.scope}
+	spec := supervisorSpec{r.opts.Isolation, isolation, supervisorVersion, ref.Token, key, r.opts.Root, r.opts.Network, r.opts.HelperPath, r.opts.HelperArgs, r.opts.LogBytes, r.store.c, a.Body, r.scope}
 	f, e := os.OpenFile(filepath.Join(dir, "spec.json"), os.O_CREATE|os.O_EXCL|os.O_RDWR|unix.O_NOFOLLOW, 0600)
 	if e != nil {
 		return e
@@ -334,7 +340,7 @@ func SuperviseHelper() error {
 	if e != nil {
 		return e
 	}
-	rt, e := NewRuntime(s, RuntimeOptions{Root: spec.Root, Network: spec.Network, HelperPath: spec.HelperPath, HelperArgs: spec.HelperArgs, LogBytes: spec.LogBytes, captureEvents: true})
+	rt, e := NewRuntime(s, RuntimeOptions{Isolation: spec.Isolation, isolationRef: spec.IsolationRef, Root: spec.Root, Network: spec.Network, HelperPath: spec.HelperPath, HelperArgs: spec.HelperArgs, LogBytes: spec.LogBytes, captureEvents: true})
 	if e != nil {
 		return e
 	}
@@ -377,6 +383,9 @@ func SuperviseHelper() error {
 			reply := supervisorReply{Version: supervisorVersion, Token: spec.Token}
 			if err == nil && (q.Version != supervisorVersion || q.Token != spec.Token || q.Scope != scope) {
 				err = errors.New("supervisor protocol/identity mismatch")
+			}
+			if err == nil {
+				err = s.ackSupervisorEvents(q.Imported)
 			}
 			if err == nil && q.Stop {
 				err = s.update(func(tx *bolt.Tx) error {
@@ -532,6 +541,9 @@ func (r *Runtime) pollSupervisor(key string, a Attempt) error {
 			if event.Sequence != v.Supervisor.Imported+1 {
 				return errors.New("supervisor event gap")
 			}
+			if e := r.verifyIsolationObservation(v.Execution, &event.Execution); e != nil {
+				return e
+			}
 			v.Supervisor.Imported = event.Sequence
 			x := event.Execution
 			v.Execution = &x
@@ -615,13 +627,22 @@ func (r *Runtime) supervisorLost(key string, a Attempt) error {
 			return quarantine(errors.New("supervisor journal immutable spec mismatch"))
 		}
 		if local.Execution != nil {
+			if e := r.verifyIsolationObservation(a.Execution, local.Execution); e != nil {
+				return quarantine(e)
+			}
 			a.Execution = local.Execution
+		}
+		if a.Supervisor.Imported < st.EventBase {
+			return quarantine(errors.New("parent supervisor import cursor rolled back"))
 		}
 		for _, event := range st.ExecutionEvents {
 			if event.Sequence > a.Supervisor.Imported {
 				e = r.update(key, func(v *Attempt) error {
 					if event.Sequence != v.Supervisor.Imported+1 {
 						return errors.New("supervisor event gap")
+					}
+					if e := r.verifyIsolationObservation(v.Execution, &event.Execution); e != nil {
+						return e
 					}
 					v.Supervisor.Imported = event.Sequence
 					x := event.Execution
@@ -639,7 +660,13 @@ func (r *Runtime) supervisorLost(key string, a Attempt) error {
 		}
 	}
 	complete := a.Execution.PID == 0 && a.Supervisor.Process.PID == 0
-	if a.Execution.PID > 0 {
+	if a.Execution.Isolation != nil {
+		var e error
+		complete, e = r.finishIsolation(key, a.Execution)
+		if e != nil {
+			complete = false
+		}
+	} else if a.Execution.PID > 0 {
 		var e error
 		complete, e = cleanupOwned(ProcessIdentity{a.Execution.PID, a.Execution.Start}, unix.SIGKILL)
 		if e != nil {

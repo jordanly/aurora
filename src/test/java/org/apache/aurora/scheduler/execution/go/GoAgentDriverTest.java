@@ -138,6 +138,96 @@ public class GoAgentDriverTest {
   }
 
   @Test
+  public void testLateSupersededRunReplyAfterRetirementIsHarmless() throws Exception {
+    driver.stopAsync().awaitTerminated();
+    String prior = System.getProperty("aurora.go.retained-completed");
+    System.setProperty("aurora.go.retained-completed", "0");
+    try {
+      GoAgentConfig config = new GoAgentConfig("cluster", "incarnation", null, null, "", null, "",
+          List.of(NODE));
+      driver = new GoAgentDriver(config, sqlite, sqlite, () -> offers, () -> states,
+          registered::add, agent, false);
+    } finally {
+      if (prior == null) {
+        System.clearProperty("aurora.go.retained-completed");
+      } else {
+        System.setProperty("aurora.go.retained-completed", prior);
+      }
+    }
+    start();
+    commitLaunch();
+    agent.blockRun = true;
+    var delivery = java.util.concurrent.CompletableFuture.runAsync(driver::tick);
+    assertTrue(agent.deliveryStarted.await(2, TimeUnit.SECONDS));
+    try {
+      driver.killTask(TASK);
+      driver.tick(); // Stop supersedes the uncertain in-flight Run.
+      agent.observations.add(observation(1, "stopped", "complete", false));
+      driver.tick();
+      assertTrue(agent.retiredTickets.contains(1L));
+      assertFalse(sqlite.read(stores -> sqlite.effects()
+          .command(GoTaskFactory.identity("r-", TASK)).isPresent()));
+      agent.resumeDelivery.countDown();
+      delivery.get(2, TimeUnit.SECONDS);
+      // A late response must not poison subsequent SQLite writes.
+      sqlite.write(stores -> null);
+    } finally {
+      agent.resumeDelivery.countDown();
+      delivery.get(2, TimeUnit.SECONDS);
+    }
+  }
+
+  @Test
+  public void testRetirementReceiptLossKeepsHistoryUntilRetry() throws Exception {
+    start();
+    commitLaunch();
+    driver.tick(); // Ticket one remains a live service.
+    sqlite.write(stores -> {
+      for (int i = 0; i < 65; i++) {
+        String task = "completed-" + i;
+        long ticket = sqlite.effects().allocateTicket(NODE.name(), task);
+        ObjectNode run;
+        try {
+          run = (ObjectNode) WireJson.parse(launch(NODE, task).body()
+              .getBytes(java.nio.charset.StandardCharsets.US_ASCII));
+        } catch (IOException e) {
+          throw new IllegalStateException(e);
+        }
+        ((ObjectNode) run.path("identity")).put("ticket", Long.toString(ticket));
+        String command = GoTaskFactory.identity("r-", task);
+        sqlite.effects().enqueue(new Command(command, NODE.name(), task, "Run", 1,
+            WireJson.bytes(run)));
+        sqlite.effects().acknowledge(command);
+        sqlite.effects().completeTicket(NODE.name(), ticket);
+      }
+      return null;
+    });
+    agent.loseRetirementAck = true;
+    driver.killTask(TASK);
+    driver.tick();
+    assertEquals("Stop", agent.deliveries.getLast().path("body").path("kind").asText());
+    assertEquals(0, pending());
+    assertTrue(sqlite.read(stores -> sqlite.effects()
+        .command(GoTaskFactory.identity("r-", "completed-0")).isPresent()));
+    assertTrue(sqlite.read(stores -> sqlite.effects().retiringTask("completed-0")));
+    assertTrue(agent.retiredTickets.contains(2L));
+    agent.corruptRetirementRange = true;
+    driver.tick();
+    assertEquals("[]", sqlite.read(stores -> sqlite.effects()
+        .retention(NODE.name()).orElseThrow().retired()));
+    assertTrue(sqlite.read(stores -> sqlite.effects()
+        .command(GoTaskFactory.identity("r-", "completed-0")).isPresent()));
+    agent.corruptRetirementRange = false;
+    driver.tick();
+    assertFalse(sqlite.read(stores -> sqlite.effects()
+        .command(GoTaskFactory.identity("r-", "completed-0")).isPresent()));
+    assertTrue(sqlite.read(stores -> sqlite.effects()
+        .command(GoTaskFactory.identity("r-", TASK)).isPresent()));
+    assertTrue(sqlite.read(stores -> sqlite.effects()
+        .command(GoTaskFactory.identity("r-", "completed-1")).isPresent()));
+  }
+
+  @Test
   public void testRolledBackLaunchNeverDispatches() throws Exception {
     start();
     try {
@@ -499,12 +589,12 @@ public class GoAgentDriverTest {
   public void testWatchIdleHeartbeatAndCommittedLocalAssignment() throws Exception {
     startWatch();
     eventually(() -> currentOffer != null);
-    assertEquals(List.of("/v1/session", "/v1/ack"), agent.requests);
+    assertEquals(List.of("/v1/session", "/v1/ack", "/v1/retention"), agent.requests);
     ObjectNode heartbeat = WireJson.object().put("kind", "heartbeat").put("nextCursor", "0");
     heartbeat.set("config", agent.frame("snapshot", 0).path("config"));
     agent.frames.add(heartbeat);
     Thread.sleep(1200);
-    assertEquals(List.of("/v1/session", "/v1/ack"), agent.requests);
+    assertEquals(List.of("/v1/session", "/v1/ack", "/v1/retention"), agent.requests);
     commitLaunch();
     notifyAssignment();
     eventually(() -> agent.deliveries.size() == 1 && pending() == 0 && currentOffer != null
@@ -699,19 +789,27 @@ public class GoAgentDriverTest {
     stores.getUnsafeTaskStore().saveTasks(Set.of(IScheduledTask.build(task)));
   }
 
-  private static ObjectNode identity() {
+  private ObjectNode identity() {
     return identity(TASK);
   }
 
-  private static ObjectNode identity(String taskId) {
+  private ObjectNode identity(String taskId) {
+    var run = sqlite.read(stores -> sqlite.effects().command(GoTaskFactory.identity("r-", taskId)));
+    if (run.isPresent()) {
+      try {
+        return (ObjectNode) WireJson.parse(run.get().payload()).path("identity").deepCopy();
+      } catch (IOException e) {
+        throw new IllegalStateException(e);
+      }
+    }
     return WireJson.object().put("attempt", GoTaskFactory.identity("a-", taskId));
   }
 
-  private static GoTaskFactory.Launch launch() {
+  private GoTaskFactory.Launch launch() {
     return launch(NODE, TASK);
   }
 
-  private static GoTaskFactory.Launch launch(GoAgentConfig.Node node, String taskId) {
+  private GoTaskFactory.Launch launch(GoAgentConfig.Node node, String taskId) {
     ObjectNode body = WireJson.base("Run").put("command", GoTaskFactory.identity("r-", taskId));
     body.set("identity", identity(taskId));
     body.set("target", node.target());
@@ -721,7 +819,7 @@ public class GoAgentDriverTest {
     return new GoTaskFactory.Launch(taskId, node.name(), WireJson.string(body));
   }
 
-  private static JsonNode observation(long sequence, String state, String cleanup, boolean ready) {
+  private JsonNode observation(long sequence, String state, String cleanup, boolean ready) {
     ObjectNode body = WireJson.base("Observation").put("sequence", Long.toString(sequence))
         .put("cursor", Long.toString(sequence)).put("state", state).put("cleanup", cleanup)
         .put("ready", ready);
@@ -758,8 +856,11 @@ public class GoAgentDriverTest {
     private volatile String watchEpoch;
     private volatile String watchSession;
     private boolean loseDeliveryAck;
+    private boolean loseRetirementAck;
+    private boolean corruptRetirementRange;
     private boolean failSession;
     private boolean closed;
+    private final java.util.SortedSet<Long> retiredTickets = new java.util.TreeSet<>();
     private boolean reserved;
     private String outcome = "accepted";
 
@@ -768,6 +869,33 @@ public class GoAgentDriverTest {
                             String epoch, String session) throws IOException {
       if (!path.startsWith("/watch-state?")) {
         requests.add(path);
+      }
+      if ("/v1/retention".equals(path)) {
+        body.path("tickets").forEach(ticket -> retiredTickets.add(Long.parseLong(ticket.asText())));
+        if (loseRetirementAck) {
+          loseRetirementAck = false;
+          throw new IOException("Retirement reply lost");
+        }
+        ObjectNode result = WireJson.object().put("version", 1);
+        result.putArray("garbage");
+        var ranges = result.putArray("retired");
+        long first = 0;
+        long last = 0;
+        for (long ticket : retiredTickets) {
+          if (first == 0) {
+            first = ticket;
+          } else if (ticket != last + 1) {
+            ranges.addObject().put("first", Long.toString(first)).put("last", Long.toString(last));
+            first = ticket;
+          }
+          last = ticket;
+        }
+        if (first != 0) {
+          long returnedFirst = corruptRetirementRange ? 1 : first;
+          ranges.addObject().put("first", Long.toString(returnedFirst))
+              .put("last", Long.toString(last));
+        }
+        return result;
       }
       if ("/v1/session".equals(path)) {
         if (failSession) {

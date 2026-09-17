@@ -18,16 +18,17 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.function.Function;
 
-import javax.servlet.ServletContext;
-import javax.ws.rs.core.HttpHeaders;
+import jakarta.servlet.ServletContext;
+import jakarta.ws.rs.client.Entity;
+import jakarta.ws.rs.core.HttpHeaders;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.io.Resources;
 import com.google.common.net.MediaType;
 import com.google.common.primitives.Bytes;
 import com.google.inject.AbstractModule;
 import com.google.inject.Module;
 import com.google.inject.util.Modules;
-import com.sun.jersey.api.client.ClientResponse;
 
 import org.apache.aurora.gen.Response;
 import org.apache.aurora.scheduler.http.AbstractJettyTest;
@@ -35,9 +36,9 @@ import org.apache.aurora.scheduler.thrift.aop.AnnotatedAuroraAdmin;
 import org.junit.Before;
 import org.junit.Test;
 
-import static javax.servlet.http.HttpServletResponse.SC_OK;
-import static javax.servlet.http.HttpServletResponse.SC_UNSUPPORTED_MEDIA_TYPE;
-import static javax.ws.rs.core.HttpHeaders.CONTENT_TYPE;
+import static jakarta.servlet.http.HttpServletResponse.SC_OK;
+import static jakarta.servlet.http.HttpServletResponse.SC_UNSUPPORTED_MEDIA_TYPE;
+import static jakarta.ws.rs.core.HttpHeaders.CONTENT_TYPE;
 
 import static org.easymock.EasyMock.expect;
 import static org.junit.Assert.assertEquals;
@@ -64,15 +65,35 @@ public class ApiIT extends AbstractJettyTest {
   }
 
   @Test
+  public void testGeneratedClientResource() throws Exception {
+    replayAndStart();
+
+    try (var response = getPlainRequestBuilder("/apiclient/AuroraAdmin.js").get()) {
+      assertEquals(SC_OK, response.getStatus());
+      assertEquals(Resources.toString(Resources.getResource(
+          "org/apache/aurora/scheduler/gen/client/AuroraAdmin.js"), StandardCharsets.UTF_8),
+          response.readEntity(String.class));
+    }
+    try (var response = getPlainRequestBuilder("/apiclient/").get()) {
+      assertEquals(SC_OK, response.getStatus());
+      assertEquals(Resources.toString(Resources.getResource(
+          "org/apache/aurora/scheduler/gen/client/index.html"), StandardCharsets.UTF_8),
+          response.readEntity(String.class));
+    }
+    try (var response = getPlainRequestBuilder("/apiclient/missing.js").get()) {
+      assertEquals(404, response.getStatus());
+    }
+  }
+
+  @Test
   public void testGzipFilterApplied() throws Exception {
     expect(thrift.getRoleSummary()).andReturn(new Response());
 
     replayAndStart();
 
-    ClientResponse response = getRequestBuilder(ApiModule.API_PATH)
+    jakarta.ws.rs.core.Response response = getRequestBuilder(ApiModule.API_PATH)
         .header(HttpHeaders.ACCEPT_ENCODING, "gzip")
-        .type("application/x-thrift")
-        .post(ClientResponse.class, JSON_FIXTURE);
+        .post(Entity.entity(JSON_FIXTURE, "application/x-thrift"));
 
     assertEquals(SC_OK, response.getStatus());
     assertEquals("gzip", response.getHeaders().getFirst(HttpHeaders.CONTENT_ENCODING));
@@ -84,10 +105,9 @@ public class ApiIT extends AbstractJettyTest {
 
     replayAndStart();
 
-    ClientResponse response = getPlainRequestBuilder(ApiModule.API_PATH)
-        .type("application/vnd.apache.thrift.json")
+    jakarta.ws.rs.core.Response response = getPlainRequestBuilder(ApiModule.API_PATH)
         .accept("application/vnd.apache.thrift.json")
-        .post(ClientResponse.class, JSON_FIXTURE);
+        .post(Entity.entity(JSON_FIXTURE, "application/vnd.apache.thrift.json"));
 
     assertEquals(SC_OK, response.getStatus());
     assertEquals(
@@ -105,20 +125,20 @@ public class ApiIT extends AbstractJettyTest {
     // different default behaviors (Chrome and Safari will change charset to all uppercase, while
     // Firefox may leave it lowercase.
     String upperUTF8 = StandardCharsets.UTF_8.name().toUpperCase();
-    ClientResponse upperCaseUTF = getPlainRequestBuilder(ApiModule.API_PATH)
-        .type("application/vnd.apache.thrift.json; charset=" + upperUTF8)
+    jakarta.ws.rs.core.Response upperCaseUTF = getPlainRequestBuilder(ApiModule.API_PATH)
         .accept("application/vnd.apache.thrift.json; charset=" + upperUTF8)
-        .post(ClientResponse.class, JSON_FIXTURE);
+        .post(Entity.entity(
+            JSON_FIXTURE, "application/vnd.apache.thrift.json; charset=" + upperUTF8));
     assertEquals(SC_OK, upperCaseUTF.getStatus());
     assertEquals(
         "application/vnd.apache.thrift.json",
         upperCaseUTF.getHeaders().getFirst(CONTENT_TYPE));
 
     String lowerUTF8 = StandardCharsets.UTF_8.name().toLowerCase();
-    ClientResponse lowerCaseUTF = getPlainRequestBuilder(ApiModule.API_PATH)
-        .type("application/vnd.apache.thrift.json; charset=" + lowerUTF8)
+    jakarta.ws.rs.core.Response lowerCaseUTF = getPlainRequestBuilder(ApiModule.API_PATH)
         .accept("application/vnd.apache.thrift.json; charset=" + lowerUTF8)
-        .post(ClientResponse.class, JSON_FIXTURE);
+        .post(Entity.entity(
+            JSON_FIXTURE, "application/vnd.apache.thrift.json; charset=" + lowerUTF8));
     assertEquals(SC_OK, lowerCaseUTF.getStatus());
     assertEquals(
         "application/vnd.apache.thrift.json",
@@ -129,9 +149,8 @@ public class ApiIT extends AbstractJettyTest {
   public void testUnknownContentTypeRejected() throws Exception {
     replayAndStart();
 
-    ClientResponse response = getRequestBuilder(ApiModule.API_PATH)
-        .type(MediaType.PLAIN_TEXT_UTF_8.toString())
-        .post(ClientResponse.class, JSON_FIXTURE);
+    jakarta.ws.rs.core.Response response = getRequestBuilder(ApiModule.API_PATH)
+        .post(Entity.entity(JSON_FIXTURE, MediaType.PLAIN_TEXT_UTF_8.toString()));
 
     assertEquals(SC_UNSUPPORTED_MEDIA_TYPE, response.getStatus());
   }
@@ -153,10 +172,9 @@ public class ApiIT extends AbstractJettyTest {
     // Note the array has to be exactly 27 bytes long.
     byte[] rawBytes = Arrays.copyOf(Bytes.toArray(fixture), 27);
 
-    ClientResponse response = getPlainRequestBuilder(ApiModule.API_PATH)
-        .type("application/vnd.apache.thrift.binary")
+    jakarta.ws.rs.core.Response response = getPlainRequestBuilder(ApiModule.API_PATH)
         .accept("application/vnd.apache.thrift.binary")
-        .post(ClientResponse.class, rawBytes);
+        .post(Entity.entity(rawBytes, "application/vnd.apache.thrift.binary"));
 
     assertEquals(SC_OK, response.getStatus());
     assertEquals(

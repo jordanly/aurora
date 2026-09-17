@@ -13,8 +13,8 @@
  */
 package org.apache.aurora.scheduler.cron.quartz;
 
-import javax.inject.Inject;
-import javax.inject.Provider;
+import jakarta.inject.Inject;
+import jakarta.inject.Provider;
 
 import org.quartz.Job;
 import org.quartz.Scheduler;

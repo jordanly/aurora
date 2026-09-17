@@ -18,8 +18,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-import javax.servlet.Filter;
-import javax.servlet.ServletContext;
+import jakarta.servlet.Filter;
+import jakarta.servlet.ServletContext;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;

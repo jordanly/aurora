@@ -15,7 +15,7 @@ package org.apache.aurora.scheduler.cron.quartz;
 
 import java.util.Optional;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.Iterables;

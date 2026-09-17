@@ -67,6 +67,59 @@ public class SqliteEffectsTest {
   }
 
   @Test
+  public void testTicketRetirementSurvivesRestartAndKeepsAllocator() {
+    storage.write((NoResult.Quiet) stores -> {
+      storage.effects().beginRetention("agent", "scope");
+      storage.effects().confirmRetention("agent", "[]");
+      assertEquals(1, storage.effects().allocateTicket("agent", "live"));
+      assertEquals(2, storage.effects().allocateTicket("agent", "done"));
+      storage.effects().enqueue(new Command("done-run", "agent", "done", "Run", 1, new byte[0]));
+      storage.effects().completeTicket("agent", 2);
+      assertTrue(storage.effects().prepareRetirement("agent", 0).isEmpty());
+      storage.effects().acknowledge("done-run");
+    });
+    reopen();
+    storage.write((NoResult.Quiet) stores -> {
+      var selected = storage.effects().prepareRetirement("agent", 0);
+      assertEquals(List.of(new SqliteEffects.Retiring(2, "done")), selected);
+      assertTrue(storage.effects().retiringTask("done"));
+    });
+    reopen();
+    storage.write((NoResult.Quiet) stores -> {
+      assertTrue(storage.effects().retiringTask("done"));
+      storage.effects().finishRetirement("agent", "scope",
+          new SqliteEffects.Retiring(2, "done"), "attempt-done");
+      assertTrue(storage.effects().command("done-run").isEmpty());
+      assertEquals(3, storage.effects().allocateTicket("agent", "next"));
+    });
+  }
+
+  @Test
+  public void testReceiptPayloadPruningPreservesCursorAndRejectsOldReplay() {
+    var first = new ReceiptKey("agent", "scope", 1);
+    storage.write((NoResult.Quiet) stores -> {
+      assertTrue(storage.effects().recordReceipt(first, 1, new byte[] {1}));
+      storage.effects().pruneReceipts("agent", "scope");
+      assertFalse(storage.effects().hasReceipt(first));
+      assertEquals(1, storage.effects().committedCursor("agent", "scope"));
+    });
+    reopen();
+    storage.write((NoResult.Quiet) stores -> {
+      assertEquals(1, storage.effects().committedCursor("agent", "scope"));
+      assertTrue(storage.effects().recordReceipt(new ReceiptKey("agent", "scope", 2),
+          1, new byte[] {2}));
+      assertEquals(2, storage.effects().committedCursor("agent", "scope"));
+    });
+    try {
+      storage.write((NoResult.Quiet) stores ->
+          storage.effects().recordReceipt(first, 1, new byte[] {1}));
+      org.junit.Assert.fail("Pruned receipt replay accepted");
+    } catch (StorageException expected) {
+      assertTrue(expected.getMessage().contains("watermark"));
+    }
+  }
+
+  @Test
   public void testCommandCopiesPayloadAndComparesContents() {
     byte[] body = {1, 2};
     Command command = new Command("first", "agent", "task", "LAUNCH", 1, body);
@@ -281,6 +334,10 @@ public class SqliteEffectsTest {
          Statement statement = connection.createStatement()) {
       statement.execute("DROP TABLE command_outbox");
       statement.execute("DROP TABLE observation_receipts");
+      statement.execute("DROP TABLE automatic_outcome");
+      statement.execute("DROP TABLE agent_retention");
+      statement.execute("DROP TABLE attempt_retention");
+      statement.execute("DROP TABLE receipt_watermarks");
       statement.execute("PRAGMA user_version=2");
     }
     storage = SqliteStorage.open(path);
@@ -294,7 +351,7 @@ public class SqliteEffectsTest {
          Statement statement = connection.createStatement();
          ResultSet rows = statement.executeQuery("PRAGMA user_version")) {
       assertTrue(rows.next());
-      assertEquals(3, rows.getInt(1));
+      assertEquals(4, rows.getInt(1));
     }
   }
 

@@ -20,7 +20,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;

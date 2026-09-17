@@ -1,96 +1,85 @@
-# Aurora Scheduler Storage
+# Aurora scheduler storage
 
-- [Overview](#overview)
-- [Storage Semantics](#storage-semantics)
-  - [Reads, writes, modifications](#reads-writes-modifications)
-    - [Read lifecycle](#read-lifecycle)
-    - [Write lifecycle](#write-lifecycle)
-  - [Atomicity, consistency and isolation](#atomicity-consistency-and-isolation)
-  - [Population on restart](#population-on-restart)
+The original `SchedulerMain` uses one local SQLite database for scheduler metadata,
+cron jobs, tasks, quotas, host attributes, job updates and host maintenance. The
+same database holds Go-agent command intents, observation receipts and retirement
+fences. Mesos replicated-log, H2 and MyBatis storage are no longer used by this
+scheduler. This deployment has one storage owner; replication and scheduler HA
+remain separate work.
 
+## Ownership and transactions
 
-## Overview
+Startup acquires the database's stable `.owner` file lock and advances a durable
+ownership epoch. A second owner is refused. Each transaction verifies that epoch
+and session before accessing data. Use a local filesystem and keep the database,
+lock file and SQLite sidecars together under a trusted administrator's control.
 
-Aurora scheduler maintains data that need to be persisted to survive failovers and restarts.
-For example:
+SQLite runs in WAL mode with `synchronous=FULL`. Each outer read sees a committed
+snapshot. An outer write commits all store changes, command intents and observation
+receipts together. Nested writes join that transaction; a nested failure marks it
+rollback-only even if the caller catches the exception. Read-to-write promotion is
+refused. Store handles and JDBC resources must not escape their callback.
 
-* Task configurations and scheduled task instances
-* Job update configurations and update progress
-* Production resource quotas
-* Mesos resource offer host attributes
+Task and host events publish only after commit, in commit order. Publication is
+volatile; startup reconstructs policy subscribers from durable task state. Failed
+writes or event publication stop further scheduler writes because policy caches
+may have changed. Callbacks are never automatically replayed. Restart and reconcile
+from durable state before resuming operation.
 
-Aurora solves its persistence needs by leveraging the
-[Mesos implementation of a Paxos replicated log](http://mesos.apache.org/documentation/latest/replicated-log-internals/)
-[[1]](https://ramcloud.stanford.edu/~ongaro/userstudy/paxos.pdf)
-[[2]](http://en.wikipedia.org/wiki/State_machine_replication) with a key-value
-[LevelDB](https://github.com/google/leveldb) storage as persistence media.
+The owner retains one idle connection until shutdown so opening a transaction does
+not race the last connection's WAL cleanup. It does not keep an open transaction
+or prevent checkpoint progress. Connection cleanup failure retains ownership until
+cleanup succeeds.
 
-Conceptually, it can be represented by the following major components:
+## Transaction outcome retention
 
-* Volatile storage: in-memory cache of all available data. Implemented via in-memory
-[H2 Database](http://www.h2database.com/html/main.html) and accessed via
-[MyBatis](http://mybatis.github.io/mybatis-3/).
-* Log manager: interface between Aurora storage and Mesos replicated log. The default schema format
-is [thrift](https://github.com/apache/thrift). Data is stored in serialized binary form.
-* Snapshot manager: all data is periodically persisted in Mesos replicated log in a single snapshot.
-This helps establishing periodic recovery checkpoints and speeds up volatile storage recovery on
-restart.
-* Backup manager: as a precaution, snapshots are periodically written out into backup files.
-This solves a [disaster recovery problem](backup-restore.md)
-in case of a complete loss or corruption of Mesos log files.
+Routine `Storage.write(work)` calls use reserved `aurora-auto:` operation IDs and
+one durable outcome receipt. The next successful automatic write replaces that
+receipt atomically with its own effects. A commit acknowledgment failure blocks
+subsequent writes until the uncertain operation is reconciled; it cannot be hidden
+by a newer receipt.
 
-![Storage hierarchy](../images/storage_hierarchy.png)
+An automatic ID cannot be submitted through the explicit-ID write API. If its
+receipt has expired, `isCommitted` throws rather than treating the operation as
+uncommitted. After a process restart, an absent automatic receipt is likewise
+unknown: inspect domain state rather than retrying the old callback. A retained
+receipt still proves commitment across restart.
 
+The explicit `SqliteStorage.write(id, work)` API preserves durable replay
+protection for caller-chosen IDs. A repeated committed ID is rejected before work
+runs. New IDs must contain 1–256 characters. At 4,096 explicit receipts, further
+new explicit-ID writes are refused; automatic scheduler writes continue. Legacy
+receipts are preserved on upgrade, including databases already above that limit.
+There is no age-based deletion that could make an old explicit ID executable again.
 
-## Storage Semantics
+## Agent history and storage capacity
 
-Implementation details of the Aurora storage system. Understanding those can sometimes be useful
-when investigating performance issues.
+Schema version 4 adds per-node attempt tickets, compact retired-ticket intervals,
+receipt watermarks and the automatic transaction receipt. Retirement is coordinated
+with the agent after terminal cleanup, command acknowledgment and supervisor
+acknowledgment. The scheduler keeps 64 completed attempts per node by default;
+`-Daurora.go.retained-completed=0..896` configures that window. Older logs become
+unavailable after retirement. See the [agent retention contract](../../agent/README.md).
 
-### Reads, writes, modifications
+Upgrading an existing node requires a one-time drain of legacy tasks before ticket
+mode activates. Pending or uncertain legacy work blocks the transition. Existing
+node incarnation/journal scope cannot be changed inside the same database; ordinary
+daemon and scheduler restarts retain that identity.
 
-All services in Aurora access data via a set of predefined store interfaces (aka stores) logically
-grouped by the type of data they serve. Every interface defines a specific set of operations allowed
-on the data thus abstracting out the storage access and the actual persistence implementation. The
-latter is especially important in view of a general immutability of persisted data. With the Mesos
-replicated log as the underlying persistence solution, data can be read and written easily but not
-modified. All modifications are simulated by saving new versions of modified objects. This feature
-and general performance considerations justify the existence of the volatile in-memory store.
+Retiring records bounds future execution-history growth; it does not shrink an
+already allocated database file. SQLite can reuse freed pages. The agent's offline
+`compact` command can publish a smaller validated journal copy. Live task/job
+configuration, retained scheduler task/update history, backup files and externally
+managed data have their own capacity and retention policies. Monitor disk usage;
+these execution bounds are not a fixed byte limit for the entire installation.
 
-#### Read lifecycle
+## Backup and recovery
 
-There are two types of reads available in Aurora: consistent and weakly-consistent. The difference
-is explained [below](#atomicity-consistency-and-isolation).
+Use the scheduler's consistent backup facility. Copying only a live main database
+can omit committed data still in its WAL. Backups include ownership, all seven
+stores, command/receipt state and retirement fences. Restore to a new path and keep
+the source unchanged. Older backups cannot erase later agent replay fences or
+establish ownership of unknown workloads.
 
-All reads are served from the volatile storage making reads generally cheap storage operations
-from the performance standpoint. The majority of the volatile stores are represented by the
-in-memory H2 database. This allows for rich schema definitions, queries and relationships that
-key-value storage is unable to match.
-
-#### Write lifecycle
-
-Writes are more involved operations since in addition to updating the volatile store data has to be
-appended to the replicated log. Data is not available for reads until fully ack-ed by both
-replicated log and volatile storage.
-
-### Atomicity, consistency and isolation
-
-Aurora uses [write-ahead logging](http://en.wikipedia.org/wiki/Write-ahead_logging) to ensure
-consistency between replicated and volatile storage. In Aurora, data is first written into the
-replicated log and only then updated in the volatile store.
-
-Aurora storage uses read-write locks to serialize data mutations and provide consistent view of the
-available data. The available `Storage` interface exposes 3 major types of operations:
-* `consistentRead` - access is locked using reader's lock and provides consistent view on read
-* `weaklyConsistentRead` - access is lock-less. Delivers best contention performance but may result
-in stale reads
-* `write` - access is fully serialized by using writer's lock. Operation success requires both
-volatile and replicated writes to succeed.
-
-The consistency of the volatile store is enforced via H2 transactional isolation.
-
-### Population on restart
-
-Any time a scheduler restarts, it restores its volatile state from the most recent position recorded
-in the replicated log by restoring the snapshot and replaying individual log entries on top to fully
-recover the state up to the last write.
+See [backup, restore and historical snapshot import](backup-restore.md) for commands,
+retention settings, validation and recovery limits.

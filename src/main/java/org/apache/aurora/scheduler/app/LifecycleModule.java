@@ -13,7 +13,7 @@
  */
 package org.apache.aurora.scheduler.app;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import com.google.common.util.concurrent.AbstractIdleService;
 import com.google.inject.AbstractModule;

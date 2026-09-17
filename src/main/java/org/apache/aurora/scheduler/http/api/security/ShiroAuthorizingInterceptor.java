@@ -16,8 +16,8 @@ package org.apache.aurora.scheduler.http.api.security;
 import java.lang.reflect.Method;
 import java.util.concurrent.atomic.AtomicLong;
 
-import javax.inject.Inject;
-import javax.inject.Provider;
+import jakarta.inject.Inject;
+import jakarta.inject.Provider;
 
 import com.google.common.annotations.VisibleForTesting;
 

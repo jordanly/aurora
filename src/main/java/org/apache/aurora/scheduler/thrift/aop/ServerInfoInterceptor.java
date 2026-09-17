@@ -13,7 +13,7 @@
  */
 package org.apache.aurora.scheduler.thrift.aop;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;

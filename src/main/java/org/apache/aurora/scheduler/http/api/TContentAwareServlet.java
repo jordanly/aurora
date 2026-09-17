@@ -18,10 +18,10 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Optional;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 import com.google.common.net.MediaType;
 
@@ -34,7 +34,7 @@ import org.apache.thrift.transport.TTransport;
 
 import static java.util.Objects.requireNonNull;
 
-import static javax.ws.rs.core.HttpHeaders.ACCEPT;
+import static jakarta.ws.rs.core.HttpHeaders.ACCEPT;
 
 /**
  * An implementation of {@link org.apache.thrift.server.TServlet} that can handle multiple thrift

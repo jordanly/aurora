@@ -164,15 +164,15 @@ limitations under the License.
     <module name="UnusedImports"/>
     <module name="ImportOrder">
       <property name="groups"
-        value="/^javax?\./,scala,com,net,org"/>
+        value="/^javax?\./,jakarta,scala,com,net,org"/>
       <property name="ordered" value="true"/>
       <property name="separated" value="true"/>
       <property name="option" value="bottom"/>
-      <property name="staticGroups" value="/^javax?\./,scala,com,net,org"/>
+      <property name="staticGroups" value="/^javax?\./,jakarta,scala,com,net,org"/>
       <property name="separatedStaticGroups" value="true"/>
       <property name="sortStaticImportsAlphabetically" value="true"/>
       <message key="import.ordering"
-        value="Wrong order for ''{0}'' import. Order should be: java, javax, scala, com, net, org.
+        value="Wrong order for ''{0}'' import. Order should be: java, javax, jakarta, scala, com, net, org.
         Each group should be separated by a single blank line." />
     </module>
 

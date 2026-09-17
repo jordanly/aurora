@@ -17,13 +17,12 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import javax.ws.rs.HttpMethod;
-import javax.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.HttpMethod;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.Response.Status;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.sun.jersey.api.client.ClientResponse;
-import com.sun.jersey.api.client.ClientResponse.Status;
 
 import org.apache.aurora.gen.AssignedTask;
 import org.apache.aurora.gen.ScheduleStatus;
@@ -56,8 +55,8 @@ public class MnameTest extends AbstractJettyTest {
   public void testGetUsage() {
     replayAndStart();
 
-    ClientResponse response = getRequestBuilder("/mname")
-        .get(ClientResponse.class);
+    jakarta.ws.rs.core.Response response = getRequestBuilder("/mname")
+        .get();
     assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
   }
 
@@ -72,8 +71,8 @@ public class MnameTest extends AbstractJettyTest {
     replayAndStart();
 
     for (String method : methods) {
-      ClientResponse response = getRequestBuilder("/mname/myrole/test/myjob/1")
-          .method(method, ClientResponse.class);
+      jakarta.ws.rs.core.Response response = getRequestBuilder("/mname/myrole/test/myjob/1")
+          .method(method);
       assertEquals(Status.TEMPORARY_REDIRECT.getStatusCode(), response.getStatus());
       assertEquals(APP_URI, response.getHeaders().getFirst(HttpHeaders.LOCATION));
     }
@@ -92,8 +91,9 @@ public class MnameTest extends AbstractJettyTest {
     String pathAndQuery = "path?query=2";
 
     for (String method : methods) {
-      ClientResponse response = getRequestBuilder("/mname/myrole/test/myjob/1/" + pathAndQuery)
-          .method(method, ClientResponse.class);
+      jakarta.ws.rs.core.Response response = getRequestBuilder(
+          "/mname/myrole/test/myjob/1/" + pathAndQuery)
+          .method(method);
       assertEquals(Status.TEMPORARY_REDIRECT.getStatusCode(), response.getStatus());
       assertEquals(APP_URI + pathAndQuery, response.getHeaders().getFirst(HttpHeaders.LOCATION));
     }
@@ -107,8 +107,8 @@ public class MnameTest extends AbstractJettyTest {
 
     replayAndStart();
 
-    ClientResponse response = getRequestBuilder("/mname/myrole/test/myjob/1")
-        .get(ClientResponse.class);
+    jakarta.ws.rs.core.Response response = getRequestBuilder("/mname/myrole/test/myjob/1")
+        .get();
     assertEquals(Status.NOT_FOUND.getStatusCode(), response.getStatus());
   }
 
@@ -123,8 +123,8 @@ public class MnameTest extends AbstractJettyTest {
 
     replayAndStart();
 
-    ClientResponse response = getRequestBuilder("/mname/myrole/test/myjob/1")
-        .get(ClientResponse.class);
+    jakarta.ws.rs.core.Response response = getRequestBuilder("/mname/myrole/test/myjob/1")
+        .get();
     assertEquals(Status.NOT_FOUND.getStatusCode(), response.getStatus());
   }
 
@@ -140,8 +140,8 @@ public class MnameTest extends AbstractJettyTest {
 
     replayAndStart();
 
-    ClientResponse response = getRequestBuilder("/mname/myrole/test/myjob/1")
-        .get(ClientResponse.class);
+    jakarta.ws.rs.core.Response response = getRequestBuilder("/mname/myrole/test/myjob/1")
+        .get();
     assertEquals(Status.NOT_FOUND.getStatusCode(), response.getStatus());
   }
 

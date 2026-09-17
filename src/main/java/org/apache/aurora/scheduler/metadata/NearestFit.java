@@ -13,13 +13,14 @@
  */
 package org.apache.aurora.scheduler.metadata;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Functions;
@@ -58,7 +59,7 @@ public class NearestFit implements EventSubscriber {
 
   public NearestFit(Ticker ticker) {
     fitByGroupKey = CacheBuilder.newBuilder()
-        .expireAfterWrite(EXPIRATION.getValue(), EXPIRATION.getUnit().getTimeUnit())
+        .expireAfterWrite(Duration.ofMillis(EXPIRATION.as(Time.MILLISECONDS)))
         .ticker(ticker)
         .build(new CacheLoader<TaskGroupKey, Fit>() {
           @Override

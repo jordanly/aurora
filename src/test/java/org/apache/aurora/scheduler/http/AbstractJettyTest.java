@@ -13,13 +13,18 @@
  */
 package org.apache.aurora.scheduler.http;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
-import javax.servlet.ServletContext;
-import javax.servlet.ServletContextListener;
-import javax.ws.rs.core.MediaType;
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.ServletContextListener;
+import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.client.ClientBuilder;
+import jakarta.ws.rs.client.Invocation;
+import jakarta.ws.rs.core.MediaType;
 
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableMap;
@@ -32,10 +37,6 @@ import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.Module;
 import com.google.inject.util.Modules;
-import com.sun.jersey.api.client.Client;
-import com.sun.jersey.api.client.WebResource;
-import com.sun.jersey.api.client.config.ClientConfig;
-import com.sun.jersey.api.client.config.DefaultClientConfig;
 
 import org.apache.aurora.GuavaUtils.ServiceManagerIface;
 import org.apache.aurora.common.quantity.Amount;
@@ -66,6 +67,7 @@ import org.apache.aurora.scheduler.storage.Storage;
 import org.apache.aurora.scheduler.storage.entities.IServerInfo;
 import org.apache.aurora.scheduler.storage.testing.StorageTestUtil;
 import org.apache.aurora.scheduler.testing.FakeStatsProvider;
+import org.junit.After;
 import org.junit.Before;
 
 import static org.apache.aurora.scheduler.http.JettyServerModule.makeServletContextListener;
@@ -84,6 +86,13 @@ public abstract class AbstractJettyTest extends EasyMockTest {
   protected StorageTestUtil storage;
   protected HostAndPort httpServer;
   private AtomicReference<ImmutableSet<ServiceInstance>> schedulers;
+  private final List<Client> clients = new ArrayList<>();
+
+  @After
+  public void closeHttpClients() {
+    clients.forEach(Client::close);
+    clients.clear();
+  }
 
   /**
    * Subclasses should override with a module that configures the servlets they are testing.
@@ -186,19 +195,17 @@ public abstract class AbstractJettyTest extends EasyMockTest {
     return String.format("http://%s:%s%s", httpServer.getHost(), httpServer.getPort(), path);
   }
 
-  protected WebResource.Builder getPlainRequestBuilder(String path) {
+  protected Invocation.Builder getPlainRequestBuilder(String path) {
     assertNotNull("HTTP server must be started first", httpServer);
-    Client client = Client.create(new DefaultClientConfig());
-    return client.resource(makeUrl(path)).getRequestBuilder();
+    Client client = ClientBuilder.newBuilder().build();
+    clients.add(client);
+    return client.target(makeUrl(path)).request();
   }
 
-  protected WebResource.Builder getRequestBuilder(String path) {
+  protected Invocation.Builder getRequestBuilder(String path) {
     assertNotNull("HTTP server must be started first", httpServer);
-    ClientConfig config = new DefaultClientConfig();
-    config.getClasses().add(GsonMessageBodyHandler.class);
-    Client client = Client.create(config);
-    // Disable redirects so we can unit test them.
-    client.setFollowRedirects(false);
-    return client.resource(makeUrl(path)).getRequestBuilder().accept(MediaType.APPLICATION_JSON);
+    Client client = ClientBuilder.newBuilder().register(GsonMessageBodyHandler.class).build();
+    clients.add(client);
+    return client.target(makeUrl(path)).request().accept(MediaType.APPLICATION_JSON);
   }
 }
