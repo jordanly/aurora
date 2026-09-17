@@ -233,8 +233,11 @@ func (r *Runtime) startSupervisor(key string) error {
 	rw.Close()
 	rr.SetReadDeadline(time.Now().Add(5 * time.Second))
 	var ready [1]byte
-	if _, e = io.ReadFull(rr, ready[:]); e != nil || ready[0] != 'R' {
-		return errors.New("supervisor readiness failed")
+	if _, e = io.ReadFull(rr, ready[:]); e != nil {
+		return fmt.Errorf("supervisor readiness failed: %w", e)
+	}
+	if ready[0] != 'R' {
+		return errors.New("supervisor readiness failed: invalid acknowledgement")
 	}
 	info, e := processInfo(cmd.Process.Pid)
 	if e != nil {
@@ -290,6 +293,20 @@ func SuperviseHelper() error {
 	if scope != spec.Scope {
 		return errors.New("supervisor scope mismatch")
 	}
+	// Acknowledge the validated, gated process before durable initialization.
+	// Journal fsyncs can stall longer than the parent's readiness deadline.
+	// Once it records our exact identity and releases the gate, the parent can
+	// retain this attempt through its normal live-but-unavailable retry path
+	// until the journal and listener are ready. No workload can launch yet.
+	if _, e = ready.Write([]byte{'R'}); e != nil {
+		return e
+	}
+	ready.Close()
+	var g [1]byte
+	if _, e = io.ReadFull(gate, g[:]); e != nil || g[0] != 'G' {
+		return errors.New("supervisor gate not released")
+	}
+	gate.Close()
 	dir := filepath.Dir(supervisorSocket(spec.Root, spec.Key))
 	s, e := Open(filepath.Join(dir, "journal.db"), spec.Config)
 	if e != nil {
@@ -333,15 +350,6 @@ func SuperviseHelper() error {
 	ln.SetUnlinkOnClose(false)
 	defer os.Remove(supervisorSocket(spec.Root, spec.Key))
 	defer ln.Close()
-	if _, e = ready.Write([]byte{'R'}); e != nil {
-		return e
-	}
-	ready.Close()
-	var g [1]byte
-	if _, e = io.ReadFull(gate, g[:]); e != nil || g[0] != 'G' {
-		return errors.New("supervisor gate not released")
-	}
-	gate.Close()
 	requests := make(chan *net.UnixConn)
 	go func() {
 		for {
@@ -475,7 +483,7 @@ func (r *Runtime) pollSupervisor(key string, a Attempt) error {
 	connection, e := net.DialTimeout("unix", address, time.Second)
 	socketDir.Close()
 	if e != nil {
-		if !errors.Is(e, unix.ECONNREFUSED) && !os.IsNotExist(e) && !errors.Is(e, unix.EAGAIN) {
+		if !errors.Is(e, unix.ECONNREFUSED) && !errors.Is(e, unix.ENOENT) && !errors.Is(e, unix.EAGAIN) {
 			return supervisorIOError(e)
 		}
 		return r.supervisorLost(key, a)

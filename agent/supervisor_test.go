@@ -608,3 +608,164 @@ func TestSupervisorRetryClassificationRejectsIntegrityFailures(t *testing.T) {
 		}
 	}
 }
+
+// A slow journal must not consume the gated-process handshake deadline or
+// monopolize the daemon's store while it initializes. Pause the exact child
+// before release to make that window deterministic, then reattach a daemon.
+func TestSupervisorDelayedInitializationRetainsAttempt(t *testing.T) {
+	root := t.TempDir()
+	c := config()
+	s := open(t, filepath.Join(root, "state"), c)
+	defer s.Close()
+	marker := filepath.Join(root, "launches")
+	b := runtimeBody(t, "batch", marker, 0)
+	p := b["assignment"].(map[string]any)
+	p["ports"] = []any{}
+	p["readiness"] = map[string]any{"kind": "none"}
+	if _, err := s.Admit(delivery(c, b), caller(c)); err != nil {
+		t.Fatal(err)
+	}
+	key := attemptKey(b["identity"].(map[string]any))
+	opts := supervisorOpts(t, filepath.Join(root, "work"))
+	r, err := NewRuntime(s, opts)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var paused int
+	defer func() {
+		if paused != 0 {
+			unix.Kill(paused, unix.SIGCONT)
+		}
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err := r.Shutdown(ctx); err != nil {
+			t.Error(err)
+		}
+	}()
+	r.hooks.afterIdentity = func() {
+		st, err := s.Inspect()
+		if err != nil {
+			t.Fatal(err)
+		}
+		paused = st.Attempts[key].Supervisor.Process.PID
+		if err := unix.Kill(paused, unix.SIGSTOP); err != nil {
+			t.Fatal(err)
+		}
+		journal := filepath.Join(filepath.Dir(supervisorSocket(opts.Root, key)), "journal.db")
+		if _, err := os.Stat(journal); !os.IsNotExist(err) {
+			t.Fatalf("durable initialization preceded the identity/gate handshake: %v", err)
+		}
+	}
+	if err := r.Tick(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	before, err := s.Inspect()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := r.Close(); err != nil {
+		t.Fatal(err)
+	}
+	reopened, err := NewRuntime(s, opts)
+	if err != nil {
+		t.Fatal(err)
+	}
+	r = reopened
+	for i := 0; i < 3; i++ {
+		// Exercise reconciliation each time, including the unavailable path.
+		delete(r.supervisorRetry, key)
+		if err := r.Tick(context.Background()); err != nil {
+			t.Fatal(err)
+		}
+		st, err := s.Inspect()
+		if err != nil || !reflect.DeepEqual(before, st) || !st.Attempts[key].Reserved() {
+			t.Fatalf("initializing supervisor changed durable state/reservation: %v", err)
+		}
+		if _, err := os.Stat(marker); !os.IsNotExist(err) {
+			t.Fatalf("workload launched while initialization was blocked: %v", err)
+		}
+	}
+	if err := unix.Kill(paused, unix.SIGCONT); err != nil {
+		t.Fatal(err)
+	}
+	paused = 0
+	runUntil(t, r, func(st State) bool { return st.Attempts[key].Supervisor.Acknowledged })
+	st, err := s.Inspect()
+	if err != nil {
+		t.Fatal(err)
+	}
+	a := st.Attempts[key]
+	if a.Execution.Outcome != "succeeded" || a.Execution.ExitCode == nil || *a.Execution.ExitCode != 0 || a.Reserved() {
+		t.Fatalf("delayed initialization lost the exact result: %+v", a)
+	}
+	launches, err := os.ReadFile(marker)
+	if err != nil || string(launches) != "launch\n" {
+		t.Fatalf("workload replayed: %q, %v", launches, err)
+	}
+}
+
+func TestSupervisorDeathBeforeJournalRemainsQuarantined(t *testing.T) {
+	root := t.TempDir()
+	c := config()
+	s := open(t, filepath.Join(root, "state"), c)
+	defer s.Close()
+	b := runtimeBody(t, "batch", filepath.Join(root, "launches"), 0)
+	p := b["assignment"].(map[string]any)
+	p["ports"] = []any{}
+	p["readiness"] = map[string]any{"kind": "none"}
+	if _, err := s.Admit(delivery(c, b), caller(c)); err != nil {
+		t.Fatal(err)
+	}
+	key := attemptKey(b["identity"].(map[string]any))
+	r, err := NewRuntime(s, supervisorOpts(t, filepath.Join(root, "work")))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer r.Close()
+	var pid int
+	defer func() {
+		if pid != 0 {
+			unix.Kill(pid, unix.SIGKILL)
+		}
+	}()
+	r.hooks.afterIdentity = func() {
+		st, err := s.Inspect()
+		if err != nil {
+			t.Fatal(err)
+		}
+		pid = st.Attempts[key].Supervisor.Process.PID
+		if err := unix.Kill(pid, unix.SIGSTOP); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := r.Tick(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if err := unix.Kill(pid, unix.SIGKILL); err != nil {
+		t.Fatal(err)
+	}
+	deadline := time.Now().Add(5 * time.Second)
+	for {
+		info, err := processInfo(pid)
+		if os.IsNotExist(err) || err == nil && (info.State == "Z" || info.State == "X") {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatal("supervisor did not die", err)
+		}
+		time.Sleep(time.Millisecond)
+	}
+	err = r.Tick(context.Background())
+	var unavailable *supervisorUnavailable
+	if err == nil || errors.As(err, &unavailable) || !strings.Contains(err.Error(), "supervisor journal unavailable; cleanup unconfirmed") {
+		t.Fatalf("missing journal did not fail closed: %v", err)
+	}
+	st, err := s.Inspect()
+	if err != nil {
+		t.Fatal(err)
+	}
+	a := st.Attempts[key]
+	if !a.Reserved() || a.Execution.Outcome != "lost" || a.Execution.Cleanup != "unknown" || a.Execution.ExitCode != nil {
+		t.Fatalf("dead uninitialized supervisor escaped quarantine: %+v", a)
+	}
+}

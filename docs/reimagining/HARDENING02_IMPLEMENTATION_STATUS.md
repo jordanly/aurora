@@ -68,19 +68,34 @@ verify that the idle connection permits a complete WAL checkpoint, transaction
 connections close, ownership remains held after failed shutdown, retries release
 it safely, and failed initialization still cleans up correctly.
 
+## Supervisor startup
+
+The first log qualification exposed another startup failure: both agents' new
+supervisors spent more than five seconds initializing durable journals, exceeding
+the gated-process handshake deadline before any workload launched. Aurora
+rescheduled those attempts, so the strict log acceptance check correctly failed.
+
+The handshake now establishes the validated supervisor's exact identity before
+journal initialization. A live supervisor without a ready socket remains attached
+with its reservation retained, including after daemon recovery. Wrapped Unix
+socket ENOENT errors take that same unavailable path. The readiness timeout is
+unchanged. Dead supervisors with missing or corrupt journals still fail closed;
+this change does not infer successful cleanup from an absent journal.
+
 ## Qualification
 
-Qualification is in progress for implementation commit
-`42ad3c6dc28a032cb771a609b6223e32d2fd1559`, published on
+Qualification is in progress for the implementation published on
 [`codex/in-place-java25`](https://github.com/jordanly/aurora/tree/codex/in-place-java25).
 Final receipts will record exact source, artifacts and fresh two-agent Docker results.
 
 Local behavior checks pass 1,375 scheduler tests and 124 commons tests, with
 zero failures, errors or skips. Instruction coverage is 91.57% and branch coverage
-is 81.09%; the original 87% / 79% thresholds remain unchanged. Final static
-analysis, packaging and fresh-cluster qualification are in progress.
+is 81.09%; the original 87% / 79% thresholds remain unchanged. All Java quality gates, UI lint and 150 tests in 35 suites, packaging and
+installed-launcher verification pass locally. The previous cluster passed smoke and application-health qualification before
+the supervisor startup failure described above. A new cluster will qualify the
+corrected startup behavior and remaining phases.
 
-The implementation changes 65 files, adding 4,100 lines and deleting 116 before
+The implementation changes 65 files, adding 4,281 lines and deleting 128 before
 this qualification documentation; 23 changed files contain tests. Review found
 and fixed startup-deadline ordering, monotonic health-stop escalation, UTF-8 page
 boundaries, UI route collisions, test injector bindings and transient supervisor
