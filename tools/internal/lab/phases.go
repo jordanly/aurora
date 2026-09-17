@@ -173,7 +173,7 @@ func (c *check) recovery() error {
 				if err = c.pause(3 * time.Second); err != nil {
 					return err
 				}
-				deadline := time.Now().Add(90 * time.Second)
+				deadline := time.Now().Add(daemonRecoveryTimeout)
 				var current []Task
 				for {
 					current, err = c.wait(name, func(xs []Task) bool { return len(xs) == 2 && all(xs, 2) }, 5*time.Second)

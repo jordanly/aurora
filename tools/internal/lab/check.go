@@ -29,6 +29,10 @@ import (
 
 type Object = map[string]any
 
+// JVM startup and agent registration can exceed 90 seconds on a busy ARM lab.
+// This bounds acceptance recovery, independently of workload health deadlines.
+const daemonRecoveryTimeout = 3 * time.Minute
+
 func field(kind string, value any) Object { return Object{kind: value} }
 func get(value any, number int) any {
 	object, ok := value.(map[string]any)

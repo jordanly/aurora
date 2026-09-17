@@ -140,7 +140,7 @@ func (c *check) logs() error {
 		if err != nil {
 			return err
 		}
-		deadline := time.Now().Add(90 * time.Second)
+		deadline := time.Now().Add(daemonRecoveryTimeout)
 		for {
 			allReadable := true
 			for _, task := range finished {

@@ -98,6 +98,11 @@ alone does not establish API readiness.
 
 ## API acceptance runner
 
+After an injected daemon restart or crash, acceptance allows up to three minutes
+for scheduler startup and agent registration on a loaded ARM host. This is a lab
+recovery deadline; workload health deadlines and all log-content, task-identity
+and process-identity assertions are unchanged.
+
 Once the original scheduler and adapter are ready:
 
 ```
