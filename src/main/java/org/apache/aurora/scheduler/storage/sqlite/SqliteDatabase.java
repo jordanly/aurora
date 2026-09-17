@@ -272,6 +272,7 @@ final class SqliteDatabase implements AutoCloseable {
 
   private void initialize() {
     Connection connection = null;
+    boolean retained = false;
     Throwable primary = null;
     try {
       connection = openConnection();
@@ -344,7 +345,7 @@ final class SqliteDatabase implements AutoCloseable {
       // last transaction's close can take an exclusive cleanup lock while another thread
       // opens its connection. No transaction remains open here, so checkpoints can progress.
       anchorConnection = connection;
-      connection = null;
+      retained = true;
     } catch (SQLException e) {
       primary = e;
       throw new StorageException("Failed to initialize SQLite storage", e);
@@ -352,7 +353,7 @@ final class SqliteDatabase implements AutoCloseable {
       primary = e;
       throw e;
     } finally {
-      if (connection != null) {
+      if (connection != null && !retained) {
         if (primary != null) {
           try {
             execute(connection, "ROLLBACK");
