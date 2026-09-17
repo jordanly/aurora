@@ -115,6 +115,8 @@ public class SqliteDatabaseTest {
   }
 
   @Test
+  // Connection aliases are observed here; SqliteDatabase owns and closes them.
+  @SuppressWarnings("PMD.CloseResource")
   public void testIdleConnectionKeepsWalOpenWithoutPinningSnapshot() throws Exception {
     database.close();
     List<Connection> connections = new ArrayList<>();
