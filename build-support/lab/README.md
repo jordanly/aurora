@@ -130,6 +130,12 @@ while twenty two-instance batch jobs finish. Policy checks an automatic rollback
 from a failing update, exact executor restoration, active-host draining and
 replacement, and manual execution of a scheduled cron job.
 
+The policy rollback fixture requires 30 seconds of stable RUNNING state before
+accepting an updated instance. Its deliberately failing process can briefly be
+observed as RUNNING before the exit observation arrives on a loaded host; a
+one-second window can admit that instance before the failure is observed. The
+rollback deadline and exact executor-restoration assertions remain unchanged.
+
 Churn retains two 100mCPU services, one per agent, while 130 two-instance batch
 jobs run sequentially. Each batch uses a three-second process, 600mCPU per
 instance, and a one-instance-per-host constraint. The receipt requires exactly

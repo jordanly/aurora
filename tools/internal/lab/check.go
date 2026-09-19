@@ -351,11 +351,11 @@ func (c *check) quota() error {
 	_, err := c.rpc("setQuota", Object{"1": field("str", "fixtures"), "2": field("rec", Object{"4": field("set", quota)})})
 	return err
 }
-func settings() Object {
-	return Object{"1": field("i32", 1), "2": field("i32", 0), "3": field("i32", 0), "5": field("i32", 1000), "6": field("tf", 1), "7": field("set", []any{"rec", 0}), "8": field("tf", 1)}
+func settings(stableFor time.Duration) Object {
+	return Object{"1": field("i32", 1), "2": field("i32", 0), "3": field("i32", 0), "5": field("i32", stableFor.Milliseconds()), "6": field("tf", 1), "7": field("set", []any{"rec", 0}), "8": field("tf", 1)}
 }
-func (c *check) startUpdate(config Object, message string) (any, error) {
-	result, err := c.rpc("startJobUpdate", Object{"1": field("rec", Object{"1": field("rec", config), "2": field("i32", 2), "3": field("rec", settings())}), "3": field("str", message)})
+func (c *check) startUpdate(config Object, message string, stableFor time.Duration) (any, error) {
+	result, err := c.rpc("startJobUpdate", Object{"1": field("rec", Object{"1": field("rec", config), "2": field("i32", 2), "3": field("rec", settings(stableFor))}), "3": field("str", message)})
 	if err != nil {
 		return nil, err
 	}

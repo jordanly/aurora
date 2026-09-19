@@ -49,7 +49,7 @@ func (c *check) smoke() error {
 			return err
 		}
 		c.add(Object{"name": "two-agent-service", "tasks": live, "physical": physical})
-		updateKey, err := c.startUpdate(task(service, true, 301), "isolated acceptance update")
+		updateKey, err := c.startUpdate(task(service, true, 301), "isolated acceptance update", time.Second)
 		if err != nil {
 			return err
 		}
@@ -233,7 +233,9 @@ func (c *check) policy() error {
 		process["argv"] = []string{"/bin/false"}
 		encoded, _ := json.Marshal(process)
 		executor["2"] = field("str", string(encoded))
-		updateKey, err := c.startUpdate(failing, "intentional failing update for rollback")
+		// On a busy host, RUNNING can be observed seconds before the exit observation arrives.
+		// Require sustained running so this fixture tests rollback rather than that delivery race.
+		updateKey, err := c.startUpdate(failing, "intentional failing update for rollback", 30*time.Second)
 		if err != nil {
 			return err
 		}

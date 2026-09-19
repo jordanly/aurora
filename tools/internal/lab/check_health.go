@@ -81,7 +81,7 @@ func (c *check) health() error {
 			return errors.New("fixed TCP health port failed to spread 200m services across agents")
 		}
 		c.add(Object{"name": "health-readiness-two-agents", "tasks": initial})
-		update, err := c.startUpdate(healthTask(name, 30000, 0, 128), "health startup failure must roll back")
+		update, err := c.startUpdate(healthTask(name, 30000, 0, 128), "health startup failure must roll back", time.Second)
 		if err != nil {
 			return err
 		}
