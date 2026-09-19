@@ -81,21 +81,17 @@ public class CommandLineTest {
     }
   }
 
-  private static class SensitiveOptions {
-    @Parameter(names = "-credential", description = "Authentication credential")
-    public String credential = "synthetic-default-secret";
-  }
-
   @Test
   public void testUsageExcludesDefaultAndParsedValues() {
-    SensitiveOptions options = new SensitiveOptions();
-    JCommander parser = JCommander.newBuilder().addObject(options).build();
-    parser.parse("-credential", "synthetic-entered-secret");
-    assertEquals("synthetic-entered-secret", options.credential);
+    CliOptions options = new CliOptions();
+    options.zk.digestCredentials = "synthetic-default-secret";
+    JCommander parser = JCommander.newBuilder().addObject(options.zk).build();
+    parser.parseWithoutValidation("-zk_digest_credentials", "synthetic-entered-secret");
+    assertEquals("synthetic-entered-secret", options.zk.digestCredentials);
 
     String usage = CommandLine.usage(parser);
     assertTrue(usage.startsWith("Usage: org.apache.aurora.scheduler.app.SchedulerMain"));
-    assertTrue(usage.contains("-credential: Authentication credential"));
+    assertTrue(usage.contains("-zk_digest_credentials: user:password"));
     assertFalse(usage.contains("synthetic-default-secret"));
     assertFalse(usage.contains("synthetic-entered-secret"));
   }
