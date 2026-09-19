@@ -1,0 +1,533 @@
+{
+  "schema": 1,
+  "baselineCommit": "91b9bd74746d27102a96fa47d4e06e0dd25097ca",
+  "sourceInputCount": 702,
+  "sourceInputSha256": "ba61734223f9335ce27cc521c4055a42d6e7d7f266941d274beef6050ef8590a",
+  "behaviorInputSha256": "ff2fac8f47396cc2f5096200edf217950b4dfa1297118956961d0bb655a268e9",
+  "changesAfterBehavior": [
+    "Only CommandLineTest changed: its help-redaction test now uses real ZooKeeper options instead of a synthetic options class. All six CommandLineTest cases passed again.",
+    "Acceptance-only rollback fixture requires 30 seconds of stable running, with the same rollback deadline and outcome assertions.",
+    "Go agent preserves a confirmed successful exit on ErrWaitDelay and durably records incomplete output; agent/helper tests and vet passed before rebuilding both binaries.",
+    "Existing finalizer test allows one second for admission while retaining shared-deadline and second-finalizer exclusion assertions."
+  ],
+  "tests": {
+    "scheduler": {
+      "tests": 1456,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "commons": {
+      "tests": 141,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "coverage": {
+    "INSTRUCTION": {
+      "missed": 5086,
+      "covered": 56392
+    },
+    "BRANCH": {
+      "missed": 732,
+      "covered": 3116
+    }
+  },
+  "quality": {
+    "status": "passed",
+    "command": "./gradlew -PthriftCompiler=\"$PWD/.cache/inplace-thrift/source/compiler/cpp/thrift\" -Pq verifyOriginalQuality --continue",
+    "logSha256": "c2db8eefe0c8acaea44ac5f282ea91774aaffdc539ca151427f885607158e42a",
+    "reports": [
+      {
+        "tool": "checkstyle",
+        "sourceSet": "main",
+        "findings": 0,
+        "reportSha256": "83edd7732646d6ffbe6129ef3a265100d5161b1af0c673bc0650b5cb71858af9"
+      },
+      {
+        "tool": "checkstyle",
+        "sourceSet": "test",
+        "findings": 0,
+        "reportSha256": "0d941bc377f1d0d10e9f2a4f6656279ab50953c403af41b276d907d31a3be8d3"
+      },
+      {
+        "tool": "checkstyle",
+        "sourceSet": "jmh",
+        "findings": 0,
+        "reportSha256": "55d5655853814a39bf323d35a0d0c62fbd70883bb792a7d09d4f5d5f65c3c593"
+      },
+      {
+        "tool": "pmd",
+        "sourceSet": "main",
+        "findings": 0,
+        "reportSha256": "0919c4201bf431c006182f3e04676b32b69b757825d6801ab3bc63642c0958e7"
+      },
+      {
+        "tool": "pmd",
+        "sourceSet": "test",
+        "findings": 0,
+        "reportSha256": "d46a577274a294d72da9ca5db116b5d811c4b5aa87e2f40481890eb048057ffa"
+      },
+      {
+        "tool": "pmd",
+        "sourceSet": "jmh",
+        "findings": 0,
+        "reportSha256": "42b57a7e1d281b9b4debc2987570338a4676a0536efcdce139251efb077a57ff"
+      },
+      {
+        "tool": "spotbugs",
+        "sourceSet": "main",
+        "findings": 0,
+        "reportSha256": "edaadc2439c72f2c0d03eebd1a285dff382bd8a68f8256c36c150b1f50a98a35"
+      },
+      {
+        "tool": "spotbugs",
+        "sourceSet": "test",
+        "findings": 0,
+        "reportSha256": "fc55bacc6fc040b91d50b630502a8b882496e1051bb3c03e2fe2a75931b945eb"
+      },
+      {
+        "tool": "spotbugs",
+        "sourceSet": "jmh",
+        "findings": 0,
+        "reportSha256": "709b5787448bb1fd8fa7f7c91cef1fec3b264b0787670b45206a8554a698932e"
+      }
+    ],
+    "pmdFixtureCases": 106,
+    "spotBugsFixtureCases": 76,
+    "checkstyleSharedFixtureContracts": 18,
+    "checkstyleRecordFixtureContracts": 3,
+    "benchmarkFixtureCheck": "passed (five repeated scheduling/reset cycles; no performance measurement)",
+    "fullGateInputSha256": "b12d75a75882decf7f4863d8ea1f02111a3a26c3467a6d3578bbe71ee857df6b",
+    "followup": "CLI help production changes subsequently passed checkstyleMain, pmdMain and spotbugsMain. Final test changes passed checkstyleTest, pmdTest, spotbugsTest, licenseTest and focusedTest; see command receipts."
+  },
+  "installedDistribution": {
+    "status": "passed",
+    "receiptSha256": "f2cfee40801864bca1a115bbafd38602d10a7a820bba4cb0edfc1674c90b52a4",
+    "treeSha256": "e30fe9933055db35b3659408f32c3ed8ce3182b78f29705f1e36f9be12238bce",
+    "launcherUsageVerified": {
+      "aurora-scheduler": true,
+      "recovery-tool": true
+    },
+    "applicationArtifacts": {
+      "aurora-0.23.0-SNAPSHOT.jar": {
+        "auroraClassCount": 781,
+        "bytecodeMajor": 69,
+        "requiredEntries": [
+          "org/apache/aurora/scheduler/storage/durability/RecoveryTool.class",
+          "scheduler/assets/scheduler/index.html",
+          "scheduler/assets/js/bundle.js",
+          "scheduler/assets/js/bundle.js.map",
+          "scheduler/assets/js/thrift.js",
+          "scheduler/assets/bower_components/jquery/dist/jquery.min.js"
+        ],
+        "sha256": "e1b4f19e6134f0570625a6f42f18721c15c9f0b7d35d822c3043fab5607d5385",
+        "size": 3675508
+      },
+      "aurora-api-0.23.0-SNAPSHOT.jar": {
+        "auroraClassCount": 1547,
+        "bytecodeMajor": 69,
+        "requiredEntries": [
+          "org/apache/aurora/gen/AuroraAdmin.class",
+          "org/apache/aurora/scheduler/storage/entities/IScheduledTask.class",
+          "org/apache/aurora/scheduler/gen/client/ReadOnlyScheduler.js",
+          "org/apache/aurora/scheduler/gen/client/AuroraAdmin.js",
+          "org/apache/aurora/scheduler/gen/client/api_types.js",
+          "org/apache/aurora/scheduler/gen/client/api.html"
+        ],
+        "sha256": "daea331459e39255df142a92fc73e148fd9291fc67976c223d4d9289e72ab4a1",
+        "size": 2989975
+      },
+      "commons-0.23.0-SNAPSHOT.jar": {
+        "auroraClassCount": 151,
+        "bytecodeMajor": 69,
+        "sha256": "b5dd89375f76fcd8e726b3f8fdbcef94470f9d35f688cd189d978c6a0c939def",
+        "size": 165551
+      }
+    }
+  },
+  "implementationCommit": "e66c81c04474bda8bf3ec0ab2bb5828493192c2d",
+  "commandReceipts": [
+    {
+      "log": ".cache/java25-review-20260918/fix-quality-pass.log",
+      "sha256": "c2db8eefe0c8acaea44ac5f282ea91774aaffdc539ca151427f885607158e42a",
+      "result": "verifyOriginalQuality passed (complete original gate).",
+      "command": "./gradlew -PthriftCompiler=\"$PWD/.cache/inplace-thrift/source/compiler/cpp/thrift\" -Pq verifyOriginalQuality --continue"
+    },
+    {
+      "log": ".cache/java25-review-20260918/fix-cli-help.log",
+      "sha256": "564163fa6516925dcbdadeae16dec65522475f1d9d442c4e91466b044df3a3d8",
+      "result": "CLI tests and main analyzers passed; invocation failed only in pmdTest on the subsequently removed synthetic fixture.",
+      "command": "./gradlew -PthriftCompiler=\"$PWD/.cache/inplace-thrift/source/compiler/cpp/thrift\" focusedTest --tests org.apache.aurora.scheduler.config.CommandLineTest -Pq checkstyleMain checkstyleTest pmdMain pmdTest spotbugsMain spotbugsTest verifyInstalledDistribution --continue"
+    },
+    {
+      "log": ".cache/java25-review-20260918/fix-final-verification.log",
+      "sha256": "51635b9ef1d2219f88723f4c7b64f01fec1a20db6e61c6ce284d7ee5c3667dfd",
+      "result": "verifyOriginalBehavior, coverage gates and distribution verification passed; invocation failed only in pmdTest on the subsequently removed synthetic fixture.",
+      "command": "./gradlew -PthriftCompiler=\"$PWD/.cache/inplace-thrift/source/compiler/cpp/thrift\" verifyOriginalBehavior -Pq checkstyleTest pmdTest spotbugsTest licenseTest verifyInstalledDistribution --continue"
+    },
+    {
+      "log": ".cache/java25-review-20260918/fix-cli-final.log",
+      "sha256": "f4b0cba62b4c35af09c2e5c8d00ca22c017a449021cf882a2ea558ae2071c1cd",
+      "result": "Entire final invocation passed: six CLI tests, test analyzers, license checks and distribution verification.",
+      "command": "./gradlew -PthriftCompiler=\"$PWD/.cache/inplace-thrift/source/compiler/cpp/thrift\" focusedTest --tests org.apache.aurora.scheduler.config.CommandLineTest -Pq checkstyleTest pmdTest spotbugsTest licenseTest verifyInstalledDistribution --continue"
+    },
+    {
+      "log": ".cache/java25-review-20260918/fix-policy-tools-check.log",
+      "sha256": "38ade1c008867c510eb8051e69d91e9918cb499829fb8638f973e2ed8a77344c",
+      "command": "build-support/bootstrap-go check-tools --offline",
+      "result": "Pinned tools module uncached tests and vet passed."
+    },
+    {
+      "log": ".cache/java25-review-20260918/fix-agent-waitdelay-check.log",
+      "sha256": "4d1954e45c8a26075ca256ed496ec01a74301298cc4a76cd6f28c42325de8dc9",
+      "command": "GOMODCACHE=\"$PWD/.pi-tools/go-mod\" GOCACHE=\"$PWD/.pi-tools/go-cache\" build-support/lab/build-agents --offline --check --output \"$PWD/.pi-tools/java25-review-fixes\"",
+      "result": "Pinned Go 1.27.1 uncached agent/helper tests and vet passed; both binaries built with provenance."
+    },
+    {
+      "log": ".cache/java25-review-20260918/fix-lab-v2-churn.log",
+      "sha256": "ea1b797caa78b2d13189926579660248f1fccc510254961e0843f8bd07e12fc8",
+      "command": "build-support/lab/inplace-check --root \"$PWD/.pi-lab/java25-review-fixes-v2\" --phase churn",
+      "result": "Passed in Docker group via sg docker."
+    },
+    {
+      "log": ".cache/java25-review-20260918/fix-lab-v2-health.log",
+      "sha256": "f1d9e5675ac8c73cf9bac3f9f001cb23b1d5d74d56f8bb246a057e2d5b313b17",
+      "command": "build-support/lab/inplace-check --root \"$PWD/.pi-lab/java25-review-fixes-v2\" --phase health",
+      "result": "Passed in Docker group via sg docker."
+    },
+    {
+      "log": ".cache/java25-review-20260918/fix-lab-v2-logs.log",
+      "sha256": "1ca3b824b2b76d637aa59c6061803a0a5a4f844dc471d9ca07a88d313d2c2176",
+      "command": "build-support/lab/inplace-check --root \"$PWD/.pi-lab/java25-review-fixes-v2\" --phase logs",
+      "result": "Passed in Docker group via sg docker."
+    },
+    {
+      "log": ".cache/java25-review-20260918/fix-lab-v2-policy.log",
+      "sha256": "5e25425a85bf3185b497518b95e756e33cdc01686c1c7cbad9e05bc34a9a7ac5",
+      "command": "build-support/lab/inplace-check --root \"$PWD/.pi-lab/java25-review-fixes-v2\" --phase policy",
+      "result": "Passed in Docker group via sg docker."
+    },
+    {
+      "log": ".cache/java25-review-20260918/fix-lab-v2-recovery.log",
+      "sha256": "6ba8d711b6440ff3d8e8d574fb567825dfbd506d76263377ab4d00218c601622",
+      "command": "build-support/lab/inplace-check --root \"$PWD/.pi-lab/java25-review-fixes-v2\" --phase recovery --rounds 3",
+      "result": "Passed in Docker group via sg docker."
+    },
+    {
+      "log": ".cache/java25-review-20260918/fix-lab-v2-smoke.log",
+      "sha256": "acf85f35fa3ed4296cac1c618009757ea9d16e695a24762c62e2b947813f182b",
+      "command": "build-support/lab/inplace-check --root \"$PWD/.pi-lab/java25-review-fixes-v2\" --phase smoke",
+      "result": "Passed in Docker group via sg docker."
+    },
+    {
+      "log": ".cache/java25-review-20260918/fix-lab-down.log",
+      "sha256": "f6075934429b28232eaec891f680f4801d7f2baa3e8c36f47417400b99ca95a7",
+      "command": "build-support/lab/inplace-cluster down --root \"$PWD/.pi-lab/java25-review-fixes\"",
+      "result": "Owned lab teardown passed via sg docker."
+    },
+    {
+      "log": ".cache/java25-review-20260918/fix-lab-v2-down.log",
+      "sha256": "79546594caf682e3611ba086fa49b126d47c17dd92a7fa7d8f6b80151c528087",
+      "command": "build-support/lab/inplace-cluster down --root \"$PWD/.pi-lab/java25-review-fixes-v2\"",
+      "result": "Owned lab teardown passed via sg docker."
+    }
+  ],
+  "sourceDigestRecipe": {
+    "selection": "Existing git tracked and nonignored untracked .java files; build.gradle, settings.gradle, .auroraversion; every file under config/checkstyle, config/pmd, config/spotbugs.",
+    "digest": "SHA256 of UTF-8 lines in sorted repository-relative path order: file SHA256, two spaces, path, newline."
+  },
+  "findingCounts": {
+    "implemented": 52,
+    "staged": 3,
+    "retained": 1
+  },
+  "implementationCommits": [
+    "f0a181143412a4684f3f8921334f56812858f89e",
+    "0490ddc778ce91bf7c94d2aac961260f0c7519b7",
+    "e66c81c04474bda8bf3ec0ab2bb5828493192c2d",
+    "9c817e700f909eb2db7ae666ffbcd8e401107873",
+    "edb49e08eda5a7ea1f57d243f5f67b456da56f93"
+  ],
+  "dockerAcceptance": {
+    "status": "passed",
+    "root": ".pi-lab/java25-review-fixes-v2",
+    "sourceHashes": {
+      "agent": "afb3c581ea05c908f468f46189f7c72aa12215a604bde22f128e1de3cd53d6f3",
+      "helper": "aa47c820224ebb3d6374f1bd79f610ff6a59f0eacbbc9381d660aa13170d9ca8"
+    },
+    "binaries": {
+      "agent": {
+        "binarySha256": "bf7b6fc23df264c3157a612cdf0d7971eaffbf51ace02ff097e0ff3e4b4fe087",
+        "build": [
+          "CGO_ENABLED=0",
+          "GOOS=linux",
+          "GOARCH=arm64",
+          "GOTOOLCHAIN=local",
+          "-trimpath",
+          "-buildvcs=false",
+          "-ldflags=-s -w"
+        ],
+        "goVersion": "go version go1.27.1 linux/arm64",
+        "schema": 1,
+        "sourceSha256": "afb3c581ea05c908f468f46189f7c72aa12215a604bde22f128e1de3cd53d6f3"
+      },
+      "helper": {
+        "binarySha256": "6efea655ef9538ebace7686268fab9e687a7b97167d588e0cfc7889fad412e7d",
+        "build": [
+          "CGO_ENABLED=0",
+          "GOOS=linux",
+          "GOARCH=arm64",
+          "GOTOOLCHAIN=local",
+          "-trimpath",
+          "-buildvcs=false",
+          "-ldflags=-s -w"
+        ],
+        "goVersion": "go version go1.27.1 linux/arm64",
+        "schema": 1,
+        "sourceSha256": "aa47c820224ebb3d6374f1bd79f610ff6a59f0eacbbc9381d660aa13170d9ca8"
+      }
+    },
+    "jdkTreeSha256": "b3cc501021753578ad473ebf90efed8cb34e37435dd4ba1b8b36589577863ca2",
+    "schedulerDistributionSha256": "e30fe9933055db35b3659408f32c3ed8ce3182b78f29705f1e36f9be12238bce",
+    "reports": [
+      {
+        "file": ".pi-lab/java25-review-fixes-v2/check-churn-1789793001125936435.json",
+        "sha256": "d5d6ce4f6ae35a6dcd8daae846ea29f7490e0e3af3975091e65cc3ae687a8a69",
+        "phase": "churn",
+        "ok": true,
+        "caseCount": 1,
+        "rpcCount": 1081,
+        "caseNames": [
+          "retained-history-churn"
+        ],
+        "churn": {
+          "batches": 130,
+          "finishedPerHost": {
+            "agent-a": 130,
+            "agent-b": 130
+          },
+          "samples": 130,
+          "elapsedSeconds": 799.610043691,
+          "backupCountBefore": 3,
+          "backupCountAfter": 3,
+          "finishedTaskCount": 260,
+          "stableServiceTaskCount": 2
+        }
+      },
+      {
+        "file": ".pi-lab/java25-review-fixes-v2/check-health-1789791894612802310.json",
+        "sha256": "bb3f6ac3cec259c2ab9251a4c614aa83016a1f9f6303553ddd32eee0e1360a37",
+        "phase": "health",
+        "ok": true,
+        "caseCount": 3,
+        "rpcCount": 55,
+        "caseNames": [
+          "health-listener-loss",
+          "health-readiness-two-agents",
+          "health-startup-rollback"
+        ]
+      },
+      {
+        "file": ".pi-lab/java25-review-fixes-v2/check-logs-1789791952205809834.json",
+        "sha256": "6e0dcf0ea6c5518e473df65ce31bee4ac22a08642700e1f92ac2496562ac09a6",
+        "phase": "logs",
+        "ok": true,
+        "caseCount": 7,
+        "rpcCount": 20,
+        "caseNames": [
+          "retained-logs-after-restart",
+          "retained-output"
+        ]
+      },
+      {
+        "file": ".pi-lab/java25-review-fixes-v2/check-policy-1789792864167664980.json",
+        "sha256": "9a273a5ed95147cca3345f3458ffa9da9670b257dddf047116a0eb7e7a055752",
+        "phase": "policy",
+        "ok": true,
+        "caseCount": 3,
+        "rpcCount": 110,
+        "caseNames": [
+          "active-drain-replacement",
+          "automatic-rollback",
+          "manual-cron-finished"
+        ]
+      },
+      {
+        "file": ".pi-lab/java25-review-fixes-v2/check-recovery-1789792111653569485.json",
+        "sha256": "c2db9083cac6d5263a7cad95d3e610787842f96260f251e96f3d5f39a0b7de94",
+        "phase": "recovery",
+        "ok": true,
+        "caseCount": 9,
+        "rpcCount": 30,
+        "caseNames": [
+          "crash-agent",
+          "crash-scheduler",
+          "restart-scheduler"
+        ],
+        "recoveryRounds": 3
+      },
+      {
+        "file": ".pi-lab/java25-review-fixes-v2/check-smoke-1789791848011499669.json",
+        "sha256": "ca8b7288ec1b1d470a1b791fdb153826847152b08f3c2453b9a1ae577b192ce4",
+        "phase": "smoke",
+        "ok": true,
+        "caseCount": 6,
+        "rpcCount": 39,
+        "caseNames": [
+          "batch-finished",
+          "drain-empty-hosts-api",
+          "quota-and-cron-api",
+          "rolling-update",
+          "service-killed",
+          "two-agent-service"
+        ]
+      }
+    ],
+    "cleanup": "owned containers and network removed; local receipts retained",
+    "existingLANLab": "unchanged"
+  },
+  "earlierDockerAcceptance": {
+    "status": "superseded after churn failure and agent correction",
+    "root": ".pi-lab/java25-review-fixes",
+    "sourceHashes": {
+      "agent": "41aa42ffa957ef97443e3b5b283f0829db9aa03482adbcaba18b753523590aa2",
+      "helper": "aa47c820224ebb3d6374f1bd79f610ff6a59f0eacbbc9381d660aa13170d9ca8"
+    },
+    "binaries": {
+      "agent": {
+        "binarySha256": "f5ee4479807422ed21c67ad869e70ce88220bb7a79c59aa3ca8837df6a533aec",
+        "build": [
+          "CGO_ENABLED=0",
+          "GOOS=linux",
+          "GOARCH=arm64",
+          "GOTOOLCHAIN=local",
+          "-trimpath",
+          "-buildvcs=false",
+          "-ldflags=-s -w"
+        ],
+        "goVersion": "go version go1.27.1 linux/arm64",
+        "schema": 1,
+        "sourceSha256": "41aa42ffa957ef97443e3b5b283f0829db9aa03482adbcaba18b753523590aa2"
+      },
+      "helper": {
+        "binarySha256": "6efea655ef9538ebace7686268fab9e687a7b97167d588e0cfc7889fad412e7d",
+        "build": [
+          "CGO_ENABLED=0",
+          "GOOS=linux",
+          "GOARCH=arm64",
+          "GOTOOLCHAIN=local",
+          "-trimpath",
+          "-buildvcs=false",
+          "-ldflags=-s -w"
+        ],
+        "goVersion": "go version go1.27.1 linux/arm64",
+        "schema": 1,
+        "sourceSha256": "aa47c820224ebb3d6374f1bd79f610ff6a59f0eacbbc9381d660aa13170d9ca8"
+      }
+    },
+    "jdkTreeSha256": "b3cc501021753578ad473ebf90efed8cb34e37435dd4ba1b8b36589577863ca2",
+    "reports": [
+      {
+        "file": ".pi-lab/java25-review-fixes/check-churn-1789790282087925542.json",
+        "sha256": "9af5320ad112d1bfd11a9602920ddaad386f09da493ad379a620ba0bc9ff03d9",
+        "phase": "churn",
+        "ok": false,
+        "caseCount": 0,
+        "rpcCount": 151,
+        "caseNames": [],
+        "error": "timed out waiting for check-1789790282-063e802f09db-churn-batch-5: [{fixtures-test-check-1789790282-063e802f09db-churn-batch-5-0-714d8c5f-3345-452c-8d5f-5280b2352d3b agent-b 4} {fixtures-test-check-1789790282-063e802f09db-churn-batch-5-1-4b5f8a00-3b75-43f9-ae9c-92b74b2108c2 agent-a 3}]"
+      },
+      {
+        "file": ".pi-lab/java25-review-fixes/check-health-1789788541144905785.json",
+        "sha256": "099a53e1bc2ebe731a4ac703d4228dd7ba9726c4334351d7ed3b437567f4d3e4",
+        "phase": "health",
+        "ok": true,
+        "caseCount": 3,
+        "rpcCount": 57,
+        "caseNames": [
+          "health-listener-loss",
+          "health-readiness-two-agents",
+          "health-startup-rollback"
+        ]
+      },
+      {
+        "file": ".pi-lab/java25-review-fixes/check-logs-1789788665505988573.json",
+        "sha256": "be397c12b4e9e1599528d3e7008442ae4b25feb75bd7eacdcecd039c76c15d45",
+        "phase": "logs",
+        "ok": true,
+        "caseCount": 7,
+        "rpcCount": 7,
+        "caseNames": [
+          "retained-logs-after-restart",
+          "retained-output"
+        ]
+      },
+      {
+        "file": ".pi-lab/java25-review-fixes/check-policy-1789789749788385838.json",
+        "sha256": "fde12a457f58dd345c19ef17ba126a94911fb8e7d92d4ad5fc73d2dd79ef2ecf",
+        "phase": "policy",
+        "ok": false,
+        "caseCount": 0,
+        "rpcCount": 37,
+        "caseNames": [],
+        "error": "unexpected update terminal status 4"
+      },
+      {
+        "file": ".pi-lab/java25-review-fixes/check-policy-1789790147992988515.json",
+        "sha256": "f93a959f13c08b9fa60c025457301037877c7abe8546aa38596257f2e6daffbf",
+        "phase": "policy",
+        "ok": true,
+        "caseCount": 3,
+        "rpcCount": 103,
+        "caseNames": [
+          "active-drain-replacement",
+          "automatic-rollback",
+          "manual-cron-finished"
+        ]
+      },
+      {
+        "file": ".pi-lab/java25-review-fixes/check-recovery-1789788867706983279.json",
+        "sha256": "8e3e059272b360dc9425cd24b5433cd550f502f891826396f005d7e733f56090",
+        "phase": "recovery",
+        "ok": true,
+        "caseCount": 9,
+        "rpcCount": 28,
+        "caseNames": [
+          "crash-agent",
+          "crash-scheduler",
+          "restart-scheduler"
+        ],
+        "recoveryRounds": 3
+      },
+      {
+        "file": ".pi-lab/java25-review-fixes/check-smoke-1789788294750763703.json",
+        "sha256": "304d0f66830707325348757bad9eb8818b7d71bd1f603504aab178215b48f4de",
+        "phase": "smoke",
+        "ok": false,
+        "caseCount": 0,
+        "rpcCount": 0,
+        "caseNames": [],
+        "error": "Post \"http://172.26.0.4:8081/api\": dial tcp 172.26.0.4:8081: connect: connection refused"
+      },
+      {
+        "file": ".pi-lab/java25-review-fixes/check-smoke-1789788428569397772.json",
+        "sha256": "f816b23a743585d622d3a6b765778fc3c3153df43d492aa7d420e733353070fb",
+        "phase": "smoke",
+        "ok": true,
+        "caseCount": 6,
+        "rpcCount": 51,
+        "caseNames": [
+          "batch-finished",
+          "drain-empty-hosts-api",
+          "quota-and-cron-api",
+          "rolling-update",
+          "service-killed",
+          "two-agent-service"
+        ]
+      }
+    ],
+    "cleanup": "owned containers and network removed; local receipts retained"
+  }
+}

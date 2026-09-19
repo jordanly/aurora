@@ -1,6 +1,6 @@
 # Historical storage compatibility boundary
 
-BACK-004 is partially addressed: the required import surface is documented below and its replay test now includes the final historical golden. Writable legacy storage has **not** been removed.
+BACK-004 retains packaged writable legacy storage for extension compatibility. The required import surface is documented below; the separate BACK-009 fix extends replay through the final historical golden. Writable legacy storage has **not** been removed.
 
 The original `SchedulerMain` installs `GoAgentModule`, which binds SQLite. Its normal production path does not install `DurableStorageModule`, `LogPersistenceModule`, `SnapshotModule`, or `BackupModule`. This establishes that those legacy writers are unused by the supplied entrypoint; it does not establish that their public classes are unused by external modules.
 
