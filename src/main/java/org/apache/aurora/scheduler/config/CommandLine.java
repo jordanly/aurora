@@ -143,9 +143,24 @@ public final class CommandLine {
     } catch (ParameterException e) {
       // Converter messages and usage defaults can contain the original secret value.
       LOG.error("Invalid command line options.");
+      if (parser != null) {
+        LOG.error("{}", usage(parser));
+      }
       System.exit(1);
       throw new RuntimeException("Invalid command line options");
     }
+  }
+
+  @VisibleForTesting
+  static String usage(JCommander parser) {
+    StringBuilder usage = new StringBuilder(
+        "Usage: " + SchedulerMain.class.getName() + " [options]\n");
+    // Descriptions and names are metadata; JCommander's default formatter also includes values.
+    parser.getParameters().stream()
+        .map(param -> "  " + param.getLongestName() + ": " + param.getDescription())
+        .sorted()
+        .forEach(line -> usage.append(line).append('\n'));
+    return usage.toString();
   }
 
   /**

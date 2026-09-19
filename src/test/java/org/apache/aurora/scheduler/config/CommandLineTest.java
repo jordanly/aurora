@@ -23,6 +23,7 @@ import java.util.Map;
 
 import javax.security.auth.kerberos.KerberosPrincipal;
 
+import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.google.common.base.Joiner;
 import com.google.common.base.Predicates;
@@ -78,6 +79,25 @@ public class CommandLineTest {
       assertTrue(logs.messages().contains("-zk_digest_credentials: [redacted]"));
       assertFalse(logs.messages().contains(secret));
     }
+  }
+
+  private static class SensitiveOptions {
+    @Parameter(names = "-credential", description = "Authentication credential")
+    public String credential = "synthetic-default-secret";
+  }
+
+  @Test
+  public void testUsageExcludesDefaultAndParsedValues() {
+    SensitiveOptions options = new SensitiveOptions();
+    JCommander parser = JCommander.newBuilder().addObject(options).build();
+    parser.parse("-credential", "synthetic-entered-secret");
+    assertEquals("synthetic-entered-secret", options.credential);
+
+    String usage = CommandLine.usage(parser);
+    assertTrue(usage.startsWith("Usage: org.apache.aurora.scheduler.app.SchedulerMain"));
+    assertTrue(usage.contains("-credential: Authentication credential"));
+    assertFalse(usage.contains("synthetic-default-secret"));
+    assertFalse(usage.contains("synthetic-entered-secret"));
   }
 
   @Test
