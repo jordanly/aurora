@@ -82,6 +82,30 @@ func logRequest(t *testing.T, s *Store, c Config, rawQuery string) (int, map[str
 	return w.Code, body
 }
 
+func TestServeLogsMarksIncompleteDrainWithoutInventingDroppedBytes(t *testing.T) {
+	s, c, key := seededLogs(t)
+	if err := s.db.Update(func(tx *bolt.Tx) error {
+		st, err := readForAttempt(tx.Bucket([]byte("state")), key)
+		if err != nil {
+			return err
+		}
+		st.Attempts[key].Execution.OutputIncomplete = true
+		return save(tx.Bucket([]byte("state")), st)
+	}); err != nil {
+		t.Fatal(err)
+	}
+	for _, stream := range []string{"stdout", "stderr"} {
+		status, page := logRequest(t, s, c, "attempt="+key+"&stream="+stream+"&offset=0&limit=65536")
+		if status != 200 || page["truncated"] != true || page["complete"] != true {
+			t.Fatalf("incomplete %s drain not exposed: %d %+v", stream, status, page)
+		}
+	}
+	a, found, err := s.InspectAttempt(key)
+	if err != nil || !found || a.Execution.StdoutDropped != 0 || a.Execution.StderrDropped != 0 {
+		t.Fatalf("incomplete drain changed byte counters: %+v %v", a.Execution, err)
+	}
+}
+
 func TestServeLogsPaginationAndBothStreams(t *testing.T) {
 	s, c, key := seededLogs(t)
 	code, body := logRequest(t, s, c, "attempt="+key+"&stream=stdout&offset=0&limit=8")

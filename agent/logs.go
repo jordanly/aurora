@@ -124,7 +124,7 @@ func serveLogs(w http.ResponseWriter, r *http.Request, store *Store) {
 	next := offset + uint64(n)
 	transportJSON(w, 200, map[string]any{
 		"attempt": key, "stream": stream, "offset": offset, "nextOffset": next,
-		"hasMore": next < uint64(info.Size()), "truncated": dropped > 0,
+		"hasMore": next < uint64(info.Size()), "truncated": dropped > 0 || a.Execution.OutputIncomplete,
 		"complete": a.Execution.Phase == "terminal" && a.Execution.Cleanup == "complete",
 		"data":     string(data[:n]),
 	})

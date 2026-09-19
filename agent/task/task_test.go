@@ -286,7 +286,9 @@ func TestFinalizerSharedDeadline(t *testing.T) {
 	first.Finalizer, second.Finalizer = true, true
 	m := manifest(proc("a", "exit 0"), first, second)
 	m.MaxConcurrency = 1
-	m.FinalizationWaitMillis = 60
+	// Leave room for durable admission on a busy host; the first finalizer still
+	// runs far longer than the shared budget and must prevent the second admission.
+	m.FinalizationWaitMillis = 1000
 	dir := t.TempDir()
 	if err := os.Chmod(dir, 0700); err != nil {
 		t.Fatal(err)

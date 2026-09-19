@@ -406,13 +406,16 @@ func TestSupervisorTerminalAckCrashBoundary(t *testing.T) {
 
 func TestSupervisorWaitDelayRetainsKnownExit(t *testing.T) {
 	root := t.TempDir()
+	release := filepath.Join(root, "release-output-pipe")
+	defer os.WriteFile(release, nil, 0600)
 	s := open(t, filepath.Join(root, "state"), config())
 	defer s.Close()
 	b := fixture(t, "run")
 	p := b["assignment"].(map[string]any)
 	p["ports"] = []any{}
 	p["readiness"] = map[string]any{"kind": "none"}
-	p["argv"] = []any{"/bin/sh", "-c", "sleep 0.6 & exit 0"}
+	// The gate outlives WaitDelay; the iteration cap also bounds a failed test's child.
+	p["argv"] = []any{"/bin/sh", "-c", "(n=0; while [ ! -f \"$1\" ] && [ \"$n\" -lt 5000 ]; do sleep 0.01; n=$((n+1)); done) & exit 0", "wait-delay", release}
 	if _, e := s.Admit(delivery(config(), b), caller(config())); e != nil {
 		t.Fatal(e)
 	}
@@ -423,15 +426,18 @@ func TestSupervisorWaitDelayRetainsKnownExit(t *testing.T) {
 	runUntil(t, r, func(st State) bool { return onlyAttempt(st).Execution.Phase == "terminal" })
 	st, _ := s.Inspect()
 	a := onlyAttempt(st)
-	if a.Execution.ExitCode == nil || *a.Execution.ExitCode != 0 {
+	if a.Execution.ExitCode == nil || *a.Execution.ExitCode != 0 || a.Execution.Outcome != "succeeded" || !a.Execution.OutputIncomplete {
 		t.Fatalf("WaitDelay discarded known root exit: %+v", a.Execution)
+	}
+	if err := os.WriteFile(release, nil, 0600); err != nil {
+		t.Fatal(err)
 	}
 	unix.Kill(a.Supervisor.Process.PID, unix.SIGKILL)
 	time.Sleep(700 * time.Millisecond)
 	runUntil(t, r, func(st State) bool { return onlyAttempt(st).Execution.Cleanup == "complete" })
 	st, _ = s.Inspect()
 	a = onlyAttempt(st)
-	if a.Execution.ExitCode == nil || *a.Execution.ExitCode != 0 {
+	if a.Execution.ExitCode == nil || *a.Execution.ExitCode != 0 || a.Execution.Outcome != "succeeded" || !a.Execution.OutputIncomplete {
 		t.Fatalf("supervisor loss discarded durable root exit: %+v", a.Execution)
 	}
 }

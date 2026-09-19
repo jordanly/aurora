@@ -14,7 +14,10 @@ GET /tasklogs/{taskId}/{stdout|stderr}?offset=0&limit=65536
 Responses contain `taskId`, `stream`, `offset`, `nextOffset`, `hasMore`,
 `truncated`, `complete` and `data`. Offsets count source bytes. `hasMore` describes
 remaining retained bytes; `complete` means the process is terminal and cleanup
-has completed. `truncated` reports dropped bytes confirmed when execution ends.
+has completed. `truncated` reports confirmed dropped bytes or a pipe-drain timeout
+that may have cut off output after the process exited. A known successful process
+exit remains successful in the latter case; dropped-byte counters retain their
+measured values.
 A running stream may already have reached its cap before that diagnostic is final.
 Refresh checks the current page; Next follows the returned offset. The browser
 keeps one page in memory. Text pages preserve UTF-8 boundaries when possible;

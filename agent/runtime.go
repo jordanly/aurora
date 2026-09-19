@@ -56,20 +56,21 @@ type ProcessIdentity struct {
 	Start string `json:"start"`
 }
 type Execution struct {
-	Isolation     *IsolationRef `json:"isolation,omitempty"`
-	HealthFailure string        `json:"healthFailure,omitempty"`
-	Phase         string        `json:"phase"`
-	PID           int           `json:"pid"`
-	Start         string        `json:"start"`
-	Outcome       string        `json:"outcome"`
-	Cleanup       string        `json:"cleanup"`
-	Ready         bool          `json:"ready"`
-	ExitCode      *int          `json:"exitCode,omitempty"`
-	Signal        int           `json:"signal,omitempty"`
-	StdoutBytes   int64         `json:"stdoutBytes"`
-	StderrBytes   int64         `json:"stderrBytes"`
-	StdoutDropped int64         `json:"stdoutDropped"`
-	StderrDropped int64         `json:"stderrDropped"`
+	Isolation        *IsolationRef `json:"isolation,omitempty"`
+	HealthFailure    string        `json:"healthFailure,omitempty"`
+	Phase            string        `json:"phase"`
+	PID              int           `json:"pid"`
+	Start            string        `json:"start"`
+	Outcome          string        `json:"outcome"`
+	Cleanup          string        `json:"cleanup"`
+	Ready            bool          `json:"ready"`
+	ExitCode         *int          `json:"exitCode,omitempty"`
+	Signal           int           `json:"signal,omitempty"`
+	StdoutBytes      int64         `json:"stdoutBytes"`
+	StderrBytes      int64         `json:"stderrBytes"`
+	StdoutDropped    int64         `json:"stdoutDropped"`
+	StderrDropped    int64         `json:"stderrDropped"`
+	OutputIncomplete bool          `json:"outputIncomplete,omitempty"`
 }
 
 func validateExecution(e *Execution) error {
@@ -791,7 +792,11 @@ func (r *Runtime) poll(ctx context.Context, key string, a Attempt, p *liveProces
 		outcome := "succeeded"
 		code := 0
 		signal := 0
-		if p.waitErr != nil {
+		drainTimedOut := errors.Is(p.waitErr, exec.ErrWaitDelay)
+		// WaitDelay can expire after a successful exit while output pipes remain open.
+		// Preserve the known process result; expose incomplete output separately.
+		knownSuccess := drainTimedOut && p.cmd.ProcessState != nil && p.cmd.ProcessState.Success()
+		if p.waitErr != nil && !knownSuccess {
 			outcome = "failed"
 			if ee, ok := p.waitErr.(*exec.ExitError); ok {
 				code = ee.ExitCode()
@@ -840,6 +845,7 @@ func (r *Runtime) poll(ctx context.Context, key string, a Attempt, p *liveProces
 			x.StderrBytes = errBytes
 			x.StdoutDropped = outDropped
 			x.StderrDropped = errDropped
+			x.OutputIncomplete = drainTimedOut
 			return nil
 		}, true)
 		if e != nil {
