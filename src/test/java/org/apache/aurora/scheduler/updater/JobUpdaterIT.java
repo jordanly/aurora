@@ -1596,6 +1596,8 @@ public class JobUpdaterIT extends EasyMockTest {
     changeState(JOB, 0, ASSIGNED, STARTING, RUNNING);
     changeState(JOB, 1, ASSIGNED, STARTING, RUNNING);
     changeState(JOB, 2, ASSIGNED, STARTING, RUNNING);
+    // SLA duration is strict: even a zero-second policy requires positive running time.
+    clock.advance(Amount.of(1L, Time.MILLISECONDS));
 
     ImmutableMultimap.Builder<Integer, JobUpdateAction> actions = ImmutableMultimap.builder();
 
@@ -1669,6 +1671,8 @@ public class JobUpdaterIT extends EasyMockTest {
     changeState(JOB, 0, ASSIGNED, STARTING, RUNNING);
     changeState(JOB, 1, ASSIGNED, STARTING, RUNNING);
     changeState(JOB, 2, ASSIGNED, STARTING, RUNNING);
+    // SLA duration is strict: even a zero-second policy requires positive running time.
+    clock.advance(Amount.of(1L, Time.MILLISECONDS));
 
     ImmutableMultimap.Builder<Integer, JobUpdateAction> actions = ImmutableMultimap.builder();
 
@@ -1747,6 +1751,8 @@ public class JobUpdaterIT extends EasyMockTest {
     changeState(JOB, 0, ASSIGNED, STARTING, RUNNING);
     changeState(JOB, 1, ASSIGNED, STARTING, RUNNING);
     changeState(JOB, 2, ASSIGNED, STARTING, RUNNING);
+    // SLA duration is strict: even a zero-second policy requires positive running time.
+    clock.advance(Amount.of(1L, Time.MILLISECONDS));
 
     ImmutableMultimap.Builder<Integer, JobUpdateAction> actions = ImmutableMultimap.builder();
 

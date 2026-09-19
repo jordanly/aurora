@@ -293,63 +293,7 @@ final class SqliteDatabase implements AutoCloseable {
         }
       }
       execute(connection, "BEGIN IMMEDIATE");
-      if (version == 0) {
-        execute(connection, "CREATE TABLE storage_owner (singleton INTEGER PRIMARY KEY"
-            + " CHECK(singleton=1), epoch INTEGER NOT NULL, session_id TEXT NOT NULL)");
-        execute(connection, "INSERT INTO storage_owner VALUES (1, 0, '')");
-        execute(connection, "CREATE TABLE storage_transactions (operation_id TEXT PRIMARY KEY"
-            + " NOT NULL, owner_epoch INTEGER NOT NULL)");
-      }
-      if (version < 2) {
-        execute(connection, "CREATE TABLE scheduler_metadata (singleton INTEGER PRIMARY KEY"
-            + " CHECK(singleton=1), framework_id TEXT NOT NULL)");
-        for (String table : new String[] {
-            "cron_jobs", "quotas", "attributes", "host_maintenance", "tasks", "job_updates"}) {
-          execute(connection, "CREATE TABLE " + table + " (record_key TEXT PRIMARY KEY NOT NULL,"
-              + " payload_version INTEGER NOT NULL, payload BLOB NOT NULL)");
-        }
-        execute(connection, "PRAGMA user_version=2");
-      }
-      if (version < 3) {
-        execute(connection,
-            "CREATE TABLE command_outbox (sequence INTEGER PRIMARY KEY AUTOINCREMENT,"
-            + " command_id TEXT NOT NULL UNIQUE, agent_id TEXT NOT NULL, task_id TEXT NOT NULL,"
-            + " command_type TEXT NOT NULL,"
-            + " payload_version INTEGER NOT NULL CHECK(payload_version>0),"
-            + " payload BLOB NOT NULL, owner_epoch INTEGER NOT NULL,"
-            + " acknowledged INTEGER NOT NULL DEFAULT 0 CHECK(acknowledged IN (0,1)))");
-        execute(
-            connection,
-            "CREATE INDEX pending_commands ON command_outbox(acknowledged,sequence)");
-        execute(connection, "CREATE TABLE observation_receipts (agent_id TEXT NOT NULL,"
-            + " incarnation TEXT NOT NULL, sequence INTEGER NOT NULL CHECK(sequence>=0),"
-            + " payload_version INTEGER NOT NULL CHECK(payload_version>0), payload BLOB NOT NULL,"
-            + " PRIMARY KEY(agent_id,incarnation,sequence))");
-        execute(connection, "PRAGMA user_version=3");
-      }
-      if (version < 4) {
-        execute(connection, "CREATE TABLE automatic_outcome (singleton INTEGER PRIMARY KEY"
-            + " CHECK(singleton=1), operation_id TEXT NOT NULL, owner_epoch INTEGER NOT NULL)");
-        execute(connection, "CREATE TABLE agent_retention (agent_id TEXT PRIMARY KEY,"
-            + " scope TEXT NOT NULL,"
-            + " enabled INTEGER NOT NULL DEFAULT 0, next_ticket INTEGER NOT NULL DEFAULT 1,"
-            + " retired TEXT NOT NULL DEFAULT '[]')");
-        execute(connection, "CREATE TABLE attempt_retention (agent_id TEXT NOT NULL,"
-            + " ticket INTEGER NOT NULL, task_id TEXT NOT NULL UNIQUE,"
-            + " complete INTEGER NOT NULL DEFAULT 0, retiring INTEGER NOT NULL DEFAULT 0,"
-            + " PRIMARY KEY(agent_id,ticket))");
-        execute(connection, "CREATE TABLE receipt_watermarks (agent_id TEXT NOT NULL,"
-            + " incarnation TEXT NOT NULL, sequence INTEGER NOT NULL,"
-            + " PRIMARY KEY(agent_id,incarnation))");
-        execute(connection, "PRAGMA user_version=4");
-      }
-      // An additive query index keeps version-3 backups compatible and is installed when an
-      // existing database is opened, as well as when the outbox is first created.
-      execute(connection, "CREATE INDEX IF NOT EXISTS pending_commands_by_agent"
-          + " ON command_outbox(acknowledged,agent_id,sequence)");
-      execute(connection, "CREATE INDEX IF NOT EXISTS pending_stops_by_agent"
-          + " ON command_outbox(agent_id,sequence)"
-          + " WHERE acknowledged=0 AND command_type='Stop'");
+      SqliteSchema.migrate(connection, version);
       try (PreparedStatement update = connection.prepareStatement(
           "UPDATE storage_owner SET epoch=epoch+1, session_id=? WHERE singleton=1")) {
         update.setString(1, sessionId);
@@ -495,71 +439,16 @@ final class SqliteDatabase implements AutoCloseable {
     }
     lifecycle.readLock().lock();
     writer.lock();
-    Path temporaryDirectory = null;
-    Throwable primary = null;
     try {
       checkOpen();
       if (uncertainOperation != null) {
         throw new StorageException("Reconcile uncertain operation before backup: "
             + uncertainOperation);
       }
-      Path requested = destination.toAbsolutePath().normalize();
-      Path requestedParent = requested.getParent();
-      if (requestedParent == null) {
-        throw new StorageException("SQLite backup path must name a file: " + requested);
-      }
-      Path targetParent = requestedParent.toRealPath();
-      Path target = targetParent.resolve(requested.getFileName());
-      if (Files.exists(target, LinkOption.NOFOLLOW_LINKS)
-          || target.equals(path)
-          || target.equals(path.resolveSibling(path.getFileName() + "-wal"))
-          || target.equals(path.resolveSibling(path.getFileName() + "-shm"))
-          || target.equals(path.resolveSibling(path.getFileName() + "-journal"))
-          || target.equals(path.resolveSibling(path.getFileName() + ".owner"))) {
-        throw new StorageException("Backup destination must be a new independent file: " + target);
-      }
-      temporaryDirectory = Files.createTempDirectory(targetParent, ".aurora-backup-");
-      Path snapshot = temporaryDirectory.resolve("snapshot.db");
-      writeSnapshot(snapshot);
-      try (Connection verification = DriverManager.getConnection(
-          "jdbc:sqlite:" + snapshot.toUri().toASCIIString());
-           Statement statement = verification.createStatement();
-           ResultSet rows = statement.executeQuery("PRAGMA integrity_check")) {
-        if (!rows.next() || !"ok".equals(rows.getString(1)) || rows.next()) {
-          throw new StorageException("SQLite backup failed integrity verification");
-        }
-      }
-      // Link publication is atomic and cannot overwrite a destination created concurrently.
-      // Both paths are on the destination filesystem; the temporary link is removed afterward.
-      Files.createLink(target, snapshot);
-      Files.delete(snapshot);
-      try (FileChannel directory = FileChannel.open(targetParent, StandardOpenOption.READ)) {
-        directory.force(true);
-      }
-    } catch (IOException | SQLException e) {
-      primary = e;
-      throw new StorageException("Unable to create SQLite backup", e);
-    } catch (RuntimeException | Error e) {
-      primary = e;
-      throw e;
+      SqliteBackup.create(path, destination, this::writeSnapshot);
     } finally {
-      try {
-        if (temporaryDirectory != null) {
-          Files.deleteIfExists(temporaryDirectory.resolve("snapshot.db"));
-          Files.deleteIfExists(temporaryDirectory.resolve("snapshot.db-wal"));
-          Files.deleteIfExists(temporaryDirectory.resolve("snapshot.db-shm"));
-          Files.deleteIfExists(temporaryDirectory);
-        }
-      } catch (IOException cleanup) {
-        if (primary != null) {
-          suppress(primary, cleanup);
-        } else {
-          throw new StorageException("Unable to clean up SQLite backup workspace", cleanup);
-        }
-      } finally {
-        writer.unlock();
-        lifecycle.readLock().unlock();
-      }
+      writer.unlock();
+      lifecycle.readLock().unlock();
     }
   }
 

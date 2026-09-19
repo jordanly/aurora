@@ -245,8 +245,8 @@ public class StateManagerImpl implements StateManager {
   // Actions are deliberately ordered to prevent things like deleting a task before rescheduling it
   // (thus losing the object to copy), or rescheduling a task before incrementing the failure count
   // (thus not carrying forward the failure increment).
-  private static final Ordering<SideEffect> ACTION_ORDER =
-      Ordering.explicit(ACTIONS_IN_ORDER).onResultOf(SideEffect::getAction);
+  private static final Ordering<Action> ACTION_ORDER =
+      Ordering.explicit(ACTIONS_IN_ORDER);
 
   private StateChangeResult updateTaskAndExternalState(
       TaskStore.Mutable taskStore,
@@ -271,10 +271,10 @@ public class StateManagerImpl implements StateManager {
 
     TransitionResult result = stateMachine.updateState(targetState);
 
-    for (SideEffect sideEffect : ACTION_ORDER.sortedCopy(result.getSideEffects())) {
+    for (Action action : ACTION_ORDER.sortedCopy(result.getSideEffects())) {
       Optional<IScheduledTask> upToDateTask = taskStore.fetchTask(taskId);
 
-      switch (sideEffect.getAction()) {
+      switch (action) {
         case INCREMENT_FAILURES:
           taskStore.mutateTask(taskId, task1 -> IScheduledTask.build(
               task1.newBuilder().setFailureCount(task1.getFailureCount() + 1)));
@@ -365,7 +365,7 @@ public class StateManagerImpl implements StateManager {
           break;
 
         default:
-          throw new IllegalStateException("Unrecognized side-effect " + sideEffect.getAction());
+          throw new IllegalStateException("Unrecognized side-effect " + action);
       }
     }
 

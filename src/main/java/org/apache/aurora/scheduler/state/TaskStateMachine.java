@@ -13,6 +13,7 @@
  */
 package org.apache.aurora.scheduler.state;
 
+import java.util.EnumSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
@@ -26,7 +27,6 @@ import com.google.common.base.Functions;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Sets;
 
 import org.apache.aurora.common.base.Command;
 import org.apache.aurora.common.base.Consumers;
@@ -91,7 +91,7 @@ class TaskStateMachine {
   private final StateMachine<TaskState> stateMachine;
   private Optional<TaskState> previousState = Optional.empty();
 
-  private final Set<SideEffect> sideEffects = Sets.newHashSet();
+  private final Set<Action> sideEffects = EnumSet.noneOf(Action.class);
 
   private static final Function<ScheduleStatus, TaskState> STATUS_TO_TASK_STATE =
       input -> TaskState.valueOf(input.name());
@@ -519,12 +519,8 @@ class TaskStateMachine {
   }
 
   private void addFollowup(Action action) {
-    addFollowup(new SideEffect(action, Optional.empty()));
-  }
-
-  private void addFollowup(SideEffect sideEffect) {
-    LOG.debug("Adding work command {} for {}", sideEffect, this);
-    sideEffects.add(sideEffect);
+    LOG.debug("Adding work command {} for {}", action, this);
+    sideEffects.add(action);
   }
 
   private Consumer<Transition<TaskState>> addFollowupClosure(final Action action) {
@@ -558,7 +554,7 @@ class TaskStateMachine {
       return new TransitionResult(NOOP, ImmutableSet.of());
     }
     boolean success = stateMachine.transition(taskState);
-    ImmutableSet<SideEffect> transitionEffects = ImmutableSet.copyOf(sideEffects);
+    ImmutableSet<Action> transitionEffects = ImmutableSet.copyOf(sideEffects);
     sideEffects.clear();
     if (success) {
       return new TransitionResult(SUCCESS, transitionEffects);

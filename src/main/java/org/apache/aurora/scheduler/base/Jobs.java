@@ -13,7 +13,9 @@
  */
 package org.apache.aurora.scheduler.base;
 
-import java.util.EnumSet;
+import java.util.Set;
+
+import com.google.common.collect.ImmutableSet;
 
 import org.apache.aurora.gen.JobStats;
 import org.apache.aurora.gen.JobUpdateStatus;
@@ -34,8 +36,8 @@ public final class Jobs {
   /**
    * States of updates that are blocked on pulses.
    */
-  public static final EnumSet<JobUpdateStatus> AWAITING_PULSE_STATES =
-      EnumSet.copyOf(apiConstants.AWAITNG_PULSE_JOB_UPDATE_STATES);
+  public static final Set<JobUpdateStatus> AWAITING_PULSE_STATES =
+      ImmutableSet.copyOf(apiConstants.AWAITNG_PULSE_JOB_UPDATE_STATES);
 
   /**
    * For a given collection of tasks compute statistics based on the state of the task.
@@ -53,35 +55,12 @@ public final class Jobs {
 
   private static void updateStats(JobStats stats, ScheduleStatus status) {
     switch (status) {
-      case INIT:
-      case PENDING:
-      case THROTTLED:
-        stats.setPendingTaskCount(stats.getPendingTaskCount() + 1);
-        break;
-
-      case ASSIGNED:
-      case STARTING:
-      case RESTARTING:
-      case RUNNING:
-      case KILLING:
-      case DRAINING:
-      case PARTITIONED:
-      case PREEMPTING:
-        stats.setActiveTaskCount(stats.getActiveTaskCount() + 1);
-        break;
-
-      case KILLED:
-      case FINISHED:
-        stats.setFinishedTaskCount(stats.getFinishedTaskCount() + 1);
-        break;
-
-      case LOST:
-      case FAILED:
-        stats.setFailedTaskCount(stats.getFailedTaskCount() + 1);
-        break;
-
-      default:
-        throw new IllegalArgumentException("Unsupported status: " + status);
+      case INIT, PENDING, THROTTLED -> stats.setPendingTaskCount(stats.getPendingTaskCount() + 1);
+      case ASSIGNED, STARTING, RESTARTING, RUNNING, KILLING, DRAINING, PARTITIONED, PREEMPTING ->
+          stats.setActiveTaskCount(stats.getActiveTaskCount() + 1);
+      case KILLED, FINISHED -> stats.setFinishedTaskCount(stats.getFinishedTaskCount() + 1);
+      case LOST, FAILED -> stats.setFailedTaskCount(stats.getFailedTaskCount() + 1);
+      default -> throw new IllegalArgumentException("Unsupported status: " + status);
     }
   }
 }

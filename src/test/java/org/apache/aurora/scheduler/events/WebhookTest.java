@@ -73,26 +73,27 @@ public class WebhookTest {
   // an ephemeral port for our test Jetty server, meaning we cannot specify WebhookInfo statically.
   // Test fixture for WebhookInfo without a whitelist, thus all task statuses are implicitly
   // whitelisted.
-  private static final WebhookInfoBuilder WEBHOOK_INFO_BUILDER = WebhookInfo
+  private final WebhookInfoBuilder baseInfo = WebhookInfo
       .newBuilder()
       .setHeaders(HEADERS)
       .setTimeout(TIMEOUT);
   // Test fixture for WebhookInfo in which only "LOST" and "FAILED" task statuses are explicitly
   // whitelisted.
-  private static final WebhookInfoBuilder WEBHOOK_INFO_WITH_WHITELIST_BUILDER = WebhookInfo
+  private final WebhookInfoBuilder whitelistInfo = WebhookInfo
       .newBuilder()
       .setHeaders(HEADERS)
       .setTimeout(TIMEOUT)
       .addWhitelistedStatus("LOST")
       .addWhitelistedStatus("FAILED");
   // Test fixture for WebhookInfo in which all task statuses are whitelisted by wildcard character.
-  private static final WebhookInfoBuilder WEBHOOK_INFO_WITH_WILDCARD_WHITELIST_BUILDER =
+  private final WebhookInfoBuilder wildcardInfo =
       WebhookInfo
           .newBuilder()
           .setHeaders(HEADERS)
           .setTimeout(TIMEOUT)
           .addWhitelistedStatus("*");
 
+  private final List<Webhook> webhooks = new java.util.ArrayList<>();
   private Server jettyServer;
   private AsyncHttpClient httpClient;
   private FakeStatsProvider statsProvider;
@@ -196,13 +197,30 @@ public class WebhookTest {
 
   @After
   public void tearDown() throws Exception {
-    jettyServer.stop();
+    try {
+      for (Webhook webhook : webhooks) {
+        webhook.stopAsync().awaitTerminated();
+      }
+    } finally {
+      try {
+        httpClient.close();
+      } finally {
+        jettyServer.stop();
+      }
+    }
+  }
+
+  private Webhook startWebhook(WebhookInfo info) {
+    Webhook webhook = new Webhook(() -> httpClient, info, statsProvider);
+    webhooks.add(webhook);
+    webhook.startAsync().awaitRunning();
+    return webhook;
   }
 
   @Test
   public void testTaskChangedStateNoOldState() throws Exception {
-    WebhookInfo webhookInfo = buildWebhookInfoWithJettyPort(WEBHOOK_INFO_BUILDER);
-    Webhook webhook = new Webhook(httpClient, webhookInfo, statsProvider);
+    WebhookInfo webhookInfo = buildWebhookInfoWithJettyPort(baseInfo);
+    Webhook webhook = startWebhook(webhookInfo);
 
     // Should be a noop as oldState is MIA so this test would have throw an exception.
     // If it does not, then we are good.
@@ -213,8 +231,8 @@ public class WebhookTest {
   public void testTaskChangedWithOldStateSuccess() throws Exception {
     jettyServer.setHandler(createHandlerThatExpectsContent(CHANGE_JSON));
     jettyServer.start();
-    WebhookInfo webhookInfo = buildWebhookInfoWithJettyPort(WEBHOOK_INFO_BUILDER);
-    Webhook webhook = new Webhook(httpClient, webhookInfo, statsProvider);
+    WebhookInfo webhookInfo = buildWebhookInfoWithJettyPort(baseInfo);
+    Webhook webhook = startWebhook(webhookInfo);
 
     webhook.taskChangedState(CHANGE_OLD_STATE);
 
@@ -229,8 +247,8 @@ public class WebhookTest {
     // We expect CHANGE_JSON but get CHANGE_LOST which causes an error code to be returned.
     jettyServer.setHandler(createHandlerThatExpectsContent(CHANGE_JSON));
     jettyServer.start();
-    WebhookInfo webhookInfo = buildWebhookInfoWithJettyPort(WEBHOOK_INFO_BUILDER);
-    Webhook webhook = new Webhook(httpClient, webhookInfo, statsProvider);
+    WebhookInfo webhookInfo = buildWebhookInfoWithJettyPort(baseInfo);
+    Webhook webhook = startWebhook(webhookInfo);
 
     webhook.taskChangedState(CHANGE_LOST);
 
@@ -242,11 +260,15 @@ public class WebhookTest {
 
   @Test
   public void testTaskChangedWithOldStateError() throws Exception {
-    // Don't start Jetty server, send the request to an invalid URL to force a UnknownHostException
+    // Bind then close a local connector to exercise refusal without an external DNS request.
+    jettyServer.start();
+    int closedPort = ((org.eclipse.jetty.server.ServerConnector)
+        jettyServer.getConnectors()[0]).getLocalPort();
+    jettyServer.stop();
     WebhookInfo webhookInfo = buildWebhookInfo(
-        WEBHOOK_INFO_BUILDER,
-        "http://bad.host.com");
-    Webhook webhook = new Webhook(httpClient, webhookInfo, statsProvider);
+        baseInfo,
+        "http://127.0.0.1:" + closedPort);
+    Webhook webhook = startWebhook(webhookInfo);
 
     webhook.taskChangedState(CHANGE_OLD_STATE);
 
@@ -261,8 +283,8 @@ public class WebhookTest {
     // Verifying TaskStateChange in the whitelist is sent to the configured endpoint.
     jettyServer.setHandler(createHandlerThatExpectsContent(CHANGE_LOST_JSON));
     jettyServer.start();
-    WebhookInfo webhookInfo = buildWebhookInfoWithJettyPort(WEBHOOK_INFO_WITH_WHITELIST_BUILDER);
-    Webhook webhook = new Webhook(httpClient, webhookInfo, statsProvider);
+    WebhookInfo webhookInfo = buildWebhookInfoWithJettyPort(whitelistInfo);
+    Webhook webhook = startWebhook(webhookInfo);
 
     webhook.taskChangedState(CHANGE_LOST);
 
@@ -277,8 +299,8 @@ public class WebhookTest {
     // Verifying TaskStateChange not in the whitelist is not sent to the configured endpoint.
     jettyServer.setHandler(createHandlerThatExpectsContent(CHANGE_JSON));
     jettyServer.start();
-    WebhookInfo webhookInfo = buildWebhookInfoWithJettyPort(WEBHOOK_INFO_WITH_WHITELIST_BUILDER);
-    Webhook webhook = new Webhook(httpClient, webhookInfo, statsProvider);
+    WebhookInfo webhookInfo = buildWebhookInfoWithJettyPort(whitelistInfo);
+    Webhook webhook = startWebhook(webhookInfo);
 
     webhook.taskChangedState(CHANGE_OLD_STATE);
   }
@@ -294,7 +316,7 @@ public class WebhookTest {
 
   @Test
   public void testParsingWebhookInfo() throws Exception {
-    WebhookInfo webhookInfo = WEBHOOK_INFO_BUILDER
+    WebhookInfo webhookInfo = baseInfo
         .setTargetURL(STATIC_URL)
         .build();
 
@@ -312,16 +334,13 @@ public class WebhookTest {
 
   @Test
   public void testWebhookInfo() throws Exception {
-    WebhookInfo webhookInfo = WEBHOOK_INFO_BUILDER
+    WebhookInfo webhookInfo = baseInfo
         .setTargetURL(STATIC_URL)
         .build();
 
     assertEquals(webhookInfo.toString(),
-        "WebhookInfo{headers={"
-            + "Content-Type=application/vnd.kafka.json.v1+json, "
-            + "Producer-Type=reliable"
-            + "}, "
-            + "targetURI=http://localhost:8080/, "
+        "WebhookInfo{headerNames=[Content-Type, Producer-Type], "
+            + "targetScheme=http, targetHost=localhost, targetPort=8080, "
             + "connectTimeoutMsec=5000, "
             + "whitelistedStatuses=null"
             + "}");
@@ -334,16 +353,13 @@ public class WebhookTest {
 
   @Test
   public void testWebhookInfoWithWhiteList() throws Exception {
-    WebhookInfo webhookInfoWithWhitelist = WEBHOOK_INFO_WITH_WHITELIST_BUILDER
+    WebhookInfo webhookInfoWithWhitelist = whitelistInfo
         .setTargetURL(STATIC_URL)
         .build();
 
     assertEquals(webhookInfoWithWhitelist.toString(),
-        "WebhookInfo{headers={"
-            + "Content-Type=application/vnd.kafka.json.v1+json, "
-            + "Producer-Type=reliable"
-            + "}, "
-            + "targetURI=http://localhost:8080/, "
+        "WebhookInfo{headerNames=[Content-Type, Producer-Type], "
+            + "targetScheme=http, targetHost=localhost, targetPort=8080, "
             + "connectTimeoutMsec=5000, "
             + "whitelistedStatuses=[LOST, FAILED]"
             + "}");
@@ -359,16 +375,13 @@ public class WebhookTest {
 
   @Test
   public void testWebhookInfoWithWildcardWhitelist() throws Exception {
-    WebhookInfo webhookInfoWithWildcardWhitelist = WEBHOOK_INFO_WITH_WILDCARD_WHITELIST_BUILDER
+    WebhookInfo webhookInfoWithWildcardWhitelist = wildcardInfo
         .setTargetURL(STATIC_URL)
         .build();
 
     assertEquals(webhookInfoWithWildcardWhitelist.toString(),
-        "WebhookInfo{headers={"
-            + "Content-Type=application/vnd.kafka.json.v1+json, "
-            + "Producer-Type=reliable"
-            + "}, "
-            + "targetURI=http://localhost:8080/, "
+        "WebhookInfo{headerNames=[Content-Type, Producer-Type], "
+            + "targetScheme=http, targetHost=localhost, targetPort=8080, "
             + "connectTimeoutMsec=5000, "
             + "whitelistedStatuses=null"
             + "}");

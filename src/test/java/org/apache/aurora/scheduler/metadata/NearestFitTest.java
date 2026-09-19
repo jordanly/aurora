@@ -19,6 +19,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import com.google.common.collect.ImmutableSet;
@@ -77,6 +80,38 @@ public class NearestFitTest {
   @Test
   public void testNoReason() {
     assertNearest();
+  }
+
+  @Test
+  public void testConcurrentReadersAndCompetingVetoes() throws Exception {
+    try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+      for (int attempt = 0; attempt < 100; attempt++) {
+        nearest = new NearestFit(ticker);
+        CountDownLatch start = new CountDownLatch(1);
+        var worse = executor.submit(() -> {
+          start.await();
+          vetoed(SEVERITY_1);
+          return null;
+        });
+        var better = executor.submit(() -> {
+          start.await();
+          vetoed(SEVERITY_4_CPU);
+          return null;
+        });
+        var reader = executor.submit(() -> {
+          start.await();
+          for (int read = 0; read < 100; read++) {
+            org.junit.Assert.assertNotNull(nearest.getNearestFit(GROUP_KEY));
+          }
+          return null;
+        });
+        start.countDown();
+        worse.get(5, TimeUnit.SECONDS);
+        better.get(5, TimeUnit.SECONDS);
+        reader.get(5, TimeUnit.SECONDS);
+        assertNearest(SEVERITY_4_CPU);
+      }
+    }
   }
 
   @Test

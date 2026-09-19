@@ -30,6 +30,7 @@ import com.google.common.io.Files;
 import org.apache.aurora.codec.ThriftBinaryCodec;
 import org.apache.aurora.common.quantity.Amount;
 import org.apache.aurora.common.quantity.Time;
+import org.apache.aurora.common.stats.Stats;
 import org.apache.aurora.common.testing.easymock.EasyMockTest;
 import org.apache.aurora.common.util.testing.FakeClock;
 import org.apache.aurora.gen.Attribute;
@@ -48,6 +49,7 @@ import org.apache.aurora.scheduler.storage.backup.StorageBackup.StorageBackupImp
 import org.apache.aurora.scheduler.storage.backup.StorageBackup.StorageBackupImpl.BackupConfig;
 import org.apache.aurora.scheduler.storage.mem.MemStorageModule;
 import org.apache.aurora.scheduler.testing.FakeScheduledExecutor;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -74,6 +76,7 @@ public class StorageBackupTest extends EasyMockTest {
 
   @Before
   public void setUp() throws IOException {
+    Stats.flush();
     storage = MemStorageModule.newEmptyStorage();
     delegate = createMock(Snapshotter.class);
     final File backupDir = temporaryFolder.newFolder();
@@ -82,6 +85,11 @@ public class StorageBackupTest extends EasyMockTest {
     config = new BackupConfig(backupDir, MAX_BACKUPS, INTERVAL);
     clock.advance(Amount.of(365 * 30L, Time.DAYS));
     storageBackup = new StorageBackupImpl(storage, delegate, clock, config, executor);
+  }
+
+  @After
+  public void clearStats() {
+    Stats.flush();
   }
 
   private void triggerSnapshot(Snapshot expectedResult) {

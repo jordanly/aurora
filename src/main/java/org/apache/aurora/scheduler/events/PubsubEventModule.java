@@ -17,6 +17,8 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 import java.util.Set;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -67,6 +69,7 @@ public final class PubsubEventModule extends AbstractModule {
 
   private final Logger log;
   private final Executor registeredExecutor;
+  private final boolean ownsRegisteredExecutor;
   private final boolean synchronousFailClosed;
   private final AtomicReference<Throwable> subscriberFailure = new AtomicReference<>();
   private Provider<ExecutionControl> executionControl;
@@ -83,6 +86,7 @@ public final class PubsubEventModule extends AbstractModule {
   public PubsubEventModule(boolean synchronousFailClosed) {
     this.log = LoggerFactory.getLogger(PubsubEventModule.class);
     this.synchronousFailClosed = synchronousFailClosed;
+    this.ownsRegisteredExecutor = true;
     this.registeredExecutor = AsyncUtil.singleThreadLoggingScheduledExecutor("RegisteredEventSink",
         log);
   }
@@ -97,6 +101,7 @@ public final class PubsubEventModule extends AbstractModule {
     this.synchronousFailClosed = synchronousFailClosed;
     this.log = requireNonNull(log);
     this.registeredExecutor = requireNonNull(registeredExecutor);
+    this.ownsRegisteredExecutor = false;
   }
 
   @VisibleForTesting
@@ -209,22 +214,40 @@ public final class PubsubEventModule extends AbstractModule {
     return eventBus::post;
   }
 
+  @Provides
+  @RegisteredEvents
+  Executor provideRegisteredExecutor() {
+    return registeredExecutor;
+  }
+
+  @Provides
+  @RegisteredEvents
+  Boolean provideExecutorOwnership() {
+    return ownsRegisteredExecutor;
+  }
+
   static class RegisterSubscribers extends AbstractIdleService {
     private final EventBus eventBus;
     private final EventBus registeredEventBus;
     private final Set<EventSubscriber> subscribers;
     private final Set<EventSubscriber> registeredSubscribers;
+    private final Executor registeredExecutor;
+    private final boolean ownsRegisteredExecutor;
 
     @Inject
     RegisterSubscribers(EventBus eventBus,
                         @RegisteredEvents EventBus registeredEventBus,
                         Set<EventSubscriber> subscribers,
-                        @RegisteredEvents Set<EventSubscriber> registeredSubscribers) {
+                        @RegisteredEvents Set<EventSubscriber> registeredSubscribers,
+                        @RegisteredEvents Executor registeredExecutor,
+                        @RegisteredEvents Boolean ownsRegisteredExecutor) {
 
       this.eventBus = requireNonNull(eventBus);
       this.registeredEventBus = requireNonNull(registeredEventBus);
       this.subscribers = requireNonNull(subscribers);
       this.registeredSubscribers = requireNonNull(registeredSubscribers);
+      this.registeredExecutor = requireNonNull(registeredExecutor);
+      this.ownsRegisteredExecutor = ownsRegisteredExecutor;
     }
 
     @Override
@@ -234,8 +257,16 @@ public final class PubsubEventModule extends AbstractModule {
     }
 
     @Override
-    protected void shutDown() {
-      // Nothing to do - await VM shutdown.
+    protected void shutDown() throws InterruptedException {
+      subscribers.forEach(eventBus::unregister);
+      registeredSubscribers.forEach(registeredEventBus::unregister);
+      if (ownsRegisteredExecutor) {
+        ExecutorService executor = (ExecutorService) registeredExecutor;
+        executor.shutdownNow();
+        if (!executor.awaitTermination(5, TimeUnit.SECONDS)) {
+          throw new IllegalStateException("Registered-event executor did not terminate");
+        }
+      }
     }
   }
 

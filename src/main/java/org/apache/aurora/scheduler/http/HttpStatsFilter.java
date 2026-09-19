@@ -19,7 +19,6 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpServletResponseWrapper;
 
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
@@ -40,28 +39,12 @@ public class HttpStatsFilter extends AbstractFilter {
         }
       });
 
-  private static class ResponseWithStatus extends HttpServletResponseWrapper {
-    // 200 response code is the default if none is explicitly set.
-    private int wrappedStatus = 200;
-
-    ResponseWithStatus(HttpServletResponse resp) {
-      super(resp);
-    }
-
-    @Override
-    public void setStatus(int sc) {
-      super.setStatus(sc);
-      wrappedStatus = sc;
-    }
-  }
-
   @Override
   public void doFilter(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
       throws IOException, ServletException {
 
     long start = System.nanoTime();
-    ResponseWithStatus wrapper = new ResponseWithStatus(response);
-    chain.doFilter(request, wrapper);
-    counters.getUnchecked(wrapper.wrappedStatus).accumulate(System.nanoTime() - start);
+    chain.doFilter(request, response);
+    counters.getUnchecked(response.getStatus()).accumulate(System.nanoTime() - start);
   }
 }

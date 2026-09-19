@@ -13,14 +13,17 @@
  */
 package org.apache.aurora.scheduler.stats;
 
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 
 import jakarta.inject.Inject;
 
 import com.google.common.base.Joiner;
 
 import org.apache.aurora.common.inject.TimedInterceptor.Timed;
-import org.apache.aurora.scheduler.base.Query;
 import org.apache.aurora.scheduler.resources.ResourceType;
 import org.apache.aurora.scheduler.stats.ResourceCounter.Metric;
 import org.apache.aurora.scheduler.storage.Storage.StorageException;
@@ -37,6 +40,7 @@ class TaskStatCalculator implements Runnable {
 
   private final CachedCounters counters;
   private final ResourceCounter resourceCounter;
+  private Set<String> previousNames = Set.of();
 
   @Inject
   TaskStatCalculator(ResourceCounter resourceCounter, CachedCounters counters) {
@@ -44,13 +48,13 @@ class TaskStatCalculator implements Runnable {
     this.counters = requireNonNull(counters);
   }
 
-  private void update(String prefix, Metric metric) {
+  private void collect(Map<String, Long> values, String prefix, Metric metric) {
     metric.getBag().streamResourceVectors().forEach(r -> {
       ResourceType type = r.getKey();
       String metricName =
           Joiner.on("_").join(prefix, type.getAuroraName(), type.getAuroraStatUnit())
               .toLowerCase(Locale.ROOT);
-      counters.get(metricName).set((long) metric.getBag().valueOf(type));
+      values.put(metricName, (long) metric.getBag().valueOf(type));
     });
   }
 
@@ -58,21 +62,24 @@ class TaskStatCalculator implements Runnable {
   @Override
   public void run() {
     try {
-      for (Metric metric : resourceCounter.computeConsumptionTotals()) {
-        update("resources_" + metric.type.name(), metric);
+      ResourceCounter.Snapshot snapshot = resourceCounter.computeSnapshot();
+      Map<String, Long> values = new HashMap<>();
+      for (Metric metric : snapshot.consumption()) {
+        collect(values, "resources_" + metric.type.name(), metric);
       }
-      // Export consumption per role
-      for (ResourceCounter.MetricType type: ResourceCounter.MetricType.values()) {
-        resourceCounter.computeAggregates(
-            Query.unscoped().active(),
-            type.filter,
-            taskConfig -> type.name() + "_" + taskConfig.getJob().getRole())
-            .forEach((name, metric) -> update("resources_per_role_" + name, metric));
+      snapshot.consumptionByRole().forEach((name, metric) ->
+          collect(values, "resources_per_role_" + name, metric));
+      collect(values, "resources_allocated_quota", snapshot.quota());
+      snapshot.quotaByRole().forEach((role, metric) ->
+          collect(values, "quota_per_role_" + role, metric));
+      // A role or a sparse resource vector can disappear entirely between successful samples.
+      for (String name : previousNames) {
+        if (!values.containsKey(name)) {
+          counters.get(name).set(0);
+        }
       }
-
-      update("resources_allocated_quota", resourceCounter.computeQuotaAllocationTotals());
-      resourceCounter.computeQuotaAllocationByRole()
-          .forEach((role, metric) -> update("quota_per_role_" + role, metric));
+      values.forEach((name, value) -> counters.get(name).set(value));
+      previousNames = new HashSet<>(values.keySet());
     } catch (StorageException e) {
       LOG.debug("Unable to fetch metrics, storage is likely not ready.");
     }

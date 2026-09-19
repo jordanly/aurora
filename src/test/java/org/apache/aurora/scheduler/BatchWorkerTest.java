@@ -157,8 +157,8 @@ public class BatchWorkerTest extends EasyMockTest {
       return true;
     });
     CompletableFuture<Boolean> second = batchWorker.execute(store -> {
-      // Preserve successful completion inside the active storage transaction.
-      assertTrue(first.isDone());
+      // No item may report success before the entire batch commits.
+      assertFalse(first.isDone());
       return true;
     });
     batchWorker.startAsync().awaitRunning(TIMEOUT_SECONDS, TimeUnit.SECONDS);
@@ -230,7 +230,7 @@ public class BatchWorkerTest extends EasyMockTest {
   }
 
   @Test
-  public void testEarlierSuccessStaysCompletedWhenSameBatchFails() throws Exception {
+  public void testEarlierResultFailsWhenSameBatchFails() throws Exception {
     control.replay();
     RuntimeException failure = new IllegalArgumentException("second item failed");
     // The poll/requeue order runs the second submission first.
@@ -241,7 +241,7 @@ public class BatchWorkerTest extends EasyMockTest {
     batchWorker.startAsync();
 
     assertFailure(failed, failure);
-    assertTrue(succeeded.get(TIMEOUT_SECONDS, TimeUnit.SECONDS));
+    assertFailure(succeeded, failure);
   }
 
   @Test
@@ -276,6 +276,33 @@ public class BatchWorkerTest extends EasyMockTest {
 
     assertFailure(result, failure);
     assertEquals(Service.State.FAILED, batchWorker.state());
+  }
+
+  @Test
+  public void testFailureAfterCallbackFailsStagedResultsAndDoesNotScheduleRetry() throws Exception {
+    batchWorker.stopAsync();
+    Storage storage = createMock(Storage.class);
+    RuntimeException failure = new IllegalStateException("commit failed");
+    expect(storage.write(EasyMock.<Storage.MutateWork<Void, RuntimeException>>anyObject()))
+        .andAnswer(() -> {
+          Storage.MutateWork<Void, RuntimeException> work = EasyMock.getCurrentArgument(0);
+          work.apply(storageUtil.mutableStoreProvider);
+          assertEquals(0, batchWorker.scheduledExecutor.submit(() -> 0).get().intValue());
+          throw failure;
+        });
+    batchWorker = new BatchWorker<>(storage, statsProvider, 2);
+    control.replay();
+    AtomicInteger retries = new AtomicInteger();
+    CompletableFuture<Boolean> retry = batchWorker.executeWithReplay(constantBackoff(0), store -> {
+      retries.incrementAndGet();
+      return new Result<>(false, false);
+    });
+    CompletableFuture<Boolean> result = batchWorker.execute(store -> true);
+    batchWorker.startAsync();
+
+    assertFailure(result, failure);
+    assertFailure(retry, failure);
+    assertEquals(1, retries.get());
   }
 
   @Test

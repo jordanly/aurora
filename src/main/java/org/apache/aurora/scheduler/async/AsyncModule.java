@@ -18,6 +18,7 @@ import java.lang.annotation.Target;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 import jakarta.inject.Inject;
 import jakarta.inject.Qualifier;
@@ -62,8 +63,6 @@ public class AsyncModule extends AbstractModule {
   public @interface AsyncExecutor { }
 
   public AsyncModule(Options options) {
-    // Don't worry about clean shutdown, these can be daemon and cleanup-free.
-    // TODO(wfarner): Should we use a bounded caching thread pool executor instead?
     this(AsyncUtil.loggingScheduledExecutor(
         options.asyncWorkerThreads,
         "AsyncProcessor-%d",
@@ -115,8 +114,11 @@ public class AsyncModule extends AbstractModule {
     }
 
     @Override
-    protected void shutDown() {
-      // Nothing to do - await VM shutdown.
+    protected void shutDown() throws InterruptedException {
+      executor.shutdownNow();
+      if (!executor.awaitTermination(5, TimeUnit.SECONDS)) {
+        throw new IllegalStateException("Async executor did not terminate");
+      }
     }
   }
 }

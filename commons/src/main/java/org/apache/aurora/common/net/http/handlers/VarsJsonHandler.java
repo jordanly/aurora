@@ -48,6 +48,8 @@ import org.apache.aurora.common.stats.Stat;
  */
 @Path("/vars.json")
 public class VarsJsonHandler {
+  private static final Gson COMPACT_GSON = new Gson();
+  private static final Gson PRETTY_GSON = new GsonBuilder().setPrettyPrinting().create();
 
   private final Supplier<Iterable<Stat<?>>> statSupplier;
 
@@ -78,6 +80,6 @@ public class VarsJsonHandler {
   }
 
   private Gson getGson(boolean pretty) {
-    return pretty ? new GsonBuilder().setPrettyPrinting().create() : new Gson();
+    return pretty ? PRETTY_GSON : COMPACT_GSON;
   }
 }

@@ -16,6 +16,8 @@ package org.apache.aurora.scheduler.execution.go;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 import com.google.common.collect.ImmutableSet;
 
@@ -37,13 +39,45 @@ import static org.apache.aurora.gen.Resource.diskMb;
 import static org.apache.aurora.gen.Resource.numCpus;
 import static org.apache.aurora.gen.Resource.ramMb;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.fail;
 
 public class GoTaskFactoryTest extends EasyMockTest {
   private static final String PROCESS = "{\"version\":\"aurora-process-v1\","
       + "\"argv\":[\"/bin/echo\",\"hello\"],\"env\":{\"MODE\":\"test\"},"
       + "\"graceMillis\":1000}";
+
+  @Test
+  public void malformedProfileErrorsDoNotExposeExecutorData() {
+    control.replay();
+    TaskDescriptionException malformed = assertThrows(TaskDescriptionException.class,
+        () -> factory().validate(task("{\"version\":synthetic-profile-secret}")));
+    assertFalse(malformed.toString().contains("synthetic-profile-secret"));
+    assertNull(malformed.getCause());
+    TaskDescriptionException unknownField = assertThrows(TaskDescriptionException.class,
+        () -> factory().validate(task(PROCESS.replace("\"graceMillis\":1000",
+            "\"graceMillis\":1000,\"synthetic-profile-secret\":1"))));
+    assertFalse(unknownField.toString().contains("synthetic-profile-secret"));
+    assertFalse(unknownField.getCause().toString().contains("synthetic-profile-secret"));
+  }
+
+  @Test
+  public void processProfileOwnsCollectionsAndRedactsValues() {
+    control.replay();
+    var argv = new java.util.ArrayList<>(List.of("/bin/echo", "synthetic-profile-secret"));
+    var env = new java.util.HashMap<>(Map.of("TOKEN", "synthetic-profile-secret"));
+    var profile = new GoTaskFactory.ProcessProfile(argv, env, 1000, Optional.empty());
+    argv.clear();
+    env.clear();
+    assertEquals(2, profile.argv().size());
+    assertEquals(1, profile.env().size());
+    assertThrows(UnsupportedOperationException.class, () -> profile.argv().clear());
+    assertThrows(UnsupportedOperationException.class, () -> profile.env().clear());
+    assertFalse(profile.toString().contains("synthetic-profile-secret"));
+  }
 
   @Test
   public void validatesSupportedProcessProfile() throws Exception {
@@ -123,6 +157,9 @@ public class GoTaskFactoryTest extends EasyMockTest {
     assertEquals("main", run.get("assignment").get("process").asText());
     assertEquals(1001, run.path("assignment").path("resources").path("cpuMillis").asInt());
     assertEquals("1", run.get("desiredRevision").asText());
+    // Frozen canonical assignment digest from the original launch shape, before profile extraction.
+    assertEquals("5f824cbe66bbbde547196f8de88e0dda8ae12a86a0530623b31df03f87169911",
+        run.path("templateSha256").asText());
     assertNotEquals(
         GoTaskFactory.identity("a-", "task-1"),
         GoTaskFactory.identity("a-", "task-2"));
@@ -136,6 +173,8 @@ public class GoTaskFactoryTest extends EasyMockTest {
         + "\"startupTimeoutMillis\":30000,\"failureThreshold\":3}";
     String data = PROCESS.substring(0, PROCESS.length() - 1) + ",\"health\":" + health + "}";
     factory().validate(task(data));
+    assertEquals(Optional.of("agent-container:8080"), GoTaskFactory.healthSocket(task(data)));
+    assertEquals(Optional.empty(), GoTaskFactory.healthSocket(task(PROCESS)));
     for (String invalid : List.of(
         data.replace("8080", "0"), data.replace("8080", "65536"),
         data.replace("\"tcp\"", "\"http\""),

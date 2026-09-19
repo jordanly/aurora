@@ -13,6 +13,7 @@
  */
 package org.apache.aurora.scheduler;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -49,6 +50,9 @@ import static com.google.common.base.Preconditions.checkState;
 /**
  * Generic helper that allows bundling multiple work items into a single {@link Storage}
  * transaction aiming to reduce the write lock contention.
+ * Results and retries are published only after the complete storage write returns successfully,
+ * including nested work and post-commit event delivery. A failed write fails every unfinished
+ * result in the batch; callers must not infer rollback or automatically replay that failure.
  * Completion callbacks can run inline on the worker or stopping thread; they must not block
  * waiting for other results from this worker.
  *
@@ -280,27 +284,31 @@ public class BatchWorker<T> extends AbstractExecutionThreadService {
   private void processBatch(List<WorkItem<T>> batch) {
     if (!batch.isEmpty()) {
       long unlockedStart = System.nanoTime();
+      List<Runnable> committedActions = new ArrayList<>(batch.size());
       storage.write((Storage.MutateWork.NoResult.Quiet) storeProvider -> {
         long lockedStart = System.nanoTime();
         for (WorkItem<T> item : batch) {
           Result<T> itemResult = item.work.apply(storeProvider);
           if (itemResult.isCompleted) {
-            item.result.complete(itemResult.value);
+            committedActions.add(() -> item.result.complete(itemResult.value));
           } else {
-            // Work not finished yet - re-queue for a followup later.
+            // Stage retries too: even a zero-delay retry must wait for a successful write.
             long backoffMsec = backoffFor(item);
-            scheduledExecutor.schedule(
+            committedActions.add(() -> scheduledExecutor.schedule(
                 () -> requeue(new WorkItem<>(
                     item.work,
                     item.result,
                     item.backoffStrategy,
                     Optional.of(backoffMsec))),
                 backoffMsec,
-                TimeUnit.MILLISECONDS);
+                TimeUnit.MILLISECONDS));
           }
         }
         batchLocked.accumulate(System.nanoTime() - lockedStart);
       });
+      // This worker owns the outer write on its execution thread. Completing here also keeps
+      // arbitrary future callbacks outside the storage transaction and publication locks.
+      committedActions.forEach(Runnable::run);
       batchUnlocked.accumulate(System.nanoTime() - unlockedStart);
       batchesProcessed.incrementAndGet();
       lastBatchSize.set(batch.size());

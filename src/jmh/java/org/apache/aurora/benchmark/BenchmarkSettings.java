@@ -15,30 +15,23 @@ package org.apache.aurora.benchmark;
 
 import java.util.Set;
 
+import com.google.common.collect.ImmutableSet;
+
 import org.apache.aurora.scheduler.storage.entities.IHostAttributes;
 import org.apache.aurora.scheduler.storage.entities.IScheduledTask;
-
-import static java.util.Objects.requireNonNull;
 
 /**
  * Benchmark test settings.
  */
-final class BenchmarkSettings {
-  private final Set<IHostAttributes> hostAttributes;
-  private final double siblingClusterUtilization;
-  private final double victimClusterUtilization;
-  private final Set<IScheduledTask> tasks;
+record BenchmarkSettings(
+    double siblingClusterUtilization,
+    double victimClusterUtilization,
+    Set<IHostAttributes> hostAttributes,
+    Set<IScheduledTask> tasks) {
 
-  private BenchmarkSettings(
-      double siblingClusterUtilization,
-      double victimClusterUtilization,
-      Set<IHostAttributes> hostAttributes,
-      Set<IScheduledTask> tasks) {
-
-    this.siblingClusterUtilization = siblingClusterUtilization;
-    this.victimClusterUtilization = victimClusterUtilization;
-    this.hostAttributes = requireNonNull(hostAttributes);
-    this.tasks = requireNonNull(tasks);
+  BenchmarkSettings {
+    hostAttributes = ImmutableSet.copyOf(hostAttributes);
+    tasks = ImmutableSet.copyOf(tasks);
   }
 
   /**

@@ -13,6 +13,7 @@
  */
 package org.apache.aurora.scheduler.http.api;
 
+import java.io.ByteArrayOutputStream;
 import java.util.function.Function;
 
 import jakarta.servlet.ServletContext;
@@ -21,6 +22,7 @@ import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response.Status;
+import jakarta.ws.rs.core.StreamingOutput;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -47,6 +49,7 @@ import org.apache.aurora.scheduler.http.AbstractJettyTest;
 import org.apache.aurora.scheduler.storage.entities.IJobConfiguration;
 import org.apache.aurora.scheduler.storage.entities.IResponse;
 import org.apache.aurora.scheduler.storage.entities.ITaskConfig;
+import org.apache.aurora.scheduler.testing.LogCapture;
 import org.apache.aurora.scheduler.thrift.aop.AnnotatedAuroraAdmin;
 import org.junit.Before;
 import org.junit.Test;
@@ -56,6 +59,9 @@ import static org.apache.aurora.gen.ScheduleStatus.RUNNING;
 import static org.easymock.EasyMock.anyObject;
 import static org.easymock.EasyMock.expect;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 
 public class ApiBetaTest extends AbstractJettyTest {
   private AnnotatedAuroraAdmin thrift;
@@ -84,6 +90,24 @@ public class ApiBetaTest extends AbstractJettyTest {
           .setCronCollisionPolicy(CronCollisionPolicy.CANCEL_NEW)
           .setKey(new JobKey("role", "env", "name"))
           .setTaskConfig(TASK_CONFIG.newBuilder()));
+
+  @Test
+  public void testRequestBodiesAreNotLogged() throws Exception {
+    expect(thrift.createJob(anyObject())).andReturn(new Response().setResponseCode(OK)).once();
+    replayAndStart();
+    ApiBeta endpoint = new ApiBeta(thrift);
+    String secret = "synthetic-executor-secret";
+    try (LogCapture logs = new LogCapture(ApiBeta.class)) {
+      var success = endpoint.invoke("createJob", "{\"description\":{\"taskConfig\":{"
+          + "\"executorConfig\":{\"name\":\"test\",\"data\":\"" + secret + "\"}}}}");
+      ((StreamingOutput) success.getEntity()).write(new ByteArrayOutputStream());
+      assertThrows(jakarta.ws.rs.WebApplicationException.class,
+          () -> endpoint.invoke("createJob", "{\"" + secret));
+      endpoint.invoke(secret, secret);
+      assertTrue(logs.messages().contains("Call to createJob"));
+      assertFalse(logs.messages().contains(secret));
+    }
+  }
 
   @Test
   public void testCreateJob() throws Exception {

@@ -79,6 +79,7 @@ public class AsyncModuleTest extends EasyMockTest {
     Set<Service> services = injector.getInstance(
         Key.get(new TypeLiteral<Set<Service>>() { }, AppStartup.class));
     for (Service service : services) {
+      addTearDown(() -> service.stopAsync().awaitTerminated());
       service.startAsync().awaitRunning();
     }
 

@@ -83,7 +83,7 @@ public class NearestFit implements EventSubscriber {
    */
   public ImmutableSet<Veto> getNearestFit(TaskGroupKey groupKey) {
     Fit fit = fitByGroupKey.getIfPresent(groupKey);
-    return (fit == null) ? NO_VETO : fit.vetoes;
+    return (fit == null) ? NO_VETO : fit.getVetoes();
   }
 
   /**
@@ -127,7 +127,7 @@ public class NearestFit implements EventSubscriber {
    * @param taskGroups Group of pending tasks.
    * @return A map with key=TaskGroupKey and value=List of reasons.
    */
-  public synchronized Map<TaskGroupKey, List<String>> getPendingReasons(
+  public Map<TaskGroupKey, List<String>> getPendingReasons(
         Iterable<TaskGroup> taskGroups) {
     return StreamSupport.stream(taskGroups.spliterator(), false).map(t -> {
       List<String> reasons = getNearestFit(t.getKey()).stream()
@@ -138,6 +138,10 @@ public class NearestFit implements EventSubscriber {
 
   private static class Fit {
     private ImmutableSet<Veto> vetoes;
+
+    synchronized ImmutableSet<Veto> getVetoes() {
+      return vetoes == null ? NO_VETO : vetoes;
+    }
 
     private static int score(Iterable<Veto> vetoes) {
       int total = 0;
@@ -159,7 +163,7 @@ public class NearestFit implements EventSubscriber {
      * count. See {@link Veto} for more details on scoring differences.
      * @param newVetoes The vetoes for the scheduling assignment with {@code newHost}.
      */
-    void maybeUpdate(Set<Veto> newVetoes) {
+    synchronized void maybeUpdate(Set<Veto> newVetoes) {
       if (vetoes == null) {
         update(newVetoes);
         return;

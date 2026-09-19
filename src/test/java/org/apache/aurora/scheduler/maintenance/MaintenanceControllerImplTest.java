@@ -17,6 +17,7 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -30,6 +31,8 @@ import org.apache.aurora.common.quantity.Amount;
 import org.apache.aurora.common.quantity.Time;
 import org.apache.aurora.common.stats.StatsProvider;
 import org.apache.aurora.common.testing.easymock.EasyMockTest;
+import org.apache.aurora.common.util.Clock;
+import org.apache.aurora.common.util.testing.FakeClock;
 import org.apache.aurora.gen.CountSlaPolicy;
 import org.apache.aurora.gen.HostAttributes;
 import org.apache.aurora.gen.HostMaintenanceRequest;
@@ -89,6 +92,7 @@ public class MaintenanceControllerImplTest extends EasyMockTest {
           .setDurationSecs(1800)
   );
 
+  private final FakeClock clock = new FakeClock();
   private StorageTestUtil storageUtil;
   private StateManager stateManager;
   private SlaManager slaManager;
@@ -97,6 +101,7 @@ public class MaintenanceControllerImplTest extends EasyMockTest {
 
   @Before
   public void setUp() throws Exception {
+    clock.setNowMillis(TimeUnit.DAYS.toMillis(1));
     storageUtil = new StorageTestUtil(this);
     storageUtil.expectOperations();
     stateManager = createMock(StateManager.class);
@@ -111,6 +116,7 @@ public class MaintenanceControllerImplTest extends EasyMockTest {
           @Override
           protected void configure() {
             bind(Storage.class).toInstance(storageUtil.storage);
+            bind(Clock.class).toInstance(clock);
             bind(StateManager.class).toInstance(stateManager);
             bind(SlaManager.class).toInstance(slaManager);
             bind(StatsProvider.class).toInstance(new FakeStatsProvider());
@@ -151,7 +157,7 @@ public class MaintenanceControllerImplTest extends EasyMockTest {
     IHostMaintenanceRequest maintenanceRequest =
         IHostMaintenanceRequest.build(new HostMaintenanceRequest()
             .setHost(HOST_A)
-            .setCreatedTimestampMs(System.currentTimeMillis())
+            .setCreatedTimestampMs(clock.nowMillis())
             .setTimeoutSecs(7200)
             .setDefaultSlaPolicy(SLA_POLICY));
 
@@ -272,7 +278,7 @@ public class MaintenanceControllerImplTest extends EasyMockTest {
     IHostMaintenanceRequest maintenanceRequest =
         IHostMaintenanceRequest.build(new HostMaintenanceRequest()
             .setHost(HOST_A)
-            .setCreatedTimestampMs(System.currentTimeMillis())
+            .setCreatedTimestampMs(clock.nowMillis())
             .setTimeoutSecs(7200)
             .setDefaultSlaPolicy(SLA_POLICY));
     expect(storageUtil.hostMaintenanceStore.getHostMaintenanceRequest(HOST_A))
@@ -325,6 +331,29 @@ public class MaintenanceControllerImplTest extends EasyMockTest {
   }
 
   @Test
+  public void testMaintenanceDeadlineBoundary() {
+    IScheduledTask task = makeTask(HOST_A, "task");
+    IHostAttributes attributes = IHostAttributes.build(
+        new HostAttributes().setHost(HOST_A).setMode(DRAINING));
+    expect(storageUtil.attributeStore.getHostAttributes())
+        .andReturn(ImmutableSet.of(attributes)).times(2);
+    expect(storageUtil.taskStore.fetchTasks(Query.slaveScoped(HOST_A).active()))
+        .andReturn(ImmutableSet.of(task)).times(2);
+    IHostMaintenanceRequest request = IHostMaintenanceRequest.build(new HostMaintenanceRequest()
+        .setHost(HOST_A).setCreatedTimestampMs(clock.nowMillis() - 1000)
+        .setTimeoutSecs(1).setDefaultSlaPolicy(SLA_POLICY));
+    expect(storageUtil.hostMaintenanceStore.getHostMaintenanceRequest(HOST_A))
+        .andReturn(Optional.of(request)).times(2);
+    expectTaskDraining(task, false);
+    expectTaskDraining(task, true);
+    control.replay();
+
+    maintenance.runForTest();
+    clock.advance(Amount.of(1L, Time.MILLISECONDS));
+    maintenance.runForTest();
+  }
+
+  @Test
   public void testIterationNoMaintenanceRequest() {
     IScheduledTask task1 = makeTask(HOST_A, "taskA");
     IScheduledTask task2 = makeTask(HOST_A, "taskB");
@@ -364,7 +393,7 @@ public class MaintenanceControllerImplTest extends EasyMockTest {
     IHostMaintenanceRequest maintenanceRequest =
         IHostMaintenanceRequest.build(new HostMaintenanceRequest()
             .setHost(HOST_A)
-            .setCreatedTimestampMs(System.currentTimeMillis())
+            .setCreatedTimestampMs(clock.nowMillis())
             .setTimeoutSecs(7200)
             .setDefaultSlaPolicy(SLA_POLICY));
     expect(storageUtil.hostMaintenanceStore.getHostMaintenanceRequest(HOST_A))

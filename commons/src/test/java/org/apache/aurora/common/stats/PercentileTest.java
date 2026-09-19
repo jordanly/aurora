@@ -113,7 +113,7 @@ public class PercentileTest {
 
   @Test
   public void testReverseLinear() {
-    for (int i = 0; i < 10001; i++) {
+    for (int i = 10000; i >= 0; i--) {
       percentiles.record(i);
     }
 
@@ -191,12 +191,12 @@ public class PercentileTest {
     }
   }
 
-  private void checkValuesAreFlushed(Percentile<Integer> input_percentiles, double... values) {
+  private void checkValuesAreFlushed(Percentile<Integer> input_percentiles) {
     // Check that the values were flushed.
-    for (int i = 0; i < values.length; i++) {
+    for (int i = 0; i < PERCENTILES.length; i++) {
       checkPercentile(input_percentiles, PERCENTILES[i], 0);
     }
-    assertThat(percentiles.samples.isEmpty(), is(true));
+    assertThat(input_percentiles.samples.isEmpty(), is(true));
   }
 
   private void checkPercentile(Percentile<Integer> input_percentiles,

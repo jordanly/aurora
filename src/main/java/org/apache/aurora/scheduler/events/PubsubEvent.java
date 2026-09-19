@@ -77,6 +77,7 @@ public interface PubsubEvent {
    * This class is final as it should only be constructed through declared factory methods.
    */
   final class TaskStateChange implements PubsubEvent {
+    private static final Gson GSON = new Gson();
     private final IScheduledTask task;
     private final Optional<ScheduleStatus> oldState;
 
@@ -150,14 +151,13 @@ public interface PubsubEvent {
     }
 
     public String toJson() {
-      Gson gson = new Gson();
       JsonObject event = new JsonObject();
-      event.add("task", gson.toJsonTree(task));
+      event.add("task", GSON.toJsonTree(task));
       // Preserve the webhook's historical Optional representation without reading JDK fields.
       JsonObject previousState = new JsonObject();
-      oldState.ifPresent(state -> previousState.add("value", gson.toJsonTree(state)));
+      oldState.ifPresent(state -> previousState.add("value", GSON.toJsonTree(state)));
       event.add("oldState", previousState);
-      return gson.toJson(event);
+      return GSON.toJson(event);
     }
 
   }

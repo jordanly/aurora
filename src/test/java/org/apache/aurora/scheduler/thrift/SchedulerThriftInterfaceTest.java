@@ -92,6 +92,7 @@ import org.apache.aurora.scheduler.state.StateChangeResult;
 import org.apache.aurora.scheduler.state.StateManager;
 import org.apache.aurora.scheduler.state.UUIDGenerator;
 import org.apache.aurora.scheduler.storage.SnapshotStore;
+import org.apache.aurora.scheduler.storage.Storage.MutableStoreProvider;
 import org.apache.aurora.scheduler.storage.Storage.NonVolatileStorage;
 import org.apache.aurora.scheduler.storage.Storage.StorageException;
 import org.apache.aurora.scheduler.storage.backup.Recovery;
@@ -470,7 +471,6 @@ public class SchedulerThriftInterfaceTest extends EasyMockTest {
                     numCpus(1),
                     ramMb(1024),
                     diskMb(0)));
-    task.unsetResources();
     assertResponse(INVALID_REQUEST, thrift.createJob(makeJob(task)));
   }
 
@@ -719,6 +719,54 @@ public class SchedulerThriftInterfaceTest extends EasyMockTest {
 
     assertOkResponse(thrift.pruneTasks(new TaskQuery()));
     assertEquals(1L, statsProvider.getLongValue(PRUNE_TASKS));
+  }
+
+  @Test
+  public void testPruneTasksWithSqlitePreservesActiveTasksAndQuery() throws Exception {
+    stateManager.deleteTasks(anyObject(), eq(Set.of("terminal")));
+    expectLastCall().andAnswer(() -> {
+      MutableStoreProvider stores = EasyMock.getCurrentArgument(0);
+      stores.getUnsafeTaskStore().deleteTasks(Set.of("terminal"));
+      return null;
+    }).times(3);
+    control.replay();
+
+    try (SqliteStorage sqlite = SqliteStorage.open(
+        temporary.getRoot().toPath().resolve("prune.db"))) {
+      thrift = createThrift(sqlite, quotaManager);
+      IScheduledTask active = IScheduledTask.build(
+          TaskTestUtil.makeTask("active", JOB_KEY, 0, true).newBuilder()
+              .setStatus(ScheduleStatus.RUNNING));
+      IScheduledTask terminal = IScheduledTask.build(
+          TaskTestUtil.makeTask("terminal", JOB_KEY, 1, true).newBuilder()
+              .setStatus(ScheduleStatus.FINISHED));
+      IScheduledTask other = IScheduledTask.build(
+          TaskTestUtil.makeTask("other", JOB_KEY, 2, true).newBuilder()
+              .setStatus(ScheduleStatus.FINISHED));
+      long pruned = 0;
+      for (TaskQuery query : ImmutableList.of(
+          new TaskQuery(),
+          new TaskQuery().setStatuses(Set.of()),
+          new TaskQuery().setStatuses(Set.of(ScheduleStatus.FINISHED)),
+          new TaskQuery().setStatuses(Set.of(ScheduleStatus.FINISHED, ScheduleStatus.RUNNING)))) {
+        query.setTaskIds(Set.of("active", "terminal"));
+        TaskQuery original = query.deepCopy();
+        sqlite.write(stores -> {
+          stores.getUnsafeTaskStore().saveTasks(Set.of(active, terminal, other));
+          return null;
+        });
+        boolean mixed = query.isSetStatuses()
+            && query.getStatuses().contains(ScheduleStatus.RUNNING);
+        assertResponse(mixed ? ResponseCode.ERROR : OK, thrift.pruneTasks(query));
+        assertEquals(original, query);
+        assertEquals(mixed ? Set.of(active, terminal, other) : Set.of(active, other),
+            Set.copyOf(sqlite.read(stores -> stores.getTaskStore().fetchTasks(Query.unscoped()))));
+        if (!mixed) {
+          pruned++;
+        }
+        assertEquals(pruned, statsProvider.getLongValue(PRUNE_TASKS));
+      }
+    }
   }
 
   @Test
@@ -1611,6 +1659,39 @@ public class SchedulerThriftInterfaceTest extends EasyMockTest {
   }
 
   @Test
+  public void testStartUpdateFailureLimitUsesWideArithmetic() throws Exception {
+    control.replay();
+    for (int[] limits : new int[][] {
+        {THRESHOLDS.getMaxUpdateInstanceFailures() + 1, 1}, {Integer.MAX_VALUE, 2}}) {
+      JobUpdateRequest request = buildServiceJobUpdateRequest().setInstanceCount(limits[1]);
+      request.getSettings().setMaxPerInstanceFailures(limits[0]);
+      assertEquals(invalidResponse(SchedulerThriftInterface.TOO_MANY_POTENTIAL_FAILED_INSTANCES),
+          thrift.startJobUpdate(request, AUDIT_MESSAGE));
+    }
+    assertEquals(0L, statsProvider.getLongValue(START_JOB_UPDATE));
+  }
+
+  @Test
+  public void testStartUpdateAcceptsExactFailureLimitAndLargeGroupTotal() throws Exception {
+    expectGetRemoteUser();
+    expectNoCronJob();
+    expect(uuidGenerator.createNew()).andReturn(UU_ID);
+    storageUtil.expectTaskFetch(Query.unscoped().byJob(JOB_KEY).active());
+    expectJobUpdateQuotaCheck(ENOUGH_QUOTA);
+    jobUpdateController.start(anyObject(), eq(AUDIT));
+    control.replay();
+
+    JobUpdateRequest request = buildServiceJobUpdateRequest().setInstanceCount(2);
+    request.getSettings()
+        .setMaxPerInstanceFailures(THRESHOLDS.getMaxUpdateInstanceFailures() / 2)
+        .setUpdateStrategy(JobUpdateStrategy.varBatchStrategy(
+            new VariableBatchJobUpdateStrategy()
+                .setGroupSizes(ImmutableList.of(Integer.MAX_VALUE, Integer.MAX_VALUE))));
+    assertOkResponse(thrift.startJobUpdate(request, AUDIT_MESSAGE));
+    assertEquals(2L, statsProvider.getLongValue(START_JOB_UPDATE));
+  }
+
+  @Test
   public void testStartUpdateFailsInvalidMaxFailedInstances() throws Exception {
     control.replay();
 
@@ -1659,6 +1740,7 @@ public class SchedulerThriftInterfaceTest extends EasyMockTest {
 
   @Test
   public void testStartUpdateFailsForCronJob() throws Exception {
+    expectGetRemoteUser();
     JobUpdateRequest request = buildServiceJobUpdateRequest(populatedTask());
     expectCronJob();
 
@@ -1678,6 +1760,7 @@ public class SchedulerThriftInterfaceTest extends EasyMockTest {
 
   @Test
   public void testStartNoopUpdate() throws Exception {
+    expectGetRemoteUser();
     expectNoCronJob();
     expect(uuidGenerator.createNew()).andReturn(UU_ID);
     ITaskConfig newTask = buildTaskForJobUpdate(0).getAssignedTask().getTask();
@@ -1702,6 +1785,7 @@ public class SchedulerThriftInterfaceTest extends EasyMockTest {
 
   @Test
   public void testStartUpdateInvalidScope() throws Exception {
+    expectGetRemoteUser();
     expectNoCronJob();
     expect(uuidGenerator.createNew()).andReturn(UU_ID);
 
@@ -1899,17 +1983,48 @@ public class SchedulerThriftInterfaceTest extends EasyMockTest {
     assertResponse(OK, thrift.pauseJobUpdate(UPDATE_KEY.newBuilder(), AUDIT_MESSAGE));
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testPauseMessageTooLong() throws Exception {
     expectGetRemoteUser();
 
     control.replay();
 
     assertResponse(
-        OK,
+        INVALID_REQUEST,
         thrift.pauseJobUpdate(
             UPDATE_KEY.newBuilder(),
             Strings.repeat("*", AuditData.MAX_MESSAGE_LENGTH + 1)));
+  }
+
+  @Test
+  public void testOverlongUpdateMessagesLeaveSqliteAvailable() throws Exception {
+    expectGetRemoteUser().times(6);
+    jobUpdateController.pause(UPDATE_KEY,
+        new AuditData(USER, Optional.of("*".repeat(AuditData.MAX_MESSAGE_LENGTH))));
+    control.replay();
+
+    try (SqliteStorage sqlite = SqliteStorage.open(
+        temporary.getRoot().toPath().resolve("audit.db"))) {
+      AtomicInteger failures = new AtomicInteger();
+      sqlite.setWriteFailureHandler(failure -> failures.incrementAndGet());
+      thrift = createThrift(sqlite, new QuotaManager.QuotaManagerImpl());
+      String message = "*".repeat(AuditData.MAX_MESSAGE_LENGTH + 1);
+      assertResponse(INVALID_REQUEST,
+          thrift.startJobUpdate(buildServiceJobUpdateRequest(), message));
+      assertResponse(INVALID_REQUEST, thrift.pauseJobUpdate(UPDATE_KEY.newBuilder(), message));
+      assertResponse(INVALID_REQUEST, thrift.resumeJobUpdate(UPDATE_KEY.newBuilder(), message));
+      assertResponse(INVALID_REQUEST, thrift.abortJobUpdate(UPDATE_KEY.newBuilder(), message));
+      assertResponse(INVALID_REQUEST, thrift.rollbackJobUpdate(UPDATE_KEY.newBuilder(), message));
+      assertOkResponse(thrift.pauseJobUpdate(UPDATE_KEY.newBuilder(),
+          "*".repeat(AuditData.MAX_MESSAGE_LENGTH)));
+      ResourceAggregate valid = new ResourceAggregate()
+          .setResources(Set.of(numCpus(2), ramMb(2048), diskMb(2048)));
+      assertOkResponse(thrift.setQuota(ROLE, valid));
+      assertEquals(IResourceAggregate.build(valid), sqlite.read(stores ->
+          stores.getQuotaStore().fetchQuota(ROLE).orElseThrow()));
+      assertEquals(0, failures.get());
+      assertEquals(0L, statsProvider.getLongValue(START_JOB_UPDATE));
+    }
   }
 
   @Test

@@ -22,6 +22,7 @@ import java.util.concurrent.TimeUnit;
 
 import jakarta.inject.Singleton;
 
+import com.google.common.collect.ImmutableSet;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.util.concurrent.AbstractExecutionThreadService;
@@ -49,6 +50,7 @@ import org.apache.aurora.scheduler.TaskIdGenerator;
 import org.apache.aurora.scheduler.TaskStatusHandler;
 import org.apache.aurora.scheduler.TaskStatusHandlerImpl;
 import org.apache.aurora.scheduler.TierModule;
+import org.apache.aurora.scheduler.base.Query;
 import org.apache.aurora.scheduler.base.TaskTestUtil;
 import org.apache.aurora.scheduler.config.CliOptions;
 import org.apache.aurora.scheduler.configuration.executor.ExecutorSettings;
@@ -211,12 +213,12 @@ public class StatusUpdateBenchmark {
     eventBus.register(this);
 
     statusHandler = injector.getInstance(TaskStatusHandlerImpl.class);
-    statusHandler.startAsync();
+    statusHandler.startAsync().awaitRunning();
   }
 
   @TearDown(Level.Trial)
   public void tearDown() {
-    statusHandler.stopAsync();
+    statusHandler.stopAsync().awaitTerminated();
   }
 
   /**
@@ -242,6 +244,22 @@ public class StatusUpdateBenchmark {
         (NoResult.Quiet) storeProvider -> storeProvider.getUnsafeTaskStore().saveTasks(tasks));
 
     countDownLatch = new CountDownLatch(tasks.size());
+  }
+
+  @TearDown(Level.Invocation)
+  public void clearTasks() {
+    Set<IScheduledTask> completed = storage.write(stores -> {
+      Set<IScheduledTask> snapshot = ImmutableSet.copyOf(
+          stores.getTaskStore().fetchTasks(Query.unscoped()));
+      stores.getUnsafeTaskStore().deleteAllTasks();
+      return snapshot;
+    });
+    for (IScheduledTask task : completed) {
+      eventBus.post(PubsubEvent.TaskStateChange.transition(
+          IScheduledTask.build(task.newBuilder().setStatus(ScheduleStatus.FINISHED)),
+          task.getStatus()));
+    }
+    eventBus.post(new PubsubEvent.TasksDeleted(completed));
   }
 
   @Subscribe

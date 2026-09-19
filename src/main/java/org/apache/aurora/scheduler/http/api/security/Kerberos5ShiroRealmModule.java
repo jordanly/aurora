@@ -14,13 +14,16 @@
 package org.apache.aurora.scheduler.http.api.security;
 
 import java.io.File;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.TimeUnit;
 
 import javax.security.auth.Subject;
 import javax.security.auth.kerberos.KerberosPrincipal;
+import javax.security.auth.login.AppConfigurationEntry;
+import javax.security.auth.login.Configuration;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 
@@ -29,13 +32,16 @@ import jakarta.inject.Singleton;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.io.Files;
+import com.google.common.util.concurrent.MoreExecutors;
+import com.google.common.util.concurrent.Service;
 import com.google.inject.AbstractModule;
 import com.google.inject.PrivateModule;
-import com.sun.security.auth.login.ConfigFile;
+import com.google.inject.Provides;
 import com.sun.security.auth.module.Krb5LoginModule;
 
+import org.apache.aurora.common.application.ShutdownRegistry;
 import org.apache.aurora.scheduler.config.CliOptions;
+import org.apache.aurora.scheduler.http.JettyServerModule.HttpServerLauncher;
 import org.ietf.jgss.GSSCredential;
 import org.ietf.jgss.GSSException;
 import org.ietf.jgss.GSSManager;
@@ -60,13 +66,6 @@ public class Kerberos5ShiroRealmModule extends AbstractModule {
    * Standard Object Identifier for the SPNEGO GSS-API mechanism.
    */
   private static final String GSS_SPNEGO_MECH_OID = "1.3.6.1.5.5.2";
-
-  private static final String JAAS_CONF_TEMPLATE =
-      "%s {\n"
-          + Krb5LoginModule.class.getName()
-          + " required useKeyTab=true storeKey=true doNotPrompt=true isInitiator=false "
-          + "keyTab=\"%s\" principal=\"%s\" debug=%s;\n"
-          + "};";
 
   @Parameters(separators = "=")
   public static class Options {
@@ -137,50 +136,152 @@ public class Kerberos5ShiroRealmModule extends AbstractModule {
       return;
     }
 
-    // TODO(ksweeney): Find a better way to configure JAAS in code.
-    String jaasConf = String.format(
-        JAAS_CONF_TEMPLATE,
-        getClass().getName(),
-        serverKeyTab.get().getAbsolutePath(),
-        serverPrincipal.get().getName(),
-        kerberosDebugEnabled);
-    LOG.debug("Generated jaas.conf: " + jaasConf);
-
-    File jaasConfFile;
-    try {
-      jaasConfFile = File.createTempFile("jaas", "conf");
-      jaasConfFile.deleteOnExit();
-      Files.asCharSink(jaasConfFile, StandardCharsets.UTF_8).write(jaasConf);
-    } catch (IOException e) {
-      addError(e);
-      return;
-    }
-
-    GSSCredential serverCredential;
-    try {
-      LoginContext loginContext = new LoginContext(
-          getClass().getName(),
-          null /* subject (read from jaas config file passed below) */,
-          null /* callbackHandler */,
-          new ConfigFile(jaasConfFile.toURI()));
-      loginContext.login();
-      serverCredential = createServerCredential(loginContext.getSubject());
-    } catch (LoginException e) {
-      addError(e);
-      return;
-    }
-
     install(new PrivateModule() {
       @Override
       protected void configure() {
         bind(GSSManager.class).toInstance(gssManager);
-        bind(GSSCredential.class).toInstance(serverCredential);
 
         bind(Kerberos5Realm.class).in(Singleton.class);
         expose(Kerberos5Realm.class);
       }
+
+      @Provides
+      @Singleton
+      GSSCredential provideServerCredential(ShutdownRegistry shutdown, HttpServerLauncher http) {
+        try {
+          LoginContext login = new LoginContext(
+              Kerberos5ShiroRealmModule.class.getName(), null, null, createJaasConfiguration());
+          return acquireServerCredential(login, shutdown, http);
+        } catch (LoginException e) {
+          throw new RuntimeException(e);
+        }
+      }
     });
     ShiroUtils.addRealmBinding(binder()).to(Kerberos5Realm.class);
+  }
+
+  @VisibleForTesting
+  Configuration createJaasConfiguration() {
+    Map<String, String> options = Map.of(
+        "useKeyTab", "true",
+        "storeKey", "true",
+        "doNotPrompt", "true",
+        "isInitiator", "false",
+        "keyTab", serverKeyTab.orElseThrow().getAbsolutePath(),
+        "principal", serverPrincipal.orElseThrow().getName(),
+        "debug", Boolean.toString(kerberosDebugEnabled));
+    return new Configuration() {
+      @Override
+      public AppConfigurationEntry[] getAppConfigurationEntry(String name) {
+        if (!Kerberos5ShiroRealmModule.class.getName().equals(name)) {
+          return null;
+        }
+        return new AppConfigurationEntry[] {new AppConfigurationEntry(
+            Krb5LoginModule.class.getName(),
+            AppConfigurationEntry.LoginModuleControlFlag.REQUIRED,
+            options)};
+      }
+    };
+  }
+
+  @VisibleForTesting
+  GSSCredential acquireServerCredential(LoginContext login, ShutdownRegistry shutdown, Service http)
+      throws LoginException {
+    return acquireServerCredential(login, shutdown, http, Duration.ofSeconds(5));
+  }
+
+  @VisibleForTesting
+  GSSCredential acquireServerCredential(
+      LoginContext login, ShutdownRegistry shutdown, Service http, Duration shutdownTimeout)
+      throws LoginException {
+    login.login();
+    OwnedCredential owned = null;
+    try {
+      owned = new OwnedCredential(login, createServerCredential(login.getSubject()));
+      OwnedCredential resource = owned;
+      http.addListener(new Service.Listener() {
+        @Override
+        public void terminated(Service.State from) {
+          resource.closeAfterHttp();
+        }
+
+        @Override
+        public void failed(Service.State from, Throwable failure) {
+          resource.closeAfterHttp();
+        }
+      }, MoreExecutors.directExecutor());
+      shutdown.addAction(() -> {
+        // Startup services stop concurrently. Wait for HTTP to finish handling requests before
+        // disposing the credential shared by their authentication contexts.
+        try {
+          http.stopAsync().awaitTerminated(shutdownTimeout.toMillis(), TimeUnit.MILLISECONDS);
+        } catch (IllegalStateException e) {
+          if (http.state() != Service.State.FAILED) {
+            throw e;
+          }
+          // Failed HTTP startup has already attempted server rollback.
+        }
+        resource.close();
+      });
+      // A listener added after termination receives no past events. Close that registration race.
+      if (http.state() == Service.State.TERMINATED || http.state() == Service.State.FAILED) {
+        resource.closeAfterHttp();
+      }
+      return owned.credential;
+    } catch (RuntimeException | Error failure) {
+      try {
+        if (owned == null) {
+          login.logout();
+        } else {
+          owned.close();
+        }
+      } catch (Exception | Error cleanup) {
+        if (failure != cleanup) { // NOPMD - Throwable forbids self-suppression by identity.
+          failure.addSuppressed(cleanup);
+        }
+      }
+      throw failure;
+    }
+  }
+
+  private static final class OwnedCredential implements AutoCloseable {
+    private final LoginContext login;
+    private final GSSCredential credential;
+    private boolean closed;
+
+    OwnedCredential(LoginContext login, GSSCredential credential) {
+      this.login = login;
+      this.credential = credential;
+    }
+
+    void closeAfterHttp() {
+      try {
+        close();
+      } catch (GSSException | LoginException | RuntimeException e) {
+        LOG.warn("Failed to release Kerberos server credentials.", e);
+      }
+    }
+
+    @Override
+    public synchronized void close() throws GSSException, LoginException {
+      if (closed) {
+        return;
+      }
+      closed = true;
+      try {
+        credential.dispose();
+      } catch (GSSException | RuntimeException | Error failure) {
+        try {
+          login.logout();
+        } catch (LoginException | RuntimeException | Error cleanup) {
+          if (failure != cleanup) { // NOPMD - Throwable forbids self-suppression by identity.
+            failure.addSuppressed(cleanup);
+          }
+        }
+        throw failure;
+      }
+      login.logout();
+    }
   }
 
   @VisibleForTesting
@@ -191,7 +292,7 @@ public class Kerberos5ShiroRealmModule extends AbstractModule {
       return Subject.callAs(subject, () -> {
         try {
           return gssManager.createCredential(
-              null /* Use the service principal name defined in jaas.conf */,
+              null /* Use the service principal name defined in the JAAS configuration */,
               GSSCredential.INDEFINITE_LIFETIME,
               new Oid[] {new Oid(GSS_SPNEGO_MECH_OID), new Oid(GSS_KRB5_MECH_OID)},
               GSSCredential.ACCEPT_ONLY);

@@ -13,11 +13,11 @@
  */
 package org.apache.aurora.common.zookeeper;
 
-import com.google.common.base.Objects;
+import java.util.Arrays;
+
 import com.google.common.base.Preconditions;
 
 import org.apache.aurora.common.base.MorePreconditions;
-import org.apache.commons.lang.builder.EqualsBuilder;
 
 import static java.util.Objects.requireNonNull;
 
@@ -49,7 +49,7 @@ public final class Credentials {
 
   public Credentials(String scheme, byte[] authToken) {
     this.scheme = MorePreconditions.checkNotBlank(scheme);
-    this.authToken = requireNonNull(authToken);
+    this.authToken = requireNonNull(authToken).clone();
   }
 
   /**
@@ -67,24 +67,18 @@ public final class Credentials {
    * @return the authentication token.
    */
   public byte[] authToken() {
-    return authToken;
+    return authToken.clone();
   }
 
   @Override
   public boolean equals(Object o) {
-    if (!(o instanceof Credentials)) {
-      return false;
-    }
-
-    Credentials other = (Credentials) o;
-    return new EqualsBuilder()
-        .append(scheme, other.scheme())
-        .append(authToken, other.authToken())
-        .isEquals();
+    return o instanceof Credentials other
+        && scheme.equals(other.scheme)
+        && Arrays.equals(authToken, other.authToken);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hashCode(scheme, authToken);
+    return 31 * scheme.hashCode() + Arrays.hashCode(authToken);
   }
 }

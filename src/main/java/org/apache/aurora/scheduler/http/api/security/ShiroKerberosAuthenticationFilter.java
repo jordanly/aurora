@@ -62,7 +62,7 @@ public class ShiroKerberosAuthenticationFilter extends AbstractFilter {
       try {
         token = new AuthorizeHeaderToken(authorizationHeaderValue.get());
       } catch (IllegalArgumentException e) {
-        LOG.info("Malformed Authorize header: " + e.getMessage());
+        LOG.info("Malformed Authorize header");
         response.sendError(HttpServletResponse.SC_BAD_REQUEST);
         return;
       }
@@ -70,7 +70,7 @@ public class ShiroKerberosAuthenticationFilter extends AbstractFilter {
         subjectProvider.get().login(token);
         chain.doFilter(request, response);
       } catch (AuthenticationException e) {
-        LOG.warn("Login failed: " + e.getMessage());
+        LOG.warn("Kerberos login failed");
         sendChallenge(response);
       }
     } else {

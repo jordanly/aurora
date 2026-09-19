@@ -60,13 +60,15 @@ public class WebhookModule extends AbstractModule {
 
   private final Optional<String> webhookConfig;
 
+  // File-read causes can disclose configured paths; expose only the safe failure category.
+  @SuppressWarnings("PMD.PreserveStackTrace")
   public WebhookModule(Options options) {
     this.webhookConfig = Optional.ofNullable(options.webhookConfigFile)
         .map(f -> {
           try {
             return Files.asCharSource(options.webhookConfigFile, StandardCharsets.UTF_8).read();
           } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new IllegalArgumentException("Unable to read Webhook configuration file");
           }
         });
   }
@@ -89,10 +91,8 @@ public class WebhookModule extends AbstractModule {
           .setRequestTimeout(Duration.ofMillis(webhookInfo.getConnectonTimeoutMsec()))
           .setKeepAliveStrategy(new DefaultKeepAliveStrategy())
           .build();
-      AsyncHttpClient httpClient = asyncHttpClient(config);
-
       bind(WebhookInfo.class).toInstance(webhookInfo);
-      bind(AsyncHttpClient.class).toInstance(httpClient);
+      bind(AsyncHttpClient.class).toProvider(() -> asyncHttpClient(config));
       PubsubEventModule.bindSubscriber(binder(), Webhook.class);
       bind(Webhook.class).in(Singleton.class);
 
@@ -101,6 +101,8 @@ public class WebhookModule extends AbstractModule {
     }
   }
 
+  // Jackson causes can quote credential values; redaction tests cover their deliberate omission.
+  @SuppressWarnings("PMD.PreserveStackTrace")
   @VisibleForTesting
   static WebhookInfo parseWebhookConfig(String config) {
     checkArgument(!Strings.isNullOrEmpty(config), "Webhook configuration cannot be empty");
@@ -108,7 +110,8 @@ public class WebhookModule extends AbstractModule {
       return new ObjectMapper().readValue(config, WebhookInfo.class);
     } catch (IOException e) {
       LOG.error("Error parsing Webhook configuration file.");
-      throw new RuntimeException(e);
+      // Jackson causes may quote header values, URI credentials, or the entire input.
+      throw new IllegalArgumentException("Invalid Webhook configuration");
     }
   }
 }

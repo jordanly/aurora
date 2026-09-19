@@ -32,7 +32,8 @@ public class Lifecycle {
 
   // Monitor and state for suspending and terminating execution.
   private final Object waitMonitor = new Object();
-  private boolean destroyed = false;
+  private boolean destroyed;
+  private boolean shutdownStarted;
 
   private final Command shutdownRegistry;
 
@@ -61,15 +62,23 @@ public class Lifecycle {
    */
   public final void awaitShutdown() {
     LOG.info("Awaiting shutdown");
+    boolean interrupted = false;
     synchronized (waitMonitor) {
       while (!destroyed) {
         try {
           waitMonitor.wait();
         } catch (InterruptedException e) {
-          LOG.info("Exiting on interrupt");
-          shutdown();
-          return;
+          interrupted = true;
+          break;
         }
+      }
+    }
+    if (interrupted) {
+      LOG.info("Exiting on interrupt");
+      try {
+        shutdown();
+      } finally {
+        Thread.currentThread().interrupt();
       }
     }
   }
@@ -79,10 +88,17 @@ public class Lifecycle {
    */
   public final void shutdown() {
     synchronized (waitMonitor) {
-      if (!destroyed) {
+      if (shutdownStarted) {
+        return;
+      }
+      shutdownStarted = true;
+    }
+    LOG.info("Shutting down application");
+    try {
+      shutdownRegistry.execute();
+    } finally {
+      synchronized (waitMonitor) {
         destroyed = true;
-        LOG.info("Shutting down application");
-        shutdownRegistry.execute();
         waitMonitor.notifyAll();
       }
     }

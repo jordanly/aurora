@@ -16,6 +16,7 @@ package org.apache.aurora.scheduler.reconciliation;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 
@@ -25,6 +26,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.AbstractIdleService;
+import com.google.common.util.concurrent.MoreExecutors;
 
 import org.apache.aurora.common.quantity.Amount;
 import org.apache.aurora.common.quantity.Time;
@@ -115,6 +117,20 @@ public class TaskReconciler extends AbstractIdleService {
     this.executor = requireNonNull(executor);
     this.explicitRuns = stats.makeCounter(EXPLICIT_STAT_NAME);
     this.implicitRuns = stats.makeCounter(IMPLICIT_STAT_NAME);
+    // AbstractIdleService skips shutDown when stopped before startup or when startup fails.
+    addListener(new Listener() {
+      @Override
+      public void terminated(State from) {
+        if (from == State.NEW) {
+          executor.shutdownNow();
+        }
+      }
+
+      @Override
+      public void failed(State from, Throwable failure) {
+        executor.shutdownNow();
+      }
+    }, MoreExecutors.directExecutor());
   }
 
   public void triggerExplicitReconciliation(Optional<Integer> batchSize) {
@@ -127,8 +143,10 @@ public class TaskReconciler extends AbstractIdleService {
 
   @Override
   protected void startUp() {
-    scheduleExplicitReconciliation();
-    scheduleImplicitReconciliation();
+    if (!taskReconciliation.reconcilesFromWatch()) {
+      scheduleExplicitReconciliation();
+      scheduleImplicitReconciliation();
+    }
   }
 
   private void scheduleExplicitReconciliation() {
@@ -147,20 +165,25 @@ public class TaskReconciler extends AbstractIdleService {
         MINUTES.getTimeUnit());
   }
 
-  private void doImplicitReconcile() {
+  private synchronized void doImplicitReconcile() {
+    if (!acceptsRequests()) {
+      return;
+    }
     taskReconciliation.reconcileTasks(ImmutableSet.of());
     implicitRuns.incrementAndGet();
   }
 
-  private void doExplicitReconcile(int batchSize) {
+  private synchronized void doExplicitReconcile(int batchSize) {
+    if (!acceptsRequests()) {
+      return;
+    }
     Iterable<List<IScheduledTask>> activeBatches = Iterables.partition(
         Storage.Util.fetchTasks(storage, Query.unscoped().byStatus(Tasks.SLAVE_ASSIGNED_STATES)),
         batchSize);
 
     long delay = 0;
     for (List<IScheduledTask> batch : activeBatches) {
-      executor.schedule(() -> taskReconciliation.reconcileTasks(
-          batch.stream().map(TASK_TO_TARGET).toList()),
+      executor.schedule(() -> reconcileBatch(batch),
           delay,
           SECONDS.getTimeUnit());
       delay += settings.explicitBatchDelaySeconds;
@@ -168,9 +191,24 @@ public class TaskReconciler extends AbstractIdleService {
     explicitRuns.incrementAndGet();
   }
 
+  private boolean acceptsRequests() {
+    return (state() == State.NEW || state() == State.STARTING || isRunning())
+        && !taskReconciliation.reconcilesFromWatch();
+  }
+
+  private synchronized void reconcileBatch(List<IScheduledTask> batch) {
+    if (acceptsRequests()) {
+      taskReconciliation.reconcileTasks(batch.stream().map(TASK_TO_TARGET).toList());
+    }
+  }
+
   @Override
-  protected void shutDown() {
-    // Nothing to do - await VM shutdown.
+  protected void shutDown() throws InterruptedException {
+    // This executor belongs exclusively to reconciliation, unlike TaskTimeout's shared executor.
+    executor.shutdownNow();
+    if (!executor.awaitTermination(5, TimeUnit.SECONDS)) {
+      throw new IllegalStateException("Reconciliation executor did not terminate");
+    }
   }
 
   @VisibleForTesting

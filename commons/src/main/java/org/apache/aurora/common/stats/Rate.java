@@ -23,7 +23,6 @@ import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import com.google.common.base.Ticker;
 
-import org.apache.aurora.common.collections.Pair;
 import org.apache.aurora.common.quantity.Amount;
 import org.apache.aurora.common.quantity.Time;
 
@@ -42,7 +41,9 @@ public class Rate<T extends Number> extends SampledStat<Double> {
   private final Ticker ticker;
   private final double scaleFactor;
 
-  private final LinkedBlockingDeque<Pair<Long, Double>> samples;
+  private record Sample(long timestampNanos, double value) { }
+
+  private final LinkedBlockingDeque<Sample> samples;
 
   private Rate(String name, Supplier<T> inputAccessor, int windowSize, double scaleFactor,
       Ticker ticker) {
@@ -50,7 +51,7 @@ public class Rate<T extends Number> extends SampledStat<Double> {
 
     this.inputAccessor = Preconditions.checkNotNull(inputAccessor);
     this.ticker = Preconditions.checkNotNull(ticker);
-    samples = new LinkedBlockingDeque<Pair<Long, Double>>(windowSize);
+    samples = new LinkedBlockingDeque<>(windowSize);
     Preconditions.checkArgument(scaleFactor != 0, "Scale factor must be non-zero!");
     this.scaleFactor = scaleFactor;
   }
@@ -78,15 +79,15 @@ public class Rate<T extends Number> extends SampledStat<Double> {
 
     double rate = 0;
     if (!samples.isEmpty()) {
-      Pair<Long, Double> oldestSample = samples.peekLast();
+      Sample oldestSample = samples.peekLast();
 
-      double dy = newSample.doubleValue() - oldestSample.getSecond();
-      double dt = newTimestamp - oldestSample.getFirst();
+      double dy = newSample.doubleValue() - oldestSample.value();
+      double dt = newTimestamp - oldestSample.timestampNanos();
       rate = dt == 0 ? 0 : (NANOS_PER_SEC * scaleFactor * dy) / dt;
     }
 
     if (samples.remainingCapacity() == 0) samples.removeLast();
-    samples.addFirst(Pair.of(newTimestamp, newSample.doubleValue()));
+    samples.addFirst(new Sample(newTimestamp, newSample.doubleValue()));
 
     return rate;
   }

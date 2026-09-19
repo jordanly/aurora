@@ -310,7 +310,7 @@ public class SchedulerIT extends BaseZooKeeperTest {
     });
     addTearDown(testCompleted::countDown);
     expect(driver.stopAsync()).andReturn(driver).anyTimes();
-    driver.awaitTerminated();
+    driver.awaitTerminated(5, TimeUnit.SECONDS);
     EasyMock.expectLastCall().anyTimes();
 
     control.replay();

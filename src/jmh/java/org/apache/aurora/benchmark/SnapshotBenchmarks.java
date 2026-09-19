@@ -43,6 +43,7 @@ import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
+import org.openjdk.jmh.infra.Blackhole;
 
 /**
  * Performance benchmarks for snapshot related operations.
@@ -55,7 +56,7 @@ public class SnapshotBenchmarks {
   @Fork(1)
   @Threads(1)
   @State(Scope.Thread)
-  public static class RestoreSnapshotWithUpdatesBenchmark {
+  public static class SnapshotOperationsWithUpdatesBenchmark {
     private SnapshotterImpl snapshotStore;
     private Snapshot snapshot;
     private Storage storage;
@@ -70,14 +71,16 @@ public class SnapshotBenchmarks {
 
     @Setup(Level.Iteration)
     public void setUpIteration() {
+      storage.write((Storage.MutateWork.NoResult.Quiet) stores ->
+          stores.getJobUpdateStore().deleteAllUpdates());
       snapshot = createSnapshot(updateCount, 100, 10000);
     }
 
     @Benchmark
-    public boolean run() throws TException {
-      snapshotStore.asStream(snapshot);
-      // Return non-guessable result to satisfy "blackhole" requirement.
-      return System.currentTimeMillis() % 5 == 0;
+    public void run(Blackhole blackhole) throws TException {
+      try (var operations = snapshotStore.asStream(snapshot)) {
+        operations.forEach(blackhole::consume);
+      }
     }
 
     private SnapshotterImpl getSnapshotStore() {

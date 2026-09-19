@@ -45,6 +45,7 @@ import org.apache.aurora.common.inject.TimedInterceptor.Timed;
 import org.apache.aurora.common.quantity.Amount;
 import org.apache.aurora.common.quantity.Time;
 import org.apache.aurora.common.stats.StatsProvider;
+import org.apache.aurora.common.util.Clock;
 import org.apache.aurora.gen.HostMaintenanceRequest;
 import org.apache.aurora.gen.HostStatus;
 import org.apache.aurora.gen.MaintenanceMode;
@@ -189,6 +190,7 @@ public interface MaintenanceController {
             .setDurationSecs(0));
 
     private final Storage storage;
+    private final Clock clock;
     private final Amount<Long, Time> pollingInterval;
     private final TaskEventBatchWorker batchWorker;
     private final SlaManager slaManager;
@@ -204,9 +206,11 @@ public interface MaintenanceController {
         TaskEventBatchWorker batchWorker,
         SlaManager slaManager,
         StateManager stateManager,
-        StatsProvider statsProvider) {
+        StatsProvider statsProvider,
+        Clock clock) {
 
       this.storage = requireNonNull(storage);
+      this.clock = requireNonNull(clock);
       this.pollingInterval = checkNotNull(pollingInterval);
       this.batchWorker = requireNonNull(batchWorker);
       this.slaManager = requireNonNull(slaManager);
@@ -313,7 +317,7 @@ public interface MaintenanceController {
                       .setHost(host)
                       .setDefaultSlaPolicy(defaultSlaPolicy)
                       .setTimeoutSecs(timeoutSecs)
-                      .setCreatedTimestampMs(System.currentTimeMillis()))));
+                      .setCreatedTimestampMs(clock.nowMillis()))));
     }
 
     @Override
@@ -469,7 +473,7 @@ public interface MaintenanceController {
             Time.SECONDS)
           .as(Time.MILLISECONDS);
       long endMs = startMs + timeoutMs;
-      long remainingMs = endMs - System.currentTimeMillis();
+      long remainingMs = endMs - clock.nowMillis();
       maintenanceCountDownByTask.get(
           Joiner.on("_")
               .join(

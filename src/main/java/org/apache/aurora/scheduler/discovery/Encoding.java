@@ -18,7 +18,6 @@ import java.nio.charset.StandardCharsets;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonParseException;
-import com.google.gson.JsonSyntaxException;
 
 /**
  * Utility class for encoding and decoding data stored in ZooKeeper nodes.
@@ -46,7 +45,8 @@ public final class Encoding {
    *
    * @param data the byte array contains a serialized Thrift service instance
    */
-  public static ServiceInstance decode(byte[] data) throws JsonSyntaxException {
+  public static ServiceInstance decode(byte[] data) throws JsonParseException {
+    assertRequiredField("data", data);
     ServiceInstance instance =
         GSON.fromJson(new String(data, StandardCharsets.UTF_8), ServiceInstance.class);
     assertRequiredField("serviceInstance", instance);
@@ -60,6 +60,7 @@ public final class Encoding {
   }
 
   private static void assertRequiredFields(ServiceInstance.Endpoint endpoint) {
+    assertRequiredField("endpoint", endpoint);
     assertRequiredField("host", endpoint.getHost());
   }
 

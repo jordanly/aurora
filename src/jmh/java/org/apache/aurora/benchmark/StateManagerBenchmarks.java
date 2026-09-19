@@ -82,7 +82,7 @@ public class StateManagerBenchmarks {
       storage.prepare();
     }
 
-    @TearDown
+    @TearDown(Level.Invocation)
     public void tearDown() {
       storage.write(new Storage.MutateWork.NoResult.Quiet() {
         @Override

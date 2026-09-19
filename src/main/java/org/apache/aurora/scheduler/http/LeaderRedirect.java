@@ -82,16 +82,20 @@ class LeaderRedirect implements Closeable {
     serviceGroupMonitor.close();
   }
 
-  private Optional<HostAndPort> getLeaderHttp() {
-    Optional<ServiceInstance> leadingScheduler = getLeader();
+  record LeaderObservation(LeaderStatus status, Optional<HostAndPort> redirect) { }
 
-    return leadingScheduler.map(scheduler -> {
-      Endpoint leaderHttp = scheduler.getServiceEndpoint();
-      return HostAndPort.fromParts(leaderHttp.getHost(), leaderHttp.getPort());
-    }).or(() -> {
-      LOG.warn("Leader service instance seems to be incomplete: " + leadingScheduler);
-      return Optional.empty();
+  LeaderObservation observeLeader() {
+    Optional<HostAndPort> leader = getLeader().map(scheduler -> {
+      Endpoint endpoint = scheduler.getServiceEndpoint();
+      return HostAndPort.fromParts(endpoint.getHost(), endpoint.getPort());
     });
+    if (leader.isEmpty()) {
+      return new LeaderObservation(LeaderStatus.NO_LEADER, Optional.empty());
+    }
+    if (leader.equals(getLocalHttp())) {
+      return new LeaderObservation(LeaderStatus.LEADING, Optional.empty());
+    }
+    return new LeaderObservation(LeaderStatus.NOT_LEADING, leader);
   }
 
   private Optional<HostAndPort> getLocalHttp() {
@@ -108,19 +112,7 @@ class LeaderRedirect implements Closeable {
    */
   @VisibleForTesting
   Optional<HostAndPort> getRedirect() {
-    Optional<HostAndPort> leaderHttp = getLeaderHttp();
-    Optional<HostAndPort> localHttp = getLocalHttp();
-
-    if (leaderHttp.isPresent()) {
-      if (leaderHttp.equals(localHttp)) {
-        return Optional.empty();
-      } else {
-        return leaderHttp;
-      }
-    } else {
-      LOG.info("No leader found, not redirecting.");
-      return Optional.empty();
-    }
+    return observeLeader().redirect();
   }
 
   /**
@@ -130,19 +122,7 @@ class LeaderRedirect implements Closeable {
    * this instance is the leader).
    */
   LeaderStatus getLeaderStatus() {
-    Optional<ServiceInstance> leadingScheduler = getLeader();
-    if (!leadingScheduler.isPresent()) {
-      return LeaderStatus.NO_LEADER;
-    }
-
-    Optional<HostAndPort> leaderHttp = getLeaderHttp();
-    Optional<HostAndPort> localHttp = getLocalHttp();
-
-    if (leaderHttp.isPresent() && leaderHttp.equals(localHttp)) {
-      return LeaderStatus.LEADING;
-    }
-
-    return LeaderStatus.NOT_LEADING;
+    return observeLeader().status();
   }
 
   /**
@@ -153,15 +133,17 @@ class LeaderRedirect implements Closeable {
    * @return An optional redirect destination to route the request to the leading scheduler.
    */
   Optional<String> getRedirectTarget(HttpServletRequest req) {
-    Optional<HostAndPort> redirectTarget = getRedirect();
+    return getRedirectTarget(req, observeLeader());
+  }
+
+  Optional<String> getRedirectTarget(HttpServletRequest req, LeaderObservation observation) {
+    Optional<HostAndPort> redirectTarget = observation.redirect();
     if (redirectTarget.isPresent()) {
       HostAndPort target = redirectTarget.get();
       StringBuilder redirect = new StringBuilder()
           .append(req.getScheme())
           .append("://")
-          .append(target.getHost())
-          .append(':')
-          .append(target.getPort())
+          .append(target)
           .append(
               // If Jetty rewrote the path, we want to be sure to redirect to the original path
               // rather than the rewritten path to be sure it's a route the UI code recognizes.

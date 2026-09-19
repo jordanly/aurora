@@ -15,7 +15,6 @@ package org.apache.aurora.scheduler.testing;
 
 import java.util.concurrent.CompletableFuture;
 
-import org.apache.aurora.common.testing.easymock.EasyMockTest;
 import org.apache.aurora.scheduler.BatchWorker;
 import org.apache.aurora.scheduler.BatchWorker.Work;
 import org.apache.aurora.scheduler.storage.Storage;
@@ -38,9 +37,7 @@ public final class BatchWorkerUtil {
       IMocksControl control,
       T resultValue) throws Exception {
 
-    final CompletableFuture<T> result = new EasyMockTest.Clazz<CompletableFuture<T>>() { }
-        .createMock(control);
-    expect(result.get()).andReturn(resultValue).anyTimes();
+    final CompletableFuture<T> result = CompletableFuture.completedFuture(resultValue);
 
     final Capture<Work<T>> capture = createCapture();
     return expect(batchWorker.execute(capture(capture))).andAnswer(() -> {

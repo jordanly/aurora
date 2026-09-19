@@ -13,7 +13,6 @@
  */
 package org.apache.aurora.scheduler.base;
 
-import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 
@@ -71,20 +70,20 @@ public final class Tasks {
   /**
    * Different states that an active task may be in.
    */
-  public static final EnumSet<ScheduleStatus> ACTIVE_STATES =
-      EnumSet.copyOf(apiConstants.ACTIVE_STATES);
+  public static final Set<ScheduleStatus> ACTIVE_STATES =
+      ImmutableSet.copyOf(apiConstants.ACTIVE_STATES);
 
   /**
    * Terminal states, which a task should not move from.
    */
   public static final Set<ScheduleStatus> TERMINAL_STATES =
-      EnumSet.copyOf(apiConstants.TERMINAL_STATES);
+      ImmutableSet.copyOf(apiConstants.TERMINAL_STATES);
 
   /**
    * Tasks a state can be in when associated with a slave machine.
    */
   public static final Set<ScheduleStatus> SLAVE_ASSIGNED_STATES =
-      EnumSet.copyOf(apiConstants.SLAVE_ASSIGNED_STATES);
+      ImmutableSet.copyOf(apiConstants.SLAVE_ASSIGNED_STATES);
 
   private Tasks() {
     // Utility class.

@@ -17,6 +17,7 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadInfo;
 import java.lang.management.ThreadMXBean;
 import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -26,9 +27,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import com.google.common.primitives.Longs;
 
 /**
  * HTTP request handler that prints information about blocked threads.
@@ -37,30 +36,40 @@ import com.google.common.primitives.Longs;
  */
 @Path("/contention")
 public class ContentionPrinter {
+  private final ThreadMXBean bean;
+
   public ContentionPrinter() {
-    ManagementFactory.getThreadMXBean().setThreadContentionMonitoringEnabled(true);
+    this(ManagementFactory.getThreadMXBean());
+  }
+
+  ContentionPrinter(ThreadMXBean bean) {
+    this.bean = bean;
+    if (bean.isThreadContentionMonitoringSupported()) {
+      bean.setThreadContentionMonitoringEnabled(true);
+    }
   }
 
   @GET
   @Produces(MediaType.TEXT_PLAIN)
   public String getContention() {
     List<String> lines = Lists.newLinkedList();
-    ThreadMXBean bean = ManagementFactory.getThreadMXBean();
-
-    Map<Long, StackTraceElement[]> threadStacks = Maps.newHashMap();
-    for (Map.Entry<Thread, StackTraceElement[]> entry : Thread.getAllStackTraces().entrySet()) {
-      threadStacks.put(entry.getKey().getId(), entry.getValue());
+    // ThreadInfo carries its own stack: avoid joining unrelated snapshots of live threads.
+    Map<Long, ThreadInfo> threads = new HashMap<>();
+    for (ThreadInfo thread : bean.dumpAllThreads(false, false)) {
+      if (thread != null) {
+        threads.put(thread.getThreadId(), thread);
+      }
     }
 
     Set<Long> lockOwners = Sets.newHashSet();
 
     lines.add("Locked threads:");
-    for (ThreadInfo t : bean.getThreadInfo(bean.getAllThreadIds())) {
+    for (ThreadInfo t : threads.values()) {
       switch (t.getThreadState()) {
         case BLOCKED:
         case WAITING:
         case TIMED_WAITING:
-          lines.addAll(getThreadInfo(t, threadStacks.get(t.getThreadId())));
+          lines.addAll(getThreadInfo(t));
           if (t.getLockOwnerId() != -1) lockOwners.add(t.getLockOwnerId());
           break;
       }
@@ -68,15 +77,18 @@ public class ContentionPrinter {
 
     if (lockOwners.size() > 0) {
       lines.add("\nLock Owners");
-      for (ThreadInfo t : bean.getThreadInfo(Longs.toArray(lockOwners))) {
-        lines.addAll(getThreadInfo(t, threadStacks.get(t.getThreadId())));
+      for (Long owner : lockOwners) {
+        ThreadInfo thread = threads.get(owner);
+        if (thread != null) {
+          lines.addAll(getThreadInfo(thread));
+        }
       }
     }
 
     return String.join("\n", lines);
   }
 
-  private static List<String> getThreadInfo(ThreadInfo t, StackTraceElement[] stack) {
+  private static List<String> getThreadInfo(ThreadInfo t) {
     List<String> lines = Lists.newLinkedList();
 
     lines.add(String.format("'%s' Id=%d %s",
@@ -84,8 +96,8 @@ public class ContentionPrinter {
     lines.add("Waiting for lock: " + t.getLockName());
     lines.add("Lock is currently held by thread: " + t.getLockOwnerName());
     lines.add("Wait time: " + t.getBlockedTime() + " ms.");
-    for (StackTraceElement s : stack) {
-      lines.add(String.format("    " + s.toString()));
+    for (StackTraceElement s : t.getStackTrace()) {
+      lines.add("    " + s);
     }
     lines.add("\n");
 

@@ -17,5 +17,10 @@ import java.util.Collection;
 
 /** Sends task reconciliation requests to the scheduler backend. */
 public interface TaskReconciliation {
+  /** Whether the backend reconciles continuously from watch snapshots rather than legacy scans. */
+  default boolean reconcilesFromWatch() {
+    return false;
+  }
+
   void reconcileTasks(Collection<ReconciliationTarget> targets);
 }

@@ -13,6 +13,8 @@
  */
 package org.apache.aurora.common.stats;
 
+import java.util.List;
+
 import com.google.common.collect.ImmutableList;
 
 import org.apache.aurora.common.quantity.Amount;
@@ -27,6 +29,7 @@ import static org.apache.aurora.common.util.testing.FakeBuildInfo.generateBuildI
 import static org.easymock.EasyMock.createStrictControl;
 import static org.easymock.EasyMock.expect;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 
 /**
  * @author William Farner
@@ -119,6 +122,65 @@ public class TimeSeriesRepositoryImplTest extends EasyMockTest {
     expectTimestamps(1000L, 2000L, 3000L, 4000L, 5000L);
     expectSeriesData("early", 2, 4, 6, 8, 10);
     expectSeriesData("delayed", 0L, 0L, 0L, 0L, 100);
+  }
+
+  @Test
+  public void testSubsecondRetentionAndDetachedSnapshots() throws Exception {
+    repo = new TimeSeriesRepositoryImpl(statRegistry, Amount.of(500L, Time.MILLISECONDS),
+        Amount.of(1L, Time.SECONDS), generateBuildInfo());
+    RecordingStat<Integer> stat = mockedStat();
+    for (int value = 1; value <= 3; value++) {
+      expect(statRegistry.getStats()).andReturn(ImmutableList.of(stat));
+      expect(stat.getName()).andReturn("value");
+      expect(stat.sample()).andReturn(value);
+    }
+    control.replay();
+    repo.runSampler(clock);
+    clock.waitFor(500);
+    repo.runSampler(clock);
+    var snapshot = repo.snapshot(List.of("value", "unknown"));
+    var timestamps = repo.getTimestamps();
+    var samples = repo.get("value").getSamples();
+    clock.waitFor(500);
+    repo.runSampler(clock);
+    assertEquals(List.of(0L, 500L), snapshot.timestamps());
+    assertEquals(List.of(1, 2), snapshot.series().get("value"));
+    assertEquals(List.of(0L, 500L), timestamps);
+    assertEquals(List.of(1, 2), samples);
+    assertEquals(List.of(500L, 1000L), repo.getTimestamps());
+    assertEquals(List.of(2, 3), repo.get("value").getSamples());
+    assertEquals(null, snapshot.series().get("unknown"));
+  }
+
+  @Test
+  public void testRetiredAndReplacedRegistrationsReleaseHistory() {
+    RecordingStat<Integer> first = mockedStat();
+    RecordingStat<Integer> replacement = mockedStat();
+    expect(statRegistry.getStats()).andReturn(ImmutableList.of(first));
+    expect(first.getName()).andReturn("owned");
+    expect(first.sample()).andReturn(7);
+    expect(statRegistry.getStats()).andReturn(ImmutableList.of(replacement));
+    expect(replacement.getName()).andReturn("owned");
+    expect(replacement.sample()).andReturn(9);
+    expect(statRegistry.getStats()).andReturn(ImmutableList.of());
+    control.replay();
+
+    repo.runSampler(clock);
+    var previous = repo.snapshot(List.of("owned"));
+    repo.runSampler(clock);
+    assertEquals(List.of(0L, 9), ImmutableList.copyOf(repo.get("owned").getSamples()));
+    assertEquals(List.of(7), previous.series().get("owned"));
+    repo.runSampler(clock);
+    assertEquals(java.util.Set.of(), repo.getAvailableSeries());
+    assertEquals(null, repo.get("owned"));
+  }
+
+  @Test
+  public void testRejectsUnrepresentableSampleCount() {
+    control.replay();
+    assertThrows(IllegalArgumentException.class, () -> new TimeSeriesRepositoryImpl(
+        statRegistry, Amount.of(1L, Time.NANOSECONDS),
+        Amount.of(Long.MAX_VALUE, Time.DAYS), generateBuildInfo()));
   }
 
   private RecordingStat<Integer> mockedStat() {

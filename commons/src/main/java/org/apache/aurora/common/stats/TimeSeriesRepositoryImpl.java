@@ -13,6 +13,12 @@
  */
 package org.apache.aurora.common.stats;
 
+import java.math.BigInteger;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -24,7 +30,6 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.EvictingQueue;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
 import com.google.common.primitives.Longs;
 import com.google.common.util.concurrent.AbstractScheduledService;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -67,6 +72,7 @@ public class TimeSeriesRepositoryImpl
   // We store TimeSeriesImpl, which allows us to add samples.
   private final LoadingCache<String, TimeSeriesImpl> timeSeries;
   private final EvictingQueue<Number> timestamps;
+  private final Map<String, RecordingStat<? extends Number>> seriesOwners = new HashMap<>();
 
   private final StatRegistry statRegistry;
   private final Amount<Long, Time> samplePeriod;
@@ -87,7 +93,10 @@ public class TimeSeriesRepositoryImpl
     Preconditions.checkArgument(retentionPeriod.getValue() > 0,
         "Sample retention period must be positive.");
 
-    retainedSampleLimit = (int) (retentionPeriod.as(Time.SECONDS) / samplePeriod.as(Time.SECONDS));
+    BigInteger retained = nanos(retentionPeriod).divide(nanos(samplePeriod));
+    Preconditions.checkArgument(retained.compareTo(BigInteger.valueOf(Integer.MAX_VALUE)) <= 0,
+        "Too many retained samples.");
+    retainedSampleLimit = retained.intValueExact();
     Preconditions.checkArgument(retainedSampleLimit > 0,
         "Sample retention period must be greater than sample period.");
 
@@ -109,6 +118,11 @@ public class TimeSeriesRepositoryImpl
         });
 
     timestamps = EvictingQueue.create(retainedSampleLimit);
+  }
+
+  private static BigInteger nanos(Amount<Long, Time> amount) {
+    return BigInteger.valueOf(amount.getValue()).multiply(
+        BigInteger.valueOf(amount.getUnit().getTimeUnit().toNanos(1)));
   }
 
   private final ScheduledExecutorService executor = new ScheduledThreadPoolExecutor(
@@ -173,9 +187,20 @@ public class TimeSeriesRepositoryImpl
     timestamps.add(clock.nowMillis());
 
     long startNanos = clock.nowNanos();
+    Set<String> currentNames = new HashSet<>();
     for (RecordingStat<? extends Number> var : statRegistry.getStats()) {
-      timeSeries.getUnchecked(var.getName()).addSample(var.sample());
+      String name = var.getName();
+      currentNames.add(name);
+      RecordingStat<? extends Number> previous = seriesOwners.put(name, var);
+      if (previous != null && previous != var) {
+        // A new producer owns this name: do not inherit the retired producer's samples.
+        timeSeries.invalidate(name);
+      }
+      timeSeries.getUnchecked(name).addSample(var.sample());
     }
+    // A retired registration must also release its sample buffer and retained name.
+    timeSeries.asMap().keySet().retainAll(currentNames);
+    seriesOwners.keySet().retainAll(currentNames);
     scrapeDuration.accumulate(
         Amount.of(clock.nowNanos() - startNanos, Time.NANOSECONDS).as(Time.MICROSECONDS));
   }
@@ -193,7 +218,19 @@ public class TimeSeriesRepositoryImpl
 
   @Override
   public synchronized Iterable<Number> getTimestamps() {
-    return Iterables.unmodifiableIterable(timestamps);
+    return List.copyOf(timestamps);
+  }
+
+  @Override
+  public synchronized Snapshot snapshot(List<String> names) {
+    Map<String, List<Number>> columns = new LinkedHashMap<>();
+    for (String name : names) {
+      TimeSeriesImpl series = timeSeries.getIfPresent(name);
+      if (series != null) {
+        columns.put(name, List.copyOf(series.samples));
+      }
+    }
+    return new Snapshot(List.copyOf(timestamps), columns);
   }
 
   private class TimeSeriesImpl implements TimeSeries {
@@ -214,7 +251,9 @@ public class TimeSeriesRepositoryImpl
     }
 
     @Override public Iterable<Number> getSamples() {
-      return Iterables.unmodifiableIterable(samples);
+      synchronized (TimeSeriesRepositoryImpl.this) {
+        return List.copyOf(samples);
+      }
     }
   }
 }

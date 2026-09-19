@@ -61,18 +61,16 @@ public class BuildInfo {
   @VisibleForTesting
   public BuildInfo(Map<String, String> properties) {
     this.resourcePath = null;
-    this.properties = requireNonNull(properties);
+    this.properties = Map.copyOf(requireNonNull(properties));
   }
 
   private void fetchProperties() {
     LOG.info("Fetching build properties from " + resourcePath);
-    InputStream in = ClassLoader.getSystemResourceAsStream(resourcePath);
-    if (in == null) {
-      LOG.warn("Failed to fetch build properties from " + resourcePath);
-      return;
-    }
-
-    try {
+    try (InputStream in = ClassLoader.getSystemResourceAsStream(resourcePath)) {
+      if (in == null) {
+        LOG.warn("Failed to fetch build properties from " + resourcePath);
+        return;
+      }
       Properties buildProperties = new Properties();
       buildProperties.load(in);
       properties = Maps.fromProperties(buildProperties);

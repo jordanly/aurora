@@ -115,7 +115,9 @@ public class SchedulerLifecycleTest extends EasyMockTest {
     // Shutdown before leadership is taken (ex. in prepare).
 
     expect(driver.stopAsync()).andReturn(driver);
-    driver.awaitTerminated();
+    driver.awaitTerminated(5, TimeUnit.SECONDS);
+    expect(serviceManager.stopAsync()).andReturn(serviceManager);
+    serviceManager.awaitStopped(5, TimeUnit.SECONDS);
     storageUtil.storage.stop();
     shutdownRegistry.execute();
   }
@@ -232,8 +234,6 @@ public class SchedulerLifecycleTest extends EasyMockTest {
 
     expectFullStartup();
     expectLeaderShutdown();
-    expect(serviceManager.stopAsync()).andReturn(serviceManager);
-    serviceManager.awaitStopped(5, TimeUnit.SECONDS);
 
     Capture<ExceptionalCommand<?>> shutdownCommand = replayAndCreateLifecycle();
 

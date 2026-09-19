@@ -71,7 +71,10 @@ public class BiCache<K, V> {
 
     requireNonNull(clock);
     this.cache = CacheBuilder.newBuilder()
-        .expireAfterWrite(Duration.ofMinutes(settings.expireAfter.as(Time.MINUTES)))
+        // TimeUnit preserves sub-minute precision and saturates durations beyond the cache's
+        // nanosecond range instead of overflowing to a negative expiration.
+        .expireAfterWrite(Duration.ofNanos(settings.expireAfter.getUnit().getTimeUnit()
+            .toNanos(settings.expireAfter.getValue())))
         .ticker(new Ticker() {
           @Override
           public long read() {
@@ -108,7 +111,10 @@ public class BiCache<K, V> {
     requireNonNull(key);
     requireNonNull(value);
     cache.put(key, value);
-    inverse.put(value, key);
+    // A zero-duration cache may expire the entry synchronously during put.
+    if (cache.getIfPresent(key) != null) {
+      inverse.put(value, key);
+    }
   }
 
   /**

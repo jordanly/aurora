@@ -65,6 +65,22 @@ public class WireJsonTest {
   }
 
   @Test
+  public void watchExitCodeExceptionRequiresExactObjectPath() throws Exception {
+    for (String invalid : new String[] {
+        "{\"exitCode\":-1}",
+        "{\"state\":{\"attempts\":[{\"execution\":{\"exitCode\":-1}}]}}",
+        "{\"state\":{\"attempts\":{\"a\":{\"execution\":{\"exitCode\":[-1]}}}}}",
+        "{\"state\":{\"attempts\":{\"a\":{\"execution\":{\"exitCode\":-2}}}}}",
+        "{\"state\":{\"attempts\":{\"a\":{\"execution\":{\"exitCode\":-1.0}}}}}"
+    }) {
+      JsonNode frame = WireJson.parse(invalid.getBytes(StandardCharsets.US_ASCII));
+      JsonNode before = frame.deepCopy();
+      assertThrowsIllegalArgument(() -> WireJson.validateWatchFrame(frame));
+      assertEquals(before, frame);
+    }
+  }
+
+  @Test
   public void canonicalEncodingAndHashMatchFixture() throws Exception {
     JsonNode value = WireJson.parse(
         "{\"z\":[3,2],\"a\":{\"z\":2,\"y\":1}}"

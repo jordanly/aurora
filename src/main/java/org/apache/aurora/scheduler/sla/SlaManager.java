@@ -42,6 +42,7 @@ import org.apache.aurora.common.inject.TimedInterceptor.Timed;
 import org.apache.aurora.common.quantity.Amount;
 import org.apache.aurora.common.quantity.Time;
 import org.apache.aurora.common.stats.StatsProvider;
+import org.apache.aurora.common.util.Clock;
 import org.apache.aurora.gen.ScheduleStatus;
 import org.apache.aurora.scheduler.TierManager;
 import org.apache.aurora.scheduler.base.Query;
@@ -114,6 +115,7 @@ public class SlaManager extends AbstractIdleService {
 
   private final ScheduledExecutorService executor;
   private final Storage storage;
+  private final Clock clock;
   private final IServerInfo serverInfo;
   private final AsyncHttpClient httpClient;
   private final Striped<Lock> lock;
@@ -139,10 +141,12 @@ public class SlaManager extends AbstractIdleService {
              @HttpClient AsyncHttpClient httpClient,
              TierManager tierManager,
              StatsProvider statsProvider,
+             Clock clock,
              @SlaAwareKillNonProd boolean slaAwareKillNonProd) {
 
     this.executor = requireNonNull(executor);
     this.storage = requireNonNull(storage);
+    this.clock = requireNonNull(clock);
     this.serverInfo = requireNonNull(serverInfo);
     this.httpClient = requireNonNull(httpClient);
     this.tierManager = requireNonNull(tierManager);
@@ -221,13 +225,14 @@ public class SlaManager extends AbstractIdleService {
     throw new IllegalArgumentException("Expected a percentage/count sla policy.");
   }
 
-  private boolean meetsSLADuration(IScheduledTask task, Amount<Long, Time> slaDuration) {
+  private boolean meetsSLADuration(
+      IScheduledTask task, Amount<Long, Time> slaDuration, long nowMs) {
     return task.getTaskEvents()
         .stream()
         .filter(te -> te.getStatus() == ScheduleStatus.RUNNING)
         .map(ITaskEvent::getTimestamp)
         .max(Long::compare)
-        .map(t -> System.currentTimeMillis() - t > slaDuration.as(Time.MILLISECONDS))
+        .map(t -> nowMs - t > slaDuration.as(Time.MILLISECONDS))
         .orElse(false);
   }
 
@@ -246,12 +251,13 @@ public class SlaManager extends AbstractIdleService {
 
     // Find tasks which have been RUNNING for the required SLA duration.
     Amount<Long, Time> slaDuration = new TimeAmount(getSlaDuration(slaPolicy), Time.SECONDS);
+    long nowMs = clock.nowMillis();
     final Set<IScheduledTask> running = store.getTaskStore().fetchTasks(
         Query.jobScoped(task.getAssignedTask().getTask().getJob())
             .byStatus(ScheduleStatus.RUNNING))
         .stream()
         .filter(t -> !Tasks.id(t).equals(Tasks.id(task))) // exclude the task to be removed
-        .filter(t -> meetsSLADuration(t, slaDuration)) // task is running for sla duration
+        .filter(t -> meetsSLADuration(t, slaDuration, nowMs)) // task is running for sla duration
         .collect(Collectors.toSet());
 
     // Check it we satisfy the number of RUNNING tasks per duration time.

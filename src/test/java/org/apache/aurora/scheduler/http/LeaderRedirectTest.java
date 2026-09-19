@@ -74,41 +74,35 @@ public class LeaderRedirectTest extends EasyMockTest {
 
   @Test
   public void testLeader() throws Exception {
-    replayAndMonitor(3);
+    replayAndMonitor(2);
     publishSchedulers(localPort(HTTP_PORT));
 
     assertEquals(Optional.empty(), leaderRedirector.getRedirect());
 
-    // NB: LEADING takes 2 tests of the server group membership to calculate; thus we expect 3
-    // server group get calls, 1 for the getRedirect() above and 2 here.
     assertEquals(LeaderStatus.LEADING, leaderRedirector.getLeaderStatus());
   }
 
   @Test
   public void testNotLeader() throws Exception {
-    replayAndMonitor(3);
+    replayAndMonitor(2);
 
     HostAndPort remote = HostAndPort.fromParts("foobar", HTTP_PORT);
     publishSchedulers(remote);
 
     assertEquals(Optional.of(remote), leaderRedirector.getRedirect());
 
-    // NB: NOT_LEADING takes 2 tests of the server group membership to calculate; thus we expect 3
-    // server group get calls, 1 for the getRedirect() above and 2 here.
     assertEquals(LeaderStatus.NOT_LEADING, leaderRedirector.getLeaderStatus());
   }
 
   @Test
   public void testLeaderOnSameHost() throws Exception {
-    replayAndMonitor(3);
+    replayAndMonitor(2);
 
     HostAndPort local = localPort(555);
     publishSchedulers(local);
 
     assertEquals(Optional.of(local), leaderRedirector.getRedirect());
 
-    // NB: NOT_LEADING takes 2 tests of the server group membership to calculate; thus we expect 3
-    // server group get calls, 1 for the getRedirect() above and 2 here.
     assertEquals(LeaderStatus.NOT_LEADING, leaderRedirector.getLeaderStatus());
   }
 
@@ -181,6 +175,19 @@ public class LeaderRedirectTest extends EasyMockTest {
     assertEquals(
         Optional.of("http://foobar:500/some/path?bar=baz"),
         leaderRedirector.getRedirectTarget(mockRequest));
+  }
+
+  @Test
+  @SuppressWarnings("PMD.AvoidUsingHardCodedIP") // Exercise literal IPv6 authority brackets.
+  public void testObservationRetainsRedirectWhenMembershipChanges() throws Exception {
+    HttpServletRequest request = mockRequest("/encoded%20path", "q=a%2Fb");
+    replayAndMonitor(1);
+    publishSchedulers(HostAndPort.fromParts("::1", 555));
+    LeaderRedirect.LeaderObservation observation = leaderRedirector.observeLeader();
+    publishSchedulers();
+    assertEquals(LeaderStatus.NOT_LEADING, observation.status());
+    assertEquals(Optional.of("http://[::1]:555/encoded%20path?q=a%2Fb"),
+        leaderRedirector.getRedirectTarget(request, observation));
   }
 
   private void publishSchedulers(HostAndPort... schedulerHttpEndpoints) {

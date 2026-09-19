@@ -29,7 +29,7 @@ import static org.apache.aurora.scheduler.state.StateChangeResult.SUCCESS;
  */
 public class TransitionResult {
   private final StateChangeResult result;
-  private final ImmutableSet<SideEffect> sideEffects;
+  private final ImmutableSet<SideEffect.Action> sideEffects;
 
   /**
    * Creates a transition result with the given side effects.
@@ -37,7 +37,7 @@ public class TransitionResult {
    * @param result Transition attempt result.
    * @param sideEffects Actions that must be performed in response to the state transition.
    */
-  public TransitionResult(StateChangeResult result, ImmutableSet<SideEffect> sideEffects) {
+  public TransitionResult(StateChangeResult result, ImmutableSet<SideEffect.Action> sideEffects) {
     this.result = result;
     this.sideEffects = Objects.requireNonNull(sideEffects);
     if (!this.sideEffects.isEmpty()) {
@@ -51,7 +51,7 @@ public class TransitionResult {
     return result;
   }
 
-  public ImmutableSet<SideEffect> getSideEffects() {
+  public ImmutableSet<SideEffect.Action> getSideEffects() {
     return sideEffects;
   }
 

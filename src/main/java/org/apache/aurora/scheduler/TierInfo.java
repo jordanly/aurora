@@ -25,19 +25,12 @@ import com.google.common.collect.ImmutableMap;
 /**
  * Defines common task tier traits and behaviors.
  */
-public final class TierInfo {
-
-  private final boolean preemptible;
-  private final boolean revocable;
+public record TierInfo(
+    @JsonProperty("preemptible") boolean preemptible,
+    @JsonProperty("revocable") boolean revocable) {
 
   @JsonCreator
-  public TierInfo(
-      @JsonProperty("preemptible") boolean preemptible,
-      @JsonProperty("revocable") boolean revocable) {
-
-    this.preemptible = preemptible;
-    this.revocable = revocable;
-  }
+  public TierInfo { }
 
   /**
    * Checks if this tier intends to run tasks as preemptible.
@@ -84,15 +77,6 @@ public final class TierInfo {
   @Override
   public int hashCode() {
     return Objects.hash(preemptible, revocable);
-  }
-
-  @Override
-  public boolean equals(Object obj) {
-    if (!(obj instanceof TierInfo other)) {
-      return false;
-    }
-    return Objects.equals(preemptible, other.preemptible)
-        && Objects.equals(revocable, other.revocable);
   }
 
   @Override

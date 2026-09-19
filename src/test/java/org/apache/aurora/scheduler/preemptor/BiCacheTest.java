@@ -71,6 +71,40 @@ public class BiCacheTest {
   }
 
   @Test
+  public void testSubMinuteExpirationBoundaries() {
+    for (long seconds : new long[] {30L, 90L}) {
+      FakeClock preciseClock = new FakeClock();
+      BiCache<String, Integer> preciseCache = new BiCache<>(new FakeStatsProvider(),
+          new BiCacheSettings(Amount.of(seconds, Time.SECONDS), CACHE_NAME), preciseClock);
+      preciseCache.put(KEY_1, 1);
+      preciseClock.advance(Amount.of(seconds * 1000 - 1, Time.MILLISECONDS));
+      assertEquals(Optional.of(1), preciseCache.get(KEY_1));
+      assertEquals(ImmutableSet.of(KEY_1), preciseCache.getByValue(1));
+      preciseClock.advance(Amount.of(1L, Time.MILLISECONDS));
+      assertEquals(NO_VALUE, preciseCache.get(KEY_1));
+      assertEquals(ImmutableSet.of(), preciseCache.getByValue(1));
+    }
+  }
+
+  @Test
+  public void testZeroExpiration() {
+    BiCache<String, Integer> immediate = new BiCache<>(new FakeStatsProvider(),
+        new BiCacheSettings(Amount.of(0L, Time.SECONDS), CACHE_NAME), clock);
+    immediate.put(KEY_1, 1);
+    assertEquals(NO_VALUE, immediate.get(KEY_1));
+    assertEquals(ImmutableSet.of(), immediate.getByValue(1));
+  }
+
+  @Test
+  public void testLargeExpirationSaturates() {
+    BiCache<String, Integer> longLived = new BiCache<>(new FakeStatsProvider(),
+        new BiCacheSettings(Amount.of(Long.MAX_VALUE, Time.DAYS), CACHE_NAME), clock);
+    longLived.put(KEY_1, 1);
+    clock.advance(Amount.of(1L, Time.DAYS));
+    assertEquals(Optional.of(1), longLived.get(KEY_1));
+  }
+
+  @Test
   public void testRemoval() {
     biCache.put(KEY_1, 1);
     assertEquals(1L, statsProvider.getLongValue(CACHE_SIZE_STAT_NAME));

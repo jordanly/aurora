@@ -57,14 +57,14 @@ public class PendingTasks {
   @GET
   @Produces(MediaType.APPLICATION_JSON)
   public Response getOffers() throws IOException {
-    Map<TaskGroupKey, List<String>> taskGroupReasonMap =
-        nearestFit.getPendingReasons(taskGroups.getGroups());
+    Iterable<TaskGroup> groups = taskGroups.getGroups();
+    Map<TaskGroupKey, List<String>> taskGroupReasonMap = nearestFit.getPendingReasons(groups);
 
     ObjectMapper mapper = new ObjectMapper();
     ArrayNode jsonNode = mapper.createArrayNode();
 
     // Add the attribute "reason" to each serialized taskgroup
-    for (TaskGroup group : taskGroups.getGroups()) {
+    for (TaskGroup group : groups) {
       ObjectNode pendingTask = (ObjectNode) mapper.valueToTree(group);
 
       pendingTask.put("reason", taskGroupReasonMap.get(group.getKey()).toString());

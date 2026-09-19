@@ -96,7 +96,7 @@ final class Offers {
       for (IHostAttributes attributes : hostAttributes) {
         var offer = TestOffer.copyOf(offer(attributes.getSlaveId(),
             scalar(CPUS, cpu), scalar(RAM_MB, ram.as(Data.MB)), scalar(DISK_MB, disk.as(Data.MB)),
-            range(PORTS, IntStream.range(1, ports).boxed().toList())))
+            range(PORTS, IntStream.rangeClosed(1, ports).boxed().toList())))
             .offerId(String.format(OFFER_ID_FORMAT, id++)).hostname(attributes.getHost()).build();
         offers.add(new HostOffer(offer, attributes));
       }

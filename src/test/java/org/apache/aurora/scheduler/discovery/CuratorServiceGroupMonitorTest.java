@@ -98,6 +98,10 @@ public class CuratorServiceGroupMonitorTest extends BaseCuratorDiscoveryTest {
     startGroupMonitor();
 
     createMember("invalid".getBytes(Charsets.UTF_8));
+    createMember("{}".getBytes(Charsets.UTF_8));
+    createMember("{\"serviceEndpoint\":{\"port\":1000}}".getBytes(Charsets.UTF_8));
+    createMember(("{\"serviceEndpoint\":{\"host\":\"foo\",\"port\":1000},"
+        + "\"additionalEndpoints\":{\"http\":null}}").getBytes(Charsets.UTF_8));
 
     ServiceInstance member = serviceInstance("member");
     createMember(member);

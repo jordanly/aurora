@@ -74,9 +74,10 @@ public class TimeSeriesDataSourceTest extends EasyMockTest {
   @Test
   @SuppressWarnings("unchecked") // Needed because type information lost in vargs.
   public void testGetAllData() throws Exception {
-    expect(timeSeriesRepo.getTimestamps()).andReturn(TIMESTAMPS);
-    expect(timeSeriesRepo.get(TIME_SERIES_1)).andReturn(TS_DATA.get(TIME_SERIES_1));
-    expect(timeSeriesRepo.get(TIME_SERIES_2)).andReturn(TS_DATA.get(TIME_SERIES_2));
+    expect(timeSeriesRepo.snapshot(List.of(TIME_SERIES_1, TIME_SERIES_2)))
+        .andReturn(new TimeSeriesRepository.Snapshot(TIMESTAMPS, Map.of(
+            TIME_SERIES_1, ImmutableList.copyOf(getSamples(TIME_SERIES_1)),
+            TIME_SERIES_2, ImmutableList.copyOf(getSamples(TIME_SERIES_2)))));
 
     control.replay();
 
@@ -96,9 +97,10 @@ public class TimeSeriesDataSourceTest extends EasyMockTest {
   @Test
   @SuppressWarnings("unchecked") // Needed because type information lost in vargs.
   public void testFilterByTime() throws Exception {
-    expect(timeSeriesRepo.getTimestamps()).andReturn(TIMESTAMPS);
-    expect(timeSeriesRepo.get(TIME_SERIES_1)).andReturn(TS_DATA.get(TIME_SERIES_1));
-    expect(timeSeriesRepo.get(TIME_SERIES_2)).andReturn(TS_DATA.get(TIME_SERIES_2));
+    expect(timeSeriesRepo.snapshot(List.of(TIME_SERIES_1, TIME_SERIES_2)))
+        .andReturn(new TimeSeriesRepository.Snapshot(TIMESTAMPS, Map.of(
+            TIME_SERIES_1, ImmutableList.copyOf(getSamples(TIME_SERIES_1)),
+            TIME_SERIES_2, ImmutableList.copyOf(getSamples(TIME_SERIES_2)))));
 
     control.replay();
 

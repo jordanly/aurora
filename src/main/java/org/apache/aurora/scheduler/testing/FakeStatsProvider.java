@@ -28,6 +28,7 @@ import org.apache.aurora.common.stats.StatsProvider;
  */
 public class FakeStatsProvider implements StatsProvider {
   private final Map<String, Supplier<? extends Number>> stats = Maps.newHashMap();
+  private final Map<String, AtomicLong> counters = Maps.newHashMap();
 
   /**
    * Gets the current value of a stat.
@@ -62,9 +63,24 @@ public class FakeStatsProvider implements StatsProvider {
 
   @Override
   public AtomicLong makeCounter(String name) {
-    final AtomicLong counter = new AtomicLong();
+    if (counters.containsKey(name)) {
+      return counters.get(name);
+    }
+    if (stats.containsKey(name)) {
+      throw new IllegalArgumentException("Metric name collision on " + name);
+    }
+    AtomicLong counter = new AtomicLong();
+    counters.put(name, counter);
     stats.put(name, counter::get);
     return counter;
+  }
+
+  @Override
+  public <T extends Number> Registration registerGauge(String name, Supplier<T> gauge) {
+    if (stats.putIfAbsent(name, gauge) != null) {
+      throw new IllegalArgumentException("Metric name collision on " + name);
+    }
+    return () -> stats.remove(name, gauge);
   }
 
   @Override

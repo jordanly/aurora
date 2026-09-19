@@ -13,7 +13,7 @@
  */
 package org.apache.aurora.scheduler.scheduling;
 
-import java.util.Collection;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -24,7 +24,6 @@ import jakarta.inject.Inject;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
-import com.google.common.collect.Maps;
 
 import org.apache.aurora.common.stats.StatsProvider;
 import org.apache.aurora.scheduler.base.InstanceKeys;
@@ -164,7 +163,10 @@ public class TaskAssignerImpl implements TaskAssigner {
     }
   }
 
-  private ReservationStatus getReservation(IAssignedTask task, ResourceRequest resourceRequest) {
+  private ReservationStatus getReservation(
+      IAssignedTask task,
+      ResourceRequest resourceRequest,
+      Set<String> usedOffers) {
 
     IInstanceKey key = InstanceKeys.from(task.getTask().getJob(), task.getInstanceId());
     Optional<String> agentId = updateAgentReserver.getAgent(key);
@@ -173,7 +175,9 @@ public class TaskAssignerImpl implements TaskAssigner {
     }
     Optional<HostOffer> offer = offerManager.getMatching(
         agentId.get(),
-        resourceRequest).filter(value -> accepts(value, task));
+        resourceRequest)
+        .filter(value -> !usedOffers.contains(value.getOfferId()))
+        .filter(value -> accepts(value, task));
     if (offer.isPresent()) {
       LOG.info("Used update reservation for {} on {}", key, agentId.get());
       updateAgentReserver.release(agentId.get(), key);
@@ -204,54 +208,9 @@ public class TaskAssignerImpl implements TaskAssigner {
     return reservedForPreemption || updateAgentReserver.isReserved(agentId);
   }
 
-  private static class SchedulingMatch {
-    final IAssignedTask task;
-    final HostOffer offer;
-
-    SchedulingMatch(IAssignedTask task, HostOffer offer) {
-      this.task = requireNonNull(task);
-      this.offer = requireNonNull(offer);
-    }
-  }
-
   private static boolean accepts(HostOffer offer, IAssignedTask task) {
     return !(offer.getOffer() instanceof ExecutionOffer.TaskAware aware)
         || aware.placementVeto(task.getTask()).isEmpty();
-  }
-
-  private Collection<SchedulingMatch> findMatches(
-      ResourceRequest resourceRequest,
-      TaskGroupKey groupKey,
-      Set<IAssignedTask> tasks,
-      Map<String, TaskGroupKey> preemptionReservations) {
-
-    // Avoid matching multiple tasks against any offer.
-    Map<String, SchedulingMatch> matchesByOffer = Maps.newHashMap();
-
-    tasks.forEach(task -> {
-      ReservationStatus reservation = getReservation(task, resourceRequest);
-      Optional<HostOffer> chosenOffer;
-      if (reservation.isTaskReserving()) {
-        // Use the reserved offer, which may not currently exist.
-        chosenOffer = reservation.getOffer();
-      } else {
-        // Get all offers that will satisfy the given ResourceRequest and that are not reserved
-        // for updates or preemption.
-        Iterable<HostOffer> matchingOffers = Iterables.filter(
-            offerManager.getAllMatching(groupKey, resourceRequest),
-            o -> !matchesByOffer.containsKey(o.getOfferId())
-                && !isAgentReserved(o, groupKey, preemptionReservations)
-                && accepts(o, task));
-
-        chosenOffer = Optional.ofNullable(Iterables.getFirst(matchingOffers, null));
-      }
-
-      chosenOffer.ifPresent(hostOffer -> matchesByOffer.put(
-          hostOffer.getOfferId(),
-          new SchedulingMatch(task, hostOffer)));
-    });
-
-    return matchesByOffer.values();
   }
 
   @Timed("assigner_maybe_assign")
@@ -265,10 +224,30 @@ public class TaskAssignerImpl implements TaskAssigner {
 
     ImmutableSet.Builder<String> assigned = ImmutableSet.builder();
 
-    for (SchedulingMatch match : findMatches(resourceRequest, groupKey, tasks, reservations)) {
+    // Match each task against the aggregate updated by the previous assignment.
+    Set<String> usedOffers = new HashSet<>();
+    for (IAssignedTask task : tasks) {
+      ReservationStatus reservation = getReservation(task, resourceRequest, usedOffers);
+      Optional<HostOffer> chosenOffer;
+      if (reservation.isTaskReserving()) {
+        chosenOffer = reservation.getOffer();
+      } else {
+        Iterable<HostOffer> matchingOffers = Iterables.filter(
+            offerManager.getAllMatching(groupKey, resourceRequest),
+            offer -> !usedOffers.contains(offer.getOfferId())
+                && !isAgentReserved(offer, groupKey, reservations)
+                && accepts(offer, task));
+        chosenOffer = Optional.ofNullable(Iterables.getFirst(matchingOffers, null));
+      }
+      if (chosenOffer.isEmpty()) {
+        continue;
+      }
+
+      HostOffer offer = chosenOffer.get();
+      usedOffers.add(offer.getOfferId());
       try {
-        launchUsingOffer(storeProvider, resourceRequest, match.task, match.offer);
-        assigned.add(match.task.getTaskId());
+        launchUsingOffer(storeProvider, resourceRequest, task, offer);
+        assigned.add(task.getTaskId());
       } catch (LaunchException e) {
         // Any launch exception causes the scheduling round to terminate for this TaskGroup.
         break;

@@ -100,13 +100,13 @@ public class TaskVarsTest extends EasyMockTest {
   }
 
   private void expectStatExport(String name, StatsProvider provider) {
-    expect(provider.makeGauge(EasyMock.eq(name), EasyMock.<Supplier<Long>>anyObject()))
+    expect(provider.registerGauge(EasyMock.eq(name), EasyMock.<Supplier<Long>>anyObject()))
         .andAnswer(() -> {
           assertFalse(globalCounters.containsKey(name));
           @SuppressWarnings("unchecked")
           Supplier<Long> varSupplier = (Supplier<Long>) EasyMock.getCurrentArguments()[1];
           globalCounters.put(name, varSupplier);
-          return null;
+          return () -> globalCounters.remove(name, varSupplier);
         });
   }
 
@@ -359,8 +359,6 @@ public class TaskVarsTest extends EasyMockTest {
   @Test
   public void testRackMissing() {
     expectStatusCountersInitialized();
-    expect(storageUtil.attributeStore.getHostAttributes("a"))
-        .andReturn(Optional.empty());
     expect(storageUtil.attributeStore.getHostAttributes("a"))
         .andReturn(Optional.empty());
 

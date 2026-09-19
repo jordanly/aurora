@@ -121,7 +121,9 @@ public class ThriftIT extends EasyMockTest {
             bindMock(TaskKiller.class);
             bindMock(OfferTransport.class);
             bindMock(TaskFactory.class);
-            bindMock(TaskReconciliation.class);
+            TaskReconciliation reconciliation = createMock(TaskReconciliation.class);
+            org.easymock.EasyMock.expect(reconciliation.reconcilesFromWatch()).andStubReturn(false);
+            bind(TaskReconciliation.class).toInstance(reconciliation);
             bind(TaskConfigValidator.class).toInstance(task -> { });
             bindMock(Recovery.class);
             bindMock(StorageBackup.class);

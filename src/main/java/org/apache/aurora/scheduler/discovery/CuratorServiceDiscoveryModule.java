@@ -14,14 +14,15 @@
 package org.apache.aurora.scheduler.discovery;
 
 import java.net.InetSocketAddress;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Predicate;
 
 import jakarta.inject.Singleton;
 
 import com.google.common.base.Joiner;
-import com.google.common.base.Supplier;
 import com.google.common.collect.FluentIterable;
 import com.google.inject.Exposed;
 import com.google.inject.PrivateModule;
@@ -40,7 +41,6 @@ import org.apache.curator.RetryPolicy;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.framework.api.ACLProvider;
-import org.apache.curator.framework.listen.Listenable;
 import org.apache.curator.framework.recipes.cache.PathChildrenCache;
 import org.apache.curator.framework.state.ConnectionState;
 import org.apache.curator.framework.state.ConnectionStateListener;
@@ -60,7 +60,7 @@ class CuratorServiceDiscoveryModule extends PrivateModule {
   private final String discoveryPath;
   private final ZooKeeperConfig zooKeeperConfig;
 
-  private ConnectionState currentState;
+  private volatile ConnectionState currentState;
 
   CuratorServiceDiscoveryModule(String discoveryPath, ZooKeeperConfig zooKeeperConfig) {
     this.discoveryPath = PathUtils.validatePath(discoveryPath);
@@ -90,31 +90,6 @@ class CuratorServiceDiscoveryModule extends PrivateModule {
       connectString = connectString + zooKeeperConfig.getChrootPath().get();
     }
 
-    // export current connection state
-    for (ConnectionState connectionState : ConnectionState.values()) {
-      statsProvider.makeGauge(
-          zkConnectionGaugeName(connectionState),
-          new Supplier<Integer>() {
-            @Override
-            public Integer get() {
-              return connectionState.equals(currentState) ? 1 : 0;
-            }
-          }
-      );
-    }
-
-    // connection state counter
-    AtomicLong zkConnectionConnectedCounter =
-        statsProvider.makeCounter(zkConnectionStateCounterName(ConnectionState.CONNECTED));
-    AtomicLong zkConnectionReadonlyCounter =
-        statsProvider.makeCounter(zkConnectionStateCounterName(ConnectionState.READ_ONLY));
-    AtomicLong zkConnectionSuspendedCounter =
-        statsProvider.makeCounter(zkConnectionStateCounterName(ConnectionState.SUSPENDED));
-    AtomicLong zkConnectionReconnectedCounter =
-        statsProvider.makeCounter(zkConnectionStateCounterName(ConnectionState.RECONNECTED));
-    AtomicLong zkConnectionLostCounter =
-        statsProvider.makeCounter(zkConnectionStateCounterName(ConnectionState.LOST));
-
     // This emulates the default BackoffHelper configuration used by the legacy commons/zookeeper
     // stack. BackoffHelper is unbounded, this dies after around 5 minutes using the 10 retries.
     // NB: BoundedExponentialBackoffRetry caps max retries at 29 if you send it a larger value.
@@ -139,31 +114,8 @@ class CuratorServiceDiscoveryModule extends PrivateModule {
     }
 
     CuratorFramework curatorFramework = builder.build();
-    Listenable<ConnectionStateListener> connectionStateListener = curatorFramework
-        .getConnectionStateListenable();
-    connectionStateListener.addListener((CuratorFramework client, ConnectionState newState) -> {
-      currentState = newState;
-      switch (newState) {
-        case CONNECTED:
-          zkConnectionConnectedCounter.getAndIncrement();
-          break;
-        case READ_ONLY:
-          zkConnectionReadonlyCounter.getAndIncrement();
-          break;
-        case SUSPENDED:
-          zkConnectionSuspendedCounter.getAndIncrement();
-          break;
-        case RECONNECTED:
-          zkConnectionReconnectedCounter.getAndIncrement();
-          break;
-        case LOST:
-          zkConnectionLostCounter.getAndIncrement();
-          break;
-        default:
-          currentState = null;
-          break;
-      }
-    });
+    curatorFramework.getConnectionStateListenable()
+        .addListener(createConnectionStateListener(statsProvider));
 
     // TODO(John Sirois): It would be nice to use a Service to control the lifecycle here, but other
     // services (org.apache.aurora.scheduler.http.JettyServerModule.RedirectMonitor) rely on this
@@ -173,6 +125,18 @@ class CuratorServiceDiscoveryModule extends PrivateModule {
     shutdownRegistry.addAction(curatorFramework::close);
 
     return curatorFramework;
+  }
+
+  ConnectionStateListener createConnectionStateListener(StatsProvider statsProvider) {
+    Map<ConnectionState, AtomicLong> counters = new EnumMap<>(ConnectionState.class);
+    for (ConnectionState state : ConnectionState.values()) {
+      statsProvider.makeGauge(zkConnectionGaugeName(state), () -> state == currentState ? 1 : 0);
+      counters.put(state, statsProvider.makeCounter(zkConnectionStateCounterName(state)));
+    }
+    return (client, newState) -> {
+      currentState = newState;
+      counters.get(newState).incrementAndGet();
+    };
   }
 
   static class SingleACLProvider implements ACLProvider {

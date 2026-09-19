@@ -28,6 +28,8 @@ public interface StatsProvider {
    * Creates and exports a counter for tracking.
    *
    * @param name The name to export the stat with.
+   * Re-registering a counter name returns the existing counter; incompatible name collisions fail.
+   *
    * @return A reference to the counter that will be tracked for incrementing.
    */
   AtomicLong makeCounter(String name);
@@ -41,6 +43,21 @@ public interface StatsProvider {
    * @return A reference to the stat that was stored.
    */
   <T extends Number> Stat<T> makeGauge(String name, Supplier<T> gauge);
+
+  /** An owned metric registration. Closing it is idempotent and removes only that registration. */
+  interface Registration extends AutoCloseable {
+    @Override
+    void close();
+  }
+
+  /**
+   * Registers a gauge with an explicit lifetime. A name collision is rejected rather than sharing
+   * ownership of another producer's gauge. Providers without removal support must reject this
+   * capability instead of silently leaving the gauge exported after close.
+   */
+  default <T extends Number> Registration registerGauge(String name, Supplier<T> gauge) {
+    throw new UnsupportedOperationException("Owned metric registration is not supported");
+  }
 
   /**
    * Exports a metric that tracks the size of a collection.

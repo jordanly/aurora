@@ -15,6 +15,11 @@ package org.apache.aurora.scheduler.execution.go;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import jakarta.inject.Inject;
@@ -48,11 +53,41 @@ public final class GoTaskFactory implements TaskFactory, TaskConfigValidator {
 
   record Launch(String taskId, String agentId, String body) implements PreparedTask { }
 
+  /** Validated process data is detached from its parser tree and never prints credential values. */
+  record ProcessProfile(List<String> argv, Map<String, String> env, int graceMillis,
+      Optional<Health> health) {
+    ProcessProfile {
+      argv = List.copyOf(argv);
+      env = Map.copyOf(env);
+      health = java.util.Objects.requireNonNull(health);
+    }
+
+    @Override
+    public String toString() {
+      return "ProcessProfile{argumentCount=" + argv.size() + ", environmentNames=" + env.keySet()
+          + ", graceMillis=" + graceMillis + ", health=" + health + "}";
+    }
+  }
+
+  record Health(String network, int port, int intervalMillis, int timeoutMillis,
+      int startupTimeoutMillis, int failureThreshold) {
+    ObjectNode readiness() {
+      return WireJson.object().put("kind", "tcp").put("port", "health")
+          .put("intervalMillis", intervalMillis).put("timeoutMillis", timeoutMillis)
+          .put("startupTimeoutMillis", startupTimeoutMillis)
+          .put("failureThreshold", failureThreshold);
+    }
+  }
+
   @Override
   public void validate(ITaskConfig task) throws TaskDescriptionException {
+    validatedProfile(task);
+  }
+
+  private ProcessProfile validatedProfile(ITaskConfig task) throws TaskDescriptionException {
     try {
       WireJson.require(!tiers.getTier(task).isRevocable(), "Go agents do not offer revocable CPU");
-      validateForImport(task);
+      return validatedImportProfile(task);
     } catch (IllegalArgumentException e) {
       throw new TaskDescriptionException(e.getMessage(), e);
     }
@@ -60,6 +95,13 @@ public final class GoTaskFactory implements TaskFactory, TaskConfigValidator {
 
   /** Validates the executable profile without requiring a running scheduler or enrolled agents. */
   public static void validateForImport(ITaskConfig task) throws TaskDescriptionException {
+    validatedImportProfile(task);
+  }
+
+  // Parser causes may contain executor credentials; preserve only the safe error category.
+  @SuppressWarnings("PMD.PreserveStackTrace")
+  private static ProcessProfile validatedImportProfile(ITaskConfig task)
+      throws TaskDescriptionException {
     try {
       WireJson.require(task.isSetExecutorConfig()
           && EXECUTOR.equals(task.getExecutorConfig().getName()),
@@ -84,8 +126,11 @@ public final class GoTaskFactory implements TaskFactory, TaskConfigValidator {
               key.getRole(), key.getEnvironment(), key.getName())
           .allMatch(value -> value.matches("[a-z][a-z0-9-]{0,63}")),
           "Go process protocol currently requires lowercase job keys of at most 64 characters");
-      process(task);
-    } catch (IOException | IllegalArgumentException e) {
+      return process(task);
+    } catch (IOException e) {
+      // Jackson parse failures can quote executor data containing credentials.
+      throw new TaskDescriptionException("Invalid process profile JSON");
+    } catch (IllegalArgumentException e) {
       throw new TaskDescriptionException(e.getMessage(), e);
     }
   }
@@ -101,7 +146,7 @@ public final class GoTaskFactory implements TaskFactory, TaskConfigValidator {
     return (long) rounded;
   }
 
-  private static JsonNode process(ITaskConfig task) throws IOException {
+  private static ProcessProfile process(ITaskConfig task) throws IOException {
     String data = task.getExecutorConfig().getData();
     WireJson.require(data != null, "Executor data is required");
     WireJson.require(data.getBytes(StandardCharsets.UTF_8).length <= WireJson.MAX_BYTES - 8192,
@@ -126,6 +171,7 @@ public final class GoTaskFactory implements TaskFactory, TaskConfigValidator {
     JsonNode grace = spec.path("graceMillis");
     WireJson.require(grace.isIntegralNumber() && grace.canConvertToInt()
         && grace.asInt() >= 0 && grace.asInt() <= 60000, "graceMillis must be 0 through 60000");
+    Optional<Health> parsedHealth = Optional.empty();
     if (spec.has("health")) {
       JsonNode health = spec.get("health");
       WireJson.fields(health, "kind", "port", "network", "intervalMillis", "timeoutMillis",
@@ -138,9 +184,17 @@ public final class GoTaskFactory implements TaskFactory, TaskConfigValidator {
       bounded(health, "timeoutMillis", 1, 250);
       bounded(health, "startupTimeoutMillis", 1, 600000);
       bounded(health, "failureThreshold", 1, 100);
+      parsedHealth = Optional.of(new Health(health.path("network").asText(),
+          health.path("port").asInt(), health.path("intervalMillis").asInt(),
+          health.path("timeoutMillis").asInt(), health.path("startupTimeoutMillis").asInt(),
+          health.path("failureThreshold").asInt()));
     }
-    WireJson.bytes(spec);
-    return spec;
+    WireJson.validate(spec);
+    List<String> arguments = new ArrayList<>();
+    argv.forEach(arg -> arguments.add(arg.asText()));
+    Map<String, String> environment = new LinkedHashMap<>();
+    env.properties().forEach(entry -> environment.put(entry.getKey(), entry.getValue().asText()));
+    return new ProcessProfile(arguments, environment, grace.asInt(), parsedHealth);
   }
 
   private static void bounded(JsonNode object, String key, int minimum, int maximum) {
@@ -150,17 +204,16 @@ public final class GoTaskFactory implements TaskFactory, TaskConfigValidator {
         key + " must be " + minimum + " through " + maximum);
   }
 
-  static java.util.Optional<String> healthSocket(ITaskConfig task) {
+  // Health lookup must not attach parser causes containing the complete process profile.
+  @SuppressWarnings("PMD.PreserveStackTrace")
+  static Optional<String> healthSocket(ITaskConfig task) {
     if (!task.isSetExecutorConfig() || !EXECUTOR.equals(task.getExecutorConfig().getName())) {
-      return java.util.Optional.empty();
+      return Optional.empty();
     }
     try {
-      JsonNode spec = process(task);
-      return spec.has("health") ? java.util.Optional.of(
-          spec.path("health").path("network").asText() + ":"
-              + spec.path("health").path("port").asInt()) : java.util.Optional.empty();
+      return process(task).health().map(health -> health.network() + ":" + health.port());
     } catch (IOException e) {
-      throw new IllegalArgumentException("Invalid process profile", e);
+      throw new IllegalArgumentException("Invalid process profile JSON");
     }
   }
 
@@ -171,16 +224,17 @@ public final class GoTaskFactory implements TaskFactory, TaskConfigValidator {
   @Override
   public PreparedTask prepare(IAssignedTask task, ExecutionOffer offer, boolean revocable) {
     try {
-      validate(task.getTask());
+      ProcessProfile profile = validatedProfile(task.getTask());
       WireJson.require(!revocable, "Revocable launch unsupported");
       GoAgentConfig.Node node = config.nodes().stream()
           .filter(item -> item.name().equals(offer.getAgentId())).findFirst().orElseThrow();
-      JsonNode spec = process(task.getTask());
       var resources = ResourceManager.bagFromResources(task.getTask().getResources());
       ObjectNode assignment = WireJson.object().put("process", "main")
           .put("runtime", "trusted-host-process");
-      assignment.set("argv", spec.get("argv"));
-      assignment.set("env", spec.get("env"));
+      var arguments = assignment.putArray("argv");
+      profile.argv().forEach(arguments::add);
+      ObjectNode environment = assignment.putObject("env");
+      profile.env().forEach(environment::put);
       assignment.set("resources", WireJson.object()
           .put("cpuMillis", cpuMillis(resources))
           .put("memoryBytes", (long) resources.valueOf(ResourceType.RAM_MB) * 1048576)
@@ -188,18 +242,14 @@ public final class GoTaskFactory implements TaskFactory, TaskConfigValidator {
       assignment.putArray("ports");
       assignment.putArray("requiredCapabilities");
       assignment.set("readiness", WireJson.object().put("kind", "none"));
-      if (spec.has("health")) {
-        JsonNode health = spec.get("health");
+      profile.health().ifPresent(health -> {
         assignment.withArray("ports").add(WireJson.object().put("name", "health")
-            .put("number", health.path("port").asInt()).put("protocol", "tcp")
-            .put("family", "ipv4").put("network", health.path("network").asText()));
-        ObjectNode readiness = health.deepCopy();
-        readiness.remove("network");
-        readiness.put("port", "health");
-        assignment.set("readiness", readiness);
-      }
+            .put("number", health.port()).put("protocol", "tcp")
+            .put("family", "ipv4").put("network", health.network()));
+        assignment.set("readiness", health.readiness());
+      });
       assignment.set("retry", WireJson.object().put("maxRuns", 1));
-      assignment.set("stop", WireJson.object().put("graceMillis", spec.get("graceMillis").asInt()));
+      assignment.set("stop", WireJson.object().put("graceMillis", profile.graceMillis()));
       ObjectNode identity = WireJson.object().put("cluster", config.cluster())
           .put("incarnation", config.incarnation()).put("instance", "i-" + task.getInstanceId())
           .put("attempt", identity("a-", task.getTaskId())).put("process", "main")
@@ -214,7 +264,7 @@ public final class GoTaskFactory implements TaskFactory, TaskConfigValidator {
       run.set("target", node.target());
       run.set("assignment", assignment);
       return new Launch(task.getTaskId(), node.name(), WireJson.string(run));
-    } catch (IOException | TaskDescriptionException e) {
+    } catch (TaskDescriptionException e) {
       throw new IllegalArgumentException("Unable to prepare process task", e);
     }
   }

@@ -74,11 +74,13 @@ public class StateTest extends EasyMockTest {
   @Test
   public void testJson() throws Exception {
     TaskConfig task1 = new TaskConfig().setJob(new JobKey("role", "env", "job"));
-    TaskConfig task2 = new TaskConfig().setJob(new JobKey("role", "env", "job"));
+    TaskConfig task2 = new TaskConfig().setJob(new JobKey("role", "env", "job"))
+        .setIsService(true);
     TaskConfig task3 = new TaskConfig().setJob(new JobKey("role", "env", "another-job"));
     String task1Key = taskKey(ITaskConfig.build(task1));
     String task2Key = taskKey(ITaskConfig.build(task2));
     String task3Key = taskKey(ITaskConfig.build(task3));
+    assertEquals(3, ImmutableSet.of(task1Key, task2Key, task3Key).size());
 
     // Tests:
     // Same task config on multiple hosts.

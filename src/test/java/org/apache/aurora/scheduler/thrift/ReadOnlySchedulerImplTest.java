@@ -365,6 +365,34 @@ public class ReadOnlySchedulerImplTest extends EasyMockTest {
   }
 
   @Test
+  public void testGetTasksWithoutConfigsAllowsAbsentExecutorAndCopiesData() throws Exception {
+    ScheduledTask withExecutor =
+        Iterables.getOnlyElement(makeDefaultScheduledTasks(1)).newBuilder();
+    withExecutor.getAssignedTask().getTask().getExecutorConfig().setData("secret");
+    ScheduledTask withoutExecutor = withExecutor.deepCopy();
+    withoutExecutor.getAssignedTask().setTaskId("no-executor");
+    withoutExecutor.getAssignedTask().getTask().unsetExecutorConfig();
+    ImmutableSet<IScheduledTask> stored = ImmutableSet.of(
+        IScheduledTask.build(withExecutor), IScheduledTask.build(withoutExecutor));
+    storageUtil.expectTaskFetch(Query.unscoped(), stored);
+    control.replay();
+
+    List<ScheduledTask> tasks = assertOkResponse(thrift.getTasksWithoutConfigs(new TaskQuery()))
+        .getResult().getScheduleStatusResult().getTasks();
+    assertEquals(2, tasks.size());
+    for (int i = 0; i < 2; i++) {
+      for (ScheduledTask task : tasks) {
+        if (task.getAssignedTask().getTask().isSetExecutorConfig()) {
+          assertFalse(task.getAssignedTask().getTask().getExecutorConfig().isSetData());
+        }
+      }
+    }
+    assertEquals("secret", stored.stream()
+        .filter(task -> task.getAssignedTask().getTask().isSetExecutorConfig())
+        .findFirst().orElseThrow().getAssignedTask().getTask().getExecutorConfig().getData());
+  }
+
+  @Test
   public void testGetPendingReasonFailsSlavesSet() throws Exception {
     Builder query = Query.unscoped().bySlave("host1");
 
@@ -639,7 +667,7 @@ public class ReadOnlySchedulerImplTest extends EasyMockTest {
     ImmutableList.Builder<JobUpdateSummary> builder = ImmutableList.builder();
     for (int i = 0; i < count; i++) {
       builder.add(new JobUpdateSummary()
-          .setKey(new JobUpdateKey(JOB_KEY.newBuilder(), "id" + 1))
+          .setKey(new JobUpdateKey(JOB_KEY.newBuilder(), "id" + i))
           .setUser(USER)
           .setMetadata(METADATA));
     }
@@ -648,10 +676,12 @@ public class ReadOnlySchedulerImplTest extends EasyMockTest {
 
   private static Set<JobUpdateDetails> createJobUpdateDetails(int count) {
     List<JobUpdateSummary> summaries = createJobUpdateSummaries(count);
-    return summaries.stream()
+    Set<JobUpdateDetails> details = summaries.stream()
         .map(jobUpdateSummary ->
             new JobUpdateDetails().setUpdate(new JobUpdate().setSummary(jobUpdateSummary)))
         .collect(Collectors.toSet());
+    assertEquals(count, details.size());
+    return details;
   }
 
   private static JobUpdateDetails createJobUpdateDetails() {

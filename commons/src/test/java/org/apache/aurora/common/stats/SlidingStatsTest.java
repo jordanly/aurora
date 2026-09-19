@@ -17,6 +17,7 @@ import org.apache.aurora.common.quantity.Amount;
 import org.apache.aurora.common.quantity.Time;
 import org.apache.aurora.common.stats.SlidingStats.Timeable;
 import org.apache.aurora.common.util.testing.FakeClock;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -36,9 +37,15 @@ public class SlidingStatsTest {
 
   @Before
   public void setUp() {
+    Stats.flush();
     clock = new FakeClock();
     actions = new TimedActions(clock);
     stat = new SlidingStats("a", "nanos", 1, clock);
+  }
+
+  @After
+  public void tearDown() {
+    Stats.flush();
   }
 
   @Test

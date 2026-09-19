@@ -13,6 +13,7 @@
  */
 package org.apache.aurora.scheduler.resources;
 
+import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.Map;
 import java.util.Set;
@@ -170,15 +171,11 @@ public final class ResourceManager {
       Function<T, ResourceType> typeMapper,
       Function<T, Double> valueMapper) {
 
-    return new ResourceBag(StreamSupport.stream(resources.spliterator(), false)
-        .collect(Collectors.groupingBy(typeMapper))
-        .entrySet().stream()
-        .collect(Collectors.toMap(
-            Map.Entry::getKey,
-            group -> group.getValue().stream()
-                .map(valueMapper)
-                .reduce(REDUCE_VALUES)
-                .orElse(0.0))));
+    Map<ResourceType, Double> totals = new EnumMap<>(ResourceType.class);
+    for (T resource : resources) {
+      totals.merge(typeMapper.apply(resource), valueMapper.apply(resource), REDUCE_VALUES);
+    }
+    return new ResourceBag(totals);
   }
 
   /**

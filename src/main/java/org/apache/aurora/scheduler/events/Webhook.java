@@ -22,6 +22,7 @@ import com.google.common.eventbus.Subscribe;
 
 import com.google.common.util.concurrent.AbstractIdleService;
 import com.google.inject.Inject;
+import com.google.inject.Provider;
 
 import org.apache.aurora.common.stats.StatsProvider;
 import org.apache.aurora.gen.ScheduleStatus;
@@ -54,7 +55,8 @@ public class Webhook extends AbstractIdleService implements EventSubscriber {
   private static final Logger LOG = LoggerFactory.getLogger(Webhook.class);
 
   private final WebhookInfo webhookInfo;
-  private final AsyncHttpClient httpClient;
+  private final Provider<AsyncHttpClient> clientFactory;
+  private volatile AsyncHttpClient httpClient;
   private final Predicate<ScheduleStatus> isWhitelisted;
 
   private final AtomicLong attemptsCounter;
@@ -63,9 +65,12 @@ public class Webhook extends AbstractIdleService implements EventSubscriber {
   private final AtomicLong userErrorsCounter;
 
   @Inject
-  Webhook(AsyncHttpClient httpClient, WebhookInfo webhookInfo, StatsProvider statsProvider) {
+  Webhook(
+      Provider<AsyncHttpClient> clientFactory,
+      WebhookInfo webhookInfo,
+      StatsProvider statsProvider) {
     this.webhookInfo = requireNonNull(webhookInfo);
-    this.httpClient = requireNonNull(httpClient);
+    this.clientFactory = requireNonNull(clientFactory);
     this.attemptsCounter = statsProvider.makeCounter(ATTEMPTS_STAT_NAME);
     this.successCounter = statsProvider.makeCounter(SUCCESS_STAT_NAME);
     this.errorsCounter = statsProvider.makeCounter(ERRORS_STAT_NAME);
@@ -92,11 +97,12 @@ public class Webhook extends AbstractIdleService implements EventSubscriber {
    */
   @Subscribe
   public void taskChangedState(TaskStateChange stateChange) {
-    LOG.debug("Got an event: {}", stateChange);
+    LOG.debug("Got a task event with state {}", stateChange.getNewState());
     // Ensure that this state change event is a transition, and not an event from when the scheduler
     // first initializes. In that case we do not want to resend the entire state. This check also
     // ensures that only whitelisted statuses will be sent to the configured endpoint.
-    if (stateChange.isTransition() && isWhitelisted.apply(stateChange.getNewState())) {
+    if (isRunning() && stateChange.isTransition()
+        && isWhitelisted.apply(stateChange.getNewState())) {
       attemptsCounter.incrementAndGet();
       try {
         // We don't care about the response body, so only listen for the HTTP status code.
@@ -104,7 +110,7 @@ public class Webhook extends AbstractIdleService implements EventSubscriber {
           @Override
           public void onThrowable(Throwable t) {
             errorsCounter.incrementAndGet();
-            LOG.error("Error sending a Webhook event", t);
+            LOG.error("Error sending a Webhook event ({})", t.getClass().getSimpleName());
           }
 
           @Override
@@ -126,7 +132,7 @@ public class Webhook extends AbstractIdleService implements EventSubscriber {
           }
         });
       } catch (Exception e) {
-        LOG.error("Error making Webhook request", e);
+        LOG.error("Error making Webhook request ({})", e.getClass().getSimpleName());
         errorsCounter.incrementAndGet();
       }
     }
@@ -134,7 +140,7 @@ public class Webhook extends AbstractIdleService implements EventSubscriber {
 
   @Override
   protected void startUp() throws Exception {
-    // No-op
+    httpClient = requireNonNull(clientFactory.get());
   }
 
   @Override

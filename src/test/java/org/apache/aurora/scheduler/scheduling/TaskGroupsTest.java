@@ -17,6 +17,8 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.RateLimiter;
@@ -40,6 +42,8 @@ import org.apache.aurora.scheduler.storage.entities.IScheduledTask;
 import org.apache.aurora.scheduler.storage.testing.StorageTestUtil;
 import org.apache.aurora.scheduler.testing.FakeScheduledExecutor;
 import org.apache.aurora.scheduler.testing.FakeStatsProvider;
+import org.easymock.Capture;
+import org.easymock.EasyMock;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -47,6 +51,7 @@ import static org.apache.aurora.gen.ScheduleStatus.ASSIGNED;
 import static org.apache.aurora.gen.ScheduleStatus.INIT;
 import static org.apache.aurora.scheduler.testing.BatchWorkerUtil.expectBatchExecute;
 import static org.easymock.EasyMock.anyObject;
+import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
 import static org.junit.Assert.assertEquals;
@@ -108,8 +113,28 @@ public class TaskGroupsTest extends EasyMockTest {
     assertEquals(0L, statsProvider.getLongValue(TaskGroups.SCHEDULE_ATTEMPTS_BLOCKS));
   }
 
+  // Invoke the task directly to observe its exception and interrupt contract. A scheduled future
+  // intentionally captures exceptions instead of propagating them from the fake clock's advance.
+  private Capture<Runnable> captureScheduledWork() {
+    ScheduledExecutorService executor = createMock(ScheduledExecutorService.class);
+    ScheduledFuture<?> future = createMock(ScheduledFuture.class);
+    taskGroups = new TaskGroups(
+        executor,
+        new TaskGroupsSettings(FIRST_SCHEDULE_DELAY, backoffStrategy, rateLimiter, 2),
+        taskScheduler,
+        rescheduleCalculator,
+        batchWorker,
+        statsProvider);
+    Capture<Runnable> work = Capture.newInstance();
+    EasyMock.<ScheduledFuture<?>>expect(executor.schedule(
+        capture(work), eq(FIRST_SCHEDULE_DELAY.as(Time.MILLISECONDS)),
+        eq(TimeUnit.MILLISECONDS))).andReturn(future);
+    return work;
+  }
+
   @Test
   public void testFailedBatchDoesNotInterruptCaller() {
+    Capture<Runnable> scheduled = captureScheduledWork();
     RuntimeException failure = new RuntimeException("batch failed");
     expect(rateLimiter.acquire()).andReturn(0D);
     expect(batchWorker.execute(anyObject())).andReturn(CompletableFuture.failedFuture(failure));
@@ -118,7 +143,7 @@ public class TaskGroupsTest extends EasyMockTest {
     taskGroups.taskChangedState(TaskStateChange.transition(makeTask(TASK_A_ID), INIT));
     assertFalse(Thread.currentThread().isInterrupted());
     try {
-      clock.advance(FIRST_SCHEDULE_DELAY);
+      scheduled.getValue().run();
       fail("Expected failed batch");
     } catch (RuntimeException e) {
       assertTrue(e.getCause() instanceof ExecutionException);
@@ -131,6 +156,7 @@ public class TaskGroupsTest extends EasyMockTest {
 
   @Test
   public void testInterruptedBatchPreservesInterrupt() {
+    Capture<Runnable> scheduled = captureScheduledWork();
     expect(rateLimiter.acquire()).andReturn(0D);
     expect(batchWorker.execute(anyObject())).andReturn(new CompletableFuture<>());
     control.replay();
@@ -138,7 +164,7 @@ public class TaskGroupsTest extends EasyMockTest {
     taskGroups.taskChangedState(TaskStateChange.transition(makeTask(TASK_A_ID), INIT));
     Thread.currentThread().interrupt();
     try {
-      clock.advance(FIRST_SCHEDULE_DELAY);
+      scheduled.getValue().run();
       fail("Expected interrupted batch");
     } catch (RuntimeException e) {
       assertTrue(e.getCause() instanceof InterruptedException);

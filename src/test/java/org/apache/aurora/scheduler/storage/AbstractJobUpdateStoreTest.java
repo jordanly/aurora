@@ -168,7 +168,7 @@ public abstract class AbstractJobUpdateStoreTest {
                     ramMb(Long.MAX_VALUE),
                     diskMb(Long.MAX_VALUE)));
 
-    IJobUpdateDetails update = makeFullyPopulatedUpdate(updateId);
+    IJobUpdateDetails update = IJobUpdateDetails.build(builder);
     StorageEntityUtil.assertFullyPopulated(
         update,
         StorageEntityUtil.getField(JobUpdateSummary.class, "state"),

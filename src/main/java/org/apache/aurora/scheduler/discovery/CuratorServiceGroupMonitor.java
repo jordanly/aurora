@@ -18,7 +18,7 @@ import java.util.Optional;
 import java.util.function.Predicate;
 
 import com.google.common.collect.ImmutableSet;
-import com.google.gson.JsonSyntaxException;
+import com.google.gson.JsonParseException;
 
 import org.apache.aurora.GuavaUtils;
 import org.apache.aurora.scheduler.app.ServiceGroupMonitor;
@@ -96,7 +96,7 @@ class CuratorServiceGroupMonitor implements ServiceGroupMonitor {
   private Optional<ServiceInstance> extractServiceInstance(ChildData data) {
     try {
       return Optional.of(Encoding.decode(data.getData()));
-    } catch (JsonSyntaxException e) {
+    } catch (JsonParseException e) {
       LOG.error("Failed to deserialize ServiceInstance from " + data, e);
       return Optional.empty();
     }

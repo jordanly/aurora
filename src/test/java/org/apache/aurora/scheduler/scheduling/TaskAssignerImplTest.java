@@ -13,6 +13,7 @@
  */
 package org.apache.aurora.scheduler.scheduling;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -20,12 +21,18 @@ import java.util.Set;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 
+import org.apache.aurora.common.quantity.Amount;
+import org.apache.aurora.common.quantity.Time;
 import org.apache.aurora.common.testing.easymock.EasyMockTest;
+import org.apache.aurora.common.util.testing.FakeClock;
 import org.apache.aurora.gen.AssignedTask;
 import org.apache.aurora.gen.Attribute;
+import org.apache.aurora.gen.Constraint;
 import org.apache.aurora.gen.HostAttributes;
 import org.apache.aurora.gen.JobKey;
+import org.apache.aurora.gen.LimitConstraint;
 import org.apache.aurora.gen.TaskConfig;
+import org.apache.aurora.gen.TaskConstraint;
 import org.apache.aurora.scheduler.base.InstanceKeys;
 import org.apache.aurora.scheduler.base.SchedulerException;
 import org.apache.aurora.scheduler.base.TaskGroupKey;
@@ -35,6 +42,8 @@ import org.apache.aurora.scheduler.execution.TaskFactory;
 import org.apache.aurora.scheduler.execution.TestPreparedTask;
 import org.apache.aurora.scheduler.filter.AttributeAggregate;
 import org.apache.aurora.scheduler.filter.SchedulingFilter.ResourceRequest;
+import org.apache.aurora.scheduler.filter.SchedulingFilter.UnusedResource;
+import org.apache.aurora.scheduler.filter.SchedulingFilterImpl;
 import org.apache.aurora.scheduler.offers.HostOffer;
 import org.apache.aurora.scheduler.offers.OfferManager;
 import org.apache.aurora.scheduler.state.StateChangeResult;
@@ -395,7 +404,7 @@ public class TaskAssignerImplTest extends EasyMockTest {
     HostOffer occupied = occupiedHealthOffer();
     expectNoUpdateReservations(2);
     expect(offerManager.getAllMatching(GROUP_KEY, resourceRequest))
-        .andReturn(java.util.List.of(occupied, OFFER_2));
+        .andReturn(List.of(occupied, OFFER_2));
     expectAssignTask(OFFER_2.getOffer());
     expect(taskFactory.prepare(TASK, OFFER_2.getOffer(), false)).andReturn(PREPARED_TASK);
     offerManager.launchTask(OFFER_2.getOfferId(), PREPARED_TASK);
@@ -409,7 +418,7 @@ public class TaskAssignerImplTest extends EasyMockTest {
     HostOffer occupied = occupiedHealthOffer();
     expectNoUpdateReservations(1);
     expect(offerManager.getAllMatching(GROUP_KEY, resourceRequest))
-        .andReturn(java.util.List.of(occupied));
+        .andReturn(List.of(occupied));
     control.replay();
     assertEquals(NO_ASSIGNMENT, assigner.maybeAssign(storeProvider,
         resourceRequest, GROUP_KEY, ImmutableSet.of(TASK), NO_RESERVATION));
@@ -424,6 +433,98 @@ public class TaskAssignerImplTest extends EasyMockTest {
     control.replay();
     assertEquals(NO_ASSIGNMENT, assigner.maybeAssign(storeProvider,
         resourceRequest, GROUP_KEY, ImmutableSet.of(TASK), NO_RESERVATION));
+  }
+
+  @Test
+  public void testBatchHonorsRackLimit() throws Exception {
+    checkBatchRackLimit("rack-a", false);
+  }
+
+  @Test
+  public void testBatchUsesDifferentRacks() throws Exception {
+    checkBatchRackLimit("rack-b", false);
+  }
+
+  @Test
+  public void testBatchPreservesReservationRejectedByRackLimit() throws Exception {
+    checkBatchRackLimit("rack-a", true);
+  }
+
+  private void checkBatchRackLimit(String secondRack, boolean reserved) throws Exception {
+    TaskConfig config = TASK.getTask().newBuilder()
+        .setResources(ImmutableSet.of())
+        .setConstraints(ImmutableSet.of(new Constraint(
+            "rack", TaskConstraint.limit(new LimitConstraint(1)))));
+    IAssignedTask first = IAssignedTask.build(TASK.newBuilder().setTask(config).setInstanceId(0));
+    IAssignedTask second = IAssignedTask.build(first.newBuilder()
+        .setTaskId("second").setInstanceId(1));
+    TaskGroupKey key = TaskGroupKey.from(first.getTask());
+    ResourceRequest request = ResourceRequest.fromTask(
+        first.getTask(), NO_OVERHEAD_EXECUTOR, aggregate, TaskTestUtil.TIER_MANAGER);
+    HostOffer firstOffer = rackOffer(OFFER, "rack-a");
+    HostOffer secondOffer = rackOffer(OFFER_2, secondRack);
+    SchedulingFilterImpl filter = new SchedulingFilterImpl(
+        Amount.of(0L, Time.SECONDS), new FakeClock());
+
+    expect(updateAgentReserver.getAgent(InstanceKeys.from(JOB, 0)))
+        .andReturn(Optional.empty());
+    expect(updateAgentReserver.getAgent(InstanceKeys.from(JOB, 1)))
+        .andReturn(reserved ? Optional.of(secondOffer.getAgentId()) : Optional.empty());
+    expect(updateAgentReserver.isReserved(anyString())).andReturn(false).anyTimes();
+    expect(offerManager.getAllMatching(key, request)).andAnswer(() ->
+        List.of(firstOffer, secondOffer).stream()
+            .filter(value -> filter.filter(new UnusedResource(value, false), request).isEmpty())
+            .toList()).times(reserved ? 1 : 2);
+    if (reserved) {
+      // A rejected affinity offer must remain reserved, without falling back to ordinary offers.
+      expect(offerManager.getMatching(secondOffer.getAgentId(), request)).andAnswer(() ->
+          Optional.of(secondOffer).filter(value ->
+              filter.filter(new UnusedResource(value, false), request).isEmpty()));
+    }
+    expectAssignTask(firstOffer.getOffer(), first);
+    expect(taskFactory.prepare(first, firstOffer.getOffer(), false)).andReturn(PREPARED_TASK);
+    offerManager.launchTask(firstOffer.getOfferId(), PREPARED_TASK);
+    boolean differentRacks = !"rack-a".equals(secondRack);
+    if (differentRacks) {
+      TestPreparedTask prepared =
+          new TestPreparedTask(second.getTaskId(), secondOffer.getAgentId());
+      expectAssignTask(secondOffer.getOffer(), second);
+      expect(taskFactory.prepare(second, secondOffer.getOffer(), false)).andReturn(prepared);
+      offerManager.launchTask(secondOffer.getOfferId(), prepared);
+    }
+
+    control.replay();
+    assertEquals(differentRacks ? ImmutableSet.of(first.getTaskId(), second.getTaskId())
+            : ImmutableSet.of(first.getTaskId()),
+        assigner.maybeAssign(storeProvider, request, key,
+            ImmutableSet.of(first, second), NO_RESERVATION));
+    assertEquals(1L, aggregate.getNumTasksWithAttribute("rack", "rack-a"));
+    assertEquals(differentRacks ? 1L : 0L,
+        aggregate.getNumTasksWithAttribute("rack", "rack-b"));
+  }
+
+  private HostOffer rackOffer(HostOffer offer, String rack) {
+    return new HostOffer(offer.getOffer(), IHostAttributes.build(offer.getAttributes().newBuilder()
+        .setAttributes(ImmutableSet.of(new Attribute("rack", ImmutableSet.of(rack))))));
+  }
+
+  @Test
+  public void testUsedAffinityOfferKeepsSecondReservation() throws Exception {
+    IAssignedTask second = makeTask("second", JOB, 1).getAssignedTask();
+    IInstanceKey secondKey = InstanceKeys.from(JOB, 1);
+    expect(updateAgentReserver.getAgent(INSTANCE_KEY)).andReturn(Optional.of(SLAVE_ID));
+    expect(updateAgentReserver.getAgent(secondKey)).andReturn(Optional.of(SLAVE_ID));
+    expect(offerManager.getMatching(SLAVE_ID, resourceRequest))
+        .andReturn(Optional.of(OFFER)).times(2);
+    updateAgentReserver.release(SLAVE_ID, INSTANCE_KEY);
+    expectAssignTask(AGENT_OFFER);
+    expect(taskFactory.prepare(TASK, AGENT_OFFER, false)).andReturn(PREPARED_TASK);
+    offerManager.launchTask(OFFER.getOfferId(), PREPARED_TASK);
+
+    control.replay();
+    assertEquals(ImmutableSet.of(TASK.getTaskId()), assigner.maybeAssign(
+        storeProvider, resourceRequest, GROUP_KEY,
+        ImmutableSet.of(TASK, second), NO_RESERVATION));
   }
 
   private void expectAssignTask(ExecutionOffer offer) {

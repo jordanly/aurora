@@ -208,7 +208,7 @@ class AuroraCronJob implements Job, EventSubscriber {
               delayedStartBackoff.getBackoffStrategy(),
               store -> {
                 Query.Builder query = Query.taskScoped(activeTasks).active();
-                if (Iterables.isEmpty(storeProvider.getTaskStore().fetchTasks(query))) {
+                if (Iterables.isEmpty(store.getTaskStore().fetchTasks(query))) {
                   LOG.info("Initiating delayed launch of cron " + path);
                   stateManager.insertPendingTasks(store, task, instanceIds);
                   return new BatchWorker.Result<>(true, null);

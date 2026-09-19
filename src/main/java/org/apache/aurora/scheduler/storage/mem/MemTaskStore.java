@@ -37,7 +37,6 @@ import com.google.common.base.Supplier;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
@@ -54,6 +53,7 @@ import org.apache.aurora.scheduler.base.Tasks;
 import org.apache.aurora.scheduler.storage.TaskStore;
 import org.apache.aurora.scheduler.storage.entities.IJobKey;
 import org.apache.aurora.scheduler.storage.entities.IScheduledTask;
+import org.apache.aurora.scheduler.storage.entities.ITaskConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -154,8 +154,6 @@ class MemTaskStore implements TaskStore.Mutable {
     return jobIndex.keySet();
   }
 
-  private final Function<IScheduledTask, Task> toTask = task -> new Task(task, configInterner);
-
   @Timed("mem_storage_save_tasks")
   @Override
   public void saveTasks(Set<IScheduledTask> newTasks) {
@@ -163,11 +161,26 @@ class MemTaskStore implements TaskStore.Mutable {
     Preconditions.checkState(Tasks.ids(newTasks).size() == newTasks.size(),
         "Proposed new tasks would create task ID collision.");
 
-    Iterable<Task> canonicalized = Iterables.transform(newTasks, toTask);
-    tasks.putAll(Maps.uniqueIndex(canonicalized, task -> Tasks.id(task.storedTask)));
-    for (SecondaryIndex<?> index : secondaryIndices) {
-      index.insert(Iterables.transform(canonicalized, task -> task.storedTask));
+    newTasks.forEach(this::replaceTask);
+  }
+
+  private IScheduledTask replaceTask(IScheduledTask replacement) {
+    String id = Tasks.id(replacement);
+    Task previous = tasks.get(id);
+    if (previous != null) {
+      configInterner.removeAssociation(
+          previous.storedTask.getAssignedTask().getTask().newBuilder(), id);
     }
+    Task canonical = new Task(replacement, configInterner);
+    tasks.put(id, canonical);
+    for (SecondaryIndex<?> index : secondaryIndices) {
+      if (previous == null) {
+        index.insert(canonical.storedTask);
+      } else {
+        index.replace(previous.storedTask, canonical.storedTask);
+      }
+    }
+    return canonical.storedTask;
   }
 
   @Timed("mem_storage_delete_all_tasks")
@@ -211,10 +224,7 @@ class MemTaskStore implements TaskStore.Mutable {
         Preconditions.checkState(
             Tasks.id(original).equals(Tasks.id(maybeMutated)),
             "A task's ID may not be mutated.");
-        tasks.put(Tasks.id(maybeMutated), toTask.apply(maybeMutated));
-        for (SecondaryIndex<?> index : secondaryIndices) {
-          index.replace(original, maybeMutated);
-        }
+        return replaceTask(maybeMutated);
       }
       return maybeMutated;
     });
@@ -266,9 +276,6 @@ class MemTaskStore implements TaskStore.Mutable {
     private final IScheduledTask storedTask;
 
     Task(IScheduledTask storedTask, Interner<TaskConfig, String> interner) {
-      interner.removeAssociation(
-          storedTask.getAssignedTask().getTask().newBuilder(),
-          Tasks.id(storedTask));
       TaskConfig canonical = interner.addAssociation(
           storedTask.getAssignedTask().getTask().newBuilder(),
           Tasks.id(storedTask));
@@ -291,6 +298,11 @@ class MemTaskStore implements TaskStore.Mutable {
     public int hashCode() {
       return storedTask.hashCode();
     }
+  }
+
+  @VisibleForTesting
+  boolean isConfigInterned(ITaskConfig config) {
+    return configInterner.isInterned(config.newBuilder());
   }
 
   @VisibleForTesting
@@ -339,12 +351,6 @@ class MemTaskStore implements TaskStore.Mutable {
 
     Set<K> keySet() {
       return ImmutableSet.copyOf(index.keySet());
-    }
-
-    void insert(Iterable<IScheduledTask> tasks) {
-      for (IScheduledTask task : tasks) {
-        insert(task);
-      }
     }
 
     void insert(IScheduledTask task) {

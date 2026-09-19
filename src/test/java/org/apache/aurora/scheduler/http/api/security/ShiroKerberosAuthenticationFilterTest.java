@@ -28,6 +28,7 @@ import com.google.inject.servlet.ServletModule;
 import com.google.inject.util.Providers;
 
 import org.apache.aurora.scheduler.http.AbstractJettyTest;
+import org.apache.aurora.scheduler.testing.LogCapture;
 import org.apache.shiro.authc.AuthenticationException;
 import org.apache.shiro.authc.AuthenticationToken;
 import org.apache.shiro.subject.Subject;
@@ -38,6 +39,8 @@ import static org.easymock.EasyMock.anyObject;
 import static org.easymock.EasyMock.expectLastCall;
 import static org.easymock.EasyMock.isA;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class ShiroKerberosAuthenticationFilterTest extends AbstractJettyTest {
   private static final String PATH = "/test";
@@ -93,29 +96,35 @@ public class ShiroKerberosAuthenticationFilterTest extends AbstractJettyTest {
   public void testRejectsMalformedMechanism() {
     replayAndStart();
 
-    jakarta.ws.rs.core.Response clientResponse = getRequestBuilder(PATH)
-        .header(HttpHeaders.AUTHORIZATION, "Basic asdf")
-        .get();
-    assertEquals(
-        HttpServletResponse.SC_BAD_REQUEST,
-        clientResponse.getStatus());
+    try (LogCapture logs = new LogCapture(ShiroKerberosAuthenticationFilter.class)) {
+      jakarta.ws.rs.core.Response clientResponse = getRequestBuilder(PATH)
+          .header(HttpHeaders.AUTHORIZATION, "Basic synthetic-header-secret")
+          .get();
+      assertEquals(HttpServletResponse.SC_BAD_REQUEST, clientResponse.getStatus());
+      assertTrue(logs.messages().contains("Malformed Authorize header"));
+      assertFalse(logs.messages().contains("synthetic-header-secret"));
+    }
   }
 
   @Test
   public void testLoginFailure401() {
     subject.login(isA(AuthenticationToken.class));
-    expectLastCall().andThrow(new AuthenticationException());
+    expectLastCall().andThrow(new AuthenticationException("synthetic-auth-secret"));
 
     replayAndStart();
 
-    jakarta.ws.rs.core.Response clientResponse = getRequestBuilder(PATH)
-        .header(HttpHeaders.AUTHORIZATION, ShiroKerberosAuthenticationFilter.NEGOTIATE + " asdf")
-        .get();
+    try (LogCapture logs = new LogCapture(ShiroKerberosAuthenticationFilter.class)) {
+      jakarta.ws.rs.core.Response clientResponse = getRequestBuilder(PATH)
+          .header(HttpHeaders.AUTHORIZATION, ShiroKerberosAuthenticationFilter.NEGOTIATE + " asdf")
+          .get();
 
-    assertEquals(HttpServletResponse.SC_UNAUTHORIZED, clientResponse.getStatus());
-    assertEquals(
-        ShiroKerberosAuthenticationFilter.NEGOTIATE,
-        clientResponse.getHeaders().getFirst(HttpHeaders.WWW_AUTHENTICATE));
+      assertEquals(HttpServletResponse.SC_UNAUTHORIZED, clientResponse.getStatus());
+      assertEquals(
+          ShiroKerberosAuthenticationFilter.NEGOTIATE,
+          clientResponse.getHeaders().getFirst(HttpHeaders.WWW_AUTHENTICATE));
+      assertTrue(logs.messages().contains("Kerberos login failed"));
+      assertFalse(logs.messages().contains("synthetic-auth-secret"));
+    }
   }
 
   @Test

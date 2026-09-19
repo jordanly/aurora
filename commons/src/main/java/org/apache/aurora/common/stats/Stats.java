@@ -14,6 +14,8 @@
 package org.apache.aurora.common.stats;
 
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
@@ -57,6 +59,9 @@ public class Stats {
   private static final Cache<String, RecordingStat<? extends Number>> NUMERIC_STATS =
       CacheBuilder.newBuilder().build();
 
+  private record CounterRegistration(Number counter, Stat<?> stat, boolean tracked) { }
+  private static final Map<String, CounterRegistration> COUNTERS = new HashMap<>();
+
   public static String normalizeName(String name) {
     return NOT_NAME_CHAR.matcher(name).replaceAll("_");
   }
@@ -76,13 +81,7 @@ public class Stats {
   public static final StatsProvider STATS_PROVIDER = new StatsProvider() {
     private final StatsProvider untracked = new StatsProvider() {
       @Override public AtomicLong makeCounter(String name) {
-        final AtomicLong longVar = new AtomicLong();
-        Stats.exportStatic(new StatImpl<Long>(name) {
-          @Override public Long read() {
-            return longVar.get();
-          }
-        });
-        return longVar;
+        return exportLong(name, false);
       }
 
       @Override public <T extends Number> Stat<T> makeGauge(String name, final Supplier<T> gauge) {
@@ -91,6 +90,11 @@ public class Stats {
             return gauge.get();
           }
         });
+      }
+
+      @Override
+      public <T extends Number> Registration registerGauge(String name, Supplier<T> gauge) {
+        return registerOwnedGauge(name, gauge, false);
       }
 
       @Override public StatsProvider untracked() {
@@ -109,6 +113,10 @@ public class Stats {
           return gauge.get();
         }
       });
+    }
+
+    @Override public <T extends Number> Registration registerGauge(String name, Supplier<T> gauge) {
+      return registerOwnedGauge(name, gauge, true);
     }
 
     @Override public AtomicLong makeCounter(String name) {
@@ -166,7 +174,7 @@ public class Stats {
    * @return A reference to the stat that was stored.  The stat returned may not be equal to the
    *    stat provided.  If a variable was already returned with the same
    */
-  public static <T extends Number> Stat<T> export(Stat<T> var) {
+  public static synchronized <T extends Number> Stat<T> export(Stat<T> var) {
     String validatedName = validateName(MorePreconditions.checkNotBlank(var.getName()));
     ExportStat exportStat = new ExportStat(validatedName, var);
     try {
@@ -212,13 +220,21 @@ public class Stats {
    * @param name The name to export the stat with.
    * @return A reference to the {@link AtomicInteger} created.
    */
-  public static AtomicInteger exportInt(final String name) {
-    final AtomicInteger intVar = new AtomicInteger(0);
-    export(new SampledStat<Integer>(name, 0) {
-      @Override public Integer doSample() { return intVar.get(); }
+  public static synchronized AtomicInteger exportInt(final String name) {
+    String key = validateName(MorePreconditions.checkNotBlank(name));
+    CounterRegistration existing = existingCounter(key, true);
+    if (existing != null) {
+      if (existing.counter() instanceof AtomicInteger counter) {
+        return counter;
+      }
+      throw new IllegalArgumentException("Counter type collision on " + key);
+    }
+    AtomicInteger counter = new AtomicInteger();
+    Stat<Integer> stat = export(new SampledStat<Integer>(key, 0) {
+      @Override public Integer doSample() { return counter.get(); }
     });
-
-    return intVar;
+    COUNTERS.put(key, new CounterRegistration(counter, stat, true));
+    return counter;
   }
 
   /**
@@ -228,12 +244,57 @@ public class Stats {
    * @return A reference to the {@link AtomicLong} created.
    */
   public static AtomicLong exportLong(String name) {
-    final AtomicLong longVar = new AtomicLong(0L);
-    export(new StatImpl<Long>(name) {
-      @Override public Long read() { return longVar.get(); }
-    });
+    return exportLong(name, true);
+  }
 
-    return longVar;
+  private static synchronized AtomicLong exportLong(String name, boolean tracked) {
+    String key = validateName(MorePreconditions.checkNotBlank(name));
+    CounterRegistration existing = existingCounter(key, tracked);
+    if (existing != null) {
+      if (existing.counter() instanceof AtomicLong counter) {
+        return counter;
+      }
+      throw new IllegalArgumentException("Counter type collision on " + key);
+    }
+    AtomicLong counter = new AtomicLong();
+    Stat<Long> value = new StatImpl<Long>(key) {
+      @Override public Long read() { return counter.get(); }
+    };
+    Stat<Long> stat = tracked ? export(value) : exportStatic(value);
+    COUNTERS.put(key, new CounterRegistration(counter, stat, tracked));
+    return counter;
+  }
+
+  private static CounterRegistration existingCounter(String key, boolean tracked) {
+    CounterRegistration existing = COUNTERS.get(key);
+    if (existing != null && existing.stat() == VAR_MAP.get(key)
+        && existing.tracked() == tracked) {
+      return existing;
+    }
+    if (VAR_MAP.containsKey(key) || NUMERIC_STATS.getIfPresent(key) != null) {
+      throw new IllegalArgumentException("Metric name collision on " + key);
+    }
+    return null;
+  }
+
+  private static synchronized <T extends Number> StatsProvider.Registration registerOwnedGauge(
+      String name, Supplier<T> supplier, boolean tracked) {
+    java.util.Objects.requireNonNull(supplier);
+    String key = validateName(MorePreconditions.checkNotBlank(name));
+    if (VAR_MAP.containsKey(key) || NUMERIC_STATS.getIfPresent(key) != null) {
+      throw new IllegalArgumentException("Metric name collision on " + key);
+    }
+    Stat<T> gauge = new StatImpl<T>(key) {
+      @Override public T read() { return supplier.get(); }
+    };
+    Stat<T> registered = tracked ? export(gauge) : exportStatic(gauge);
+    return () -> {
+      synchronized (Stats.class) {
+        VAR_MAP.remove(key, registered);
+        NUMERIC_STATS.asMap().remove(key, registered);
+        ORDERED_NUMERIC_STATS.remove(registered);
+      }
+    };
   }
 
   /**
@@ -242,7 +303,7 @@ public class Stats {
    * @param var Variable to statically export.
    * @return A reference back to the provided {@link Stat}.
    */
-  static <T> Stat<T> exportStatic(Stat<T> var) {
+  static synchronized <T> Stat<T> exportStatic(Stat<T> var) {
     String validatedName = validateName(MorePreconditions.checkNotBlank(var.getName()));
     exportStaticInternal(validatedName, var);
     return var;
@@ -268,8 +329,9 @@ public class Stats {
   }
 
   @VisibleForTesting
-  public static void flush() {
+  public static synchronized void flush() {
     VAR_MAP.clear();
+    COUNTERS.clear();
     ORDERED_NUMERIC_STATS.clear();
     NUMERIC_STATS.invalidateAll();
   }

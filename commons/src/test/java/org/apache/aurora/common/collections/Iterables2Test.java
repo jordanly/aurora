@@ -14,6 +14,7 @@
 package org.apache.aurora.common.collections;
 
 import java.util.List;
+import java.util.NoSuchElementException;
 
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
@@ -22,6 +23,7 @@ import org.junit.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertThrows;
 
 /**
  * @author William Farner
@@ -74,6 +76,24 @@ public class Iterables2Test {
     Iterables.removeIf(meta, input -> Iterables.contains(input, DEFAULT));
 
     assertValues(meta, list(1, 5, 9));
+  }
+
+  @Test
+  public void testZipExhaustionAndRemovalContract() {
+    List<Integer> first = list(1, 2);
+    List<Integer> second = list(3);
+    var zipped = Iterables2.zip(List.of(first, second), 0).iterator();
+    assertThrows(IllegalStateException.class, zipped::remove);
+    assertThat(zipped.next(), is(List.of(1, 3)));
+    zipped.remove();
+    assertThrows(IllegalStateException.class, zipped::remove);
+    assertThat(zipped.next(), is(List.of(2, 0)));
+    assertThrows(NoSuchElementException.class, zipped::next);
+    zipped.remove();
+    assertThat(first, is(List.of()));
+    assertThat(second, is(List.of()));
+    assertThrows(NoSuchElementException.class,
+        Iterables2.zip(List.<Iterable<Integer>>of(), 0).iterator()::next);
   }
 
   private static List<Integer> list(Integer... ints) {

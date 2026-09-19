@@ -19,9 +19,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
-import com.google.common.base.Function;
 import com.google.common.base.MoreObjects;
-import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -290,9 +288,6 @@ public class TaskStateMachineTest {
     expectUpdateStateOnTransitionTo(THROTTLED, PENDING);
   }
 
-  private static final Function<Action, SideEffect> TO_SIDE_EFFECT =
-      action -> new SideEffect(action, Optional.empty());
-
   private void legalTransition(TaskState state, SideEffect.Action... expectedActions) {
     legalTransition(state, ImmutableSet.copyOf(expectedActions));
   }
@@ -303,7 +298,7 @@ public class TaskStateMachineTest {
     assertEquals("Transition to " + state + " was not successful", SUCCESS, result.getResult());
     assertNotEquals(previousState, stateMachine.getPreviousState());
     assertEquals(
-        FluentIterable.from(expectedActions).transform(TO_SIDE_EFFECT).toSet(),
+        expectedActions,
         result.getSideEffects());
   }
 
@@ -316,11 +311,10 @@ public class TaskStateMachineTest {
   private void illegalTransition(TaskState state, SideEffect.Action... expectedActions) {
     illegalTransition(
         state,
-        FluentIterable.from(
-            ImmutableSet.copyOf(expectedActions)).transform(TO_SIDE_EFFECT).toSet());
+        ImmutableSet.copyOf(expectedActions));
   }
 
-  private void illegalTransition(TaskState state, Set<SideEffect> sideEffects) {
+  private void illegalTransition(TaskState state, Set<Action> sideEffects) {
     TransitionResult expected = new TransitionResult(
         sideEffects.isEmpty() ? ILLEGAL : ILLEGAL_WITH_SIDE_EFFECTS,
         ImmutableSet.copyOf(sideEffects));
@@ -338,38 +332,38 @@ public class TaskStateMachineTest {
 
   private static final TransitionResult SAVE = new TransitionResult(
       SUCCESS,
-      ImmutableSet.of(new SideEffect(Action.SAVE_STATE, Optional.empty())));
+      ImmutableSet.of(Action.SAVE_STATE));
   private static final TransitionResult SAVE_AND_KILL = new TransitionResult(
       SUCCESS,
       ImmutableSet.of(
-          new SideEffect(Action.SAVE_STATE, Optional.empty()),
-          new SideEffect(Action.KILL, Optional.empty())));
+          Action.SAVE_STATE,
+          Action.KILL));
   private static final TransitionResult SAVE_AND_RESCHEDULE = new TransitionResult(
       SUCCESS,
       ImmutableSet.of(
-          new SideEffect(Action.SAVE_STATE, Optional.empty()),
-          new SideEffect(Action.RESCHEDULE, Optional.empty())));
+          Action.SAVE_STATE,
+          Action.RESCHEDULE));
   private static final TransitionResult SAVE_KILL_AND_RESCHEDULE = new TransitionResult(
       SUCCESS,
       ImmutableSet.of(
-          new SideEffect(Action.SAVE_STATE, Optional.empty()),
-          new SideEffect(Action.KILL, Optional.empty()),
-          new SideEffect(Action.RESCHEDULE, Optional.empty())));
+          Action.SAVE_STATE,
+          Action.KILL,
+          Action.RESCHEDULE));
   private static final TransitionResult ILLEGAL_KILL = new TransitionResult(
       ILLEGAL_WITH_SIDE_EFFECTS,
-      ImmutableSet.of(new SideEffect(Action.KILL, Optional.empty())));
+      ImmutableSet.of(Action.KILL));
   private static final TransitionResult TRANSITION_TO_LOST = new TransitionResult(
       SUCCESS,
-      ImmutableSet.of(new SideEffect(Action.TRANSITION_TO_LOST, Optional.empty()),
-          new SideEffect(Action.SAVE_STATE, Optional.empty())));
+      ImmutableSet.of(Action.TRANSITION_TO_LOST,
+          Action.SAVE_STATE));
   private static final TransitionResult RECORD_FAILURE = new TransitionResult(
       SUCCESS,
       ImmutableSet.of(
-          new SideEffect(Action.SAVE_STATE, Optional.empty()),
-          new SideEffect(Action.INCREMENT_FAILURES, Optional.empty())));
+          Action.SAVE_STATE,
+          Action.INCREMENT_FAILURES));
   private static final TransitionResult DELETE_TASK = new TransitionResult(
       SUCCESS,
-      ImmutableSet.of(new SideEffect(Action.DELETE, Optional.empty())));
+      ImmutableSet.of(Action.DELETE));
 
   private static final class TestCase {
     private final boolean taskPresent;

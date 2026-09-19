@@ -46,6 +46,7 @@ import org.apache.aurora.scheduler.http.api.security.HttpSecurityModule.Options.
 import org.apache.aurora.scheduler.http.api.security.ShiroIniConverterTest;
 import org.apache.aurora.scheduler.offers.OfferOrder;
 import org.apache.aurora.scheduler.sla.MetricCalculator.MetricCategory;
+import org.apache.aurora.scheduler.testing.LogCapture;
 import org.apache.shiro.authc.credential.AllowAllCredentialsMatcher;
 import org.apache.shiro.config.Ini;
 import org.apache.shiro.config.Ini.Section;
@@ -55,12 +56,28 @@ import org.junit.Test;
 
 import static org.apache.aurora.scheduler.http.api.security.ShiroIniConverterTest.EXAMPLE_RESOURCE;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class CommandLineTest {
   @Before
   public void setUp() {
     CommandLine.initializeForTest();
+  }
+
+  @Test
+  public void testOptionValuesAreNotLogged() {
+    CommandLine.clearForTest();
+    String secret = "synthetic-zk-password";
+    try (LogCapture logs = new LogCapture(CommandLine.class)) {
+      CliOptions options = CommandLine.parseOptions(
+          "-cluster_name=test", "-serverset_path=/test", "-zk_endpoints=localhost:2181",
+          "-go_agent_config=enrollment.json", "-zk_digest_credentials=user:" + secret);
+      assertEquals("user:" + secret, options.zk.digestCredentials);
+      assertTrue(logs.messages().contains("-zk_digest_credentials: [redacted]"));
+      assertFalse(logs.messages().contains(secret));
+    }
   }
 
   @Test

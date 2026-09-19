@@ -78,6 +78,11 @@ public class EncodingTest {
     assertInvalidDeserialize("");
     assertInvalidDeserialize("[]");
 
+    assertInvalidDeserialize((byte[]) null);
+    assertInvalidDeserialize("{\"serviceEndpoint\":{\"port\":1000}}");
+    assertInvalidDeserialize("{\"serviceEndpoint\":{\"host\":\"foo\",\"port\":1000},"
+        + "\"additionalEndpoints\":{\"http\":null}}");
+
     // Missing required fields.
     assertInvalidDeserialize("{}");
     assertInvalidDeserialize("{\"status\":\"ALIVE\"}");

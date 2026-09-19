@@ -56,30 +56,37 @@ final class WireJson {
     }
   }
 
-  static void validateWatchFrame(JsonNode frame) {
-    checkDepth(frame, 0);
-    JsonNode normalized = frame.deepCopy();
-    JsonNode attempts = normalized.path("state").path("attempts");
-    if (attempts.isObject()) {
-      for (JsonNode attempt : attempts) {
-        JsonNode execution = attempt.path("execution");
-        JsonNode exitCode = execution.path("exitCode");
-        if (execution.isObject() && exitCode.isIntegralNumber()
-            && exitCode.canConvertToLong() && exitCode.asLong() == -1) {
-          // Go reports -1 when a signal terminates a process. Only this diagnostic
-          // location permits it; command canonicalization remains nonnegative.
-          // Validate a copy so the returned frame preserves the actual exit code.
-          ((ObjectNode) execution).put("exitCode", 0);
-        }
-      }
-    }
-    bytes(normalized);
+  private enum WatchPath { ROOT, STATE, ATTEMPTS, ATTEMPT, EXECUTION, EXIT_CODE, OTHER }
+
+  static void validate(JsonNode value) {
+    validate(value, 0, WatchPath.OTHER);
   }
 
-  private static void checkDepth(JsonNode value, int depth) {
+  static void validateWatchFrame(JsonNode frame) {
+    validate(frame, 0, WatchPath.ROOT);
+  }
+
+  private static void validate(JsonNode value, int depth, WatchPath path) {
     require(depth <= 64, "JSON nesting limit");
-    if (value.isContainerNode()) {
-      value.forEach(child -> checkDepth(child, depth + 1));
+    if (value.isObject()) {
+      value.properties().forEach(entry -> {
+        ascii(entry.getKey());
+        WatchPath child = switch (path) {
+          case ROOT -> "state".equals(entry.getKey()) ? WatchPath.STATE : WatchPath.OTHER;
+          case STATE -> "attempts".equals(entry.getKey()) ? WatchPath.ATTEMPTS : WatchPath.OTHER;
+          case ATTEMPTS -> WatchPath.ATTEMPT;
+          case ATTEMPT -> "execution".equals(entry.getKey())
+              ? WatchPath.EXECUTION : WatchPath.OTHER;
+          case EXECUTION -> "exitCode".equals(entry.getKey())
+              ? WatchPath.EXIT_CODE : WatchPath.OTHER;
+          default -> WatchPath.OTHER;
+        };
+        validate(entry.getValue(), depth + 1, child);
+      });
+    } else if (value.isArray()) {
+      value.forEach(child -> validate(child, depth + 1, WatchPath.OTHER));
+    } else {
+      validateScalar(value, path == WatchPath.EXIT_CODE);
     }
   }
 
@@ -100,14 +107,19 @@ final class WireJson {
       value.forEach(item -> array.add(sorted(item, depth + 1)));
       return array;
     }
+    validateScalar(value, false);
+    return value;
+  }
+
+  private static void validateScalar(JsonNode value, boolean diagnosticExitCode) {
     if (value.isTextual()) {
       ascii(value.asText());
     } else if (value.isNumber()) {
       require(value.isIntegralNumber() && value.canConvertToLong()
-          && value.asLong() >= 0 && value.asLong() <= 9007199254740991L,
+          && (value.asLong() >= 0 || diagnosticExitCode && value.asLong() == -1)
+          && value.asLong() <= 9007199254740991L,
           "Protocol JSON numbers must be safe nonnegative integers");
     }
-    return value;
   }
 
   static String hash(byte[] bytes) {
@@ -135,7 +147,7 @@ final class WireJson {
     require(value.isObject(), "Expected object");
     Set<String> allowed = Set.of(names);
     value.fieldNames().forEachRemaining(
-        key -> require(allowed.contains(key), "Unknown field: " + key));
+        key -> require(allowed.contains(key), "Unknown protocol JSON field"));
   }
 
   static String string(JsonNode value) {

@@ -97,7 +97,7 @@ public class PendingTasksTest extends EasyMockTest {
 
     // Recording the return value of pendingTaskGroups.getGroups().
     List<TaskGroup> taskGroupList = new ArrayList<>();
-    expect(pendingTaskGroups.getGroups()).andReturn(taskGroupList).anyTimes();
+    expect(pendingTaskGroups.getGroups()).andReturn(taskGroupList).once();
 
     replay(pendingTaskGroups);
 
@@ -147,7 +147,7 @@ public class PendingTasksTest extends EasyMockTest {
     taskGroupList.add(taskGroup0);
     taskGroupList.add(taskGroup1);
     taskGroupList.add(taskGroup2);
-    expect(pendingTaskGroups.getGroups()).andReturn(taskGroupList).anyTimes();
+    expect(pendingTaskGroups.getGroups()).andReturn(taskGroupList).once();
 
     // Creating vetoes for CPU and RAM, corresponding to task0.
     ImmutableSet<Veto> vetoes = ImmutableSet.<Veto>builder()

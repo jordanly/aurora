@@ -56,7 +56,7 @@ final class Hosts {
                 new Attribute("rack", ImmutableSet.of(String.format(RACK_NAME_FORMAT, rackIndex))),
                 new Attribute("host", ImmutableSet.of(String.format(HOST_NAME_FORMAT, i)))))));
 
-        if (i % hostsPerRack == 0) {
+        if ((i + 1) % hostsPerRack == 0) {
           rackIndex++;
         }
       }

@@ -28,6 +28,7 @@ import org.slf4j.Logger;
 
 import static org.easymock.EasyMock.contains;
 import static org.easymock.EasyMock.expectLastCall;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class AsyncUtilTest extends EasyMockTest {
@@ -78,11 +79,41 @@ public class AsyncUtilTest extends EasyMockTest {
 
     ThreadPoolExecutor executor =
         AsyncUtil.loggingExecutor(1, 1, new LinkedBlockingQueue<>(), NAME_FORMAT, logger);
+    addTearDown(() -> {
+      executor.shutdownNow();
+      assertTrue(executor.awaitTermination(10, TimeUnit.SECONDS));
+    });
     executor.execute(() -> {
       throw new IllegalArgumentException("Expected exception.");
     });
 
     assertTrue(latch.await(30, TimeUnit.SECONDS));
+  }
+
+  @Test
+  public void testCancelledTaskDoesNotKillWorkerOrLogFailure() throws Exception {
+    control.replay();
+    var executor = scheduledExecutor();
+    long workerId = executor.submit(() -> Thread.currentThread().threadId()).get();
+    CountDownLatch entered = new CountDownLatch(1);
+    CountDownLatch release = new CountDownLatch(1);
+    var task = executor.submit(() -> {
+      entered.countDown();
+      try {
+        assertTrue(release.await(10, TimeUnit.SECONDS));
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new AssertionError(e);
+      }
+    });
+    try {
+      assertTrue(entered.await(10, TimeUnit.SECONDS));
+      assertTrue(task.cancel(false));
+    } finally {
+      release.countDown();
+    }
+    assertEquals(workerId, executor.submit(() -> Thread.currentThread().threadId())
+        .get(10, TimeUnit.SECONDS).longValue());
   }
 
   private void expectLogging() {
@@ -95,6 +126,12 @@ public class AsyncUtilTest extends EasyMockTest {
   }
 
   private ScheduledThreadPoolExecutor scheduledExecutor() {
-    return AsyncUtil.singleThreadLoggingScheduledExecutor(NAME_FORMAT, logger);
+    ScheduledThreadPoolExecutor executor =
+        AsyncUtil.singleThreadLoggingScheduledExecutor(NAME_FORMAT, logger);
+    addTearDown(() -> {
+      executor.shutdownNow();
+      assertTrue(executor.awaitTermination(10, TimeUnit.SECONDS));
+    });
+    return executor;
   }
 }

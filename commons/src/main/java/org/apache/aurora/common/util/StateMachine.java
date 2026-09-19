@@ -26,7 +26,9 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
 import com.google.common.collect.HashMultimap;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
@@ -141,10 +143,11 @@ public class StateMachine<T> {
   public boolean transition(T nextState) throws IllegalStateTransitionException {
     boolean transitionAllowed = false;
 
-    T currentCopy = currentState;
+    T currentCopy;
 
     writeLock.lock();
     try {
+      currentCopy = currentState;
       if (stateTransitions.containsEntry(currentState, nextState)) {
         currentState = nextState;
         transitionAllowed = true;
@@ -412,8 +415,8 @@ public class StateMachine<T> {
       checkArgument(!stateTransitions.isEmpty(), "No state transitions were specified.");
       return new StateMachine<T>(name,
           initialState,
-          stateTransitions,
-          Consumers.combine(transitionCallbacks),
+          ImmutableSetMultimap.copyOf(stateTransitions),
+          Consumers.combine(ImmutableList.copyOf(transitionCallbacks)),
           throwOnBadTransition);
     }
   }

@@ -35,7 +35,6 @@ import org.apache.aurora.scheduler.BatchWorker;
 import org.apache.aurora.scheduler.BatchWorker.NoResult;
 import org.apache.aurora.scheduler.SchedulerServicesModule;
 import org.apache.aurora.scheduler.base.AsyncUtil;
-import org.apache.aurora.scheduler.base.TaskGroupKey;
 import org.apache.aurora.scheduler.config.CliOptions;
 import org.apache.aurora.scheduler.config.types.TimeAmount;
 import org.apache.aurora.scheduler.events.PubsubEventModule;
@@ -108,7 +107,7 @@ public class UpdaterModule extends AbstractModule {
         if (options.enableAffinity) {
           bind(BiCacheSettings.class).toInstance(
               new BiCacheSettings(options.affinityExpiration, "update_affinity"));
-          bind(new TypeLiteral<BiCache<IInstanceKey, TaskGroupKey>>() { }).in(Singleton.class);
+          bind(new TypeLiteral<BiCache<IInstanceKey, String>>() { }).in(Singleton.class);
           bind(UpdateAgentReserver.class).to(UpdateAgentReserver.UpdateAgentReserverImpl.class);
           bind(UpdateAgentReserver.UpdateAgentReserverImpl.class).in(Singleton.class);
         } else {

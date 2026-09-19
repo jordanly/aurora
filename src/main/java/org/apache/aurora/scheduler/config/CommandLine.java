@@ -113,6 +113,8 @@ public final class CommandLine {
    *
    * @param args Command line arguments.
    */
+  // Converter causes can quote credentials; the parse boundary deliberately drops their chain.
+  @SuppressWarnings("PMD.PreserveStackTrace")
   @VisibleForTesting
   public static CliOptions parseOptions(String... args) {
     JCommander parser = null;
@@ -129,9 +131,9 @@ public final class CommandLine {
       parser.parse(args);
       LOG.info("-----------------------------------------------------------------------");
       LOG.info("Parameters:");
+      // Option values and parsed configuration objects may contain credentials.
       parser.getParameters().stream()
-          .map(param ->
-              param.getLongestName() + ": " + param.getParameterized().get(param.getObject()))
+          .map(param -> param.getLongestName() + ": [redacted]")
           .sorted()
           .forEach(LOG::info);
       LOG.info("-----------------------------------------------------------------------");
@@ -139,12 +141,10 @@ public final class CommandLine {
       instance = options;
       return options;
     } catch (ParameterException e) {
-      if (parser != null) {
-        parser.usage();
-      }
-      LOG.error(e.getMessage());
+      // Converter messages and usage defaults can contain the original secret value.
+      LOG.error("Invalid command line options.");
       System.exit(1);
-      throw new RuntimeException(e);
+      throw new RuntimeException("Invalid command line options");
     }
   }
 

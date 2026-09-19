@@ -168,7 +168,7 @@ public class DataCompatibilityTest {
             .collect(Collectors.toSet()));
 
     // Introduce each op one at a time to pinpoint a specific failed op.
-    IntStream.range(1, goldenOps.size())
+    IntStream.rangeClosed(1, goldenOps.size())
         .forEach(i -> {
           NonVolatileStorage store = createStorage(new TestPersistence(goldenOps.subList(0, i)));
           store.prepare();

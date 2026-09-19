@@ -801,7 +801,7 @@ class SchedulerThriftInterface implements AnnotatedAuroraAdmin {
       return invalidRequest(NON_SERVICE_TASK);
     }
 
-    int totalInstancesFromGroups;
+    long totalInstancesFromGroups;
     JobUpdateSettings settings = requireNonNull(mutableRequest.getSettings());
 
     // Gracefully handle a client sending an update with an older thrift schema
@@ -821,7 +821,8 @@ class SchedulerThriftInterface implements AnnotatedAuroraAdmin {
         return invalidRequest(INVALID_GROUP_SIZE);
       }
 
-      totalInstancesFromGroups = strategy.getGroupSizes().stream().reduce(0, Integer::sum);
+      totalInstancesFromGroups = strategy.getGroupSizes().stream()
+          .mapToLong(Integer::longValue).sum();
     } else {
       return invalidRequest(UNKNOWN_UPDATE_STRATEGY);
     }
@@ -838,7 +839,7 @@ class SchedulerThriftInterface implements AnnotatedAuroraAdmin {
       return invalidRequest(INVALID_MAX_FAILED_INSTANCES);
     }
 
-    if (settings.getMaxPerInstanceFailures() * mutableRequest.getInstanceCount()
+    if ((long) settings.getMaxPerInstanceFailures() * mutableRequest.getInstanceCount()
             > thresholds.getMaxUpdateInstanceFailures()) {
       return invalidRequest(TOO_MANY_POTENTIAL_FAILED_INSTANCES);
     }
@@ -856,6 +857,7 @@ class SchedulerThriftInterface implements AnnotatedAuroraAdmin {
     }
 
     IJobUpdateRequest request;
+    AuditData auditData;
     try {
       request = IJobUpdateRequest.build(
           new JobUpdateRequest(mutableRequest)
@@ -865,6 +867,12 @@ class SchedulerThriftInterface implements AnnotatedAuroraAdmin {
               .newBuilder()));
     } catch (TaskDescriptionException e) {
       return error(INVALID_REQUEST, e);
+    }
+    try {
+      auditData = new AuditData(auditMessages.getRemoteUserName(), Optional.ofNullable(message));
+    } catch (IllegalArgumentException e) {
+      return invalidRequest("Audit message must not exceed " + AuditData.MAX_MESSAGE_LENGTH
+          + " characters.");
     }
 
     return storage.write(storeProvider -> {
@@ -907,11 +915,10 @@ class SchedulerThriftInterface implements AnnotatedAuroraAdmin {
                 .setInstances(IRange.toBuildersSet(convertRanges(toRanges(replacements)))));
       }
 
-      String remoteUserName = auditMessages.getRemoteUserName();
       IJobUpdate update = IJobUpdate.build(new JobUpdate()
           .setSummary(new JobUpdateSummary()
               .setKey(new JobUpdateKey(job.newBuilder(), updateId))
-              .setUser(remoteUserName)
+              .setUser(auditData.getUser())
               .setMetadata(IMetadata.toBuildersSet(request.getMetadata())))
           .setInstructions(instructions));
 
@@ -921,9 +928,7 @@ class SchedulerThriftInterface implements AnnotatedAuroraAdmin {
             request.getInstanceCount(),
             quotaManager.checkJobUpdate(update, storeProvider));
 
-        jobUpdateController.start(
-            update,
-            new AuditData(remoteUserName, Optional.ofNullable(message)));
+        jobUpdateController.start(update, auditData);
         startJobUpdateCounter.addAndGet(request.getInstanceCount());
         return response.setResponseCode(OK)
             .setResult(Result.startJobUpdateResult(
@@ -947,12 +952,16 @@ class SchedulerThriftInterface implements AnnotatedAuroraAdmin {
 
     IJobUpdateKey key = IJobUpdateKey.build(mutableKey);
     JobKeys.assertValid(key.getJob());
+    AuditData auditData;
+    try {
+      auditData = new AuditData(auditMessages.getRemoteUserName(), message);
+    } catch (IllegalArgumentException e) {
+      return invalidRequest("Audit message must not exceed " + AuditData.MAX_MESSAGE_LENGTH
+          + " characters.");
+    }
     return storage.write(storeProvider -> {
       try {
-        change.modifyUpdate(
-            jobUpdateController,
-            key,
-            new AuditData(auditMessages.getRemoteUserName(), message));
+        change.modifyUpdate(jobUpdateController, key, auditData);
         return ok();
       } catch (UpdateStateException e) {
         return error(INVALID_REQUEST, e);
@@ -1009,11 +1018,12 @@ class SchedulerThriftInterface implements AnnotatedAuroraAdmin {
   }
 
   @Override
-  public Response pruneTasks(TaskQuery query) throws TException {
-    if (query.isSetStatuses() && query.getStatuses().stream().anyMatch(ACTIVE_STATES::contains)) {
-      return error("Tasks in non-terminal state cannot be pruned.");
-    } else if (!query.isSetStatuses()) {
+  public Response pruneTasks(TaskQuery mutableQuery) throws TException {
+    TaskQuery query = new TaskQuery(mutableQuery);
+    if (!query.isSetStatuses() || query.getStatuses().isEmpty()) {
       query.setStatuses(TERMINAL_STATES);
+    } else if (!TERMINAL_STATES.containsAll(query.getStatuses())) {
+      return error("Tasks in non-terminal state cannot be pruned.");
     }
 
     Iterable<IScheduledTask> tasks = storage.read(storeProvider ->

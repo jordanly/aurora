@@ -17,10 +17,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.NoSuchElementException;
 
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
@@ -48,12 +46,8 @@ public final class Iterables2 {
     private final T defaultValue;
 
     private List<Iterator<T>> iterators = null;
-    private final LoadingCache<Iterator<T>, Boolean> overflowing = CacheBuilder.newBuilder().build(
-        new CacheLoader<Iterator<T>, Boolean>() {
-          @Override public Boolean load(Iterator<T> iterator) {
-            return false;
-          }
-        });
+    private final List<Iterator<T>> advanced = new ArrayList<>();
+    private boolean canRemove;
 
     ZippingIterator(Iterable<Iterable<T>> iterables, T defaultValue) {
       this.iterables = iterables;
@@ -80,27 +74,32 @@ public final class Iterables2 {
     }
 
     @Override public List<T> next() {
-      init();
-      List<T> data = new ArrayList<T>(iterators.size());
+      if (!hasNext()) {
+        throw new NoSuchElementException();
+      }
+      List<T> data = new ArrayList<>(iterators.size());
+      advanced.clear();
 
       for (Iterator<T> it : iterators) {
         if (it.hasNext()) {
           data.add(it.next());
+          advanced.add(it);
         } else {
-          overflowing.asMap().put(it, true);
           data.add(defaultValue);
         }
       }
 
+      canRemove = true;
       return data;
     }
 
     @Override public void remove() {
-      init();
-      for (Iterator<T> it : iterators) {
-        if (!overflowing.getUnchecked(it)) {
-          it.remove();
-        }
+      if (!canRemove) {
+        throw new IllegalStateException("next() must precede remove()");
+      }
+      canRemove = false;
+      for (Iterator<T> it : advanced) {
+        it.remove();
       }
     }
 

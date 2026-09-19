@@ -14,6 +14,7 @@
 package org.apache.aurora.scheduler.base;
 
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -156,6 +157,8 @@ public final class AsyncUtil {
     }
     try {
       future.get();
+    } catch (CancellationException ignored) {
+      // Cancellation is normal executor lifecycle behavior, not an uncaught task failure.
     } catch (InterruptedException ie) {
       Thread.currentThread().interrupt();
     } catch (ExecutionException ee) {

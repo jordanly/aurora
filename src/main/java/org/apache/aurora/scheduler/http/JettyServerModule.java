@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.function.Function;
 
 import jakarta.inject.Inject;
@@ -368,7 +369,7 @@ public class JettyServerModule extends AbstractModule {
 
     @Override
     protected void startUp() {
-      server = new Server();
+      Server acquiredServer = new Server();
       ServletContextHandler servletHandler =
           new ServletContextHandler("/", ServletContextHandler.NO_SESSIONS);
 
@@ -377,38 +378,73 @@ public class JettyServerModule extends AbstractModule {
       servletHandler.addEventListener(servletContextListener);
       servletHandler.addServlet(HttpServletDispatcher.class, "/*");
 
-      server.setRequestLog(new CustomRequestLog(
+      acquiredServer.setRequestLog(new CustomRequestLog(
           new Slf4jRequestLogWriter(), CustomRequestLog.NCSA_FORMAT));
 
-      ServerConnector connector = new ServerConnector(server);
+      ServerConnector connector = new ServerConnector(acquiredServer);
       connector.setPort(options.jetty.httpPort);
       if (options.jetty.listenIp != null) {
         connector.setHost(options.jetty.listenIp);
       }
 
-      server.addConnector(connector);
-      server.setHandler(getCompressionHandler(getRewriteHandler(servletHandler)));
+      acquiredServer.addConnector(connector);
+      acquiredServer.setHandler(getCompressionHandler(getRewriteHandler(servletHandler)));
 
-      try {
-        connector.open();
-        server.start();
-      } catch (Exception e) {
-        throw new RuntimeException(e);
-      }
-
-      String host;
-      if (connector.getHost() == null) {
-        // Resolve the local host name.
+      HostAndPort address = startServer(acquiredServer, connector, () -> {
         try {
-          host = InetAddress.getLocalHost().getHostAddress();
+          return InetAddress.getLocalHost().getHostAddress();
         } catch (UnknownHostException e) {
           throw new RuntimeException("Failed to resolve local host address: " + e, e);
         }
-      } else {
-        // If jetty was configured with a specific host to bind to, use that.
-        host = connector.getHost();
+      });
+      server = acquiredServer;
+      serverAddress = address;
+    }
+
+    @VisibleForTesting
+    static HostAndPort startServer(
+        Server acquiredServer,
+        ServerConnector connector,
+        Callable<String> localHost) throws RuntimeException {
+
+      try {
+        connector.open();
+        acquiredServer.start();
+        String host = connector.getHost() == null ? localHost.call() : connector.getHost();
+        return HostAndPort.fromParts(host, connector.getLocalPort());
+      } catch (Error failure) {
+        cleanupServer(acquiredServer, connector, failure);
+        throw failure;
+      } catch (Exception failure) {
+        cleanupServer(acquiredServer, connector, failure);
+        throw new RuntimeException(failure);
       }
-      serverAddress = HostAndPort.fromParts(host, connector.getLocalPort());
+    }
+
+    private static void cleanupServer(
+        Server server, ServerConnector connector, Throwable failure) {
+      try {
+        server.stop();
+      } catch (Exception | Error cleanupFailure) {
+        if (failure != cleanupFailure) { // NOPMD - Throwable forbids self-suppression by identity.
+          failure.addSuppressed(cleanupFailure);
+        }
+      }
+      // An explicitly opened connector may not have entered Jetty's managed lifecycle yet.
+      try {
+        connector.close();
+      } catch (RuntimeException | Error cleanupFailure) {
+        if (failure != cleanupFailure) { // NOPMD - Throwable forbids self-suppression by identity.
+          failure.addSuppressed(cleanupFailure);
+        }
+      }
+      try {
+        server.destroy();
+      } catch (Exception | Error cleanupFailure) {
+        if (failure != cleanupFailure) { // NOPMD - Throwable forbids self-supppression by identity.
+          failure.addSuppressed(cleanupFailure);
+        }
+      }
     }
 
     @Override

@@ -43,8 +43,15 @@ final class SqliteJobUpdateStore implements JobUpdateStore.Mutable {
 
   @Override
   public List<IJobUpdateDetails> fetchJobUpdates(IJobUpdateQuery query) {
+    IJobUpdateKey key = query.getKey();
+    boolean exactKey = key != null && key.getId() != null && key.getJob() != null
+        && key.getJob().getRole() != null && key.getJob().getEnvironment() != null
+        && key.getJob().getName() != null;
     return JobUpdateStoreSupport.query(
-        records.all().values().stream().map(IJobUpdateDetails::build), query);
+        exactKey
+            ? fetchJobUpdate(key).stream()
+            : records.all().values().stream().map(IJobUpdateDetails::build),
+        query);
   }
 
   @Override

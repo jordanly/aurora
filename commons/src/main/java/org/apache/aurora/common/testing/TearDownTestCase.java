@@ -32,18 +32,23 @@ public class TearDownTestCase {
 
   @After
   public final void tearDown() {
-    List<Exception> exceptions = Lists.newArrayList();
-    for (TearDown action : actions) {
-      try {
-        action.tearDown();
-      } catch (Exception e) {
-        exceptions.add(e);
+    List<Throwable> failures = Lists.newArrayList();
+    try {
+      for (TearDown action : actions) {
+        try {
+          action.tearDown();
+        } catch (Exception | AssertionError failure) {
+          failures.add(failure);
+        }
       }
-    }
-    if(!exceptions.isEmpty()) {
-      throw new RuntimeException("Tear down did not complete cleanly: " + exceptions);
-    } else {
+    } finally {
       actions.clear();
+    }
+    if (!failures.isEmpty()) {
+      AssertionError failure = new AssertionError("Tear down did not complete cleanly",
+          failures.getFirst());
+      failures.stream().skip(1).forEach(failure::addSuppressed);
+      throw failure;
     }
   }
 

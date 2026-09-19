@@ -171,6 +171,30 @@ public class SqliteJobUpdateStoreTest extends AbstractJobUpdateStoreTest {
     }
   }
 
+  @Test
+  public void testExactKeyStillAppliesOtherFiltersAndPagination() {
+    IJobUpdateKey key = makeKey(JobKeys.from("role", "env", "job"), "keyed");
+    saveUpdate(makeJobUpdate(key));
+    JobUpdateQuery query = new JobUpdateQuery().setKey(key.newBuilder());
+    assertEquals(List.of(fetch(key)), fetch(query));
+    assertEquals(List.of(), fetch(query.deepCopy().setRole("other-role")));
+    assertEquals(List.of(), fetch(query.deepCopy().setUser("other-user")));
+    assertEquals(List.of(), fetch(query.deepCopy().setJobKey(
+        JobKeys.from("other", "env", "job").newBuilder())));
+    assertEquals(List.of(), fetch(query.deepCopy().setOffset(1)));
+    var partial = key.newBuilder();
+    partial.unsetId();
+    assertEquals(List.of(), fetch(query.deepCopy().setKey(partial)));
+    assertEquals(List.of(fetch(key)), fetch(query.deepCopy().setLimit(1)));
+    assertEquals(List.of(), fetch(query.deepCopy().setKey(
+        makeKey(JobKeys.from("role", "env", "job"), "missing").newBuilder())));
+  }
+
+  private List<IJobUpdateDetails> fetch(JobUpdateQuery query) {
+    return storage.read(stores -> stores.getJobUpdateStore()
+        .fetchJobUpdates(IJobUpdateQuery.build(query)));
+  }
+
   private IJobUpdateDetails fetch(IJobUpdateKey key) {
     return storage.read(stores -> stores.getJobUpdateStore().fetchJobUpdate(key).get());
   }

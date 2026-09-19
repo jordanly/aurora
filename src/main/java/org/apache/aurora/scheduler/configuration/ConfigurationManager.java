@@ -14,7 +14,6 @@
 package org.apache.aurora.scheduler.configuration;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
@@ -78,24 +77,9 @@ public class ConfigurationManager {
   public static final String DEDICATED_ATTRIBUTE = "dedicated";
   public static final String DEFAULT_ALLOWED_JOB_ENVIRONMENTS = "^(prod|devel|test|staging\\d*)$";
 
-  private interface Validator<T> {
-    void validate(T value) throws TaskDescriptionException;
-  }
-
-  private static class GreaterThan implements Validator<Number> {
-    private final double min;
-    private final String label;
-
-    GreaterThan(double min, String label) {
-      this.min = min;
-      this.label = label;
-    }
-
-    @Override
-    public void validate(Number value) throws TaskDescriptionException {
-      if (this.min >= value.doubleValue()) {
-        throw new TaskDescriptionException(label + " must be greater than " + this.min);
-      }
+  private static void requirePositive(double value, String label) throws TaskDescriptionException {
+    if (0.0 >= value) {
+      throw new TaskDescriptionException(label + " must be greater than 0.0");
     }
   }
 
@@ -410,23 +394,20 @@ public class ConfigurationManager {
       }
     }
 
-    Optional<Container._Fields> containerType;
+    Container._Fields containerType;
     if (config.isSetContainer()) {
       IContainer containerConfig = config.getContainer();
-      containerType = Optional.of(containerConfig.getSetField());
+      containerType = containerConfig.getSetField();
       populateDocker(config, builder, containerConfig);
     } else {
       // Default to mesos container type if unset.
-      containerType = Optional.of(Container._Fields.MESOS);
+      containerType = Container._Fields.MESOS;
     }
 
-    if (!containerType.isPresent()) {
-      throw new TaskDescriptionException("A job must have a container type.");
-    }
-    if (!settings.allowedContainerTypes.contains(containerType.get())) {
+    if (!settings.allowedContainerTypes.contains(containerType)) {
       throw new TaskDescriptionException(
           "This scheduler is not configured to allow the container type "
-              + containerType.get().toString());
+              + containerType.toString());
     }
 
     thriftBackfill.backfillTask(builder);
@@ -443,20 +424,15 @@ public class ConfigurationManager {
       throw new TaskDescriptionException("Multiple resource values are not supported for " + types);
     }
 
-    Validator<Number> cpuvalidator = new GreaterThan(0.0, "num_cpus");
-    cpuvalidator.validate(
-            ResourceManager.quantityOf(ResourceManager.getTaskResources(config, CPUS)));
-    Validator<Number> ramvalidator = new GreaterThan(0.0, "ram_mb");
-    ramvalidator.validate(
-            ResourceManager.quantityOf(ResourceManager.getTaskResources(config, RAM_MB)));
-    Validator<Number> diskvalidator = new GreaterThan(0.0, "disk_mb");
-    diskvalidator.validate(
-            ResourceManager.quantityOf(ResourceManager.getTaskResources(config, DISK_MB)));
+    requirePositive(
+        ResourceManager.quantityOf(ResourceManager.getTaskResources(config, CPUS)), "num_cpus");
+    requirePositive(
+        ResourceManager.quantityOf(ResourceManager.getTaskResources(config, RAM_MB)), "ram_mb");
+    requirePositive(
+        ResourceManager.quantityOf(ResourceManager.getTaskResources(config, DISK_MB)), "disk_mb");
 
     if (!settings.allowGpuResource && config.getResources().stream()
-        .filter(r -> ResourceType.fromResource(r).equals(GPUS))
-        .findAny()
-        .isPresent()) {
+        .anyMatch(r -> ResourceType.fromResource(r).equals(GPUS))) {
 
       throw new TaskDescriptionException("GPU resource support is disabled in this cluster.");
     }

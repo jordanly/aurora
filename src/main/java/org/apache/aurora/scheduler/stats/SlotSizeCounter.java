@@ -15,17 +15,13 @@ package org.apache.aurora.scheduler.stats;
 
 import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 import jakarta.inject.Inject;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Function;
-import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
-import com.google.common.collect.Ordering;
 
 import org.apache.aurora.common.inject.TimedInterceptor.Timed;
 import org.apache.aurora.scheduler.resources.ResourceBag;
@@ -115,41 +111,35 @@ class SlotSizeCounter implements Runnable {
   }
 
   private int countSlots(Iterable<ResourceBag> slots, final ResourceBag slotSize) {
-    Function<ResourceBag, Integer> counter = machineSlack -> Ordering.natural().min(
-        machineSlack.divide(slotSize).streamResourceVectors()
-            .map(entry -> entry.getValue())
-            .collect(Collectors.toSet()))
-        .intValue();
-
     int sum = 0;
-    for (int slotCount : FluentIterable.from(slots).transform(counter)) {
-      sum += slotCount;
+    for (ResourceBag slot : slots) {
+      // Keep Double ordering (including NaN) and the existing empty-vector failure contract.
+      double minimum = slot.divide(slotSize).streamResourceVectors()
+          .map(Map.Entry::getValue).min(Double::compare).orElseThrow();
+      sum += (int) minimum;
     }
     return sum;
   }
 
   private void updateStats(
       String name,
-      Iterable<MachineResource> slots,
+      ImmutableMultimap<String, ResourceBag> sizes,
       ResourceBag slotSize) {
-
-    ImmutableMultimap.Builder<String, ResourceBag> builder = ImmutableMultimap.builder();
-    for (MachineResource slot : slots) {
-      builder.put(getStatName(name, slot.isDedicated(), slot.isRevocable()), slot.getSize());
-    }
-
-    ImmutableMultimap<String, ResourceBag> sizes = builder.build();
 
     for (String slotGroup : SLOT_GROUPS) {
       String statName = slotGroup + name;
-      cachedCounters.get(statName).set(countSlots(sizes.get(statName), slotSize));
+      cachedCounters.get(statName).set(countSlots(sizes.get(slotGroup), slotSize));
     }
   }
 
   @Timed("slot_size_counter_run")
   @Override
   public void run() {
-    Iterable<MachineResource> slots = machineResourceProvider.get();
-    slotSizes.entrySet().stream().forEach(e -> updateStats(e.getKey(), slots, e.getValue()));
+    ImmutableMultimap.Builder<String, ResourceBag> builder = ImmutableMultimap.builder();
+    for (MachineResource slot : machineResourceProvider.get()) {
+      builder.put(getPrefix(slot.isDedicated(), slot.isRevocable()), slot.getSize());
+    }
+    ImmutableMultimap<String, ResourceBag> sizes = builder.build();
+    slotSizes.forEach((name, size) -> updateStats(name, sizes, size));
   }
 }

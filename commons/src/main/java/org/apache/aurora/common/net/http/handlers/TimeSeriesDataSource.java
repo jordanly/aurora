@@ -26,18 +26,15 @@ import jakarta.ws.rs.core.MediaType;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
-import com.google.common.base.Predicates;
 import com.google.common.base.Splitter;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.inject.Inject;
 
 import org.apache.aurora.common.collections.Iterables2;
-import org.apache.aurora.common.stats.TimeSeries;
 import org.apache.aurora.common.stats.TimeSeriesRepository;
 
 /**
@@ -70,19 +67,19 @@ public class TimeSeriesDataSource {
     }
 
     List<Iterable<Number>> tsData = Lists.newArrayList();
-    tsData.add(timeSeriesRepo.getTimestamps());
     // Ignore requests for "time" since it is implicitly returned.
-    Iterable<String> names = Iterables.filter(
-        Splitter.on(",").split(metricsQuery),
-        Predicates.not(Predicates.equalTo(TIME_METRIC)));
+    List<String> names = Splitter.on(",").splitToStream(metricsQuery)
+        .filter(name -> !TIME_METRIC.equals(name)).toList();
+    TimeSeriesRepository.Snapshot snapshot = timeSeriesRepo.snapshot(names);
+    tsData.add(snapshot.timestamps());
     for (String metric : names) {
-      TimeSeries series = timeSeriesRepo.get(metric);
+      List<Number> series = snapshot.series().get(metric);
       if (series == null) {
         JsonObject response = new JsonObject();
         response.addProperty("error", "Unknown metric " + metric);
         throw new MetricException(gson.toJson(response));
       }
-      tsData.add(series.getSamples());
+      tsData.add(series);
     }
 
     final long since = Long.parseLong(Optional.ofNullable(sinceQuery).orElse("0"));

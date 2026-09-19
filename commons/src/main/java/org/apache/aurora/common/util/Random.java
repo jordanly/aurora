@@ -33,6 +33,11 @@ public interface Random {
   int nextInt(int n);
 
   /**
+   * @see java.util.Random#nextLong(long)
+   */
+  long nextLong(long bound);
+
+  /**
    * A Random that wraps a java.util.Random.
    */
   class SystemRandom implements Random {
@@ -45,6 +50,11 @@ public interface Random {
     @Override
     public double nextDouble() {
       return rand.nextDouble();
+    }
+
+    @Override
+    public long nextLong(long bound) {
+      return rand.nextLong(bound);
     }
 
     @Override

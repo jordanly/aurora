@@ -80,6 +80,12 @@ limitations under the License.
     </Or>
     <Bug pattern="EQ_COMPARETO_USE_OBJECT_EQUALS" />
   </Match>
+  <!-- Distinct scheduled futures retain identity equality even when their remaining delays match.
+       Delayed ordering intentionally does not define task identity. -->
+  <Match>
+    <Class name="org.apache.aurora.scheduler.testing.FakeScheduledExecutor$ScheduledWork" />
+    <Bug pattern="EQ_COMPARETO_USE_OBJECT_EQUALS" />
+  </Match>
   <Match>
     <Or>
       <Class name="org.apache.aurora.scheduler.cron.testing.AbstractCronIT" />

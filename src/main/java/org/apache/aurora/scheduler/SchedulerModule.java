@@ -88,8 +88,8 @@ public class SchedulerModule extends AbstractModule {
         bind(LeadingOptions.class).toInstance(
             new LeadingOptions(options.maxRegistrationDelay, options.maxLeadingDuration));
 
-        final ScheduledExecutorService executor =
-            AsyncUtil.singleThreadLoggingScheduledExecutor("Lifecycle-%d", LOG);
+        var executor = AsyncUtil.singleThreadLoggingScheduledExecutor("Lifecycle-%d", LOG);
+        executor.setExecuteExistingDelayedTasksAfterShutdownPolicy(false);
 
         bind(ScheduledExecutorService.class).toInstance(executor);
         bind(SchedulerLifecycle.class).in(Singleton.class);

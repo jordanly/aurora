@@ -16,6 +16,7 @@ package org.apache.aurora.common.net;
 import java.net.InetSocketAddress;
 
 import com.google.common.base.Preconditions;
+import com.google.common.net.HostAndPort;
 
 /**
  * A utility that can parse [host]:[port] pairs or :[port] designators into instances of
@@ -37,13 +38,12 @@ public final class InetSocketAddressHelper {
   public static InetSocketAddress parse(String value) {
     Preconditions.checkNotNull(value);
 
-    String[] spec = value.split(":", 2);
-    if (spec.length != 2) {
-      throw new IllegalArgumentException("Invalid socket address spec: " + value);
-    }
-
-    String host = spec[0];
-    int port = asPort(spec[1]);
+    String normalized = value.endsWith(":*")
+        ? value.substring(0, value.length() - 1) + "0" : value;
+    HostAndPort endpoint = HostAndPort.fromString(normalized).requireBracketsForIPv6();
+    Preconditions.checkArgument(endpoint.hasPort(), "Socket address requires a port");
+    String host = endpoint.getHost();
+    int port = endpoint.getPort();
 
     return host.isEmpty()
         ? new InetSocketAddress(port)
@@ -58,18 +58,7 @@ public final class InetSocketAddressHelper {
    */
   public static String toString(InetSocketAddress value) {
     Preconditions.checkNotNull(value);
-    return value.getHostName() + ":" + value.getPort();
-  }
-
-  private static int asPort(String port) {
-    if ("*".equals(port)) {
-      return 0;
-    }
-    try {
-      return Integer.parseInt(port);
-    } catch (NumberFormatException e) {
-      throw new IllegalArgumentException("Invalid port: " + port, e);
-    }
+    return HostAndPort.fromParts(value.getHostString(), value.getPort()).toString();
   }
 
   private InetSocketAddressHelper() {

@@ -19,6 +19,7 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.fail;
 
 /**
  * @author John Sirois
@@ -67,12 +68,14 @@ public class MorePreconditionsTest {
   public void testCheckNotBlankStringExceptionFormatting() {
     try {
       MorePreconditions.checkNotBlank((String) null, "the meaning of life is %s", 42);
+      fail("Expected invalid input to be rejected");
     } catch (NullPointerException e) {
       assertEquals("the meaning of life is 42", e.getMessage());
     }
 
     try {
       MorePreconditions.checkNotBlank("", "wing beats per second is %s", 43);
+      fail("Expected invalid input to be rejected");
     } catch (IllegalArgumentException e) {
       assertEquals("wing beats per second is 43", e.getMessage());
     }
@@ -99,12 +102,14 @@ public class MorePreconditionsTest {
   public void testCheckNotBlankIterableExceptionFormatting() {
     try {
       MorePreconditions.checkNotBlank((Iterable<?>) null, "the meaning of life is %s", 42);
+      fail("Expected invalid input to be rejected");
     } catch (NullPointerException e) {
       assertEquals("the meaning of life is 42", e.getMessage());
     }
 
     try {
       MorePreconditions.checkNotBlank(ImmutableList.of(), "wing beats per second is %s", 43);
+      fail("Expected invalid input to be rejected");
     } catch (IllegalArgumentException e) {
       assertEquals("wing beats per second is 43", e.getMessage());
     }

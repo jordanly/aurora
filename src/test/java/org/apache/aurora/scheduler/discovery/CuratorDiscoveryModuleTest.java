@@ -15,6 +15,8 @@ package org.apache.aurora.scheduler.discovery;
 
 import java.net.InetSocketAddress;
 import java.util.Optional;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import com.google.common.collect.ImmutableList;
 import com.google.inject.AbstractModule;
@@ -33,6 +35,8 @@ import org.apache.aurora.common.zookeeper.ZooKeeperUtils;
 import org.apache.aurora.scheduler.app.ServiceGroupMonitor;
 import org.apache.aurora.scheduler.testing.FakeStatsProvider;
 import org.apache.curator.framework.api.ACLProvider;
+import org.apache.curator.framework.state.ConnectionState;
+import org.apache.curator.framework.state.ConnectionStateListener;
 import org.apache.zookeeper.data.ACL;
 import org.junit.Test;
 
@@ -74,6 +78,36 @@ public class CuratorDiscoveryModuleTest extends TearDownTestCase {
 
     assertNotNull(injector.getBinding(SingletonService.class).getProvider().get());
     assertNotNull(injector.getBinding(ServiceGroupMonitor.class).getProvider().get());
+  }
+
+  @Test
+  public void testConnectionStateMetricsAcrossThreads() throws Exception {
+    ZooKeeperConfig config = new ZooKeeperConfig(
+        ImmutableList.of(InetSocketAddress.createUnresolved("localhost", 42)),
+        Optional.empty(), false, Amount.of(1, Time.DAYS), Amount.of(1, Time.DAYS),
+        Optional.empty());
+    CuratorServiceDiscoveryModule module = new CuratorServiceDiscoveryModule("/discovery", config);
+    FakeStatsProvider stats = new FakeStatsProvider();
+    ConnectionStateListener listener = module.createConnectionStateListener(stats);
+    for (ConnectionState state : ConnectionState.values()) {
+      assertEquals(0L, stats.getLongValue("zk_connection_state_" + state));
+      assertEquals(0L, stats.getLongValue(
+          "zk_connection_state_" + state + "_counter"));
+    }
+    try (var executor = Executors.newSingleThreadExecutor()) {
+      for (ConnectionState state : ConnectionState.values()) {
+        executor.submit(() -> listener.stateChanged(null, state)).get(5, TimeUnit.SECONDS);
+        for (ConnectionState observed : ConnectionState.values()) {
+          assertEquals(observed == state ? 1L : 0L,
+              stats.getLongValue("zk_connection_state_" + observed));
+        }
+        assertEquals(1L, stats.getLongValue(
+            "zk_connection_state_" + state + "_counter"));
+      }
+      executor.submit(() -> listener.stateChanged(null, ConnectionState.CONNECTED))
+          .get(5, TimeUnit.SECONDS);
+      assertEquals(2L, stats.getLongValue("zk_connection_state_CONNECTED_counter"));
+    }
   }
 
   @Test

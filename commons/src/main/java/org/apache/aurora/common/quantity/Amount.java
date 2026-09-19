@@ -13,6 +13,10 @@
  */
 package org.apache.aurora.common.quantity;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.Objects;
+
 import com.google.common.base.Preconditions;
 
 import org.apache.aurora.common.collections.Pair;
@@ -20,6 +24,9 @@ import org.apache.aurora.common.collections.Pair;
 /**
  * Represents a value in a unit system and facilitates unambiguous communication of amounts.
  * Instances are created via static factory {@code of(...)} methods.
+ * Equality and ordering compare exact decimal magnitudes in a common base unit. Equality also
+ * requires the same numeric type and unit family. Floating-point NaN and signed zero follow the
+ * corresponding boxed number's equality semantics.
  *
  * @param <T> the type of number the amount value is expressed in
  * @param <U> the type of unit that this amount quantifies
@@ -58,27 +65,68 @@ public abstract class Amount<T extends Number & Comparable<T>, U extends Unit<U>
   }
 
   public T as(U unit) {
-    return asUnit(unit);
+    return asUnit(unit, false);
   }
 
   /**
-   * Throws TypeOverflowException if an overflow occurs during scaling.
+   * Throws TypeOverflowException if the converted value exceeds the numeric type's range.
+   * Integral conversions truncate toward zero before checking the range. Existing non-finite
+   * floating-point inputs are preserved; finite inputs that scale to infinity are overflow.
    */
   public T asChecked(U unit) {
-    T retVal = asUnit(unit);
-    if (retVal.equals(maxValue)) {
-      throw new TypeOverflowException();
-    }
-    return retVal;
+    return asUnit(unit, true);
   }
 
-  private T asUnit(Unit<?> unit) {
-    return sameUnits(unit) ? getValue() : scale(getUnit().multiplier() / unit.multiplier());
+  private T asUnit(U unit, boolean checked) {
+    if (getUnit().equals(unit)) {
+      return getValue();
+    }
+    if (getValue() instanceof Long || getValue() instanceof Integer) {
+      BigDecimal converted = magnitude().divide(
+          BigDecimal.valueOf(unit.multiplier()), 0, RoundingMode.DOWN);
+      BigDecimal maximum = new BigDecimal(maxValue.toString());
+      BigDecimal minimum = maximum.negate().subtract(BigDecimal.ONE);
+      if (checked && (converted.compareTo(maximum) > 0 || converted.compareTo(minimum) < 0)) {
+        throw new TypeOverflowException();
+      }
+      // Preserve the saturation of the original narrowing primitive casts for unchecked calls.
+      return integralValue(converted.max(minimum).min(maximum));
+    }
+    T converted = scale(getUnit().multiplier() / unit.multiplier());
+    if (checked && Double.isFinite(getValue().doubleValue())
+        && !Double.isFinite(converted.doubleValue())) {
+      throw new TypeOverflowException();
+    }
+    return converted;
+  }
+
+  @SuppressWarnings("unchecked")
+  private T integralValue(BigDecimal value) {
+    if (getValue() instanceof Long) {
+      return (T) Long.valueOf(value.longValueExact());
+    }
+    return (T) Integer.valueOf(value.intValueExact());
+  }
+
+  // Canonical finite magnitude in the unit family's base unit. Decimal numeric spellings are
+  // compared exactly, with no intermediate primitive conversion, rounding or saturation.
+  private BigDecimal magnitude() {
+    return new BigDecimal(getValue().toString())
+        .multiply(BigDecimal.valueOf(getUnit().multiplier()));
+  }
+
+  private Object canonicalValue() {
+    double value = getValue().doubleValue();
+    if (!Double.isFinite(value) || Double.doubleToLongBits(value) == Long.MIN_VALUE) {
+      // Keep Number's NaN/infinity and negative-zero value semantics across units.
+      return getValue();
+    }
+    return magnitude().stripTrailingZeros();
   }
 
   @Override
   public int hashCode() {
-    return amount.hashCode();
+    return Objects.hash(getValue().getClass(), getUnit().getClass(), canonicalValue());
   }
 
   @Override
@@ -86,39 +134,10 @@ public abstract class Amount<T extends Number & Comparable<T>, U extends Unit<U>
     if (this == obj) {
       return true;
     }
-    if (!(obj instanceof Amount)) {
-      return false;
-    }
-
-    Amount<?, ?> other = (Amount<?, ?>) obj;
-    return amount.equals(other.amount) || isSameAmount(other);
-  }
-
-  private boolean isSameAmount(Amount<?, ?> other) {
-    // Equals allows Object - so we have no compile time check that other has the right value type;
-    // ie: make sure they don't have Integer when we have Long.
-    Number value = other.getValue();
-    if (!getValue().getClass().isInstance(value)) {
-      return false;
-    }
-
-    Unit<?> unit = other.getUnit();
-    if (!getUnit().getClass().isInstance(unit)) {
-      return false;
-    }
-
-    @SuppressWarnings("unchecked")
-    U otherUnit = (U) other.getUnit();
-    return isSameAmount(other, otherUnit);
-  }
-
-  private boolean isSameAmount(Amount<?, ?> other, U otherUnit) {
-    // Compare in the more precise unit (the one with the lower multiplier).
-    if (otherUnit.multiplier() > getUnit().multiplier()) {
-      return getValue().equals(other.asUnit(getUnit()));
-    } else {
-      return as(otherUnit).equals(other.getValue());
-    }
+    return obj instanceof Amount<?, ?> other
+        && getValue().getClass().equals(other.getValue().getClass())
+        && getUnit().getClass().equals(other.getUnit().getClass())
+        && canonicalValue().equals(other.canonicalValue());
   }
 
   @Override
@@ -128,16 +147,13 @@ public abstract class Amount<T extends Number & Comparable<T>, U extends Unit<U>
 
   @Override
   public int compareTo(Amount<T, U> other) {
-    // Compare in the more precise unit (the one with the lower multiplier).
-    if (other.getUnit().multiplier() > getUnit().multiplier()) {
-      return getValue().compareTo(other.as(getUnit()));
-    } else {
-      return as(other.getUnit()).compareTo(other.getValue());
+    double value = getValue().doubleValue();
+    double otherValue = other.getValue().doubleValue();
+    if (!Double.isFinite(value) || !Double.isFinite(otherValue)
+        || (value == 0.0 && otherValue == 0.0)) {
+      return Double.compare(value, otherValue);
     }
-  }
-
-  private boolean sameUnits(Unit<? extends Unit<?>> unit) {
-    return getUnit().equals(unit);
+    return magnitude().compareTo(other.magnitude());
   }
 
   protected abstract T scale(double multiplier);

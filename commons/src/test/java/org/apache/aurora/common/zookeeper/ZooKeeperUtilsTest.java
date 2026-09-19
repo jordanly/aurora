@@ -22,7 +22,7 @@ import static org.junit.Assert.fail;
 /**
  * @author John Sirois
  */
-public class ZooKeeperUtilsTest extends BaseZooKeeperTest {
+public class ZooKeeperUtilsTest {
 
   @Test
   public void testNormalizingPath() throws Exception {

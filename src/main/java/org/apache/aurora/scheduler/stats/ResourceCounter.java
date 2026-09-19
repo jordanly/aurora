@@ -14,6 +14,7 @@
 package org.apache.aurora.scheduler.stats;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -25,9 +26,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.Iterables;
 
@@ -129,17 +127,50 @@ public class ResourceCounter {
       Predicate<ITaskConfig> filter,
       Function<ITaskConfig, K> keyFunction) throws StorageException {
 
-    LoadingCache<K, Metric> metrics = CacheBuilder.newBuilder()
-        .build(new CacheLoader<K, Metric>() {
-          @Override
-          public Metric load(K key) {
-            return new Metric();
-          }
-        });
+    Map<K, Metric> metrics = new HashMap<>();
     for (ITaskConfig task : Iterables.filter(getTasks(query), filter)) {
-      metrics.getUnchecked(keyFunction.apply(task)).accumulate(task);
+      metrics.computeIfAbsent(keyFunction.apply(task), ignored -> new Metric()).accumulate(task);
     }
-    return metrics.asMap();
+    return metrics;
+  }
+
+  record Snapshot(List<Metric> consumption, Map<String, Metric> consumptionByRole,
+                  Metric quota, Map<String, Metric> quotaByRole) {
+    Snapshot {
+      consumption = List.copyOf(consumption);
+      consumptionByRole = Map.copyOf(consumptionByRole);
+      quotaByRole = Map.copyOf(quotaByRole);
+    }
+  }
+
+  private record Inputs(List<ITaskConfig> tasks, Map<String, IResourceAggregate> quotas) { }
+
+  /** Captures both stores once, then calculates periodic metrics from their detached values. */
+  Snapshot computeSnapshot() {
+    Inputs inputs = storage.read(store -> new Inputs(
+        store.getTaskStore().fetchTasks(Query.unscoped().active()).stream()
+            .map(Tasks::getConfig).toList(),
+        Map.copyOf(store.getQuotaStore().fetchQuotas())));
+    List<Metric> totals = Arrays.stream(MetricType.values()).map(Metric::new).toList();
+    Map<String, Metric> byRole = new HashMap<>();
+    for (ITaskConfig task : inputs.tasks()) {
+      for (Metric total : totals) {
+        if (total.type.filter.apply(task)) {
+          total.accumulate(task);
+          byRole.computeIfAbsent(total.type.name() + "_" + task.getJob().getRole(),
+              ignored -> new Metric()).accumulate(task);
+        }
+      }
+    }
+    Metric quota = new Metric();
+    Map<String, Metric> quotaByRole = new HashMap<>();
+    inputs.quotas().forEach((role, allocation) -> {
+      quota.accumulate(allocation);
+      Metric metric = new Metric();
+      metric.accumulate(allocation);
+      quotaByRole.put(role, metric);
+    });
+    return new Snapshot(totals, byRole, quota, quotaByRole);
   }
 
   public enum MetricType {

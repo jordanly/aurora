@@ -94,7 +94,7 @@ For more details, please see https://issues.apache.org/jira/browse/AURORA-1169
   ext.jacksonRev = '2.21.6'
   ext.jacksonAnnotationsRev = '2.21'
   ext.jaxRsRev = '4.0.0'
-  ext.junitRev = '4.12'
+  ext.junitRev = '4.13.2'
   ext.logbackRev = '1.6.3'
   ext.nettyRev = '4.2.18.Final'
   ext.resteasyRev = '7.0.4.Final'
@@ -647,6 +647,15 @@ tasks.register('jmh', JavaExec) {
   args '-rff', layout.buildDirectory.file('reports/jmh/results.txt').get().asFile.path
 }
 
+tasks.register('verifyBenchmarkFixtures', JavaExec) {
+  group = 'verification'
+  description = 'Check benchmark workload cardinality and reset behavior without timing it.'
+  dependsOn 'jmhClasses'
+  classpath = sourceSets.jmh.runtimeClasspath
+  mainClass = 'org.apache.aurora.benchmark.BenchmarkFixtureChecks'
+  maxHeapSize = '256m'
+}
+
 run {
   mainClass = 'org.apache.aurora.scheduler.app.local.LocalSchedulerMain'
   classpath += sourceSets.test.output
@@ -699,7 +708,7 @@ tasks.register('verifyInstalledDistribution', Exec) {
 configurations.create('pmdFixtureSupport')
 dependencies {
   pmdFixtureSupport 'org.slf4j:slf4j-simple:1.7.36'
-  pmdFixtureSupport 'junit:junit:4.12'
+  pmdFixtureSupport "junit:junit:${junitRev}"
 }
 def pmdFixtureClasspath = configurations.pmd + configurations.pmdFixtureSupport +
     sourceSets.test.compileClasspath
@@ -780,7 +789,8 @@ if (runCodeQuality) {
 def requiredQualityTasks = [
     'checkstyleMain', 'checkstyleTest', 'checkstyleJmh', 'pmdMain', 'pmdTest', 'pmdJmh',
     'spotbugsMain', 'spotbugsTest', 'spotbugsJmh', 'licenseMain', 'licenseTest',
-    'verifyCheckstyleMigration', 'verifyPmdMigration', 'verifySpotBugsMigration'
+    'verifyCheckstyleMigration', 'verifyPmdMigration', 'verifySpotBugsMigration',
+    'verifyBenchmarkFixtures'
 ].collect { tasks.named(it) } + [
     project(':commons').tasks.named('licenseMain'),
     project(':commons').tasks.named('licenseTest')

@@ -23,11 +23,9 @@ import static java.util.Objects.requireNonNull;
  * Identifier for a group of identical {@link ITaskConfig} instances. Serves as a separation layer
  * between a task configuration and its scheduling purpose representation.
  */
-public final class TaskGroupKey {
-  private final ITaskConfig canonicalTask;
-
-  private TaskGroupKey(ITaskConfig task) {
-    this.canonicalTask = requireNonNull(task);
+public record TaskGroupKey(ITaskConfig canonicalTask) {
+  public TaskGroupKey {
+    requireNonNull(canonicalTask);
   }
 
   /**
@@ -52,12 +50,6 @@ public final class TaskGroupKey {
   @Override
   public int hashCode() {
     return Objects.hash(canonicalTask);
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    return o instanceof TaskGroupKey other
-        && Objects.equals(canonicalTask, other.canonicalTask);
   }
 
   @Override

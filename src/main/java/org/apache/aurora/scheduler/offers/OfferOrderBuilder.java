@@ -81,25 +81,13 @@ public final class OfferOrderBuilder {
   private static Ordering<HostOffer> getOrdering(Ordering<HostOffer> base, OfferOrder order) {
     // Random is Ordering<Object> so accepting base as a parameter and compounding in here is the
     // cleanest way I could come up with to avoid a whole bunch of type finagling.
-    switch (order) {
-      case CPU: return base.compound(CPU_COMPARATOR);
-      case DISK: return base.compound(DISK_COMPARATOR);
-      case MEMORY: return base.compound(RAM_COMPARATOR);
-      case REVOCABLE_CPU: return base.compound(REVOCABLE_CPU_COMPARATOR);
-      default: return base.compound(RANDOM_COMPARATOR);
-    }
-  }
-
-  private static Ordering<HostOffer> create(Ordering<HostOffer> base, List<OfferOrder> order) {
-    if (order.isEmpty()) {
-      return base;
-    }
-    Ordering<HostOffer> compounded = getOrdering(base, order.get(0));
-    if (order.size() > 1) {
-      return create(compounded, order.subList(1, order.size()));
-    } else {
-      return compounded;
-    }
+    return switch (order) {
+      case CPU -> base.compound(CPU_COMPARATOR);
+      case DISK -> base.compound(DISK_COMPARATOR);
+      case MEMORY -> base.compound(RAM_COMPARATOR);
+      case REVOCABLE_CPU -> base.compound(REVOCABLE_CPU_COMPARATOR);
+      case RANDOM -> base.compound(RANDOM_COMPARATOR);
+    };
   }
 
   /**
@@ -111,6 +99,11 @@ public final class OfferOrderBuilder {
    */
   @VisibleForTesting
   public static Ordering<HostOffer> create(List<OfferOrder> order) {
-    return create(BASE_COMPARATOR, order);
+    Ordering<HostOffer> ordering = BASE_COMPARATOR;
+    for (OfferOrder criterion : order) {
+      ordering = getOrdering(ordering, criterion);
+    }
+    // Distinct offers must remain distinct in the sorted offer set, even with equal resources.
+    return ordering.compound(Ordering.<String>natural().onResultOf(HostOffer::getOfferId));
   }
 }

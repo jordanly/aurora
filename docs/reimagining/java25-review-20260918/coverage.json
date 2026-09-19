@@ -1,0 +1,60 @@
+{
+  "baseline": "91b9bd74746d27102a96fa47d4e06e0dd25097ca",
+  "scope": "git ls-files *.java; generated build output excluded",
+  "totalFiles": 667,
+  "totalLines": 103729,
+  "reviewers": {
+    "foundation": {
+      "files": 173,
+      "lines": 21243,
+      "verdicts": {
+        "retain": 77,
+        "coordinated": 55,
+        "local": 41
+      },
+      "findings": 17
+    },
+    "application": {
+      "files": 166,
+      "lines": 23323,
+      "verdicts": {
+        "retain": 121,
+        "coordinated": 29,
+        "local": 16
+      },
+      "findings": 15
+    },
+    "policy": {
+      "files": 171,
+      "lines": 34270,
+      "verdicts": {
+        "retain": 119,
+        "local": 23,
+        "coordinated": 29
+      },
+      "findings": 13
+    },
+    "backend": {
+      "files": 157,
+      "lines": 24893,
+      "verdicts": {
+        "retain": 99,
+        "coordinated": 48,
+        "local": 10
+      },
+      "findings": 11
+    }
+  },
+  "verdicts": {
+    "retain": 416,
+    "coordinated": 161,
+    "local": 90
+  },
+  "findingCount": 56,
+  "coverageComplete": true,
+  "sourceHashesMatch": true,
+  "fullPathLineAnchorsInBounds": 84,
+  "javaSourceDiff": "",
+  "accountUsagePercentageAvailable": false,
+  "validation": "Manifest/hash/source-anchor checks and isolated parent Java 25 helper probe; no full regression suite or cluster operation."
+}

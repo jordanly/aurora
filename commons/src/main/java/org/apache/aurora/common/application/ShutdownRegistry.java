@@ -61,7 +61,7 @@ public interface ShutdownRegistry {
     public synchronized <E extends Exception, T extends ExceptionalCommand<E>> void addAction(
         T action) {
       Preconditions.checkState(!completed);
-      actions.add(action);
+      actions.add(java.util.Objects.requireNonNull(action));
     }
 
     /**
@@ -72,27 +72,26 @@ public interface ShutdownRegistry {
      * this class may be used for.
      */
     @Override
-    public synchronized void execute() {
-      if (!completed) {
-        LOG.info("Executing {} shutdown commands.", actions.size());
-        completed = true;
-        try {
-          for (ExceptionalCommand<? extends Exception> action : Lists.reverse(actions)) {
-            // Part of our contract is ensuring each shutdown action executes so we must catch all
-            // exceptions.
-            // SUPPRESS CHECKSTYLE:OFF IllegalCatch
-            try {
-              action.execute();
-            } catch (Exception e) {
-              LOG.warn("Shutdown action failed.", e);
-            }
-            // SUPPRESS CHECKSTYLE:ON IllegalCatch
-          }
-        } finally {
-          actions.clear();
+    public void execute() {
+      List<ExceptionalCommand<? extends Exception>> pending;
+      synchronized (this) {
+        if (completed) {
+          return;
         }
-      } else {
-        LOG.info("Action controller has already completed, subsequent calls ignored.");
+        completed = true;
+        pending = List.copyOf(actions.reversed());
+        actions.clear();
+      }
+      LOG.info("Executing {} shutdown commands.", pending.size());
+      for (ExceptionalCommand<? extends Exception> action : pending) {
+        // Each hook runs outside the registry lock, including hooks that re-enter shutdown.
+        // SUPPRESS CHECKSTYLE:OFF IllegalCatch
+        try {
+          action.execute();
+        } catch (Exception e) {
+          LOG.warn("Shutdown action failed.", e);
+        }
+        // SUPPRESS CHECKSTYLE:ON IllegalCatch
       }
     }
   }

@@ -460,7 +460,7 @@ public class GoAgentDriverTest {
       driver.launch("waiting-offer", launch(NODE, waitingTask), 0);
       return null;
     });
-    notifyAssignment();
+    notifyAssignment(waitingTask);
     eventually(() -> agent.deliveries.stream().anyMatch(delivery ->
         waitingRun.equals(delivery.path("body").path("command").asText())));
     assertEquals(1, pending());
@@ -626,8 +626,12 @@ public class GoAgentDriverTest {
   }
 
   private void notifyAssignment() {
+    notifyAssignment(TASK);
+  }
+
+  private void notifyAssignment(String taskId) {
     driver.taskChanged(PubsubEvent.TaskStateChange.initialized(
-        sqlite.read(stores -> stores.getTaskStore().fetchTask(TASK).orElseThrow())));
+        sqlite.read(stores -> stores.getTaskStore().fetchTask(taskId).orElseThrow())));
   }
 
   @Test
@@ -741,7 +745,7 @@ public class GoAgentDriverTest {
           driver.launch("offer-2", launch(second, "task-2"), 0);
           return null;
         });
-        notifyAssignment();
+        notifyAssignment("task-2");
       }).get(2, TimeUnit.SECONDS);
       eventually(2, () -> other.deliveries.size() == 1);
       ObjectNode observation = (ObjectNode) observation(1, "running", "pending", true);

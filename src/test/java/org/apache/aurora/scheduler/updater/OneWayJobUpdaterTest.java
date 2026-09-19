@@ -262,6 +262,21 @@ public class OneWayJobUpdaterTest extends EasyMockTest {
   }
 
   @Test
+  public void testThousandsOfImmediatelyCompleteBatches() {
+    ImmutableMap.Builder<Integer, StateEvaluator<String>> evaluators = ImmutableMap.builder();
+    ImmutableMap.Builder<Integer, SideEffect> expected = ImmutableMap.builder();
+    for (int i = 0; i < 3000; i++) {
+      evaluators.put(i, state -> SUCCEEDED);
+      expected.put(i, sideEffect(InstanceUpdateStatus.WORKING, InstanceUpdateStatus.SUCCEEDED));
+    }
+    control.replay();
+    OneWayJobUpdater<Integer, String> updater = new OneWayJobUpdater<>(
+        (idle, working) -> ImmutableSet.of(idle.iterator().next()), 0, evaluators.build());
+    assertEquals(new EvaluationResult<>(OneWayStatus.SUCCEEDED, expected.build()),
+        updater.evaluate(ImmutableMap.of(), instance -> "healthy"));
+  }
+
+  @Test
   public void testResultsObjectOverrides() {
     control.replay();
 

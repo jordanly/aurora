@@ -171,7 +171,8 @@ public class JobUpdateHistoryPrunerTest {
 
       TaskStore.Mutable taskStore = storeProvider.getUnsafeTaskStore();
       if (hasTasks) {
-        taskStore.saveTasks(ImmutableSet.of(makeTask("test", key.getJob())));
+        taskStore.saveTasks(ImmutableSet.of(makeTask(
+            JobKeys.canonicalString(key.getJob()) + "-" + key.getId(), key.getJob())));
       }
     });
     return update;

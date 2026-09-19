@@ -91,6 +91,8 @@ public class ApiBeta {
    * @return Parsed method parameters.
    * @throws WebApplicationException If a parameter could not be parsed.
    */
+  // Parser exception causes may contain credential-bearing request data.
+  @SuppressWarnings("PMD.PreserveStackTrace")
   private Object[] readParams(JsonObject json, Method method)
       throws WebApplicationException {
 
@@ -99,9 +101,9 @@ public class ApiBeta {
       try {
         params.add(GSON.fromJson(getJsonMember(json, param.getName()), param.getType()));
       } catch (JsonParseException e) {
+        // Parser exceptions can quote credential-bearing input, including in their causes.
         throw new WebApplicationException(
-            e,
-            badRequest("Failed to parse parameter " + param + ": " + e.getMessage()));
+            badRequest("Failed to parse parameter " + param.getName()));
       }
     }
     return params.toArray();
@@ -118,14 +120,17 @@ public class ApiBeta {
   @POST
   @Path("{method}")
   @Produces(MediaType.APPLICATION_JSON)
+  // Parser exception causes may contain credential-bearing request data.
+  @SuppressWarnings("PMD.PreserveStackTrace")
   public Response invoke(@PathParam("method") String methodName, String postData) {
-    LOG.debug("Call to {} with data: {}", methodName, postData);
-
     // First, verify that this is a valid method on the interface.
     Class<?>[] methodParameterTypes = AuroraAdminMetadata.METHODS.get(methodName);
     if (methodParameterTypes == null) {
       return errorResponse(Status.NOT_FOUND, "Method " + methodName + " does not exist.");
     }
+
+    // Only log a method name after validating it against the API metadata.
+    LOG.debug("Call to {}", methodName);
 
     JsonObject parameters;
     try {
@@ -138,7 +143,7 @@ public class ApiBeta {
       }
       parameters = (JsonObject) json;
     } catch (JsonSyntaxException e) {
-      throw new WebApplicationException(e, badRequest("Request must be valid JSON"));
+      throw new WebApplicationException(badRequest("Request must be valid JSON"));
     }
 
     final Method method = getApiMethod(methodName, methodParameterTypes);

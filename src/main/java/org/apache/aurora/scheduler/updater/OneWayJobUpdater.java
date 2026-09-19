@@ -168,28 +168,28 @@ class OneWayJobUpdater<K, T> {
   }
 
   private Map<K, SideEffect> startNextInstanceGroup(InstanceStateProvider<K, T> stateProvider) {
-    Set<K> idle = filterByStatus(instances, IDLE);
-    if (idle.isEmpty()) {
-      return ImmutableMap.of();
-    } else {
-      ImmutableMap.Builder<K, SideEffect> builder = ImmutableMap.builder();
+    ImmutableMap.Builder<K, SideEffect> actions = ImmutableMap.builder();
+    while (true) {
+      Set<K> idle = filterByStatus(instances, IDLE);
+      if (idle.isEmpty()) {
+        return actions.build();
+      }
       Set<K> working = filterByStatus(instances, WORKING);
       Set<K> nextGroup = strategy.getNextGroup(idle, working);
+      ImmutableMap.Builder<K, SideEffect> batch = ImmutableMap.builder();
       if (!nextGroup.isEmpty()) {
         for (K instance : nextGroup) {
-          builder.put(instance, instances.get(instance).evaluate(stateProvider.getState(instance)));
+          batch.put(instance, instances.get(instance).evaluate(stateProvider.getState(instance)));
         }
         LOG.debug("Changed working set for update to " + filterByStatus(instances, WORKING));
       }
-
-      Map<K, SideEffect> sideEffects = builder.build();
-      if (!idle.isEmpty() && working.isEmpty() && !SideEffect.hasActions(sideEffects.values())) {
-        // There's no in-flight instances, and no actions - so there's nothing left to initiate more
-        // work on this job. Try to find more work, or converge.
-        return builder.putAll(startNextInstanceGroup(stateProvider)).build();
-      } else {
-        return sideEffects;
+      Map<K, SideEffect> sideEffects = batch.build();
+      actions.putAll(sideEffects);
+      if (!working.isEmpty() || SideEffect.hasActions(sideEffects.values())) {
+        return actions.build();
       }
+      // No in-flight instances or actions will trigger another evaluation. Advance immediately,
+      // retaining the original batch admission and failure evaluation order.
     }
   }
 

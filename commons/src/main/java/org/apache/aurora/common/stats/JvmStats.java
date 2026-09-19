@@ -20,7 +20,7 @@ import java.lang.management.MemoryMXBean;
 import java.lang.management.OperatingSystemMXBean;
 import java.lang.management.RuntimeMXBean;
 import java.lang.management.ThreadMXBean;
-import java.util.Map;
+import java.util.Set;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
@@ -33,6 +33,10 @@ import org.apache.aurora.common.quantity.Time;
  * Convenience class to export statistics about the JVM.
  */
 public class JvmStats {
+
+  private static final Set<String> SAFE_SYSTEM_PROPERTIES = Set.of(
+      "java.version", "java.vendor", "java.vm.name", "java.vm.version", "java.vm.vendor",
+      "java.specification.version", "os.name", "os.arch", "os.version");
 
   private static final long BYTES_PER_MB = Amount.of(1L, Data.MB).as(Data.BYTES);
   private static final double SECS_PER_NANO =
@@ -55,7 +59,7 @@ public class JvmStats {
           ImmutableList.<Stat<? extends Number>>builder()
           .add(new StatImpl<Long>("system_free_physical_memory_mb") {
             @Override public Long read() {
-              return sunOsMbean.getFreePhysicalMemorySize() / BYTES_PER_MB;
+              return sunOsMbean.getFreeMemorySize() / BYTES_PER_MB;
             }
           })
           .add(new StatImpl<Long>("system_free_swap_mb") {
@@ -204,25 +208,12 @@ public class JvmStats {
         }
     ));
 
-    Stats.exportString(
-        new StatImpl<String>("jvm_input_arguments") {
-          @Override public String read() {
-            return runtimeMXBean.getInputArguments().toString();
-          }
-        }
-    );
-
-    for (final String property : System.getProperties().stringPropertyNames()) {
+    // Diagnostic endpoints must not expose arbitrary process configuration. In particular,
+    // JVM arguments, environment variables and application properties may contain credentials.
+    for (String property : SAFE_SYSTEM_PROPERTIES) {
       Stats.exportString(
           new StatImpl<String>("jvm_prop_" + Stats.normalizeName(property)) {
             @Override public String read() { return System.getProperty(property); }
-          });
-    }
-
-    for (final Map.Entry<String, String> environmentVariable : System.getenv().entrySet()) {
-      Stats.exportString(
-          new StatImpl<String>("system_env_" + Stats.normalizeName(environmentVariable.getKey())) {
-            @Override public String read() { return environmentVariable.getValue(); }
           });
     }
   }

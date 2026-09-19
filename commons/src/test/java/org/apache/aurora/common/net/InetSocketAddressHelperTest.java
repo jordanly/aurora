@@ -19,6 +19,7 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
+import static org.junit.Assert.assertThrows;
 
 /**
  * @author John Sirois
@@ -108,4 +109,18 @@ public class InetSocketAddressHelperTest {
 
     assertEquals("0.0.0.0:80", InetSocketAddressHelper.toString(new InetSocketAddress(80)));
   }
+  @Test
+  public void testIpv6AndUnresolvedRoundTrips() {
+    for (String address : new String[] {"[::1]:8081", "[fe80::1%eth0]:12", "missing.invalid:5"}) {
+      InetSocketAddress socket = InetSocketAddressHelper.parse(address);
+      assertEquals(true, socket.isUnresolved());
+      assertEquals(address, InetSocketAddressHelper.toString(socket));
+    }
+    assertEquals("[::1]:0", InetSocketAddressHelper.toString(
+        InetSocketAddressHelper.parse("[::1]:*")));
+    for (String invalid : new String[] {"::1:80", "[::1]", "[::1]:", "[::1", "[::1]:-1"}) {
+      assertThrows(IllegalArgumentException.class, () -> InetSocketAddressHelper.parse(invalid));
+    }
+  }
+
 }

@@ -29,11 +29,13 @@ import org.apache.aurora.gen.ScheduledTask;
 import org.apache.aurora.scheduler.BatchWorker;
 import org.apache.aurora.scheduler.BatchWorker.RepeatableWork;
 import org.apache.aurora.scheduler.base.JobKeys;
+import org.apache.aurora.scheduler.base.Query;
 import org.apache.aurora.scheduler.cron.quartz.AuroraCronJob.CronBatchWorker;
 import org.apache.aurora.scheduler.state.StateChangeResult;
 import org.apache.aurora.scheduler.state.StateManager;
 import org.apache.aurora.scheduler.storage.Storage;
 import org.apache.aurora.scheduler.storage.Storage.MutateWork.NoResult;
+import org.apache.aurora.scheduler.storage.TaskStore;
 import org.apache.aurora.scheduler.storage.entities.IScheduledTask;
 import org.apache.aurora.scheduler.storage.mem.MemStorageModule;
 import org.easymock.Capture;
@@ -212,6 +214,31 @@ public class AuroraCronJobTest extends EasyMockTest {
     killResult.complete(BatchWorker.NO_RESULT);
     auroraCronJob.doExecute(context);
     assertTrue(jobDetails.getJobDataMap().isEmpty());
+  }
+
+  @Test
+  public void testDelayedKillReadsReplayProvider() throws Exception {
+    Capture<RepeatableWork<BatchWorker.NoResult>> replay = createCapture();
+    expect(batchWorker.executeWithReplay(anyObject(), capture(replay)))
+        .andReturn(new CompletableFuture<>());
+    expect(backoffHelper.getBackoffStrategy()).andReturn(null).anyTimes();
+    expect(stateManager.changeState(anyObject(), eq(TASK_ID), eq(Optional.empty()),
+        eq(ScheduleStatus.KILLING), eq(AuroraCronJob.KILL_AUDIT_MESSAGE)))
+        .andReturn(StateChangeResult.SUCCESS);
+    Storage.MutableStoreProvider replayStore = createMock(Storage.MutableStoreProvider.class);
+    TaskStore replayTasks = createMock(TaskStore.class);
+    expect(replayStore.getTaskStore()).andReturn(replayTasks);
+    expect(replayTasks.fetchTasks(Query.taskScoped(TASK_ID).active()))
+        .andReturn(ImmutableSet.of());
+    stateManager.insertPendingTasks(eq(replayStore), anyObject(), anyObject());
+    control.replay();
+
+    populateStorage(CronCollisionPolicy.KILL_EXISTING);
+    populateTaskStore();
+    auroraCronJob.doExecute(context);
+    // The original provider still contains the active task. Only the replay transaction sees
+    // that it has terminated, and that same provider must receive the replacement insertion.
+    replay.getValue().apply(replayStore);
   }
 
   @Test

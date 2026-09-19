@@ -31,14 +31,21 @@ class AuthorizeHeaderToken implements AuthenticationToken {
   private static final Splitter SPLITTER = Splitter.on(" ");
   private static final BaseEncoding BASE64 = BaseEncoding.base64();
 
+  // Base64 decoder causes may quote the credential; this boundary deliberately omits them.
+  @SuppressWarnings("PMD.PreserveStackTrace")
   AuthorizeHeaderToken(String authorizeHeaderValue) throws IllegalArgumentException {
     requireNonNull(authorizeHeaderValue);
     List<String> parts = SPLITTER.splitToList(authorizeHeaderValue);
     if (parts.size() != 2 || !ShiroKerberosAuthenticationFilter.NEGOTIATE.equals(parts.get(0))) {
-      throw new IllegalArgumentException("Malformed Authorize header: " + authorizeHeaderValue);
+      throw new IllegalArgumentException("Malformed Authorize header: expected Negotiate token");
     }
 
-    this.authorizeHeaderValue = BASE64.decode(parts.get(1));
+    try {
+      this.authorizeHeaderValue = BASE64.decode(parts.get(1));
+    } catch (IllegalArgumentException e) {
+      // Decoder messages can quote input; deliberately do not retain the cause.
+      throw new IllegalArgumentException("Malformed Authorize header: invalid token encoding");
+    }
   }
 
   @Override

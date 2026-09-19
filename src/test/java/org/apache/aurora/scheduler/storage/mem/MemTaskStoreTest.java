@@ -18,15 +18,20 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Module;
 import com.google.inject.util.Modules;
 
+import org.apache.aurora.common.quantity.Amount;
+import org.apache.aurora.common.quantity.Time;
 import org.apache.aurora.common.stats.StatsProvider;
 import org.apache.aurora.scheduler.base.Tasks;
 import org.apache.aurora.scheduler.storage.AbstractTaskStoreTest;
 import org.apache.aurora.scheduler.storage.Storage.MutateWork.NoResult;
 import org.apache.aurora.scheduler.storage.TaskStore;
+import org.apache.aurora.scheduler.storage.entities.IScheduledTask;
 import org.apache.aurora.scheduler.testing.FakeStatsProvider;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class MemTaskStoreTest extends AbstractTaskStoreTest {
 
@@ -43,6 +48,32 @@ public class MemTaskStoreTest extends AbstractTaskStoreTest {
             bind(StatsProvider.class).toInstance(statsProvider);
           }
         });
+  }
+
+  @Test
+  public void testOverwriteReleasesOldConfigAndIndexes() {
+    MemTaskStore store = new MemTaskStore(statsProvider, Amount.of(1L, Time.SECONDS));
+    var original = TASK_A.newBuilder();
+    original.getAssignedTask().setSlaveHost("old-host");
+    IScheduledTask oldTask = IScheduledTask.build(original);
+    var replacement = oldTask.newBuilder();
+    replacement.getAssignedTask().setSlaveHost("new-host");
+    replacement.getAssignedTask().getTask().getJob().setName("different-job");
+    IScheduledTask newTask = IScheduledTask.build(replacement);
+    store.saveTasks(ImmutableSet.of(oldTask));
+    store.saveTasks(ImmutableSet.of(newTask));
+    assertEquals(ImmutableSet.of(Tasks.getJob(newTask)), store.getJobKeys());
+    assertFalse(store.isConfigInterned(Tasks.getConfig(oldTask)));
+    assertTrue(store.isConfigInterned(Tasks.getConfig(newTask)));
+    assertEquals(1L, statsProvider.getLongValue(MemTaskStore.getIndexSizeStatName("host")));
+    store.mutateTask(Tasks.id(newTask), task -> oldTask);
+    assertFalse(store.isConfigInterned(Tasks.getConfig(newTask)));
+    assertEquals(ImmutableSet.of(Tasks.getJob(oldTask)), store.getJobKeys());
+    store.deleteTasks(Tasks.ids(oldTask));
+    assertFalse(store.isConfigInterned(Tasks.getConfig(oldTask)));
+    assertTrue(store.getJobKeys().isEmpty());
+    assertEquals(0L, statsProvider.getLongValue(MemTaskStore.getIndexSizeStatName("host")));
+    assertEquals(0L, statsProvider.getLongValue(MemTaskStore.getIndexSizeStatName("job")));
   }
 
   @Test

@@ -29,6 +29,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.RangeSet;
+import com.google.common.collect.TreeRangeSet;
 
 import org.apache.aurora.gen.JobUpdateQuery;
 import org.apache.aurora.scheduler.base.JobKeys;
@@ -299,19 +300,21 @@ public interface QuotaManager {
               .filter(compose(equalTo(role), JobKeys::getRole))
               .uniqueIndex(IJobConfiguration::getKey);
 
+      Predicate<IAssignedTask> nonUpdatingTasks = buildNonUpdatingTasksFilter(updates);
       return new QuotaInfo(
           storeProvider.getQuotaStore().fetchQuota(role)
               .map(ResourceManager::bagFromAggregate)
               .orElse(EMPTY),
-          getConsumption(tasks, updates, cronTemplates, PROD_SHARED),
-          getConsumption(tasks, updates, cronTemplates, PROD_DEDICATED),
-          getConsumption(tasks, updates, cronTemplates, NON_PROD_SHARED),
-          getConsumption(tasks, updates, cronTemplates, NON_PROD_DEDICATED));
+          getConsumption(tasks, updates, nonUpdatingTasks, cronTemplates, PROD_SHARED),
+          getConsumption(tasks, updates, nonUpdatingTasks, cronTemplates, PROD_DEDICATED),
+          getConsumption(tasks, updates, nonUpdatingTasks, cronTemplates, NON_PROD_SHARED),
+          getConsumption(tasks, updates, nonUpdatingTasks, cronTemplates, NON_PROD_DEDICATED));
     }
 
     private ResourceBag getConsumption(
         FluentIterable<IAssignedTask> tasks,
         Map<IJobKey, IJobUpdateInstructions> updatesByKey,
+        Predicate<IAssignedTask> nonUpdatingTasks,
         Map<IJobKey, IJobConfiguration> cronTemplatesByKey,
         Predicate<ITaskConfig> filter) {
 
@@ -324,6 +327,7 @@ public interface QuotaManager {
 
       ResourceBag nonCronConsumption = getNonCronConsumption(
           updatesByKey,
+          nonUpdatingTasks,
           filteredTasks.filter(excludeCron),
           filter);
 
@@ -338,6 +342,7 @@ public interface QuotaManager {
 
     private static ResourceBag getNonCronConsumption(
         Map<IJobKey, IJobUpdateInstructions> updatesByKey,
+        Predicate<IAssignedTask> nonUpdatingTasks,
         FluentIterable<IAssignedTask> tasks,
         final Predicate<ITaskConfig> configFilter) {
 
@@ -353,7 +358,7 @@ public interface QuotaManager {
       // 3. Add up the two to yield total consumption.
 
       ResourceBag nonUpdateConsumption = fromTasks(tasks
-          .filter(buildNonUpdatingTasksFilter(updatesByKey))
+          .filter(nonUpdatingTasks)
           .transform(IAssignedTask::getTask));
 
       final Predicate<IInstanceTaskConfig> instanceFilter =
@@ -388,21 +393,19 @@ public interface QuotaManager {
     private static Predicate<IAssignedTask> buildNonUpdatingTasksFilter(
         final Map<IJobKey, IJobUpdateInstructions> roleJobUpdates) {
 
+      Map<IJobKey, RangeSet<Integer>> coveredInstances = roleJobUpdates.entrySet().stream()
+          .collect(Collectors.toMap(Map.Entry::getKey, entry -> {
+            IJobUpdateInstructions instructions = entry.getValue();
+            RangeSet<Integer> covered = TreeRangeSet.create(
+                getInstanceIds(instructions.getInitialState()));
+            if (instructions.isSetDesiredState()) {
+              covered.addAll(getInstanceIds(ImmutableSet.of(instructions.getDesiredState())));
+            }
+            return covered;
+          }));
       return task -> {
-        Optional<IJobUpdateInstructions> update = Optional.ofNullable(
-            roleJobUpdates.get(task.getTask().getJob()));
-
-        if (update.isPresent()) {
-          IJobUpdateInstructions instructions = update.get();
-          RangeSet<Integer> initialInstances = getInstanceIds(instructions.getInitialState());
-          RangeSet<Integer> desiredInstances = getInstanceIds(instructions.isSetDesiredState()
-              ? ImmutableSet.of(instructions.getDesiredState())
-              : ImmutableSet.of());
-
-          int instanceId = task.getInstanceId();
-          return !initialInstances.contains(instanceId) && !desiredInstances.contains(instanceId);
-        }
-        return true;
+        RangeSet<Integer> covered = coveredInstances.get(task.getTask().getJob());
+        return covered == null || !covered.contains(task.getInstanceId());
       };
     }
 

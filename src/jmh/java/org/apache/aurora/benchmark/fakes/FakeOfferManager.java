@@ -57,7 +57,7 @@ public class FakeOfferManager implements OfferManager {
 
   @Override
   public Iterable<HostOffer> getAll() {
-    return null;
+    return ImmutableList.of();
   }
 
   @Override

@@ -113,13 +113,17 @@ class TaskTimeout extends AbstractIdleService implements EventSubscriber {
 
     @Override
     public void run() {
-      if (!isRunning()) {
-        // Our service is not yet started.  We don't want to lose track of the task, so
-        // we will try again later.
-        LOG.debug("Retrying timeout of task {} in {}", taskId, NOT_STARTED_RETRY);
-        // TODO(wfarner): This execution should not wait for a transaction, but a second executor
-        // would be weird.
-        executor.schedule(this, NOT_STARTED_RETRY.as(Time.MILLISECONDS), TimeUnit.MILLISECONDS);
+      boolean shouldHandle = switch (state()) {
+        case NEW, STARTING -> {
+          // Startup replay precedes activation; retain the timeout until activation completes.
+          LOG.debug("Retrying timeout of task {} in {}", taskId, NOT_STARTED_RETRY);
+          executor.schedule(this, NOT_STARTED_RETRY.as(Time.MILLISECONDS), TimeUnit.MILLISECONDS);
+          yield false;
+        }
+        case STOPPING, TERMINATED, FAILED -> false;
+        case RUNNING -> true;
+      };
+      if (!shouldHandle) {
         return;
       }
 
@@ -150,7 +154,8 @@ class TaskTimeout extends AbstractIdleService implements EventSubscriber {
 
   @Subscribe
   public void recordStateChange(TaskStateChange change) {
-    if (isTransient(change.getNewState())) {
+    if (isTransient(change.getNewState())
+        && (state() == State.NEW || state() == State.STARTING || isRunning())) {
       executor.schedule(
           new TimedOutTaskHandler(change.getTaskId(), change.getNewState()),
           timeout.as(Time.MILLISECONDS),

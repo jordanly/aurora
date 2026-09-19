@@ -41,6 +41,11 @@ public class FakeStatsProvider implements StatsProvider {
   }
 
   @Override
+  public <T extends Number> Registration registerGauge(String name, Supplier<T> gauge) {
+    return () -> { };
+  }
+
+  @Override
   public StatsProvider untracked() {
     return this;
   }

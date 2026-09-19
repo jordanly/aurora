@@ -15,12 +15,17 @@ package org.apache.aurora.common.stats;
 
 import java.util.concurrent.atomic.AtomicLong;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
+
 import org.junit.After;
 import org.junit.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertThat;
 
 /**
@@ -59,15 +64,15 @@ public class StatsTest {
   }
 
   @Test
-  public void testNotSame() {
+  public void testDuplicateCounterSharesRegisteredValue() {
     AtomicLong firstExport = Stats.exportLong("somevar");
     firstExport.incrementAndGet();
     firstExport.incrementAndGet();
     assertCounter("somevar", 2L);
     AtomicLong secondExport = Stats.exportLong("somevar");
-    assertNotSame(firstExport, secondExport);
+    assertSame(firstExport, secondExport);
     secondExport.incrementAndGet();
-    assertCounter("somevar", 2L); // We keep the first one!
+    assertCounter("somevar", 3L);
   }
 
   @Test
@@ -93,6 +98,41 @@ public class StatsTest {
     plus.incrementAndGet();
     assertCounter("a_b", 1);
     assertCounter("b_c", 1);
+  }
+
+  @Test
+  public void testOwnedRegistrationCleanupAndReplacement() {
+    var previous = ImmutableList.copyOf(Stats.getNumericVariables());
+    StatsProvider.Registration first = Stats.STATS_PROVIDER.registerGauge("owned", () -> 1L);
+    assertCounter("owned", 1L);
+    assertEquals(previous.size() + 1, Iterables.size(Stats.getNumericVariables()));
+    assertThrows(IllegalArgumentException.class,
+        () -> Stats.STATS_PROVIDER.registerGauge("owned", () -> 2L));
+    assertThrows(IllegalArgumentException.class, () -> Stats.exportLong("owned"));
+    first.close();
+    assertNull(Stats.getVariable("owned"));
+    assertEquals(previous, ImmutableList.copyOf(Stats.getNumericVariables()));
+    StatsProvider.Registration second = Stats.STATS_PROVIDER.registerGauge("owned", () -> 3L);
+    first.close();
+    assertCounter("owned", 3L);
+    assertEquals(previous.size() + 1, Iterables.size(Stats.getNumericVariables()));
+    second.close();
+    assertNull(Stats.getVariable("owned"));
+    assertEquals(previous, ImmutableList.copyOf(Stats.getNumericVariables()));
+  }
+
+  @Test
+  public void testUntrackedOwnershipAndCounterCollision() {
+    var previous = ImmutableList.copyOf(Stats.getNumericVariables());
+    StatsProvider provider = Stats.STATS_PROVIDER.untracked();
+    StatsProvider.Registration registration = provider.registerGauge("instant", () -> 4L);
+    assertCounter("instant", 4L);
+    assertEquals(previous, ImmutableList.copyOf(Stats.getNumericVariables()));
+    registration.close();
+    assertNull(Stats.getVariable("instant"));
+    AtomicLong counter = provider.makeCounter("instant");
+    assertSame(counter, provider.makeCounter("instant"));
+    assertThrows(IllegalArgumentException.class, () -> Stats.exportLong("instant"));
   }
 
   private void assertCounter(String name, long value) {

@@ -81,6 +81,8 @@ public class WebhookInfo {
   private static final Predicate<List<String>> IS_ALL_WHITELISTED = statuses ->
       statuses == null || statuses.contains("*");
 
+  // URI parser causes include the original credential-bearing URL.
+  @SuppressWarnings("PMD.PreserveStackTrace")
   @JsonCreator
   public WebhookInfo(
        @JsonProperty("headers") Map<String, String> headers,
@@ -89,7 +91,11 @@ public class WebhookInfo {
        @JsonProperty("statuses") List<String> statuses) throws URISyntaxException {
 
     this.headers = ImmutableMap.copyOf(headers);
-    this.targetURI = new URI(requireNonNull(targetURL));
+    try {
+      this.targetURI = new URI(requireNonNull(targetURL));
+    } catch (URISyntaxException e) {
+      throw new URISyntaxException("[redacted]", "Invalid webhook target URI");
+    }
     this.connectTimeoutMsec = requireNonNull(timeout);
     this.whitelistedStatuses = IS_ALL_WHITELISTED.apply(statuses) ? Optional.empty()
         : Optional.ofNullable(statuses).map(
@@ -163,8 +169,10 @@ public class WebhookInfo {
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
-        .add("headers", headers.toString())
-        .add("targetURI", targetURI.toString())
+        .add("headerNames", headers.keySet())
+        .add("targetScheme", targetURI.getScheme())
+        .add("targetHost", targetURI.getHost())
+        .add("targetPort", targetURI.getPort())
         .add("connectTimeoutMsec", connectTimeoutMsec)
         .add("whitelistedStatuses", whitelistedStatuses.orElse(null))
         .toString();

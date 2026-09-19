@@ -27,6 +27,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableMap;
@@ -39,8 +40,12 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.TypeLiteral;
 
+import org.apache.aurora.common.quantity.Amount;
+import org.apache.aurora.common.quantity.Time;
 import org.apache.aurora.common.stats.StatsProvider;
 import org.apache.aurora.common.testing.easymock.EasyMockTest;
+import org.apache.aurora.common.util.Clock;
+import org.apache.aurora.common.util.testing.FakeClock;
 import org.apache.aurora.gen.CoordinatorSlaPolicy;
 import org.apache.aurora.gen.CountSlaPolicy;
 import org.apache.aurora.gen.PercentageSlaPolicy;
@@ -107,6 +112,7 @@ public class SlaManagerTest extends EasyMockTest {
   private ScheduledExecutorService coordinatorExecutor;
   private AsyncHttpClient httpClient;
   private SlaManager slaManager;
+  private final FakeClock clock = new FakeClock();
   private StorageTestUtil storageUtil;
   private StateManager stateManager;
   private IServerInfo serverInfo;
@@ -116,6 +122,7 @@ public class SlaManagerTest extends EasyMockTest {
   @Before
   public void setUp() {
     jettyServer = new Server(0); // Start Jetty server with ephemeral port
+    clock.setNowMillis(TimeUnit.DAYS.toMillis(1));
     storageUtil = new StorageTestUtil(this);
     storageUtil.expectOperations();
     stateManager = createMock(StateManager.class);
@@ -143,6 +150,7 @@ public class SlaManagerTest extends EasyMockTest {
           @Override
           protected void configure() {
             bind(Storage.class).toInstance(storageUtil.storage);
+            bind(Clock.class).toInstance(clock);
             bind(StateManager.class).toInstance(stateManager);
             bind(StatsProvider.class).toInstance(new FakeStatsProvider());
             bind(TierManager.class).toInstance(TIER_MANAGER);
@@ -201,6 +209,30 @@ public class SlaManagerTest extends EasyMockTest {
         runningSince).newBuilder();
     builder.getAssignedTask().setSlaveHost(HOST_A);
     return IScheduledTask.build(builder);
+  }
+
+  @Test
+  public void testCountSlaDurationBoundary() {
+    IScheduledTask target = makeTask("target", 0, RUNNING);
+    long runningSince = clock.nowMillis() - TimeUnit.SECONDS.toMillis(1800);
+    IScheduledTask first = makeTask("first", 1, runningSince);
+    IScheduledTask second = makeTask("second", 2, runningSince);
+    ImmutableSet<IScheduledTask> tasks = ImmutableSet.of(target, first, second);
+    expect(storageUtil.taskStore.fetchTasks(Query.jobScoped(Tasks.getJob(target)).active()))
+        .andReturn(tasks).times(2);
+    expect(storageUtil.taskStore.fetchTasks(
+        Query.jobScoped(Tasks.getJob(target)).byStatus(RUNNING)))
+        .andReturn(tasks).times(2);
+    AtomicInteger actions = new AtomicInteger();
+    control.replay();
+
+    slaManager.checkSlaThenAct(target, COUNT_SLA_POLICY,
+        store -> actions.incrementAndGet(), ImmutableMap.of(), false);
+    assertEquals(0, actions.get());
+    clock.advance(Amount.of(1L, Time.MILLISECONDS));
+    slaManager.checkSlaThenAct(target, COUNT_SLA_POLICY,
+        store -> actions.incrementAndGet(), ImmutableMap.of(), false);
+    assertEquals(1, actions.get());
   }
 
   /**
@@ -418,7 +450,7 @@ public class SlaManagerTest extends EasyMockTest {
   public void testCheckCountSlaFailsDueToRunningTimeDoesNotAct() {
     IScheduledTask task1 = makeTask("taskA", 1, RUNNING);
     IScheduledTask task2 = makeTask("taskB", 2, RUNNING);
-    IScheduledTask task3 = makeTask("taskC", 3, System.currentTimeMillis());
+    IScheduledTask task3 = makeTask("taskC", 3, clock.nowMillis());
 
     // mock calls to fetch all active tasks for the job for sla calculation
     expect(storageUtil.taskStore.fetchTasks(Query.jobScoped(Tasks.getJob(task1)).active()))
@@ -447,7 +479,7 @@ public class SlaManagerTest extends EasyMockTest {
    */
   @Test
   public void testCheckCountSlaCheckForceAct() {
-    IScheduledTask task1 = makeTask("taskA", 1, System.currentTimeMillis());
+    IScheduledTask task1 = makeTask("taskA", 1, clock.nowMillis());
 
     // expect that the fetchTask is the work is called after force
     expect(storageUtil.taskStore.fetchTask(task1.getAssignedTask().getTaskId()))
@@ -688,7 +720,7 @@ public class SlaManagerTest extends EasyMockTest {
   public void testCheckPercentageSlaFailsDueToRunningTimeDoesNotAct() {
     IScheduledTask task1 = makeTask("taskA", 1, RUNNING);
     IScheduledTask task2 = makeTask("taskB", 2, RUNNING);
-    IScheduledTask task3 = makeTask("taskC", 3, System.currentTimeMillis());
+    IScheduledTask task3 = makeTask("taskC", 3, clock.nowMillis());
 
     // mock calls to fetch all active tasks for the job for sla calculation
     expect(storageUtil.taskStore.fetchTasks(Query.jobScoped(Tasks.getJob(task1)).active()))

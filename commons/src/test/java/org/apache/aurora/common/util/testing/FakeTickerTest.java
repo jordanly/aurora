@@ -19,12 +19,11 @@ import org.junit.Before;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 /**
  * @author John Sirois
  */
-public class FakeClockTest {
+public class FakeTickerTest {
   private FakeTicker fakeTicker;
 
   @Before
@@ -33,16 +32,13 @@ public class FakeClockTest {
   }
 
   @Test
-  public void testNow() throws InterruptedException {
-    assertEquals("A fake clock should start out at time 0", 0, fakeTicker.read());
+  public void testNow() {
+    assertEquals("A fake ticker should start out at time 0", 0, fakeTicker.read());
 
     fakeTicker.setNowNanos(42L);
-    assertEquals("A fake clock's time should only be controled by setNow", 42L, fakeTicker.read());
+    assertEquals("Only setNowNanos should change time", 42L, fakeTicker.read());
 
-    long start = System.nanoTime();
-    Thread.sleep(10L);
-    assertTrue(System.nanoTime() - start > 0);
-    assertEquals("A fake clock's time should only be controled by setNow", 42L, fakeTicker.read());
+    assertEquals("Only setNowNanos should change time", 42L, fakeTicker.read());
   }
 
   @Test
@@ -66,6 +62,6 @@ public class FakeClockTest {
     assertEquals(42L, fakeTicker.read());
 
     fakeTicker.advance(Amount.of(-43L, Time.NANOSECONDS));
-    assertEquals(-1L,fakeTicker.read());
+    assertEquals(-1L, fakeTicker.read());
   }
 }

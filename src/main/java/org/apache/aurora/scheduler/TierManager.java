@@ -61,23 +61,20 @@ public interface TierManager {
     private final TierConfig tierConfig;
 
     @VisibleForTesting
-    public static class TierConfig {
-      private final String defaultTier;
-      private final Map<String, TierInfo> tiers;
+    public record TierConfig(
+        @JsonProperty("default") String defaultTier,
+        @JsonProperty("tiers") Map<String, TierInfo> tiers) {
 
       @VisibleForTesting
       @JsonCreator
-      public TierConfig(
-          @JsonProperty("default") String defaultTier,
-          @JsonProperty("tiers") Map<String, TierInfo> tiers) {
+      public TierConfig {
 
         checkArgument(!Strings.isNullOrEmpty(defaultTier), "Default tier name cannot be empty.");
         checkArgument(!tiers.isEmpty(), "Tiers cannot be empty.");
         checkArgument(
             tiers.containsKey(defaultTier),
             "Default tier name should match supplied tiers.");
-        this.defaultTier = defaultTier;
-        this.tiers = ImmutableMap.copyOf(tiers);
+        tiers = ImmutableMap.copyOf(tiers);
       }
 
       @VisibleForTesting

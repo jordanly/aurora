@@ -16,6 +16,7 @@ package org.apache.aurora;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 import java.lang.reflect.Method;
+import java.util.List;
 import java.util.Set;
 
 import jakarta.inject.Qualifier;
@@ -36,7 +37,6 @@ import com.google.inject.matcher.Matchers;
 
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
-import org.apache.aurora.common.collections.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,8 +60,14 @@ public final class GuiceUtils {
     // utility
   }
 
-  private static final Function<Method, Pair<String, Class<?>[]>> CANONICALIZE =
-      method -> Pair.of(method.getName(), method.getParameterTypes());
+  private record MethodSignature(String name, List<Class<?>> parameterTypes) {
+    private MethodSignature {
+      parameterTypes = List.copyOf(parameterTypes);
+    }
+  }
+
+  private static final Function<Method, MethodSignature> CANONICALIZE =
+      method -> new MethodSignature(method.getName(), List.of(method.getParameterTypes()));
 
   /**
    * Creates a matcher that will match methods of an interface, optionally excluding inherited
@@ -78,9 +84,9 @@ public final class GuiceUtils {
 
     Method[] methods =
         declaredMethodsOnly ? matchInterface.getDeclaredMethods() : matchInterface.getMethods();
-    final Set<Pair<String, Class<?>[]>> interfaceMethods =
+    final Set<MethodSignature> interfaceMethods =
         ImmutableSet.copyOf(Iterables.transform(ImmutableList.copyOf(methods), CANONICALIZE));
-    final LoadingCache<Method, Pair<String, Class<?>[]>> cache = CacheBuilder.newBuilder()
+    final LoadingCache<Method, MethodSignature> cache = CacheBuilder.newBuilder()
         .build(CacheLoader.from(CANONICALIZE));
 
     return new Matcher<Method>() {

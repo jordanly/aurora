@@ -19,6 +19,7 @@ import org.junit.Test;
 
 import static org.easymock.EasyMock.expect;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class RandomJitterReturnDelayTest extends EasyMockTest {
   private void assertRandomJitterReturnDelay(
@@ -31,7 +32,7 @@ public class RandomJitterReturnDelayTest extends EasyMockTest {
     Random mockRandom = control.createMock(Random.class);
 
     if (!shouldThrow) {
-      expect(mockRandom.nextInt(jitterWindowMs)).andReturn(randomValue);
+      expect(mockRandom.nextLong(jitterWindowMs)).andReturn((long) randomValue);
     }
 
     control.replay();
@@ -66,11 +67,42 @@ public class RandomJitterReturnDelayTest extends EasyMockTest {
 
   @Test
   public void testZeroWindow() throws Exception {
-    assertRandomJitterReturnDelay(100, 0, false);
+    control.replay();
+    assertEquals(100L, new RandomJitterReturnDelay(100, 0,
+        Random.Util.newDefaultRandom()).get().getValue().longValue());
   }
 
   @Test
   public void testZeroHoldTimeZeroWindow() throws Exception {
-    assertRandomJitterReturnDelay(0, 0, false);
+    control.replay();
+    assertEquals(0L, new RandomJitterReturnDelay(0, 0,
+        Random.Util.newDefaultRandom()).get().getValue().longValue());
   }
+
+  @Test
+  public void testLargeWindowRange() {
+    control.replay();
+    long window = (long) Integer.MAX_VALUE + 1000;
+    RandomJitterReturnDelay delay = new RandomJitterReturnDelay(100, window,
+        new Random.SystemRandom(new java.util.Random(0)));
+    for (int i = 0; i < 100; i++) {
+      long value = delay.get().getValue();
+      assertTrue(value >= 100);
+      assertTrue(value < 100 + window);
+    }
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void testOverflowingDelayRejected() {
+    control.replay();
+    new RandomJitterReturnDelay(Long.MAX_VALUE, 2, Random.Util.newDefaultRandom());
+  }
+
+  @Test
+  public void testMaximumRepresentableDelay() {
+    control.replay();
+    assertEquals(Long.MAX_VALUE, new RandomJitterReturnDelay(Long.MAX_VALUE, 1,
+        Random.Util.newDefaultRandom()).get().getValue().longValue());
+  }
+
 }

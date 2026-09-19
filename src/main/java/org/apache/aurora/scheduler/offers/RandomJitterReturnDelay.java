@@ -37,6 +37,9 @@ class RandomJitterReturnDelay implements Supplier<Amount<Long, Time>>  {
   RandomJitterReturnDelay(long minHoldTimeMs, long maxJitterWindowMs, Random random) {
     checkArgument(minHoldTimeMs >= 0);
     checkArgument(maxJitterWindowMs >= 0);
+    checkArgument(maxJitterWindowMs == 0
+        || minHoldTimeMs <= Long.MAX_VALUE - (maxJitterWindowMs - 1),
+        "Maximum offer return delay exceeds milliseconds range");
 
     this.minHoldTimeMs = minHoldTimeMs;
     this.maxJitterWindowMs = maxJitterWindowMs;
@@ -45,6 +48,7 @@ class RandomJitterReturnDelay implements Supplier<Amount<Long, Time>>  {
 
   @Override
   public Amount<Long, Time> get() {
-    return Amount.of(minHoldTimeMs + random.nextInt((int) maxJitterWindowMs), Time.MILLISECONDS);
+    long jitter = maxJitterWindowMs == 0 ? 0 : random.nextLong(maxJitterWindowMs);
+    return Amount.of(minHoldTimeMs + jitter, Time.MILLISECONDS);
   }
 }

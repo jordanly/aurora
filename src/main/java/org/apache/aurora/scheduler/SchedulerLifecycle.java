@@ -126,6 +126,7 @@ public class SchedulerLifecycle implements EventSubscriber {
         shutdownRegistry,
         statsProvider,
         schedulerActiveServiceManager);
+    shutdownRegistry.addAction(executorService::shutdown);
   }
 
   private static final class DefaultDelayedActions implements DelayedActions {
@@ -205,8 +206,6 @@ public class SchedulerLifecycle implements EventSubscriber {
       @Override
       public void execute() throws TimeoutException {
         stateMachine.transition(State.DEAD);
-        schedulerActiveServiceManager.stopAsync();
-        schedulerActiveServiceManager.awaitStopped(5L, TimeUnit.SECONDS);
       }
     });
 
@@ -290,8 +289,20 @@ public class SchedulerLifecycle implements EventSubscriber {
 
           // TODO(wfarner): Re-evaluate tear-down ordering here.  Should the top-level shutdown
           // be invoked first, or the underlying critical components?
-          driver.stopAsync().awaitTerminated();
-          storage.stop();
+          try {
+            driver.stopAsync().awaitTerminated(5, TimeUnit.SECONDS);
+          } catch (TimeoutException e) {
+            LOG.warn("Driver did not stop before the shutdown deadline", e);
+          } finally {
+            try {
+              schedulerActiveServiceManager.stopAsync();
+              schedulerActiveServiceManager.awaitStopped(5, TimeUnit.SECONDS);
+            } catch (TimeoutException e) {
+              LOG.warn("Scheduler services did not stop before the shutdown deadline", e);
+            } finally {
+              storage.stop();
+            }
+          }
         } finally {
           lifecycle.shutdown();
         }

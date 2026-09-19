@@ -16,6 +16,7 @@ package org.apache.aurora.scheduler.updater;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -684,8 +685,8 @@ class JobUpdateControllerImpl implements JobUpdateController {
 
     JobUpdateStore.Mutable updateStore = storeProvider.getJobUpdateStore();
 
-    IJobUpdateInstructions instructions = updateStore.fetchJobUpdate(key).get()
-        .getUpdate().getInstructions();
+    IJobUpdateDetails details = updateStore.fetchJobUpdate(key).get();
+    IJobUpdateInstructions instructions = details.getUpdate().getInstructions();
     if (isCoordinatedAndPulseExpired(key, instructions)) {
       // Move coordinated update into awaiting pulse state.
       JobUpdateStatus blockedStatus = getBlockedState(summary.getState().getStatus());
@@ -711,6 +712,14 @@ class JobUpdateControllerImpl implements JobUpdateController {
           newEvent(getPausedState(summary.getState().getStatus())).setMessage(UPDATE_AUTO_PAUSED));
     }
 
+    // Evaluation and auto-pause above do not append instance events. Reuse this transaction's
+    // snapshot, indexing only actions used for suppression (not deduplicating stored SLA events).
+    Map<Integer, Set<JobUpdateAction>> actionsByInstance = Maps.newHashMap();
+    for (IJobInstanceUpdateEvent event : details.getInstanceEvents()) {
+      actionsByInstance.computeIfAbsent(event.getInstanceId(),
+          ignored -> EnumSet.noneOf(JobUpdateAction.class)).add(event.getAction());
+    }
+
     for (Map.Entry<Integer, SideEffect> entry : result.getSideEffects().entrySet()) {
       // If we're pausing after processing this set of side effects, only process the side effects
       // which are in a terminal state in order to avoid starting new shards after the pause
@@ -722,19 +731,13 @@ class JobUpdateControllerImpl implements JobUpdateController {
       Iterable<InstanceUpdateStatus> statusChanges;
 
       int instanceId = entry.getKey();
-      List<IJobInstanceUpdateEvent> savedEvents = updateStore.fetchJobUpdate(key).get()
-          .getInstanceEvents()
-          .stream()
-          .filter(e -> e.getInstanceId() == instanceId)
-          .collect(Collectors.toList());
-
-      Set<JobUpdateAction> savedActions =
-          savedEvents.stream().map(EVENT_TO_ACTION).collect(Collectors.toSet());
+      Set<JobUpdateAction> savedActions = actionsByInstance.computeIfAbsent(instanceId,
+          ignored -> EnumSet.noneOf(JobUpdateAction.class));
 
       // Don't bother persisting a sequence of status changes that represents an instance that
       // was immediately recognized as being healthy and in the desired state.
       if (entry.getValue().getStatusChanges().equals(NOOP_INSTANCE_UPDATE)
-          && savedEvents.isEmpty()) {
+          && savedActions.isEmpty()) {
 
         LOG.info("Suppressing no-op update for instance " + instanceId);
         statusChanges = ImmutableSet.of();
@@ -757,6 +760,7 @@ class JobUpdateControllerImpl implements JobUpdateController {
                   .setTimestampMs(clock.nowMillis())
                   .setAction(action));
           updateStore.saveJobInstanceUpdateEvent(summary.getKey(), event);
+          savedActions.add(action);
           jobUpdateActionStats.getUnchecked(action).incrementAndGet();
         }
       }

@@ -18,12 +18,27 @@ import java.nio.charset.StandardCharsets;
 import org.junit.Test;
 
 import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
 
 public class AuthorizeHeaderTokenTest {
   private static final String ALADDIN_OPEN_SESAME = "QWxhZGRpbjpvcGVuIHNlc2FtZQ==";
   private static final byte[] ALADDIN_OPEN_SESAME_DECODED =
       "Aladdin:open sesame".getBytes(StandardCharsets.US_ASCII);
+
+  @Test
+  public void testMalformedCredentialsAreNotInExceptions() {
+    for (String header : new String[] {
+        "Basic synthetic-password", "Negotiate synthetic-password extra", "Negotiate secret!"
+    }) {
+      IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+          () -> new AuthorizeHeaderToken(header));
+      assertFalse(error.toString().contains("synthetic-password"));
+      assertFalse(error.toString().contains("secret!"));
+      assertNull(error.getCause());
+    }
+  }
 
   @Test(expected = IllegalArgumentException.class)
   public void testInvalidScheme() {

@@ -16,6 +16,7 @@ package org.apache.aurora.scheduler.reconciliation;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 import com.google.common.collect.ImmutableList;
@@ -80,13 +81,14 @@ public class TaskReconcilerTest extends EasyMockTest {
     storageUtil = new StorageTestUtil(this);
     statsProvider = createMock(StatsProvider.class);
     taskReconciliation = createMock(TaskReconciliation.class);
+    expect(taskReconciliation.reconcilesFromWatch()).andStubReturn(false);
     executorService = createMock(ScheduledExecutorService.class);
     explicitRuns = new AtomicLong();
     implicitRuns = new AtomicLong();
   }
 
   @Test
-  public void testExecution() {
+  public void testExecution() throws Exception {
     expect(statsProvider.makeCounter(EXPLICIT_STAT_NAME)).andReturn(explicitRuns);
     expect(statsProvider.makeCounter(IMPLICIT_STAT_NAME)).andReturn(implicitRuns);
     FakeScheduledExecutor clock =
@@ -113,6 +115,8 @@ public class TaskReconcilerTest extends EasyMockTest {
     taskReconciliation.reconcileTasks(EasyMock.anyObject());
     expectLastCall().times(3);
 
+    expect(executorService.shutdownNow()).andReturn(ImmutableList.of());
+    expect(executorService.awaitTermination(5, TimeUnit.SECONDS)).andReturn(true);
     control.replay();
 
     TaskReconciler reconciler = new TaskReconciler(
@@ -148,6 +152,52 @@ public class TaskReconcilerTest extends EasyMockTest {
     reconciler.triggerExplicitReconciliation(Optional.empty());
     assertEquals(7L, explicitRuns.get());
     assertEquals(3L, implicitRuns.get());
+
+    reconciler.stopAsync().awaitTerminated();
+    clock.advance(IMPLICT_SCHEDULE);
+    reconciler.triggerExplicitReconciliation(Optional.empty());
+    reconciler.triggerImplicitReconciliation();
+    assertEquals(7L, explicitRuns.get());
+    assertEquals(3L, implicitRuns.get());
+  }
+
+  @Test
+  public void testStopBeforeStartupClosesExecutor() {
+    expect(statsProvider.makeCounter(EXPLICIT_STAT_NAME)).andReturn(explicitRuns);
+    expect(statsProvider.makeCounter(IMPLICIT_STAT_NAME)).andReturn(implicitRuns);
+    expect(executorService.shutdownNow()).andReturn(ImmutableList.of());
+    control.replay();
+    TaskReconciler reconciler = new TaskReconciler(
+        SETTINGS, storageUtil.storage, taskReconciliation, executorService, statsProvider);
+    reconciler.stopAsync().awaitTerminated();
+  }
+
+  @Test
+  public void testWatchBackendDoesNotScheduleOrScan() throws Exception {
+    expect(statsProvider.makeCounter(EXPLICIT_STAT_NAME)).andReturn(explicitRuns);
+    expect(statsProvider.makeCounter(IMPLICIT_STAT_NAME)).andReturn(implicitRuns);
+    expect(executorService.shutdownNow()).andReturn(ImmutableList.of());
+    expect(executorService.awaitTermination(5, TimeUnit.SECONDS)).andReturn(true);
+    control.replay();
+    TaskReconciliation watch = new TaskReconciliation() {
+      @Override
+      public boolean reconcilesFromWatch() {
+        return true;
+      }
+
+      @Override
+      public void reconcileTasks(java.util.Collection<ReconciliationTarget> targets) {
+        throw new AssertionError("Watch backend must not receive legacy reconciliation");
+      }
+    };
+    TaskReconciler reconciler = new TaskReconciler(
+        SETTINGS, storageUtil.storage, watch, executorService, statsProvider);
+    reconciler.startAsync().awaitRunning();
+    reconciler.triggerExplicitReconciliation(Optional.of(1));
+    reconciler.triggerImplicitReconciliation();
+    reconciler.stopAsync().awaitTerminated();
+    assertEquals(0L, explicitRuns.get());
+    assertEquals(0L, implicitRuns.get());
   }
 
   @Test(expected = IllegalArgumentException.class)

@@ -13,6 +13,9 @@
  */
 package org.apache.aurora.common.quantity;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import com.google.common.collect.Lists;
 import com.google.common.collect.Ordering;
 
@@ -22,6 +25,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertThrows;
 
 /**
  * @author John Sirois
@@ -113,4 +117,84 @@ public class AmountTest {
   public void testAmountThrowsTypeOverflowException() {
     Amount.of(1000, Time.DAYS).asChecked(Time.MILLISECONDS);
   }
+  @Test
+  public void testCrossUnitHashCollectionsAndNumericTypes() {
+    Set<Amount<Long, Time>> amounts = new HashSet<>();
+    amounts.add(Amount.of(1L, Time.DAYS));
+    amounts.add(Amount.of(24L, Time.HOURS));
+    assertEquals(1, amounts.size());
+    assertEquals(Amount.of(1L, Time.DAYS).hashCode(), Amount.of(24L, Time.HOURS).hashCode());
+    assertEquals(Amount.of(-1, Data.KB), Amount.of(-1024, Data.BYTES));
+    assertEquals(Amount.of(-1, Data.KB).hashCode(), Amount.of(-1024, Data.BYTES).hashCode());
+    assertNotEquals(Amount.of(1.0f, Time.SECONDS), Amount.of(1.0, Time.SECONDS));
+  }
+
+  @Test
+  public void testLargeIntegersRemainExact() {
+    long beyondDoublePrecision = 9_007_199_254_740_993L;
+    assertEquals(Long.valueOf(beyondDoublePrecision),
+        Amount.of(beyondDoublePrecision * 1000, Time.NANOSECONDS).as(Time.MICROSECONDS));
+    assertEquals(Amount.of(beyondDoublePrecision, Time.MICROSECONDS),
+        Amount.of(beyondDoublePrecision * 1000, Time.NANOSECONDS));
+    assertNotEquals(Amount.of(beyondDoublePrecision, Time.NANOSECONDS),
+        Amount.of(beyondDoublePrecision - 1, Time.NANOSECONDS));
+    assertTrue(Amount.of(Long.MAX_VALUE, Time.DAYS)
+        .compareTo(Amount.of(Long.MAX_VALUE, Time.HOURS)) > 0);
+    assertNotEquals(Amount.of(Long.MAX_VALUE, Time.DAYS), Amount.of(Long.MAX_VALUE, Time.HOURS));
+  }
+
+  @Test
+  public void testIntegralBoundsAndTruncation() {
+    assertEquals(Long.valueOf(Long.MAX_VALUE),
+        Amount.of(Long.MAX_VALUE, Time.NANOSECONDS).asChecked(Time.NANOSECONDS));
+    assertEquals(Long.valueOf(Long.MIN_VALUE),
+        Amount.of(Long.MIN_VALUE, Time.NANOSECONDS).asChecked(Time.NANOSECONDS));
+    assertEquals(Integer.valueOf(Integer.MAX_VALUE),
+        Amount.of(Integer.MAX_VALUE, Data.BITS).asChecked(Data.BITS));
+    assertEquals(Integer.valueOf(Integer.MIN_VALUE),
+        Amount.of(Integer.MIN_VALUE, Data.BITS).asChecked(Data.BITS));
+    assertEquals(Long.valueOf(-1), Amount.of(-1999L, Time.NANOSECONDS).as(Time.MICROSECONDS));
+    assertEquals(Integer.valueOf(-1), Amount.of(-1999, Time.NANOSECONDS).as(Time.MICROSECONDS));
+    assertEquals(Long.valueOf(Long.MAX_VALUE),
+        Amount.of(Long.MAX_VALUE, Time.MICROSECONDS).as(Time.NANOSECONDS));
+    assertEquals(Long.valueOf(Long.MIN_VALUE),
+        Amount.of(Long.MIN_VALUE, Time.MICROSECONDS).as(Time.NANOSECONDS));
+    assertThrows(Amount.TypeOverflowException.class,
+        () -> Amount.of(Long.MAX_VALUE, Time.MICROSECONDS).asChecked(Time.NANOSECONDS));
+    assertThrows(Amount.TypeOverflowException.class,
+        () -> Amount.of(Long.MIN_VALUE, Time.MICROSECONDS).asChecked(Time.NANOSECONDS));
+    assertThrows(Amount.TypeOverflowException.class,
+        () -> Amount.of(Integer.MIN_VALUE, Data.BYTES).asChecked(Data.BITS));
+  }
+
+  @Test
+  public void testFloatingPointCanonicalValuesAndSpecialValues() {
+    assertEquals(Amount.of(0.1, Time.SECONDS), Amount.of(100.0, Time.MILLISECONDS));
+    assertEquals(Amount.of(0.1f, Time.SECONDS), Amount.of(100.0f, Time.MILLISECONDS));
+    assertEquals(Amount.of(0.1f, Time.SECONDS).hashCode(),
+        Amount.of(100.0f, Time.MILLISECONDS).hashCode());
+    assertEquals(Amount.of(Double.NaN, Time.SECONDS), Amount.of(Double.NaN, Time.DAYS));
+    assertEquals(Amount.of(Double.NaN, Time.SECONDS).hashCode(),
+        Amount.of(Double.NaN, Time.DAYS).hashCode());
+    assertEquals(Amount.of(Float.NaN, Time.SECONDS), Amount.of(Float.NaN, Time.DAYS));
+    assertEquals(Amount.of(Float.NEGATIVE_INFINITY, Time.SECONDS),
+        Amount.of(Float.NEGATIVE_INFINITY, Time.DAYS));
+    assertNotEquals(Amount.of(-0.0f, Time.SECONDS), Amount.of(0.0f, Time.DAYS));
+    assertEquals(Amount.of(Double.POSITIVE_INFINITY, Time.SECONDS),
+        Amount.of(Double.POSITIVE_INFINITY, Time.DAYS));
+    assertEquals(Amount.of(-0.0, Time.SECONDS), Amount.of(-0.0, Time.DAYS));
+    assertNotEquals(Amount.of(-0.0, Time.SECONDS), Amount.of(0.0, Time.DAYS));
+    assertTrue(Amount.of(-0.0, Time.SECONDS).compareTo(Amount.of(0.0, Time.DAYS)) < 0);
+    assertTrue(Amount.of(Double.MAX_VALUE, Time.DAYS)
+        .compareTo(Amount.of(Double.POSITIVE_INFINITY, Time.SECONDS)) < 0);
+    assertEquals(Double.valueOf(Double.MAX_VALUE),
+        Amount.of(Double.MAX_VALUE, Time.SECONDS).asChecked(Time.SECONDS));
+    assertEquals(Double.valueOf(Double.POSITIVE_INFINITY),
+        Amount.of(Double.POSITIVE_INFINITY, Time.SECONDS).asChecked(Time.NANOSECONDS));
+    assertThrows(Amount.TypeOverflowException.class,
+        () -> Amount.of(Double.MAX_VALUE, Time.SECONDS).asChecked(Time.NANOSECONDS));
+    assertThrows(Amount.TypeOverflowException.class,
+        () -> Amount.of(-Float.MAX_VALUE, Time.SECONDS).asChecked(Time.NANOSECONDS));
+  }
+
 }

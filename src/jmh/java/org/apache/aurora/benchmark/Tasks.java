@@ -58,7 +58,8 @@ final class Tasks {
     private ScheduleStatus scheduleStatus = ScheduleStatus.PENDING;
     private ImmutableSet.Builder<Constraint> constraints = ImmutableSet.builder();
 
-    private static int uuid = 0;
+    private static final java.util.concurrent.atomic.AtomicLong NEXT_ID =
+        new java.util.concurrent.atomic.AtomicLong();
 
     Builder setRole(String newRole) {
       jobKey.setRole(newRole);
@@ -130,7 +131,8 @@ final class Tasks {
 
       for (int i = 0; i < count; i++) {
         String taskId =
-            jobKey.getRole() + "-" + jobKey.getEnvironment() + "-" + i + "-" + uuid++;
+            jobKey.getRole() + "-" + jobKey.getEnvironment() + "-" + i + "-"
+                + NEXT_ID.getAndIncrement();
 
         ScheduledTask builder = TaskTestUtil.makeTask(taskId, IJobKey.build(jobKey))
             .newBuilder()

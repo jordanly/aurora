@@ -14,7 +14,6 @@
 package org.apache.aurora.scheduler.storage;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -28,7 +27,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
@@ -427,26 +425,19 @@ public abstract class AbstractTaskStoreTest extends TearDownTestCase {
   }
 
   @Test
-  public void testCanonicalTaskConfigs() {
+  public void testEqualTaskConfigsAcrossDistinctTasks() {
     IScheduledTask a = createTask("a");
-    IScheduledTask b = createTask("a");
-    IScheduledTask c = createTask("a");
+    ScheduledTask builder = a.newBuilder();
+    builder.getAssignedTask().setTaskId("b");
+    IScheduledTask b = IScheduledTask.build(builder);
+    builder.getAssignedTask().setTaskId("c");
+    IScheduledTask c = IScheduledTask.build(builder);
     saveTasks(a, b, c);
-    Set<IScheduledTask> inserted = ImmutableSet.of(a, b, c);
-
-    Set<ITaskConfig> storedConfigs = FluentIterable.from(fetchTasks(Query.unscoped()))
-        .transform(Tasks::getConfig)
-        .toSet();
-    assertEquals(
-        FluentIterable.from(inserted).transform(Tasks::getConfig).toSet(),
-        storedConfigs);
-    Map<ITaskConfig, ITaskConfig> identityMap = Maps.newIdentityHashMap();
-    for (ITaskConfig stored : storedConfigs) {
-      identityMap.put(stored, stored);
+    List<IScheduledTask> stored = ImmutableList.copyOf(fetchTasks(Query.unscoped()));
+    assertEquals(3, stored.size());
+    for (IScheduledTask task : stored) {
+      assertEquals(Tasks.getConfig(a), Tasks.getConfig(task));
     }
-    assertEquals(
-        ImmutableMap.of(Tasks.getConfig(a), Tasks.getConfig(a)),
-        identityMap);
   }
 
   private static IScheduledTask setHost(IScheduledTask task, IHostAttributes host) {

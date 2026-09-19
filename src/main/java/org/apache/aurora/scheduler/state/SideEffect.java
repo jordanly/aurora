@@ -13,51 +13,15 @@
  */
 package org.apache.aurora.scheduler.state;
 
-import java.util.Objects;
-import java.util.Optional;
-
-import org.apache.aurora.gen.ScheduleStatus;
-
 /**
  * Descriptions of the different types of external work commands that task state machines may
  * trigger.
  */
-class SideEffect {
-  private final Action action;
-  private final Optional<ScheduleStatus> nextState;
-
-  SideEffect(Action action, Optional<ScheduleStatus> nextState) {
-    this.action = action;
-    this.nextState = nextState;
-  }
-
-  public Action getAction() {
-    return action;
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    if (!(o instanceof SideEffect)) {
-      return false;
-    }
-
-    SideEffect other = (SideEffect) o;
-    return Objects.equals(action, other.action)
-        && Objects.equals(nextState, other.nextState);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(action, nextState);
-  }
-
-  @Override
-  public String toString() {
-    if (nextState.isPresent()) {
-      return action.toString() + " " + nextState.get();
-    } else {
-      return action.toString();
-    }
+// Retain the existing Action namespace without introducing an instantiable wrapper.
+@SuppressWarnings("PMD.MissingStaticMethodInNonInstantiatableClass")
+final class SideEffect {
+  private SideEffect() {
+    // Namespace for task-state actions.
   }
 
   enum Action {

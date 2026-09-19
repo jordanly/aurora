@@ -53,11 +53,31 @@ the scheduler running in vagrant, check out these links:
 
 ### Counters and gauges
 Among numeric stats, there are two fundamental types of stats exported: _counters_ and _gauges_.
-Counters are guaranteed to be monotonically-increasing for the lifetime of a process, while gauges
-may decrease in value.  Aurora uses counters to represent things like the number of times an event
+Counters increase monotonically while their registration exists, while gauges may decrease in
+value. Most counters are registered for the lifetime of the process; the task failure histories
+described below have a shorter, bounded lifetime.  Aurora uses counters to represent things like the number of times an event
 has occurred, and gauges to capture things like the current length of a queue.  Counters are a
 natural fit for accurate composition into [rate ratios](http://en.wikipedia.org/wiki/Rate_ratio)
 (useful for sample-resistant latency calculation), while gauges are not.
+
+### Task failure history lifetime
+
+The scheduler keeps at most 10,000 dynamic task failure history names across
+`tasks_LOST_<job>`, `tasks_FAILED_<job>`, `tasks_lost_rack_<rack>`, and
+`tasks_lost_dedicated_<role>`. A history name that has not been accessed by a task event for one hour
+is retired during subsequent event processing. Retirement removes its exported gauge and its
+internal time-series samples on the next sampling pass. A later event may recreate the name with a
+fresh value starting at zero; monitoring systems should treat this as a counter reset.
+
+When the name budget is full, existing histories continue to update and new names accumulate in
+`task_vars_dynamic_job_LOST_overflow`, `task_vars_dynamic_job_FAILED_overflow`,
+`task_vars_dynamic_rack_overflow`, or `task_vars_dynamic_dedicated_overflow`. Include these overflow
+counters when computing totals for the corresponding category. Job histories and their overflow
+counters are available in `/vars` but are not sampled into the internal time-series repository.
+
+The fixed `task_store_<state>` gauges are not subject to this budget or idle retirement. All task
+metrics owned by the scheduler's task-variable service are removed when that service stops.
+Export important history to an external monitoring system if it must outlive these registrations.
 
 # Alerting
 

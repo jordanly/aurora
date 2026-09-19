@@ -33,6 +33,10 @@ record GoAgentConfig(String cluster, String incarnation, Path database, Path key
     nodes = List.copyOf(nodes);
   }
 
+  String journalScope(Node node) {
+    return incarnation + "/" + node.journal();
+  }
+
   record Node(String name, URI url, String journal, String boot, String runtime,
               long cpuMillis, long memoryBytes, long diskMb) {
     ObjectNode target() {

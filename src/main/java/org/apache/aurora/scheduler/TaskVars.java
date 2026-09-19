@@ -13,11 +13,11 @@
  */
 package org.apache.aurora.scheduler;
 
+import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.stream.StreamSupport;
 
 import jakarta.inject.Inject;
 
@@ -26,6 +26,8 @@ import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.base.Strings;
 import com.google.common.base.Supplier;
+import com.google.common.base.Ticker;
+import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -78,16 +80,64 @@ public class TaskVars extends AbstractIdleService implements EventSubscriber {
   );
 
   private final LoadingCache<String, Counter> counters;
-  private final LoadingCache<String, Counter> untrackedCounters;
+  private final LoadingCache<String, Counter> untrackedOverflowCounters;
+  private final Cache<String, Counter> dynamicCounters;
+  private final Cache<String, Counter> untrackedCounters;
+  private final StatsProvider trackedProvider;
+  private final StatsProvider untrackedProvider;
+  private final int dynamicLimit;
+  private boolean stopped;
   private final Storage storage;
   private volatile boolean exporting = false;
 
   @Inject
-  TaskVars(Storage storage, final StatsProvider statProvider) {
+  TaskVars(Storage storage, StatsProvider statProvider) {
+    this(storage, statProvider, Ticker.systemTicker(), 10_000, Duration.ofHours(1));
+  }
+
+  @VisibleForTesting
+  TaskVars(Storage storage, StatsProvider statProvider, Ticker ticker,
+           int dynamicLimit, Duration idleRetention) {
     this.storage = requireNonNull(storage);
-    requireNonNull(statProvider);
+    this.trackedProvider = requireNonNull(statProvider);
+    this.untrackedProvider = statProvider.untracked();
+    if (dynamicLimit < 0) {
+      throw new IllegalArgumentException("Dynamic metric limit must be nonnegative");
+    }
+    this.dynamicLimit = dynamicLimit;
     counters = buildCache(statProvider);
-    untrackedCounters = buildCache(statProvider.untracked());
+    untrackedOverflowCounters = buildCache(untrackedProvider);
+    dynamicCounters = buildDynamicCache(ticker, idleRetention);
+    untrackedCounters = buildDynamicCache(ticker, idleRetention);
+  }
+
+  private Cache<String, Counter> buildDynamicCache(Ticker ticker, Duration retention) {
+    // These are cumulative loss/failure histories, not the fixed active-state gauges. Idle
+    // histories retire on subsequent events after one hour and restart at zero on recreation.
+    // New names beyond the shared 10,000-name budget accumulate in per-category overflow metrics.
+    return CacheBuilder.newBuilder().ticker(ticker).expireAfterAccess(retention)
+        .<String, Counter>removalListener(notification -> notification.getValue().close())
+        .build();
+  }
+
+  private Counter dynamicCounter(String name, String category, boolean untracked) {
+    dynamicCounters.cleanUp();
+    untrackedCounters.cleanUp();
+    Cache<String, Counter> cache = untracked ? untrackedCounters : dynamicCounters;
+    Counter existing = cache.getIfPresent(name);
+    if (existing != null) {
+      return existing;
+    }
+    if (dynamicCounters.size() + untrackedCounters.size() >= dynamicLimit) {
+      return (untracked ? untrackedOverflowCounters : counters)
+          .getUnchecked("task_vars_dynamic_" + category + "_overflow");
+    }
+    Counter counter = new Counter(untracked ? untrackedProvider : trackedProvider);
+    if (exporting) {
+      counter.exportAs(name);
+    }
+    cache.put(name, counter);
+    return counter;
   }
 
   private LoadingCache<String, Counter> buildCache(final StatsProvider provider) {
@@ -143,66 +193,38 @@ public class TaskVars extends AbstractIdleService implements EventSubscriber {
     getCounter(status).decrement();
   }
 
-  private void updateRackCounters(IScheduledTask task, ScheduleStatus newState) {
-    final String host = task.getAssignedTask().getSlaveHost();
-    Optional<String> rack;
-    if (Strings.isNullOrEmpty(task.getAssignedTask().getSlaveHost())) {
-      rack = Optional.empty();
-    } else {
-      rack = storage.read(storeProvider ->
-          StreamSupport.stream(
-              AttributeStore.Util.attributesOrNone(storeProvider, host).spliterator(),
-              false)
-            .filter(IS_RACK)
-            .findFirst()
-            .map(ATTR_VALUE));
-    }
+  private void updateHostCounters(IScheduledTask task, ScheduleStatus newState) {
+    String host = task.getAssignedTask().getSlaveHost();
+    Set<IAttribute> attributes = Strings.isNullOrEmpty(host) ? ImmutableSet.of()
+        : storage.read(store ->
+            ImmutableSet.copyOf(AttributeStore.Util.attributesOrNone(store, host)));
+    Optional<String> rack = attributes.stream().filter(IS_RACK).findFirst().map(ATTR_VALUE);
+    Set<String> dedicatedRoles = attributes.stream()
+        .filter(attr -> "dedicated".equals(attr.getName())).findFirst()
+        .map(IAttribute::getValues).orElse(ImmutableSet.of());
 
-    // Always dummy-read the lost-tasks-per-rack stat. This ensures that there is at least a zero
-    // exported for all racks.
-    rack.ifPresent(s -> counters.getUnchecked(rackStatName(s)));
-
+    rack.ifPresent(value -> dynamicCounter(rackStatName(value), "rack", false));
+    dedicatedRoles.forEach(role -> dynamicCounter(dedicatedRoleStatName(role), "dedicated", false));
     if (newState == ScheduleStatus.LOST) {
       rack.ifPresentOrElse(
-          s -> counters.getUnchecked(rackStatName(s)).increment(),
+          value -> dynamicCounter(rackStatName(value), "rack", false).increment(),
           () -> LOG.warn("Failed to find rack attribute associated with host " + host));
-    }
-  }
-
-  private void updateDedicatedCounters(IScheduledTask task, ScheduleStatus newState) {
-    final String host = task.getAssignedTask().getSlaveHost();
-    ImmutableSet<String> dedicatedRoles;
-    if (Strings.isNullOrEmpty(host)) {
-      dedicatedRoles = ImmutableSet.of();
-    } else {
-      dedicatedRoles = storage.read(store ->
-          StreamSupport.stream(
-                AttributeStore.Util.attributesOrNone(store, host).spliterator(),
-                false)
-              .filter(attr -> "dedicated".equals(attr.getName()))
-              .findFirst()
-              .map(IAttribute::getValues)
-              .orElse(ImmutableSet.of())
-      );
-    }
-
-    // Always dummy-read the lost-tasks-per-role stat. This ensures that there is at least a zero
-    // exported for all roles.
-    dedicatedRoles.forEach(s -> counters.getUnchecked(dedicatedRoleStatName(s)));
-
-    if (newState == ScheduleStatus.LOST) {
-      dedicatedRoles.forEach(s -> counters.getUnchecked(dedicatedRoleStatName(s)).increment());
+      dedicatedRoles.forEach(role ->
+          dynamicCounter(dedicatedRoleStatName(role), "dedicated", false).increment());
     }
   }
 
   private void updateJobCounters(IScheduledTask task, ScheduleStatus newState) {
     if (TRACKED_JOB_STATES.contains(newState)) {
-      untrackedCounters.getUnchecked(jobStatName(task, newState)).increment();
+      dynamicCounter(jobStatName(task, newState), "job_" + newState, true).increment();
     }
   }
 
   @Subscribe
-  public void taskChangedState(TaskStateChange stateChange) {
+  public synchronized void taskChangedState(TaskStateChange stateChange) {
+    if (stopped) {
+      return;
+    }
     IScheduledTask task = stateChange.getTask();
     Optional<ScheduleStatus> previousState = stateChange.getOldState();
 
@@ -211,13 +233,12 @@ public class TaskVars extends AbstractIdleService implements EventSubscriber {
     }
     incrementCount(task.getStatus());
 
-    updateRackCounters(task, task.getStatus());
+    updateHostCounters(task, task.getStatus());
     updateJobCounters(task, task.getStatus());
-    updateDedicatedCounters(task, task.getStatus());
   }
 
   @Override
-  protected void startUp() {
+  protected synchronized void startUp() {
     // Dummy read the counter for each status counter. This is important to guarantee a stat with
     // value zero is present for each state, even if all states are not represented in the task
     // store.
@@ -225,13 +246,27 @@ public class TaskVars extends AbstractIdleService implements EventSubscriber {
       getCounter(status);
     }
 
-    exportCounters(counters.asMap());
-    exportCounters(untrackedCounters.asMap());
+    try {
+      exportCounters(counters.asMap());
+      exportCounters(untrackedOverflowCounters.asMap());
+      exportCounters(dynamicCounters.asMap());
+      exportCounters(untrackedCounters.asMap());
+    } catch (RuntimeException | Error e) {
+      shutDown();
+      throw e;
+    }
   }
 
   @Override
-  protected void shutDown() {
-    // Ignored. VM shutdown is required to stop exporting task vars.
+  protected synchronized void shutDown() {
+    stopped = true;
+    exporting = false;
+    counters.asMap().values().forEach(Counter::close);
+    counters.invalidateAll();
+    untrackedOverflowCounters.asMap().values().forEach(Counter::close);
+    untrackedOverflowCounters.invalidateAll();
+    dynamicCounters.invalidateAll();
+    untrackedCounters.invalidateAll();
   }
 
   private void exportCounters(Map<String, Counter> counterMap) {
@@ -244,13 +279,19 @@ public class TaskVars extends AbstractIdleService implements EventSubscriber {
   }
 
   @Subscribe
-  public void tasksDeleted(final TasksDeleted event) {
+  public synchronized void tasksDeleted(final TasksDeleted event) {
+    if (stopped) {
+      return;
+    }
     for (IScheduledTask task : event.getTasks()) {
       decrementCount(task.getStatus());
     }
   }
 
-  public void taskVetoed(Set<Veto> vetoes) {
+  public synchronized void taskVetoed(Set<Veto> vetoes) {
+    if (stopped) {
+      return;
+    }
     VetoGroup vetoGroup = Veto.identifyGroup(vetoes);
     if (vetoGroup != VetoGroup.EMPTY) {
       counters.getUnchecked(VETO_GROUPS_TO_COUNTERS.get(vetoGroup)).increment();
@@ -262,7 +303,7 @@ public class TaskVars extends AbstractIdleService implements EventSubscriber {
 
   private static class Counter implements Supplier<Long> {
     private final AtomicLong value = new AtomicLong();
-    private boolean exported = false;
+    private StatsProvider.Registration registration;
     private final StatsProvider stats;
 
     Counter(StatsProvider stats) {
@@ -275,9 +316,15 @@ public class TaskVars extends AbstractIdleService implements EventSubscriber {
     }
 
     private synchronized void exportAs(String name) {
-      if (!exported) {
-        stats.makeGauge(name, this);
-        exported = true;
+      if (registration == null) {
+        registration = stats.registerGauge(name, this);
+      }
+    }
+
+    private synchronized void close() {
+      if (registration != null) {
+        registration.close();
+        registration = null;
       }
     }
 

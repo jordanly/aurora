@@ -13,6 +13,9 @@
  */
 package org.apache.aurora.common.stats;
 
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -44,4 +47,17 @@ public interface TimeSeriesRepository {
    * @return All current timestamps.
    */
   Iterable<Number> getTimestamps();
+  /** Returns one detached sample of the requested series and their shared timestamps. */
+  Snapshot snapshot(List<String> names);
+
+  /** Missing series are omitted from the map; each present column belongs to these timestamps. */
+  record Snapshot(List<Number> timestamps, Map<String, List<Number>> series) {
+    public Snapshot {
+      timestamps = List.copyOf(timestamps);
+      Map<String, List<Number>> copied = new LinkedHashMap<>();
+      series.forEach((name, values) -> copied.put(name, List.copyOf(values)));
+      series = Map.copyOf(copied);
+    }
+  }
+
 }

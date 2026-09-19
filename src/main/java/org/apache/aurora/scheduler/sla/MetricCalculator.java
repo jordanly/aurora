@@ -14,7 +14,9 @@
 package org.apache.aurora.scheduler.sla;
 
 import java.util.Collection;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
@@ -203,10 +205,12 @@ public class MetricCalculator implements Runnable {
       Range<Long> timeRange,
       String nameQualifier) {
 
+    Map<GroupType, Multimap<String, IScheduledTask>> groups = new EnumMap<>(GroupType.class);
     for (MetricCategory category : categories) {
       for (Entry<AlgorithmType, GroupType> slaMetric : category.getMetrics().entries()) {
         for (Entry<String, Collection<IScheduledTask>> namedGroup
-            : slaMetric.getValue().getSlaGroup().createNamedGroups(tasks).asMap().entrySet()) {
+            : groups.computeIfAbsent(slaMetric.getValue(),
+                type -> type.getSlaGroup().createNamedGroups(tasks)).asMap().entrySet()) {
 
           AlgorithmType algoType = slaMetric.getKey();
           String metricName = namedGroup.getKey() + algoType.getAlgorithmName() + nameQualifier;

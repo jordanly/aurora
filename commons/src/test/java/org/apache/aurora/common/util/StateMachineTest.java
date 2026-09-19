@@ -39,6 +39,16 @@ public class StateMachineTest extends EasyMockTest {
   private static final String D = "D";
 
   @Test
+  public void testBuiltMachineDoesNotObserveBuilderChanges() {
+    control.replay();
+    var builder = StateMachine.<String>builder(NAME).initialState(A).addState(A, B);
+    var machine = builder.build();
+    builder.addState(B, C).onAnyTransition(transition -> fail("Late callback leaked"));
+    changeState(machine, B);
+    changeStateFail(machine, C);
+  }
+
+  @Test
   public void testEmptySM() {
     control.replay();
 

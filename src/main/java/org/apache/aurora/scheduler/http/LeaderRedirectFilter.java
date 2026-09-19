@@ -66,7 +66,8 @@ public class LeaderRedirectFilter extends AbstractFilter {
       return;
     }
 
-    LeaderStatus leaderStatus = redirector.getLeaderStatus();
+    LeaderRedirect.LeaderObservation observation = redirector.observeLeader();
+    LeaderStatus leaderStatus = observation.status();
     switch (leaderStatus) {
       case LEADING:
         chain.doFilter(request, response);
@@ -75,7 +76,7 @@ public class LeaderRedirectFilter extends AbstractFilter {
         sendServiceUnavailable(response);
         return;
       case NOT_LEADING:
-        Optional<String> leaderRedirect = redirector.getRedirectTarget(request);
+        Optional<String> leaderRedirect = redirector.getRedirectTarget(request, observation);
         if (leaderRedirect.isPresent()) {
           response.setStatus(HttpServletResponse.SC_TEMPORARY_REDIRECT);
           response.setHeader(HttpHeaders.LOCATION, leaderRedirect.get());

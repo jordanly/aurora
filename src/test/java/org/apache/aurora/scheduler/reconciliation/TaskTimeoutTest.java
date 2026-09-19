@@ -224,6 +224,28 @@ public class TaskTimeoutTest extends EasyMockTest {
   }
 
   @Test
+  public void testTimeoutAfterShutdownDoesNotReadOrReschedule() {
+    Capture<Runnable> assignedTimeout = expectTaskWatch();
+    replayAndCreate();
+    changeState(PENDING, ASSIGNED);
+    timeout.stopAsync().awaitTerminated();
+    assignedTimeout.getValue().run();
+    changeState(PENDING, ASSIGNED);
+    assertEquals(0, timedOutTaskCounter.intValue());
+  }
+
+  @Test
+  public void testTimeoutAfterStopBeforeStartDoesNotReschedule() {
+    Capture<Runnable> assignedTimeout = expectTaskWatch();
+    control.replay();
+    timeout = new TaskTimeout(executor, storageUtil.storage, stateManager, TIMEOUT, statsProvider);
+    changeState(PENDING, ASSIGNED);
+    timeout.stopAsync().awaitTerminated();
+    assignedTimeout.getValue().run();
+    assertEquals(0, timedOutTaskCounter.intValue());
+  }
+
+  @Test
   public void testTimeoutWhileNotStarted() throws Exception {
     // Since the timeout is never instructed to start, it should not attempt to transition tasks,
     // but it should try again later.

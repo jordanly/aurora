@@ -36,7 +36,6 @@ import com.google.common.collect.FluentIterable;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
@@ -169,12 +168,12 @@ class ReadOnlySchedulerImpl implements ReadOnlyScheduler.Iface {
 
   @Override
   public Response getTasksWithoutConfigs(TaskQuery query) {
-    List<ScheduledTask> tasks = Lists.transform(
-        getTasks(query),
-        task -> {
-          task.getAssignedTask().getTask().getExecutorConfig().unsetData();
-          return task;
-        });
+    List<ScheduledTask> tasks = getTasks(query);
+    for (ScheduledTask task : tasks) {
+      if (task.getAssignedTask().getTask().isSetExecutorConfig()) {
+        task.getAssignedTask().getTask().getExecutorConfig().unsetData();
+      }
+    }
 
     return ok(Result.scheduleStatusResult(new ScheduleStatusResult().setTasks(tasks)));
   }

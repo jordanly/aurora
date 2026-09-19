@@ -14,17 +14,21 @@
 package org.apache.aurora.benchmark;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.AbstractExecutorService;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import jakarta.inject.Singleton;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -45,10 +49,12 @@ import org.apache.aurora.common.stats.StatsProvider;
 import org.apache.aurora.common.util.Clock;
 import org.apache.aurora.common.util.testing.FakeClock;
 import org.apache.aurora.common.util.testing.FakeTicker;
+import org.apache.aurora.gen.ScheduleStatus;
 import org.apache.aurora.gen.ServerInfo;
 import org.apache.aurora.scheduler.TaskIdGenerator;
 import org.apache.aurora.scheduler.TierModule;
 import org.apache.aurora.scheduler.async.AsyncModule;
+import org.apache.aurora.scheduler.base.Query;
 import org.apache.aurora.scheduler.base.TaskTestUtil;
 import org.apache.aurora.scheduler.config.CliOptions;
 import org.apache.aurora.scheduler.config.CommandLine;
@@ -56,6 +62,7 @@ import org.apache.aurora.scheduler.config.types.TimeAmount;
 import org.apache.aurora.scheduler.configuration.executor.ExecutorSettings;
 import org.apache.aurora.scheduler.configuration.executor.TestExecutorSettings;
 import org.apache.aurora.scheduler.events.EventSink;
+import org.apache.aurora.scheduler.events.PubsubEvent;
 import org.apache.aurora.scheduler.execution.OfferTransport;
 import org.apache.aurora.scheduler.execution.TaskFactory;
 import org.apache.aurora.scheduler.execution.TaskKiller;
@@ -96,6 +103,7 @@ import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.annotations.TearDown;
 import org.openjdk.jmh.annotations.Warmup;
 
 /**
@@ -118,8 +126,9 @@ public class SchedulingBenchmarks {
     private static final Integer BATCH_SIZE = 5;
     protected Storage storage;
     private TaskScheduler taskScheduler;
-    private OfferManager offerManager;
-    private EventBus eventBus;
+    protected OfferManager offerManager;
+    protected ClusterStateImpl clusterState;
+    protected EventBus eventBus;
     private BenchmarkSettings settings;
 
     /**
@@ -201,7 +210,8 @@ public class SchedulingBenchmarks {
 
       taskScheduler = injector.getInstance(TaskScheduler.class);
       offerManager = injector.getInstance(OfferManager.class);
-      eventBus.register(injector.getInstance(ClusterStateImpl.class));
+      clusterState = injector.getInstance(ClusterStateImpl.class);
+      eventBus.register(clusterState);
 
       withInjector(injector);
 
@@ -209,10 +219,15 @@ public class SchedulingBenchmarks {
       saveHostAttributes(settings.getHostAttributes());
 
       Set<HostOffer> offers = new Offers.Builder().build(settings.getHostAttributes());
+      withOffers(offers);
       Offers.addOffers(offerManager, offers);
       fillUpCluster(offers.size());
 
       saveTasks(settings.getTasks());
+    }
+
+    protected void withOffers(Set<HostOffer> offers) {
+      // Only workloads that restore consumed offers need to retain this fixture.
     }
 
     protected void withInjector(Injector injector) {
@@ -283,27 +298,88 @@ public class SchedulingBenchmarks {
   }
 
   /**
-   * Tests the successful scheduling of tasks in an almost empty cluster.
-   * The cluster will be filled progressively over benchmark repetitions.
+   * Schedules ten tasks against the same mostly empty cluster on every invocation.
+   * Cleanup restores task, victim-cache and offer state outside the timed operation.
    */
   public static class FillClusterBenchmark extends AbstractBase {
+    @Param("200000")
+    public int numHosts;
+
+    private Set<IScheduledTask> tasks;
+    private Map<String, HostOffer> originalOffers;
+    private int baselineTasks;
+    private int baselineVictims;
+    private int baselineOffers;
+
+    @Override
+    protected void withOffers(Set<HostOffer> offers) {
+      originalOffers = offers.stream().collect(Collectors.toUnmodifiableMap(
+          HostOffer::getAgentId, Function.identity()));
+    }
+
     @Override
     protected BenchmarkSettings getSettings() {
+      tasks = new Tasks.Builder().build(10);
       return new BenchmarkSettings.Builder()
           .setSiblingClusterUtilization(0.01)
           .setVictimClusterUtilization(0.01)
-          .setHostAttributes(new Hosts.Builder().setNumHostsPerRack(2).build(200000))
-          .setTasks(new Tasks.Builder().build(0))
+          .setHostAttributes(new Hosts.Builder().setNumHostsPerRack(2).build(numHosts))
+          .setTasks(tasks)
           .build();
     }
 
     @Override
+    @Setup(Level.Trial)
+    public void setUpBenchmark() {
+      super.setUpBenchmark();
+      baselineTasks = storage.read(stores -> stores.getTaskStore()
+          .fetchTasks(Query.unscoped()).size());
+      baselineVictims = clusterState.getSlavesToActiveTasks().size();
+      baselineOffers = Iterables.size(offerManager.getAll());
+    }
+
+    @Override
     public Set<String> runBenchmark() {
-      // In contrast to the other tests in this file we have to create new tasks for each
-      // benchmark repetition to make sure they can actually be scheduled.
-      Set<IScheduledTask> tasks = new Tasks.Builder().build(10);
-      saveTasks(tasks);
       return schedule(tasks);
+    }
+
+    @TearDown(Level.Invocation)
+    public void restoreCluster() {
+      List<IScheduledTask> previous = storage.write(stores -> {
+        Set<String> ids = org.apache.aurora.scheduler.base.Tasks.ids(tasks);
+        List<IScheduledTask> saved = List.copyOf(
+            stores.getTaskStore().fetchTasks(Query.taskScoped(ids)));
+        stores.getUnsafeTaskStore().deleteTasks(ids);
+        stores.getUnsafeTaskStore().saveTasks(tasks);
+        return saved;
+      });
+      for (IScheduledTask task : previous) {
+        if (org.apache.aurora.scheduler.base.Tasks.SLAVE_ASSIGNED_STATES
+            .contains(task.getStatus())) {
+          // The fake driver owns no real processes. Remove its synthetic active victim before
+          // returning the consumed offer; TasksDeleted does not update ClusterStateImpl.
+          eventBus.post(PubsubEvent.TaskStateChange.transition(
+              IScheduledTask.build(task.newBuilder().setStatus(ScheduleStatus.FINISHED)),
+              task.getStatus()));
+          offerManager.add(originalOffers.get(task.getAssignedTask().getSlaveId()));
+        }
+      }
+    }
+
+    void verifyResetCardinality() {
+      int actualTasks = storage.read(stores -> stores.getTaskStore()
+          .fetchTasks(Query.unscoped()).size());
+      if (actualTasks != baselineTasks || clusterState.getSlavesToActiveTasks().size()
+          != baselineVictims
+          || Iterables.size(offerManager.getAll()) != baselineOffers) {
+        throw new AssertionError("Scheduling fixture grew across benchmark invocations");
+      }
+      long pending = storage.read(stores -> stores.getTaskStore()
+          .fetchTasks(Query.taskScoped(org.apache.aurora.scheduler.base.Tasks.ids(tasks)))
+          .stream().filter(task -> task.getStatus() == ScheduleStatus.PENDING).count());
+      if (pending != tasks.size()) {
+        throw new AssertionError("Scheduling fixture did not restore all pending tasks");
+      }
     }
   }
 
